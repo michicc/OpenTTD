@@ -57,7 +57,7 @@ void InitializeGame(uint size_x, uint size_y, bool reset_date, bool reset_settin
 	 * related to the new game we're about to start/load. */
 	UnInitWindowSystem();
 
-	AllocateMap(size_x, size_y);
+	_m.Allocate(size_x, size_y);
 
 	_pause_mode = PM_UNPAUSED;
 	_fast_forward = 0;

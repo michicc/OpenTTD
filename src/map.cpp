@@ -12,6 +12,8 @@
 #include "stdafx.h"
 #include "debug.h"
 #include "core/alloc_func.hpp"
+#include "core/mem_func.hpp"
+#include "tile_map.h"
 #include "water_map.h"
 #include "string_func.h"
 
@@ -29,15 +31,25 @@ uint _map_size_y;    ///< Size of the map along the Y
 uint _map_size;      ///< The number of tiles on the map
 uint _map_tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
-Tile *_m = NULL;          ///< Tiles of the map
+Map _m;              ///< The map
 
+
+Map::Map() : tiles(NULL), offset(NULL), size_x(0), size_y(0)
+{
+}
+
+Map::~Map()
+{
+	delete[] this->tiles;
+	delete[] this->offset;
+}
 
 /**
  * (Re)allocates a map with the given dimension
  * @param size_x the width of the map along the NE/SW edge
  * @param size_y the 'height' of the map along the SE/NW edge
  */
-void AllocateMap(uint size_x, uint size_y)
+void Map::Allocate(uint size_x, uint size_y)
 {
 	/* Make sure that the map size is within the limits and that
 	 * size of both axes is a power of 2. */
@@ -57,9 +69,32 @@ void AllocateMap(uint size_x, uint size_y)
 	_map_size = size_x * size_y;
 	_map_tile_mask = _map_size - 1;
 
-	free(_m);
+	this->size_x = size_x;
+	this->size_y = size_y;
 
-	_m = CallocT<Tile>(_map_size);
+	/* Free old memory */
+	delete[] this->tiles;
+	delete[] this->offset;
+
+	/* Allocate tiles */
+	this->tiles = new SmallVector<Tile, 64>[size_y];
+	for (uint i = 0; i < size_y; i++) {
+		this->tiles[i].Append(size_x);
+	}
+	this->Clear();
+
+	/* Allocate offset array for each map line. */
+	this->offset = new uint16[size_x * size_y];
+	for (uint i = 0; i < size_x * size_y; i++) {
+		this->offset[i] = i & (size_x - 1);
+	}
+}
+
+void Map::Clear()
+{
+	for (uint i = 0; i < this->size_y; i++) {
+		MemSetT(this->tiles[i].Begin(), 0, this->tiles[i].Length());
+	}
 }
 
 
