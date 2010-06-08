@@ -3084,7 +3084,7 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode
 }
 
 
-static void TileLoop_Station(TileIndex tile)
+static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 {
 	/* FIXME -- GetTileTrackStatus_Station -> animated stationtiles
 	 * hardcoded.....not good */
@@ -3098,11 +3098,11 @@ static void TileLoop_Station(TileIndex tile)
 			/* FALL THROUGH */
 		case STATION_OILRIG: //(station part)
 		case STATION_BUOY:
-			TileLoop_Water(tile);
-			break;
+			return TileLoop_Water(tile, tptr);
 
 		default: break;
 	}
+	return true;
 }
 
 

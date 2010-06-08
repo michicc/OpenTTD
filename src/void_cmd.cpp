@@ -47,9 +47,10 @@ static void GetTileDesc_Void(TileIndex tile, TileDesc *td)
 	td->owner[0] = OWNER_NONE;
 }
 
-static void TileLoop_Void(TileIndex tile)
+static bool TileLoop_Void(TileIndex tile, Tile *&tptr)
 {
 	/* not used */
+	return true;
 }
 
 static void ChangeTileOwner_Void(TileIndex tile, Owner old_owner, Owner new_owner)

@@ -1155,7 +1155,7 @@ static void DoDryUp(TileIndex tile)
  *
  * @param tile the water/shore tile that floods
  */
-void TileLoop_Water(TileIndex tile)
+bool TileLoop_Water(TileIndex tile, Tile *&tptr)
 {
 	if (IsTileType(tile, MP_WATER)) AmbientSoundEffect(tile);
 
@@ -1188,14 +1188,15 @@ void TileLoop_Water(TileIndex tile)
 				if (!IsValidTile(dest)) continue;
 
 				FloodingBehaviour dest_behaviour = GetFloodingBehaviour(dest);
-				if ((dest_behaviour == FLOOD_ACTIVE) || (dest_behaviour == FLOOD_PASSIVE)) return;
+				if ((dest_behaviour == FLOOD_ACTIVE) || (dest_behaviour == FLOOD_PASSIVE)) return true;
 			}
 			DoDryUp(tile);
 			break;
 		}
 
-		default: return;
+		default: break;
 	}
+	return true;
 }
 
 void ConvertGroundTilesIntoWaterTiles()

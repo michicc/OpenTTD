@@ -715,6 +715,27 @@ CommandCost CmdClearArea(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 TileIndex _cur_tileloop_tile;
 
 /**
+ * Call the tile loop proc for all tile associated with a given tile index.
+ * @param tile Tile index.
+ */
+static inline void CallTileLoopProc(TileIndex tile)
+{
+	Tile *tptr = _m.ToTile(tile);
+	bool has_next;
+
+	do {
+		/* Query associated tile state first in case the current tile is deleted. */
+		has_next = HasAssociatedTile(tptr);
+
+		if (_tile_type_procs[GetTileType(tptr)]->tile_loop_proc(tile, tptr)) { // Can modify tptr
+				/* Current tile wasn't deleted, but the next tile could be.
+				 * Requery associated tile state. */
+				has_next = HasAssociatedTile(tptr++);
+		}
+	} while (has_next);
+}
+
+/**
  * Gradually iterate over all tiles on the map, calling their TileLoopProcs once every 256 ticks.
  */
 void RunTileLoop()
@@ -740,12 +761,12 @@ void RunTileLoop()
 
 	/* Manually update tile 0 every 256 ticks - the LFSR never iterates over it itself.  */
 	if (_tick_counter % 256 == 0) {
-		_tile_type_procs[GetTileType((TileIndex)0)]->tile_loop_proc(0);
+		CallTileLoopProc(0);
 		count--;
 	}
 
 	while (count--) {
-		_tile_type_procs[GetTileType(tile)]->tile_loop_proc(tile);
+		CallTileLoopProc(tile);
 
 		/* Get the next tile in sequence using a Galois LFSR. */
 		tile = (tile >> 1) ^ (-(int32)(tile & 1) & feedback);

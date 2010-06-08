@@ -113,7 +113,7 @@ typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, TransportType mode, u
 typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex tile);
 typedef void AnimateTileProc(TileIndex tile);
-typedef void TileLoopProc(TileIndex tile);
+typedef bool TileLoopProc(TileIndex tile, Tile *&tptr);
 typedef void ChangeTileOwnerProc(TileIndex tile, Owner old_owner, Owner new_owner);
 
 /** @see VehicleEnterTileStatus to see what the return values mean */

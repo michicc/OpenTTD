@@ -2485,14 +2485,13 @@ static Foundation GetFoundation_Track(TileIndex tile, Slope tileh)
 	return IsPlainRail(tile) ? GetRailFoundation(tileh, GetTrackBits(tile)) : FlatteningFoundation(tileh);
 }
 
-static void TileLoop_Track(TileIndex tile)
+static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 {
 	RailGroundType old_ground = GetRailGroundType(tile);
 	RailGroundType new_ground;
 
 	if (old_ground == RAIL_GROUND_WATER) {
-		TileLoop_Water(tile);
-		return;
+		return TileLoop_Water(tile, rail_tile);
 	}
 
 	switch (_settings_game.game_creation.landscape) {
@@ -2606,6 +2605,8 @@ set_ground:
 		SetRailGroundType(tile, new_ground);
 		MarkTileDirtyByTile(tile);
 	}
+
+	return true;
 }
 
 

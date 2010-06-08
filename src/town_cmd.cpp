@@ -462,18 +462,18 @@ static void MakeTownHouseBigger(TileIndex tile)
  * Periodic tic handler for houses and town
  * @param tile been asked to do its stuff
  */
-static void TileLoop_Town(TileIndex tile)
+static bool TileLoop_Town(TileIndex tile, Tile *&tptr)
 {
 	HouseID house_id = GetHouseType(tile);
 
 	/* NewHouseTileLoop returns false if Callback 21 succeeded, i.e. the house
 	 * doesn't exist any more, so don't continue here. */
-	if (house_id >= NEW_HOUSE_OFFSET && !NewHouseTileLoop(tile)) return;
+	if (house_id >= NEW_HOUSE_OFFSET && !NewHouseTileLoop(tile)) return true;
 
 	if (!IsHouseCompleted(tile)) {
 		/* Construction is not completed. See if we can go further in construction*/
 		MakeTownHouseBigger(tile);
-		return;
+		return true;
 	}
 
 	const HouseSpec *hs = HouseSpec::Get(house_id);
@@ -543,6 +543,7 @@ static void TileLoop_Town(TileIndex tile)
 	}
 
 	cur_company.Restore();
+	return true;
 }
 
 static CommandCost ClearTile_Town(TileIndex tile, DoCommandFlag flags)
