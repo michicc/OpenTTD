@@ -360,7 +360,7 @@ static inline void MakeShore(TileIndex t)
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
 	_m[t].m5 = WBL_TYPE_NORMAL << WBL_TYPE_BEGIN | 1 << WBL_COAST_FLAG;
-	SB(_m[t].m6, 2, 4, 0);
+	SB(_m[t].m6, 3, 3, 0);
 	_m[t].m7 = 0;
 }
 
@@ -373,6 +373,8 @@ static inline void MakeShore(TileIndex t)
  */
 static inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8 random_bits)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 2);
+
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, wc);
@@ -380,7 +382,7 @@ static inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8 random_b
 	_m[t].m3 = 0;
 	_m[t].m4 = random_bits;
 	_m[t].m5 = WBL_TYPE_NORMAL << WBL_TYPE_BEGIN;
-	SB(_m[t].m6, 2, 4, 0);
+	SB(_m[t].m6, 3, 3, 0);
 	_m[t].m7 = 0;
 }
 

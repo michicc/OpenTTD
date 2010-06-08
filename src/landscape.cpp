@@ -486,12 +486,28 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 	}
 }
 
+
+/**
+ * Make a clear tile with grass ground.
+ * @param t The tile to make a clear grass tile.
+ */
+void MakeClearGrass(TileIndex t)
+{
+	MakeClear(t, CLEAR_GRASS, _generating_world ? 3 : 0);
+}
+
 void DoClearSquare(TileIndex tile)
 {
 	/* If the tile can have animation and we clear it, delete it from the animated tile list. */
 	if (_tile_type_procs[GetTileType(tile)]->animate_tile_proc != NULL) DeleteAnimatedTile(tile);
 
-	MakeClear(tile, CLEAR_GRASS, _generating_world ? 3 : 0);
+	/* Remove all associated tiles. */
+	Tile *tptr = _m.ToTile(tile);
+	while (HasAssociatedTile(tptr)) {
+		_m.RemoveTile(tile, tptr + 1);
+	}
+	MakeClearGrass(tile);
+	SetAssociatedTileFlag(tptr, false);
 	MarkTileDirtyByTile(tile);
 }
 
@@ -638,7 +654,15 @@ CommandCost CmdLandscapeClear(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 			return_cmd_error(STR_ERROR_CAN_T_BUILD_ON_WATER);
 		}
 	} else {
-		cost.AddCost(_tile_type_procs[GetTileType(tile)]->clear_tile_proc(tile, flags));
+		/* Try to clear all associated tiles. */
+		Tile *tptr = _m.ToTile(tile);
+		bool tile_deleted, has_next;
+		do {
+			tile_deleted = false;
+			has_next = HasAssociatedTile(tptr);
+			cost.AddCost(_tile_type_procs[GetTileType(tptr)]->clear_tile_proc(tile, tptr, flags, &tile_deleted));
+			if (!tile_deleted) tptr++;
+		} while (has_next);
 	}
 
 	if (flags & DC_EXEC) {

@@ -546,7 +546,7 @@ static bool TileLoop_Town(TileIndex tile, Tile *&tptr)
 	return true;
 }
 
-static CommandCost ClearTile_Town(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Town(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	if (flags & DC_AUTO) return_cmd_error(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
 	if (!CanDeleteHouse(tile)) return CMD_ERROR;

@@ -940,10 +940,12 @@ static CommandCost DoClearBridge(TileIndex tile, DoCommandFlag flags)
 /**
  * Remove a tunnel or a bridge from the game.
  * @param tile Tile containing one of the endpoints.
+ * @param tptr Pointer to the actual tile struct.
  * @param flags Command flags.
+ * @param[out] Returns whether the actual tile was deleted from memory.
  * @return Succeeded or failed command.
  */
-static CommandCost ClearTile_TunnelBridge(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_TunnelBridge(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	if (IsTunnel(tile)) {
 		if (flags & DC_AUTO) return_cmd_error(STR_ERROR_MUST_DEMOLISH_TUNNEL_FIRST);

@@ -463,7 +463,7 @@ static void GetTileDesc_Industry(TileIndex tile, TileDesc *td)
 	}
 }
 
-static CommandCost ClearTile_Industry(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Industry(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	Industry *i = Industry::GetByTile(tile);
 	const IndustrySpec *indspec = GetIndustrySpec(i->type);

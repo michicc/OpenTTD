@@ -73,7 +73,7 @@ struct TileDesc {
  */
 typedef void DrawTileProc(TileInfo *ti);
 typedef int GetSlopeZProc(TileIndex tile, uint x, uint y);
-typedef CommandCost ClearTileProc(TileIndex tile, DoCommandFlag flags);
+typedef CommandCost ClearTileProc(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted);
 
 /**
  * Tile callback function signature for obtaining cargo acceptance of a tile

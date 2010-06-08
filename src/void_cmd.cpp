@@ -35,7 +35,7 @@ static Foundation GetFoundation_Void(TileIndex tile, Slope tileh)
 	return FOUNDATION_NONE;
 }
 
-static CommandCost ClearTile_Void(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Void(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	return_cmd_error(STR_ERROR_OFF_EDGE_OF_MAP);
 }

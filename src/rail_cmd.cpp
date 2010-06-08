@@ -1762,7 +1762,7 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_DEPOT_TRAIN]);
 }
 
-static CommandCost ClearTile_Track(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Track(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	CommandCost cost(EXPENSES_CONSTRUCTION);
 

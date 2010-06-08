@@ -1060,7 +1060,7 @@ static CommandCost RemoveRoadDepot(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_DEPOT_ROAD]);
 }
 
-static CommandCost ClearTile_Road(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Road(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	switch (GetRoadTileType(tile)) {
 		case ROAD_TILE_NORMAL: {

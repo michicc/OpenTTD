@@ -466,7 +466,7 @@ CommandCost CmdBuildCanal(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 	}
 }
 
-static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Water(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	switch (GetWaterTileType(tile)) {
 		case WATER_TILE_CLEAR: {
@@ -494,7 +494,8 @@ static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
 					Company::Get(owner)->infrastructure.water--;
 					DirtyCompanyInfrastructureWindows(owner);
 				}
-				DoClearSquare(tile);
+				MakeClearGrass(tile);
+				MarkTileDirtyByTile(tile);
 				MarkCanalsAndRiversAroundDirty(tile);
 			}
 
@@ -509,7 +510,8 @@ static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
 			if (ret.Failed()) return ret;
 
 			if (flags & DC_EXEC) {
-				DoClearSquare(tile);
+				MakeClearGrass(tile);
+				MarkTileDirtyByTile(tile);
 				MarkCanalsAndRiversAroundDirty(tile);
 			}
 			if (IsSlopeWithOneCornerRaised(slope)) {

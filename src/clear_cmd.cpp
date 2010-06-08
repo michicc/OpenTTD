@@ -25,7 +25,7 @@
 
 #include "safeguards.h"
 
-static CommandCost ClearTile_Clear(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Clear(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	static const Price clear_price_table[] = {
 		PR_CLEAR_GRASS,
@@ -41,7 +41,10 @@ static CommandCost ClearTile_Clear(TileIndex tile, DoCommandFlag flags)
 		price.AddCost(_price[clear_price_table[GetClearGround(tile)]]);
 	}
 
-	if (flags & DC_EXEC) DoClearSquare(tile);
+	if (flags & DC_EXEC) {
+		MakeClearGrass(tile);
+		MarkTileDirtyByTile(tile);
+	}
 
 	return price;
 }

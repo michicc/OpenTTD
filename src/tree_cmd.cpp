@@ -545,7 +545,7 @@ static Foundation GetFoundation_Trees(TileIndex tile, Slope tileh)
 	return FOUNDATION_NONE;
 }
 
-static CommandCost ClearTile_Trees(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Trees(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	uint num;
 
