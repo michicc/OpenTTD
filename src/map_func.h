@@ -13,6 +13,7 @@
 #define MAP_FUNC_H
 
 #include "core/math_func.hpp"
+#include "core/smallvec_type.hpp"
 #include "tile_type.h"
 #include "map_type.h"
 #include "direction_func.h"
@@ -27,18 +28,6 @@ extern uint _map_tile_mask;
 
 #define TILE_MASK(x) ((x) & _map_tile_mask)
 
-/**
- * Pointer to the tile-array.
- *
- * This variable points to the tile-array which contains the tiles of
- * the map.
- */
-extern Tile *_m;
-
-/**
- * Allocate a new map with the given size.
- */
-void AllocateMap(uint size_x, uint size_y);
 
 /**
  * Logarithm of the map size along the X side.
@@ -213,6 +202,53 @@ static inline uint TileY(TileIndex tile)
 {
 	return tile >> MapLogX();
 }
+
+
+/** Class encapsulating the map array.
+ *
+ * The map is stored in an array of tile lines and an offset
+ * array indicating the position of each tile in the tile line.
+ */
+class Map {
+private:
+	SmallVector<Tile, 64> *tiles;
+	uint16                *offset;
+
+	uint size_x, size_y;
+
+public:
+	Map();
+	~Map();
+
+	/** Allocate a new map with the given size. */
+	void Allocate(uint size_x, uint size_y);
+
+	/** Valid map array allocated? */
+	bool IsValid() const { return this->tiles != NULL; }
+
+	/** Clear map contents. */
+	void Clear();
+
+	/** Convert tile index to tile pointer. */
+	inline Tile *ToTile(TileIndex tile)
+	{
+		return this->tiles[TileY(tile)].Get(this->offset[tile]);
+	}
+
+	inline Tile& operator[](TileIndex tile)
+	{
+		return *this->ToTile(tile);
+	}
+};
+
+/**
+ * Pointer to the tile array.
+ *
+ * This variable points to the tile array which contains the tiles of
+ * the map.
+ */
+extern Map _m;
+
 
 /**
  * Return the offset between to tiles from a TileIndexDiffC struct.
