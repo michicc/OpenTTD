@@ -37,7 +37,7 @@ static void Save_MAPS()
 static void Load_MAPS()
 {
 	SlGlobList(_map_dimensions);
-	AllocateMap(_map_dim_x, _map_dim_y);
+	_m.Allocate(_map_dim_x, _map_dim_y);
 }
 
 static void Check_MAPS()
