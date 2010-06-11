@@ -564,11 +564,12 @@ static void AddAcceptedCargo_Object(TileIndex tile, CargoArray &acceptance, uint
 }
 
 
-static void GetTileDesc_Object(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Object(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	const ObjectSpec *spec = ObjectSpec::GetByTile(tile);
 	td->str = spec->name;
 	td->owner[0] = GetTileOwner(tile);
+	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 	td->build_date = Object::GetByTile(tile)->build_date;
 
 	if (spec->grf_prop.grffile != NULL) {

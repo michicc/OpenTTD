@@ -1660,7 +1660,7 @@ static const StringID _road_tile_strings[] = {
 	STR_LAI_ROAD_DESCRIPTION_ROAD,
 };
 
-static void GetTileDesc_Road(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Road(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	Owner rail_owner = INVALID_OWNER;
 	Owner road_owner = INVALID_OWNER;
@@ -1714,6 +1714,7 @@ static void GetTileDesc_Road(TileIndex tile, TileDesc *td)
 	} else {
 		/* One to rule them all */
 		td->owner[0] = first_owner;
+		if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 	}
 }
 
