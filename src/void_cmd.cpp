@@ -63,7 +63,7 @@ static TrackStatus GetTileTrackStatus_Void(TileIndex tile, TransportType mode, u
 	return 0;
 }
 
-static CommandCost TerraformTile_Void(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Void(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	return_cmd_error(STR_ERROR_OFF_EDGE_OF_MAP);
 }
