@@ -1592,7 +1592,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile)
 	}
 
 	/* Can only build on clear flat areas, possibly with trees. */
-	if ((!IsTileType(tile, MP_CLEAR) && !IsTileType(tile, MP_TREES)) || !IsTileFlat(tile)) {
+	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -2791,7 +2791,7 @@ static bool SearchTileForStatue(TileIndex tile, void *user_data)
 	if (MayHaveBridgeAbove(tile) && IsBridgeAbove(tile)) return false;
 
 	/* A clear-able open space is always preferred. */
-	if ((IsTileType(tile, MP_CLEAR) || IsTileType(tile, MP_TREES)) && TryClearTile(tile)) {
+	if (IsTileType(tile, MP_CLEAR) && TryClearTile(tile)) {
 		statue_data->best_position = tile;
 		return true;
 	}

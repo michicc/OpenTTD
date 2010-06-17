@@ -76,18 +76,13 @@ static void GenerateRockyArea(TileIndex end, TileIndex start)
 	TileArea ta(start, end);
 
 	TILE_AREA_LOOP(tile, ta) {
-		switch (GetTileType(tile)) {
-			case MP_TREES:
-				if (GetTreeGround(tile) == TREE_GROUND_SHORE) continue;
-				/* FALL THROUGH */
-			case MP_CLEAR:
-				MakeClear(tile, CLEAR_ROCKS, 3);
-				break;
-
-			default: continue;
+		if (IsTileType(tile, MP_CLEAR)) {
+			Tile *trees = GetTileByType(tile, MP_TREES);
+			if (trees != NULL) _m.RemoveTile(tile, trees);
+			MakeClear(tile, CLEAR_ROCKS, 3);
+			MarkTileDirtyByTile(tile);
+			success = true;
 		}
-		MarkTileDirtyByTile(tile);
-		success = true;
 	}
 
 	if (success && _settings_client.sound.confirm) SndPlayTileFx(SND_1F_SPLAT_OTHER, end);

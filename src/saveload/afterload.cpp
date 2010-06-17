@@ -121,8 +121,9 @@ void SetWaterClassDependingOnSurroundings(TileIndex t, bool include_invalid_wate
 				break;
 
 			case MP_TREES:
-				/* trees on shore */
-				has_water |= (GB(_m[neighbour].m2, 4, 2) == TREE_GROUND_SHORE);
+				/* This function is only called for old savegames which
+				 * still have trees on shore as MP_TREES tiles. */
+				has_water |= (GB(_m[neighbour].m2, 4, 2) == 3);
 				break;
 
 			default: break;
@@ -209,6 +210,47 @@ static void UpdateVoidTiles()
 static inline RailType UpdateRailType(RailType rt, RailType min)
 {
 	return rt >= min ? (RailType)(rt + 1): rt;
+}
+
+/* Decompose the tile into ground and additional tiles. */
+static void DecomposeTile(TileIndex tile)
+{
+	switch (GetTileType(tile)) {
+		case MP_TREES: {
+			Tile *new_tile = _m.NewTile(tile, MP_TREES, true);
+
+			/* Copy old tile to the new tile. */
+			MemCpyT(new_tile, new_tile - 1);
+
+			/* Make new ground tile. */
+			uint ground_type = GB(new_tile->m2, 6, 3);
+			uint density     = GB(new_tile->m2, 4, 2);
+			switch (ground_type) {
+				case 0: // Clear land
+				case 1: // Rough land
+					MakeClear(tile, (ClearGround)ground_type, density);
+					break;
+				case 2: // Snow or desert
+					MakeClear(tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, density);
+					if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(tile, density);
+					break;
+				case 3: // Shore tile
+					MakeShore(tile);
+					break;
+				case 4: // Rough snow
+					MakeClear(tile, CLEAR_ROUGH, 3);
+					MakeSnow(tile, density);
+					break;
+				default:
+					NOT_REACHED();
+			}
+			SetAssociatedTileFlag(new_tile - 1, true);
+			break;
+		}
+
+		default:
+			break;
+	}
 }
 
 /**
@@ -1625,8 +1667,8 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(81)) {
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (GetTileType(t) == MP_TREES) {
-				TreeGround groundType = (TreeGround)GB(_m[t].m2, 4, 2);
-				if (groundType != TREE_GROUND_SNOW_DESERT) SB(_m[t].m2, 6, 2, 3);
+				uint groundType = GB(_m[t].m2, 4, 2);
+				if (groundType != 2) SB(_m[t].m2, 6, 2, 3); // TREE_GROUND_SNOW_DESERT
 			}
 		}
 	}
@@ -2923,6 +2965,11 @@ bool AfterLoadGame()
 				ClrBit(_m[t].m6, 2);
 			}
 		}
+	}
+
+	/* Decompose all tiles into their base tile components. */
+	for (TileIndex t = 0; t < map_size; t++) {
+		DecomposeTile(t);
 	}
 
 
