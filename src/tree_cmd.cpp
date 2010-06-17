@@ -770,7 +770,7 @@ void OnTick_Trees()
 	}
 }
 
-static TrackStatus GetTileTrackStatus_Trees(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Trees(TileIndex tile, Tile *tptr, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	return 0;
 }

@@ -680,7 +680,7 @@ static void GetTileDesc_Town(TileIndex tile, Tile *tptr, TileDesc *td)
 	td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 }
 
-static TrackStatus GetTileTrackStatus_Town(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Town(TileIndex tile, Tile *tptr, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	/* not used */
 	return 0;

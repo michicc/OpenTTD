@@ -532,7 +532,14 @@ void DoClearSquare(TileIndex tile)
  */
 TrackStatus GetTileTrackStatus(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
-	return _tile_type_procs[GetTileType(tile)]->get_tile_track_status_proc(tile, mode, sub_mode, side);
+	TrackStatus result = 0;
+
+	Tile *tptr = _m.ToTile(tile);
+	do {
+		result |= _tile_type_procs[GetTileType(tptr)]->get_tile_track_status_proc(tile, tptr, mode, sub_mode, side);
+	} while (HasAssociatedTile(tptr++));
+
+	return result;
 }
 
 /**

@@ -607,7 +607,7 @@ static bool TileLoop_Object(TileIndex tile, Tile *&tptr)
 }
 
 
-static TrackStatus GetTileTrackStatus_Object(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Object(TileIndex tile, Tile *tptr, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	return 0;
 }

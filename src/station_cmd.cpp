@@ -3037,7 +3037,7 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 }
 
 
-static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TrackBits trackbits = TRACK_BIT_NONE;
 
