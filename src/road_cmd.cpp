@@ -1569,7 +1569,7 @@ static bool TileLoop_Road(TileIndex tile, Tile *&road_tile)
 	return true;
 }
 
-static bool ClickTile_Road(TileIndex tile)
+static bool ClickTile_Road(TileIndex tile, Tile *tptr)
 {
 	if (!IsRoadDepot(tile)) return false;
 

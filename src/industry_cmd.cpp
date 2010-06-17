@@ -901,7 +901,7 @@ static bool TileLoop_Industry(TileIndex tile, Tile *&tptr)
 	return true;
 }
 
-static bool ClickTile_Industry(TileIndex tile)
+static bool ClickTile_Industry(TileIndex tile, Tile *tptr)
 {
 	ShowIndustryViewWindow(GetIndustryIndex(tile));
 	return true;
