@@ -756,9 +756,9 @@ void GenerateObjects()
 	}
 }
 
-static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Object(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return true;
 
 	if (IsObjectType(tile, OBJECT_OWNED_LAND) && new_owner != INVALID_OWNER) {
 		SetTileOwner(tile, new_owner);
@@ -777,6 +777,7 @@ static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_ow
 	} else {
 		ReallyClearObjectTile(Object::GetByTile(tile));
 	}
+	return true;
 }
 
 static CommandCost TerraformTile_Object(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
