@@ -97,6 +97,41 @@ void Map::Clear()
 	}
 }
 
+size_t Map::GetTileCount() const
+{
+	size_t count = 0;
+	for (uint i = 0; i < this->size_y; i++) {
+		count += this->tiles[i].Length();
+	}
+	return count;
+}
+
+Map::Iterator& Map::Iterator::operator ++()
+{
+	tile++;
+	if (tile == _m.tiles[y_pos].End()) {
+		tile = _m.tiles[++y_pos].Begin();
+	}
+	return *this;
+}
+
+Map::Iterator Map::Iterator::operator ++(int)
+{
+	Iterator old(*this);
+	++(*this);
+	return old;
+}
+
+Map::Iterator Map::Begin()
+{
+	return Map::Iterator(this->tiles[0].Begin(), 0);
+}
+
+Map::Iterator Map::End()
+{
+	return Map::Iterator(this->tiles[this->size_y-1].End(), this->size_y-1);
+}
+
 
 #ifdef _DEBUG
 TileIndex TileAdd(TileIndex tile, TileIndexDiff add,
