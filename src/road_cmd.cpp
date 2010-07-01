@@ -1388,7 +1388,6 @@ static void DrawTile_Road(TileInfo *ti, bool draw_halftile, Corner halftile_corn
 			break;
 		}
 	}
-	DrawBridgeMiddle(ti);
 }
 
 /**
