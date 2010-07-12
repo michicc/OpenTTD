@@ -301,7 +301,7 @@ static IndustryDrawTileProc * const _industry_draw_tile_procs[5] = {
 	IndustryDrawCoalPlantSparks,
 };
 
-static void DrawTile_Industry(TileInfo *ti)
+static void DrawTile_Industry(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	IndustryGfx gfx = GetIndustryGfx(ti->tile);
 	Industry *ind = Industry::GetByTile(ti->tile);
@@ -331,9 +331,6 @@ static void DrawTile_Industry(TileInfo *ti)
 			GetIndustryConstructionStage(ti->tile))];
 
 	SpriteID image = dits->ground.sprite;
-
-	/* DrawFoundation() modifies ti->z and ti->tileh */
-	if (ti->tileh != SLOPE_FLAT) DrawFoundation(ti, FOUNDATION_LEVELED);
 
 	/* If the ground sprite is the default flat water sprite, draw also canal/river borders.
 	 * Do not do this if the tile's WaterClass is 'land'. */
@@ -367,7 +364,7 @@ static void DrawTile_Industry(TileInfo *ti)
 	}
 }
 
-static Foundation GetFoundation_Industry(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Industry(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	IndustryGfx gfx = GetIndustryGfx(tile);
 

@@ -269,8 +269,10 @@ void DrawCatenaryOnTunnel(const TileInfo *ti)
 /**
  * Draws wires and, if required, pylons on a given tile
  * @param ti The Tileinfo to draw the tile for
+ * @param draw_halftile Are we drawing the upper part of a half-tile?
+ * @param halftile_corner The corner where the upper half-tile is or CORNER_INVALID if no half-tile.
  */
-static void DrawCatenaryRailway(const TileInfo *ti)
+static void DrawCatenaryRailway(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	/* Pylons are placed on a tile edge, so we need to take into account
 	 * the track configuration of 2 adjacent tiles. trackconfig[0] stores the
@@ -283,11 +285,7 @@ static void DrawCatenaryRailway(const TileInfo *ti)
 
 	/* Half tile slopes coincide only with horizontal/vertical track.
 	 * Faking a flat slope results in the correct sprites on positions. */
-	Corner halftile_corner = CORNER_INVALID;
-	if (IsHalftileSlope(tileh[TS_HOME])) {
-		halftile_corner = GetHalftileSlopeCorner(tileh[TS_HOME]);
-		tileh[TS_HOME] = SLOPE_FLAT;
-	}
+	if (IsHalftileSlope(tileh[TS_HOME])) tileh[TS_HOME] = SLOPE_FLAT;
 
 	TLG tlg = GetTLG(ti->tile);
 	byte PCPstatus = 0;
@@ -302,29 +300,22 @@ static void DrawCatenaryRailway(const TileInfo *ti)
 	 *    because that one is drawn on the bridge. Exception is for length 0 bridges
 	 *    which have no middle tiles */
 	trackconfig[TS_HOME] = GetRailTrackBitsUniversal(ti->tile, &OverridePCP);
+	if (IsValidCorner(halftile_corner)) {
+		trackconfig[TS_HOME] &= draw_halftile ? CornerToTrackBits(halftile_corner) : ~CornerToTrackBits(halftile_corner);
+	}
 	wireconfig[TS_HOME] = MaskWireBits(ti->tile, trackconfig[TS_HOME]);
 	/* If a track bit is present that is not in the main direction, the track is level */
 	isflat[TS_HOME] = ((trackconfig[TS_HOME] & (TRACK_BIT_HORZ | TRACK_BIT_VERT)) != 0);
 
 	AdjustTileh(ti->tile, &tileh[TS_HOME]);
 
-	SpriteID pylon_normal = GetPylonBase(ti->tile);
-	SpriteID pylon_halftile = (halftile_corner != CORNER_INVALID) ? GetPylonBase(ti->tile, TCX_UPPER_HALFTILE) : pylon_normal;
+	SpriteID pylon_base = GetPylonBase(ti->tile, draw_halftile ? TCX_UPPER_HALFTILE : TCX_NORMAL);
 
 	for (DiagDirection i = DIAGDIR_BEGIN; i < DIAGDIR_END; i++) {
-		static const uint edge_corners[] = {
-			1 << CORNER_N | 1 << CORNER_E, // DIAGDIR_NE
-			1 << CORNER_S | 1 << CORNER_E, // DIAGDIR_SE
-			1 << CORNER_S | 1 << CORNER_W, // DIAGDIR_SW
-			1 << CORNER_N | 1 << CORNER_W, // DIAGDIR_NW
-		};
-		SpriteID pylon_base = (halftile_corner != CORNER_INVALID && HasBit(edge_corners[i], halftile_corner)) ? pylon_halftile : pylon_normal;
 		TileIndex neighbour = ti->tile + TileOffsByDiagDir(i);
 		int elevation = GetPCPElevation(ti->tile, i);
 
-		/* Here's one of the main headaches. GetTileSlope does not correct for possibly
-		 * existing foundataions, so we do have to do that manually later on.*/
-		tileh[TS_NEIGHBOUR] = GetTileSlope(neighbour);
+		tileh[TS_NEIGHBOUR] = GetFoundationSlope(neighbour);
 		trackconfig[TS_NEIGHBOUR] = GetRailTrackBitsUniversal(neighbour, NULL);
 		wireconfig[TS_NEIGHBOUR] = MaskWireBits(neighbour, trackconfig[TS_NEIGHBOUR]);
 		if (IsTunnelTile(neighbour) && i != GetTunnelBridgeDirection(neighbour)) wireconfig[TS_NEIGHBOUR] = trackconfig[TS_NEIGHBOUR] = TRACK_BIT_NONE;
@@ -373,18 +364,8 @@ static void DrawCatenaryRailway(const TileInfo *ti)
 			PPPallowed[i] = 0;
 		}
 
-		Foundation foundation = FOUNDATION_NONE;
-
 		/* Station and road crossings are always "flat", so adjust the tileh accordingly */
 		if (IsTileType(neighbour, MP_STATION) || IsTileType(neighbour, MP_ROAD)) tileh[TS_NEIGHBOUR] = SLOPE_FLAT;
-
-		/* Read the foundations if they are present, and adjust the tileh */
-		if (trackconfig[TS_NEIGHBOUR] != TRACK_BIT_NONE && IsTileType(neighbour, MP_RAILWAY) && HasCatenary(GetRailType(neighbour))) foundation = GetRailFoundation(tileh[TS_NEIGHBOUR], trackconfig[TS_NEIGHBOUR]);
-		if (IsBridgeTile(neighbour)) {
-			foundation = GetBridgeFoundation(tileh[TS_NEIGHBOUR], DiagDirToAxis(GetTunnelBridgeDirection(neighbour)));
-		}
-
-		ApplyFoundationToSlope(foundation, &tileh[TS_NEIGHBOUR]);
 
 		/* Half tile slopes coincide only with horizontal/vertical track.
 		 * Faking a flat slope results in the correct sprites on positions. */
@@ -455,21 +436,11 @@ static void DrawCatenaryRailway(const TileInfo *ti)
 	/* Don't draw a wire if the station tile does not want any */
 	if (IsRailStationTile(ti->tile) && !CanStationTileHaveWires(ti->tile)) return;
 
-	SpriteID wire_normal = GetWireBase(ti->tile);
-	SpriteID wire_halftile = (halftile_corner != CORNER_INVALID) ? GetWireBase(ti->tile, TCX_UPPER_HALFTILE) : wire_normal;
-	Track halftile_track;
-	switch (halftile_corner) {
-		case CORNER_W: halftile_track = TRACK_LEFT; break;
-		case CORNER_S: halftile_track = TRACK_LOWER; break;
-		case CORNER_E: halftile_track = TRACK_RIGHT; break;
-		case CORNER_N: halftile_track = TRACK_UPPER; break;
-		default:       halftile_track = INVALID_TRACK; break;
-	}
+	SpriteID wire_base = GetWireBase(ti->tile, draw_halftile ? TCX_UPPER_HALFTILE : TCX_NORMAL);
 
 	/* Drawing of pylons is finished, now draw the wires */
 	Track t;
 	FOR_EACH_SET_TRACK(t, wireconfig[TS_HOME]) {
-		SpriteID wire_base = (t == halftile_track) ? wire_halftile : wire_normal;
 		byte PCPconfig = HasBit(PCPstatus, PCPpositions[t][0]) +
 			(HasBit(PCPstatus, PCPpositions[t][1]) << 1);
 
@@ -558,9 +529,11 @@ void DrawCatenaryOnBridge(const TileInfo *ti)
 /**
  * Draws overhead wires and pylons for electric railways.
  * @param ti The TileInfo struct of the tile being drawn
+ * @param draw_halftile Are we drawing the upper part of a half-tile?
+ * @param halftile_corner The corner where the upper half-tile is or CORNER_INVALID if no half-tile.
  * @see DrawCatenaryRailway
  */
-void DrawCatenary(const TileInfo *ti)
+void DrawCatenary(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	switch (GetTileType(ti->tile)) {
 		case MP_RAILWAY:
@@ -587,7 +560,7 @@ void DrawCatenary(const TileInfo *ti)
 
 		default: return;
 	}
-	DrawCatenaryRailway(ti);
+	DrawCatenaryRailway(ti, draw_halftile, halftile_corner);
 }
 
 bool SettingsDisableElrail(int32 p1)

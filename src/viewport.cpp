@@ -1085,10 +1085,7 @@ static void ViewportAddLandscape()
 			_vd.last_foundation_child[0] = NULL;
 			_vd.last_foundation_child[1] = NULL;
 
-			do {
-				TileType tt = ti.tptr != NULL ? GetTileType(ti.tptr) : MP_VOID;
-				_tile_type_procs[tt]->draw_tile_proc(&ti);
-			} while (ti.tptr != NULL && HasAssociatedTile(ti.tptr++));
+			DrawTile(&ti);
 
 			if ((x_cur == (int)MapMaxX() * TILE_SIZE && IsInsideMM(y_cur, 0, MapMaxY() * TILE_SIZE + 1)) ||
 					(y_cur == (int)MapMaxY() * TILE_SIZE && IsInsideMM(x_cur, 0, MapMaxX() * TILE_SIZE + 1))) {
