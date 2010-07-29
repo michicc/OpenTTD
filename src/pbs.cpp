@@ -395,7 +395,6 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 	}
 
 	/* Check for reachable tracks. */
-	ft.m_new_td_bits &= DiagdirReachesTrackdirs(ft.m_exitdir);
 	if (forbid_90deg) ft.m_new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
 	if (ft.m_new_td_bits == TRACKDIR_BIT_NONE) return include_line_end;
 
@@ -404,9 +403,8 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 		/* PBS signal on next trackdir? Safe position. */
 		if (HasPbsSignalOnTrackdir(ft.m_new_tile, td)) return true;
 		/* One-way PBS signal against us? Safe if end-of-line is allowed. */
-		Tile *rail_tile = GetTileByType(ft.m_new_tile, MP_RAILWAY);
-		if (rail_tile != NULL && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td)) &&
-				GetSignalType(rail_tile, TrackdirToTrack(td)) == SIGTYPE_PBS_ONEWAY) {
+		if (ft.m_new_rail_tile != NULL && HasSignalOnTrackdir(ft.m_new_rail_tile, ReverseTrackdir(td)) &&
+				GetSignalType(ft.m_new_rail_tile, TrackdirToTrack(td)) == SIGTYPE_PBS_ONEWAY) {
 			return include_line_end;
 		}
 	}
