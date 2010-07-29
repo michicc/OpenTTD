@@ -20,6 +20,10 @@
 #include "signal_type.h"
 
 
+/** Iterate through all rail tiles at a tile index. */
+#define FOR_ALL_RAIL_TILES(ptr, tile) for (Tile *ptr = GetTileByType(tile, MP_RAILWAY); ptr != NULL; ptr = GetNextTileByType(ptr, MP_RAILWAY))
+
+
 /** Different types of Rail-related tiles */
 enum RailTileType {
 	RAIL_TILE_NORMAL   = 0, ///< Normal rail tile without signals
@@ -213,6 +217,54 @@ static inline DiagDirection GetRailDepotDirection(const Tile *t)
 static inline Track GetRailDepotTrack(const Tile *t)
 {
 	return DiagDirToDiagTrack(GetRailDepotDirection(t));
+}
+
+/**
+ * Get all trackdirs of a rail tile reachable from a given side.
+ * @param t The tile to get the tracks from.
+ * @param diagdir The tile is entered from this direction.
+ * @return The reachable trackdirs.
+ */
+static inline TrackdirBits GetRailTrackdirBits(const Tile *t, DiagDirection diagdir)
+{
+	assert(IsTileType(t, MP_RAILWAY));
+	if (IsRailDepot(t)) {
+		DiagDirection dir = ReverseDiagDir(GetRailDepotDirection(t));
+		return dir == diagdir ? TrackdirToTrackdirBits(DiagDirToDiagTrackdir(dir)) : TRACKDIR_BIT_NONE;
+	}
+	return TrackBitsToTrackdirBits(GetTrackBits(t)) & DiagdirReachesTrackdirs(diagdir);
+}
+
+/**
+ * Find a rail tile at a specific tile index that has tracks reachable from a given side.
+ * @param tile The tile index to check.
+ * @param diagdir The tile is entered from this direction.
+ * @return Pointer to a matching rail tile or NULL if no such tile exists.
+ */
+static inline Tile *GetRailTileFromDiagDir(TileIndex tile, DiagDirection diagdir)
+{
+	FOR_ALL_RAIL_TILES(rail_tile, tile) {
+		if (GetRailTrackdirBits(rail_tile, diagdir) != TRACKDIR_BIT_NONE) return rail_tile;
+	}
+	return NULL;
+}
+
+/**
+ * Find a rail tile at a specific tile index that has a specific track.
+ * @param tile The tile index to check.
+ * @param track The track to search for.
+ * @return Pointer to a matching rail tile or NULL if no such tile exists.
+ */
+static inline Tile *GetRailTileFromTrack(TileIndex tile, Track track)
+{
+	FOR_ALL_RAIL_TILES(rail_tile, tile) {
+		if (IsRailDepot(rail_tile)) {
+			if (GetRailDepotTrack(rail_tile) == track) return rail_tile;
+			continue;
+		}
+		if (HasTrack(rail_tile, track)) return rail_tile;
+	}
+	return NULL;
 }
 
 /**

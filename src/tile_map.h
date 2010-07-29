@@ -376,6 +376,20 @@ static inline Tile *GetTileByType(TileIndex tile, TileType type)
 }
 
 /**
+ * Find the next associated tile with a specific tile type.
+ * @param tile Tile to start searching.
+ * @param type Tile type to search for.
+ * @return The next tile with the asked tile type or NULL if no such tile exists.
+ */
+static inline Tile *GetNextTileByType(Tile *tile, TileType type)
+{
+	while (HasAssociatedTile(tile++)) {
+		if (IsTileType(tile, type)) return tile;
+	}
+	return NULL;
+}
+
+/**
  * Check if a tile index has an associated tile with a given type.
  * @param tile Tile index to query.
  * @param type Tile type to search for.

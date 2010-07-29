@@ -2141,14 +2141,14 @@ static bool CheckTrainStayInDepot(Train *v)
 
 		v->wait_counter = 0;
 
-		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
+		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, GetRailDepotDirection(depot_tile), v->owner);
 		if (seg_state == SIGSEG_FULL || HasDepotReservation(depot_tile)) {
 			/* Full and no PBS signal in block or depot reserved, can't exit. */
 			SetWindowClassesDirty(WC_TRAINS_LIST);
 			return true;
 		}
 	} else {
-		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
+		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, GetRailDepotDirection(depot_tile), v->owner);
 	}
 
 	/* We are leaving a depot, but have to go to the exact same one; re-enter */
@@ -2183,7 +2183,7 @@ static bool CheckTrainStayInDepot(Train *v)
 
 	v->UpdateViewport(true, true);
 	VehicleUpdatePosition(v);
-	UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
+	UpdateSignalsOnSegment(v->tile, GetRailDepotDirection(depot_tile), v->owner);
 	v->UpdateAcceleration();
 	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
 
@@ -3492,7 +3492,9 @@ static void DeleteLastWagon(Train *v)
 	if (IsLevelCrossingTile(tile)) UpdateLevelCrossing(tile);
 
 	/* Update signals */
-	if (IsTileType(tile, MP_TUNNELBRIDGE) || IsRailDepotTile(tile)) {
+	if (IsRailDepotTile(tile)) {
+		UpdateSignalsOnSegment(tile, GetRailDepotDirection(GetRailDepotTile(tile)), owner);
+	} else if (IsTileType(tile, MP_TUNNELBRIDGE)) {
 		UpdateSignalsOnSegment(tile, INVALID_DIAGDIR, owner);
 	} else {
 		SetSignalsOnBothDir(tile, track, owner);
