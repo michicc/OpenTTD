@@ -312,7 +312,7 @@ protected: // These functions should not be called outside acceleration code.
 	 */
 	inline uint16 GetMaxTrackSpeed() const
 	{
-		Tile *rail_tile = GetTileByType(this->tile, MP_RAILWAY);
+		Tile *rail_tile = GetRailTileFromTrack(this->tile, TrackdirToTrack(this->GetVehicleTrackdir()));
 		return GetRailTypeInfo(GetRailType(rail_tile != NULL ? rail_tile : _m.ToTile(this->tile)))->max_speed;
 	}
 
