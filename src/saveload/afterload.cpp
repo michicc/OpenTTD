@@ -150,7 +150,7 @@ static void ConvertTownOwner()
 	for (TileIndex tile = 0; tile != MapSize(); tile++) {
 		switch (GetTileType(tile)) {
 			case MP_ROAD:
-				if (GB(_m[tile].m5, 4, 2) == ROAD_TILE_CROSSING && HasBit(_m[tile].m3, 7)) {
+				if (GB(_m[tile].m5, 4, 2) == 1 /* ROAD_TILE_CROSSING */ && HasBit(_m[tile].m3, 7)) {
 					_m[tile].m3 = OWNER_TOWN;
 				}
 				/* FALL THROUGH */
@@ -277,6 +277,26 @@ static void DecomposeTile(TileIndex tile)
 			SetRailFenceType(new_tile, fences);
 			SetAssociatedTileFlag(old_tile, true);
 			SB(old_tile->m6, 6, 2, bridge);
+			break;
+		}
+
+		case MP_ROAD: {
+			if (GetRoadTileType(tile) == 1) {
+				/* Level crossing, extract info. */
+				Axis road_axis = (Axis)GB(_m[tile].m5, 0, 1);
+				TrackBits tracks = road_axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X;
+				bool reserved = HasBit(_m[tile].m5, 4);
+
+				/* Create new rail tile. */
+				Tile *rail_tile = MakeLevelCrossing(tile, GetTileOwner(tile), tracks, GetRailType(tile));
+				if (reserved) SetTrackReservation(rail_tile, tracks);
+
+				/* Change road tile to normal road. */
+				RoadTypes rts = GetRoadTypes(tile);
+				TownID town = GetTownIndex(tile);
+				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rts, town, (Owner)GB(_m[tile].m7, 0, 5), HasBit(rts, ROADTYPE_TRAM) ? GetRoadOwner(tile, ROADTYPE_TRAM) : OWNER_NONE);
+			}
+
 			break;
 		}
 
@@ -502,7 +522,7 @@ static void CDECL HandleSavegameLoadCrash(int signum)
  */
 static void FixOwnerOfRailTrack(TileIndex t)
 {
-	assert(!Company::IsValidID(GetTileOwner(t)) && (IsLevelCrossingTile(t) || IsPlainRailTile(t)));
+	assert(!Company::IsValidID(GetTileOwner(t)) && ((IsTileType(t, MP_ROAD) && GetRoadTileType(t) == 1) || IsPlainRailTile(t)));
 
 	/* remove leftover rail piece from crossing (from very old savegames) */
 	Train *v = NULL, *w;
@@ -530,9 +550,9 @@ static void FixOwnerOfRailTrack(TileIndex t)
 		}
 	}
 
-	if (IsLevelCrossingTile(t)) {
+	if (IsTileType(t, MP_ROAD) && GetRoadTileType(t) == 1 /* ROAD_TILE_CROSSING */) {
 		/* else change the crossing to normal road (road vehicles won't care) */
-		MakeRoadNormal(t, GetCrossingRoadBits(t), GetRoadTypes(t), GetTownIndex(t),
+		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(t), GetTownIndex(t),
 			GetRoadOwner(t, ROADTYPE_ROAD), GetRoadOwner(t, ROADTYPE_TRAM));
 		return;
 	}
@@ -992,7 +1012,7 @@ bool AfterLoadGame()
 
 				case MP_ROAD:
 					_m[t].m4 |= (_m[t].m2 << 4);
-					if ((GB(_m[t].m5, 4, 2) == ROAD_TILE_CROSSING ? (Owner)_m[t].m3 : GetTileOwner(t)) == OWNER_TOWN) {
+					if ((GB(_m[t].m5, 4, 2) == 1 /* ROAD_TILE_CROSSING */ ? (Owner)_m[t].m3 : GetTileOwner(t)) == OWNER_TOWN) {
 						SetTownIndex(t, CalcClosestTownFromTile(t)->index);
 					} else {
 						SetTownIndex(t, 0);
@@ -1081,7 +1101,7 @@ bool AfterLoadGame()
 							SB(_m[t].m4, 4, 4, 0);
 							SB(_m[t].m6, 2, 4, 0);
 							break;
-						case ROAD_TILE_CROSSING:
+						case 1: /* ROAD_TILE_CROSSING */
 							SB(_m[t].m4, 5, 2, GB(_m[t].m5, 2, 2));
 							break;
 						case ROAD_TILE_DEPOT:    break;
@@ -1125,7 +1145,7 @@ bool AfterLoadGame()
 							SB(_m[t].m5, 0, 4, GB(_m[t].m4, 0, 4));  // road bits
 							break;
 
-						case ROAD_TILE_CROSSING:
+						case 1: /* ROAD_TILE_CROSSING */
 							SB(_m[t].m7, 0, 5, GB(_m[t].m4, 0, 5)); // road owner
 							SB(_m[t].m6, 3, 3, GB(_m[t].m3, 4, 3));  // ground
 							SB(_m[t].m3, 4, 4, GB(_m[t].m5, 0, 4));  // tram owner
@@ -1275,7 +1295,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_ROAD:
-					if (IsLevelCrossing(t)) {
+					if (GetRoadTileType(t) == 1) { // Level crossing
 						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
@@ -1855,7 +1875,7 @@ bool AfterLoadGame()
 					Owner o = GetRoadOwner(t, rt);
 					if (o < MAX_COMPANIES && !Company::IsValidID(o)) SetRoadOwner(t, rt, OWNER_NONE);
 				}
-				if (IsLevelCrossing(t)) {
+				if (GetRoadTileType(t) == 1) { // Level crossing
 					if (!Company::IsValidID(GetTileOwner(t))) FixOwnerOfRailTrack(t);
 				}
 			} else if (IsPlainRailTile(t)) {
@@ -1962,7 +1982,7 @@ bool AfterLoadGame()
 				}
 
 				case MP_ROAD: // Clear PBS reservation on crossing
-					if (IsLevelCrossing(t)) SetCrossingReservation(t, false);
+					if (GetRoadTileType(t) == 1) ClrBit(_m[t].m5, 4);
 					break;
 
 				case MP_STATION: // Clear PBS reservation on station
