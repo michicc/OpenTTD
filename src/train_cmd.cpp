@@ -2266,23 +2266,23 @@ void FreeTrainTrackReservation(const Train *v, TileIndex origin, Trackdir orig_t
 
 		if (!IsValidTrackdir(td)) break;
 
-		if (ft.m_new_rail_tile != NULL) {
-			if (HasSignalOnTrackdir(ft.m_new_rail_tile, td)) {
-				if (!IsPbsSignal(GetSignalType(ft.m_new_rail_tile, TrackdirToTrack(td)))) {
+		if (IsRailTile(ft.m_new_tile_ptr)) {
+			if (HasSignalOnTrackdir(ft.m_new_tile_ptr, td)) {
+				if (!IsPbsSignal(GetSignalType(ft.m_new_tile_ptr, TrackdirToTrack(td)))) {
 					/* Conventional signal along trackdir: remove reservation and stop. */
-					UnreserveTrack(ft.m_new_rail_tile, TrackdirToTrack(td));
+					UnreserveTrack(ft.m_new_tile_ptr, TrackdirToTrack(td));
 					break;
 				} else {
-					if (GetSignalStateByTrackdir(ft.m_new_rail_tile, td) == SIGNAL_STATE_RED) {
+					if (GetSignalStateByTrackdir(ft.m_new_tile_ptr, td) == SIGNAL_STATE_RED) {
 						/* Red PBS signal? Can't be our reservation, would be green then. */
 						break;
 					} else {
 						/* Turn the signal back to red. */
-						SetSignalStateByTrackdir(ft.m_new_rail_tile, td, SIGNAL_STATE_RED);
+						SetSignalStateByTrackdir(ft.m_new_tile_ptr, td, SIGNAL_STATE_RED);
 						MarkTileDirtyByTile(tile);
 					}
 				}
-			} else if (HasSignalOnTrackdir(ft.m_new_rail_tile, ReverseTrackdir(td)) && IsOnewaySignal(ft.m_new_rail_tile, TrackdirToTrack(td))) {
+			} else if (HasSignalOnTrackdir(ft.m_new_tile_ptr, ReverseTrackdir(td)) && IsOnewaySignal(ft.m_new_tile_ptr, TrackdirToTrack(td))) {
 				break;
 			}
 		}

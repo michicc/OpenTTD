@@ -43,7 +43,7 @@ struct CFollowTrackT
 	TileIndex           m_old_tile;      ///< the origin (vehicle moved from) before move
 	Trackdir            m_old_td;        ///< the trackdir (the vehicle was on) before move
 	TileIndex           m_new_tile;      ///< the new tile (the vehicle has entered)
-	Tile               *m_new_rail_tile; ///< pointer to the actual new tile
+	Tile               *m_new_tile_ptr;  ///< pointer to the actual new tile
 	TrackdirBits        m_new_td_bits;   ///< the new set of available trackdirs
 	DiagDirection       m_exitdir;       ///< exit direction (leaving the old tile)
 	bool                m_is_tunnel;     ///< last turn passed tunnel
@@ -81,7 +81,7 @@ struct CFollowTrackT
 		m_old_tile = INVALID_TILE;
 		m_old_td = INVALID_TRACKDIR;
 		m_new_tile = INVALID_TILE;
-		m_new_rail_tile = NULL;
+		m_new_tile_ptr = NULL;
 		m_new_td_bits = TRACKDIR_BIT_NONE;
 		m_exitdir = INVALID_DIAGDIR;
 		m_is_station = m_is_bridge = m_is_tunnel = false;
@@ -197,7 +197,7 @@ protected:
 	{
 		m_is_station = m_is_bridge = m_is_tunnel = false;
 		m_tiles_skipped = 0;
-		m_new_rail_tile = NULL;
+		m_new_tile_ptr = NULL;
 
 		/* extra handling for tunnels and bridges in our direction */
 		if (IsTileType(m_old_tile, MP_TUNNELBRIDGE)) {
@@ -237,11 +237,11 @@ protected:
 		CPerfStart perf(*m_pPerf);
 
 		if (IsRailTT() && HasTileByType(m_new_tile, MP_RAILWAY)) {
-			m_new_rail_tile = GetTileByType(m_new_tile, MP_RAILWAY);
+			m_new_tile_ptr = GetTileByType(m_new_tile, MP_RAILWAY);
 			/* We have at least one rail tile. */
 			do {
-				m_new_td_bits = GetRailTrackdirBits(m_new_rail_tile, m_exitdir);
-			} while (m_new_td_bits == TRACKDIR_BIT_NONE && (m_new_rail_tile = GetNextTileByType(m_new_rail_tile, MP_RAILWAY)) != NULL);
+				m_new_td_bits = GetRailTrackdirBits(m_new_tile_ptr, m_exitdir);
+			} while (m_new_td_bits == TRACKDIR_BIT_NONE && (m_new_tile_ptr = GetNextTileByType(m_new_tile_ptr, MP_RAILWAY)) != NULL);
 		} else {
 			m_new_td_bits = TrackStatusToTrackdirBits(GetTileTrackStatus(m_new_tile, TT(), IsRoadTT() ? RoadVehicle::From(m_veh)->compatible_roadtypes : 0));
 
@@ -333,8 +333,8 @@ protected:
 			}
 		}
 		if (IsRailTT()) {
-			Tile *rail_tile = m_new_rail_tile;
-			if (rail_tile == NULL) rail_tile = _m.ToTile(m_new_tile);
+			Tile *rail_tile = m_new_tile_ptr;
+			if (!IsRailTile(rail_tile)) rail_tile = _m.ToTile(m_new_tile);
 
 			/* Rail transport is possible only on tiles with the same owner as vehicle. */
 			if (GetTileOwner(rail_tile) != m_veh_owner) {
@@ -399,7 +399,7 @@ protected:
 			if (exitdir != m_exitdir) {
 				/* reverse */
 				m_new_tile = m_old_tile;
-				if (IsRailTT()) m_new_rail_tile = GetRailDepotTile(m_new_tile);
+				if (IsRailTT()) m_new_tile_ptr = GetRailDepotTile(m_new_tile);
 				m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 				m_exitdir = exitdir;
 				m_tiles_skipped = 0;
