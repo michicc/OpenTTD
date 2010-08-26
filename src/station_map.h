@@ -541,7 +541,7 @@ static inline void MakeStation(TileIndex t, Owner o, StationID sid, StationType 
 	_m[t].m5 = section;
 	SB(_m[t].m6, 2, 1, 0);
 	SB(_m[t].m6, 3, 3, st);
-	_me[t].m7 = 0;
+	_m[t].m7 = 0;
 }
 
 /**

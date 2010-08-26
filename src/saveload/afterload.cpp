@@ -1039,12 +1039,12 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			switch (GetTileType(t)) {
 				case MP_ROAD:
-					if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_me[t].m7, 5, 3));
-					SB(_me[t].m7, 5, 1, GB(_m[t].m3, 7, 1)); // snow/desert
+					if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_m[t].m7, 5, 3));
+					SB(_m[t].m7, 5, 1, GB(_m[t].m3, 7, 1)); // snow/desert
 					switch (GetRoadTileType(t)) {
 						default: SlErrorCorrupt("Invalid road tile type");
 						case ROAD_TILE_NORMAL:
-							SB(_me[t].m7, 0, 4, GB(_m[t].m3, 0, 4)); // road works
+							SB(_m[t].m7, 0, 4, GB(_m[t].m3, 0, 4)); // road works
 							SB(_m[t].m6, 3, 3, GB(_m[t].m3, 4, 3));  // ground
 							SB(_m[t].m3, 0, 4, GB(_m[t].m4, 4, 4));  // tram bits
 							SB(_m[t].m3, 4, 4, GB(_m[t].m5, 0, 4));  // tram owner
@@ -1052,7 +1052,7 @@ bool AfterLoadGame()
 							break;
 
 						case ROAD_TILE_CROSSING:
-							SB(_me[t].m7, 0, 5, GB(_m[t].m4, 0, 5)); // road owner
+							SB(_m[t].m7, 0, 5, GB(_m[t].m4, 0, 5)); // road owner
 							SB(_m[t].m6, 3, 3, GB(_m[t].m3, 4, 3));  // ground
 							SB(_m[t].m3, 4, 4, GB(_m[t].m5, 0, 4));  // tram owner
 							SB(_m[t].m5, 0, 1, GB(_m[t].m4, 6, 1));  // road axis
@@ -1073,7 +1073,7 @@ bool AfterLoadGame()
 					if (!IsRoadStop(t)) break;
 
 					if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_m[t].m3, 0, 3));
-					SB(_me[t].m7, 0, 5, HasBit(_m[t].m6, 2) ? OWNER_TOWN : GetTileOwner(t));
+					SB(_m[t].m7, 0, 5, HasBit(_m[t].m6, 2) ? OWNER_TOWN : GetTileOwner(t));
 					SB(_m[t].m3, 4, 4, _m[t].m1);
 					_m[t].m4 = 0;
 					break;
@@ -1084,11 +1084,11 @@ bool AfterLoadGame()
 						if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_m[t].m3, 0, 3));
 
 						Owner o = GetTileOwner(t);
-						SB(_me[t].m7, 0, 5, o); // road owner
+						SB(_m[t].m7, 0, 5, o); // road owner
 						SB(_m[t].m3, 4, 4, o == OWNER_NONE ? OWNER_TOWN : o); // tram owner
 					}
 					SB(_m[t].m6, 2, 4, GB(_m[t].m2, 4, 4)); // bridge type
-					SB(_me[t].m7, 5, 1, GB(_m[t].m4, 7, 1)); // snow/desert
+					SB(_m[t].m7, 5, 1, GB(_m[t].m4, 7, 1)); // snow/desert
 
 					_m[t].m2 = 0;
 					_m[t].m4 = 0;
@@ -1391,7 +1391,7 @@ bool AfterLoadGame()
 				} else {
 					/* The "lift has destination" bit has been moved from
 					 * m5[7] to m7[0]. */
-					SB(_me[t].m7, 0, 1, HasBit(_m[t].m5, 7));
+					SB(_m[t].m7, 0, 1, HasBit(_m[t].m5, 7));
 					ClrBit(_m[t].m5, 7);
 
 					/* The "lift is moving" bit has been removed, as it does
@@ -1983,7 +1983,7 @@ bool AfterLoadGame()
 
 			/* Make sure those bits are clear as well! */
 			_m[t].m4 = 0;
-			_me[t].m7 = 0;
+			_m[t].m7 = 0;
 		}
 	}
 
@@ -2382,22 +2382,22 @@ bool AfterLoadGame()
 			switch (GetTileType(t)) {
 				case MP_HOUSE:
 					if (GetHouseType(t) >= NEW_HOUSE_OFFSET) {
-						uint per_proc = _me[t].m7;
-						_me[t].m7 = GB(_m[t].m6, 2, 6) | (GB(_m[t].m3, 5, 1) << 6);
+						uint per_proc = _m[t].m7;
+						_m[t].m7 = GB(_m[t].m6, 2, 6) | (GB(_m[t].m3, 5, 1) << 6);
 						SB(_m[t].m3, 5, 1, 0);
 						SB(_m[t].m6, 2, 6, min(per_proc, 63));
 					}
 					break;
 
 				case MP_INDUSTRY: {
-					uint rand = _me[t].m7;
-					_me[t].m7 = _m[t].m3;
+					uint rand = _m[t].m7;
+					_m[t].m7 = _m[t].m3;
 					_m[t].m3 = rand;
 					break;
 				}
 
 				case MP_OBJECT:
-					_me[t].m7 = _m[t].m3;
+					_m[t].m7 = _m[t].m3;
 					_m[t].m3 = 0;
 					break;
 

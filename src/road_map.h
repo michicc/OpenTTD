@@ -165,7 +165,7 @@ static inline void SetRoadBits(TileIndex t, RoadBits r, RoadType rt)
  */
 static inline RoadTypes GetRoadTypes(TileIndex t)
 {
-	return (RoadTypes)GB(_me[t].m7, 6, 2);
+	return (RoadTypes)GB(_m[t].m7, 6, 2);
 }
 
 /**
@@ -176,7 +176,7 @@ static inline RoadTypes GetRoadTypes(TileIndex t)
 static inline void SetRoadTypes(TileIndex t, RoadTypes rt)
 {
 	assert(IsTileType(t, MP_ROAD) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
-	SB(_me[t].m7, 6, 2, rt);
+	SB(_m[t].m7, 6, 2, rt);
 }
 
 /**
@@ -201,7 +201,7 @@ static inline Owner GetRoadOwner(TileIndex t, RoadType rt)
 	assert(IsTileType(t, MP_ROAD) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
 	switch (rt) {
 		default: NOT_REACHED();
-		case ROADTYPE_ROAD: return (Owner)GB(IsNormalRoadTile(t) ? _m[t].m1 : _me[t].m7, 0, 5);
+		case ROADTYPE_ROAD: return (Owner)GB(IsNormalRoadTile(t) ? _m[t].m1 : _m[t].m7, 0, 5);
 		case ROADTYPE_TRAM: {
 			/* Trams don't need OWNER_TOWN, and remapping OWNER_NONE
 			 * to OWNER_TOWN makes it use one bit less */
@@ -221,7 +221,7 @@ static inline void SetRoadOwner(TileIndex t, RoadType rt, Owner o)
 {
 	switch (rt) {
 		default: NOT_REACHED();
-		case ROADTYPE_ROAD: SB(IsNormalRoadTile(t) ? _m[t].m1 : _me[t].m7, 0, 5, o); break;
+		case ROADTYPE_ROAD: SB(IsNormalRoadTile(t) ? _m[t].m1 : _m[t].m7, 0, 5, o); break;
 		case ROADTYPE_TRAM: SB(_m[t].m3, 4, 4, o == OWNER_NONE ? OWNER_TOWN : o); break;
 	}
 }
@@ -428,7 +428,7 @@ static inline void BarCrossing(TileIndex t)
  */
 static inline bool IsOnSnow(TileIndex t)
 {
-	return HasBit(_me[t].m7, 5);
+	return HasBit(_m[t].m7, 5);
 }
 
 /** Toggle the snow/desert state of a road tile. */
@@ -439,7 +439,7 @@ static inline bool IsOnSnow(TileIndex t)
  */
 static inline void ToggleSnow(TileIndex t)
 {
-	ToggleBit(_me[t].m7, 5);
+	ToggleBit(_m[t].m7, 5);
 }
 
 
@@ -491,9 +491,9 @@ static inline bool HasRoadWorks(TileIndex t)
  */
 static inline bool IncreaseRoadWorksCounter(TileIndex t)
 {
-	AB(_me[t].m7, 0, 4, 1);
+	AB(_m[t].m7, 0, 4, 1);
 
-	return GB(_me[t].m7, 0, 4) == 15;
+	return GB(_m[t].m7, 0, 4) == 15;
 }
 
 /**
@@ -522,7 +522,7 @@ static inline void TerminateRoadWorks(TileIndex t)
 	assert(HasRoadWorks(t));
 	SetRoadside(t, (Roadside)(GetRoadside(t) - ROADSIDE_GRASS_ROAD_WORKS + ROADSIDE_GRASS));
 	/* Stop the counter */
-	SB(_me[t].m7, 0, 4, 0);
+	SB(_m[t].m7, 0, 4, 0);
 }
 
 
@@ -559,7 +559,7 @@ static inline void MakeRoadNormal(TileIndex t, RoadBits bits, RoadTypes rot, Tow
 	_m[t].m4 = 0;
 	_m[t].m5 = (HasBit(rot, ROADTYPE_ROAD) ? bits : 0) | ROAD_TILE_NORMAL << 6;
 	SB(_m[t].m6, 2, 4, 0);
-	_me[t].m7 = rot << 6;
+	_m[t].m7 = rot << 6;
 	SetRoadOwner(t, ROADTYPE_TRAM, tram);
 }
 
@@ -583,7 +583,7 @@ static inline void MakeRoadCrossing(TileIndex t, Owner road, Owner tram, Owner r
 	_m[t].m4 = 0;
 	_m[t].m5 = ROAD_TILE_CROSSING << 6 | roaddir;
 	SB(_m[t].m6, 2, 4, 0);
-	_me[t].m7 = rot << 6 | road;
+	_m[t].m7 = rot << 6 | road;
 	SetRoadOwner(t, ROADTYPE_TRAM, tram);
 }
 
@@ -604,7 +604,7 @@ static inline void MakeRoadDepot(TileIndex t, Owner owner, DepotID did, DiagDire
 	_m[t].m4 = 0;
 	_m[t].m5 = ROAD_TILE_DEPOT << 6 | dir;
 	SB(_m[t].m6, 2, 4, 0);
-	_me[t].m7 = RoadTypeToRoadTypes(rt) << 6 | owner;
+	_m[t].m7 = RoadTypeToRoadTypes(rt) << 6 | owner;
 	SetRoadOwner(t, ROADTYPE_TRAM, owner);
 }
 

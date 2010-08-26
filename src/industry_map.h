@@ -287,7 +287,7 @@ static inline void MakeIndustry(TileIndex t, IndustryID index, IndustryGfx gfx, 
 	SetIndustryGfx(t, gfx); // m5, part of m6
 	SetIndustryTriggers(t, 0); // rest of m6
 	SetWaterClass(t, wc);
-	_me[t].m7 = 0;
+	_m[t].m7 = 0;
 }
 
 #endif /* INDUSTRY_MAP_H */

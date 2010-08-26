@@ -233,7 +233,7 @@ static void Load_MAP7()
 
 	for (TileIndex i = 0; i != size;) {
 		SlArray(buf, MAP_SL_BUF_SIZE, SLE_UINT8);
-		for (uint j = 0; j != MAP_SL_BUF_SIZE; j++) _me[i++].m7 = buf[j];
+		for (uint j = 0; j != MAP_SL_BUF_SIZE; j++) _m[i++].m7 = buf[j];
 	}
 }
 
@@ -244,7 +244,7 @@ static void Save_MAP7()
 
 	SlSetLength(size);
 	for (TileIndex i = 0; i != size;) {
-		for (uint j = 0; j != MAP_SL_BUF_SIZE; j++) buf[j] = _me[i++].m7;
+		for (uint j = 0; j != MAP_SL_BUF_SIZE; j++) buf[j] = _m[i++].m7;
 		SlArray(buf, MAP_SL_BUF_SIZE, SLE_UINT8);
 	}
 }

@@ -36,13 +36,8 @@ extern uint _map_tile_mask;
 extern Tile *_m;
 
 /**
- * Pointer to the extended tile-array.
- *
- * This variable points to the extended tile-array which contains the tiles
- * of the map.
+ * Allocate a new map with the given size.
  */
-extern TileExtended *_me;
-
 void AllocateMap(uint size_x, uint size_y);
 
 /**

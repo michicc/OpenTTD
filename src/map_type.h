@@ -24,14 +24,7 @@ struct Tile {
 	byte   m4;          ///< General purpose
 	byte   m5;          ///< General purpose
 	byte   m6;          ///< Primarily used for bridges and rainforest/desert
-};
-
-/**
- * Data that is stored per tile. Also used Tile for this.
- * Look at docs/landscape.html for the exact meaning of the members.
- */
-struct TileExtended {
-	byte m7; ///< Primarily used for newgrf support
+	byte   m7;			///< Primarily used for newgrf support
 };
 
 /**

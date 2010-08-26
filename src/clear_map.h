@@ -272,7 +272,7 @@ static inline void MakeClear(TileIndex t, ClearGround g, uint density)
 	_m[t].m4 = 0 << 5 | 0 << 2;
 	SetClearGroundDensity(t, g, density); // Sets m5
 	SB(_m[t].m6, 2, 4, 0); // Other bits are "tropic zone" and "bridge above"
-	_me[t].m7 = 0;
+	_m[t].m7 = 0;
 }
 
 
@@ -292,7 +292,7 @@ static inline void MakeField(TileIndex t, uint field_type, IndustryID industry)
 	_m[t].m4 = 0 << 5 | 0 << 2;
 	SetClearGroundDensity(t, CLEAR_FIELDS, 3);
 	SB(_m[t].m6, 2, 4, 0);
-	_me[t].m7 = 0;
+	_m[t].m7 = 0;
 }
 
 /**

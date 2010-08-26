@@ -1473,7 +1473,7 @@ static bool LoadOldMapPart1(LoadgameState *ls, int num)
 {
 	if (_savegame_type == SGT_TTO) {
 		MemSetT(_m, 0, OLD_MAP_SIZE);
-		MemSetT(_me, 0, OLD_MAP_SIZE);
+		MemSetT(_m, 0, OLD_MAP_SIZE);
 	}
 
 	for (uint i = 0; i < OLD_MAP_SIZE; i++) {
