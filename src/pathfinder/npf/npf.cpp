@@ -284,8 +284,8 @@ static void NPFMarkTile(TileIndex tile)
 			SetClearDensity(tile, 0);
 			MarkTileDirtyByTile(tile);
 		}
-	} else if (IsTileType(tile, MP_ROAD) && !IsRoadDepot(tile)) {
-		SetRoadside(tile, ROADSIDE_BARREN);
+	} else if (HasTileByType(tile, MP_ROAD) && !IsRoadDepotTile(tile)) {
+		SetRoadside(GetTileByType(tile, MP_ROAD), ROADSIDE_BARREN);
 		MarkTileDirtyByTile(tile);
 	}
 #endif
@@ -687,7 +687,7 @@ static DiagDirection GetDepotDirection(TileIndex tile, TransportType type)
 
 	switch (type) {
 		case TRANSPORT_RAIL:  return GetRailDepotDirection(GetRailDepotTile(tile));
-		case TRANSPORT_ROAD:  return GetRoadDepotDirection(tile);
+		case TRANSPORT_ROAD:  return GetRoadDepotDirection(GetRoadDepotTile(tile));
 		case TRANSPORT_WATER: return GetShipDepotDirection(tile);
 		default: return INVALID_DIAGDIR; // Not reached
 	}
@@ -696,8 +696,9 @@ static DiagDirection GetDepotDirection(TileIndex tile, TransportType type)
 /** Tests if a tile is a road tile with a single tramtrack (tram can reverse) */
 static DiagDirection GetSingleTramBit(TileIndex tile)
 {
-	if (IsNormalRoadTile(tile)) {
-		RoadBits rb = GetRoadBits(tile, ROADTYPE_TRAM);
+	const Tile *road = GetRoadTileByType(tile, ROADTYPE_TRAM);
+	if (IsNormalRoadTile(road)) {
+		RoadBits rb = GetRoadBits(road, ROADTYPE_TRAM);
 		switch (rb) {
 			case ROAD_NW: return DIAGDIR_NW;
 			case ROAD_SW: return DIAGDIR_SW;

@@ -538,22 +538,23 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 			CommandCost ret = EnsureNoVehicleOnGround(tile);
 			if (ret.Failed()) return ret;
 
-			if (IsNormalRoad(tile)) {
-				if (HasRoadWorks(tile)) return_cmd_error(STR_ERROR_ROAD_WORKS_IN_PROGRESS);
+			Tile *road_tile = GetTileByType(tile, MP_ROAD);
+			if (IsNormalRoad(road_tile)) {
+				if (HasRoadWorks(road_tile)) return_cmd_error(STR_ERROR_ROAD_WORKS_IN_PROGRESS);
 
-				if (GetDisallowedRoadDirections(tile) != DRD_NONE) return_cmd_error(STR_ERROR_CROSSING_ON_ONEWAY_ROAD);
+				if (GetDisallowedRoadDirections(road_tile) != DRD_NONE) return_cmd_error(STR_ERROR_CROSSING_ON_ONEWAY_ROAD);
 
 				if (RailNoLevelCrossings(railtype)) return_cmd_error(STR_ERROR_CROSSING_DISALLOWED);
 
-				RoadTypes roadtypes = GetRoadTypes(tile);
-				RoadBits road = GetRoadBits(tile, ROADTYPE_ROAD);
-				RoadBits tram = GetRoadBits(tile, ROADTYPE_TRAM);
+				RoadTypes roadtypes = GetRoadTypes(road_tile);
+				RoadBits road = GetRoadBits(road_tile, ROADTYPE_ROAD);
+				RoadBits tram = GetRoadBits(road_tile, ROADTYPE_TRAM);
 				switch (roadtypes) {
 					default: break;
 					case ROADTYPES_TRAM:
 						/* Tram crossings must always have road. */
 						if (flags & DC_EXEC) {
-							SetRoadOwner(tile, ROADTYPE_ROAD, _current_company);
+							SetRoadOwner(road_tile, ROADTYPE_ROAD, _current_company);
 							Company *c = Company::GetIfValid(_current_company);
 							if (c != NULL) {
 								/* A full diagonal tile has two road bits. */
@@ -572,9 +573,9 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 				road |= tram;
 				if ((track == TRACK_X && road == ROAD_Y) || (track == TRACK_Y && road == ROAD_X)) {
 					if (flags & DC_EXEC) {
-						SetRoadTypes(tile, roadtypes);
-						SetRoadBits(tile, road, ROADTYPE_ROAD);
-						SetRoadside(tile, ROADSIDE_BARREN);
+						SetRoadTypes(road_tile, roadtypes);
+						SetRoadBits(road_tile, road, ROADTYPE_ROAD);
+						SetRoadside(road_tile, ROADSIDE_BARREN);
 						MakeLevelCrossing(tile, _current_company, TrackToTrackBits(track), railtype);
 						UpdateLevelCrossing(tile, false);
 						Company::Get(_current_company)->infrastructure.rail[railtype] += LEVELCROSSING_TRACKBIT_FACTOR;
@@ -2368,7 +2369,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 			if (axis == AXIS_Y) image++;
 			if (IsCrossingBarred(ti->tptr)) image += 2;
 
-			Roadside roadside = GetRoadside(ti->tile);
+			Roadside roadside = GetRoadside(GetTileByType(ti->tile, MP_ROAD));
 
 			if (DrawRoadAsSnowDesert(ti->tile, roadside)) {
 				image += 8;
@@ -2391,8 +2392,8 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 		}
 
 		/* Draw tram tracks if present, as the crossing graphics hide them. */
-		if (HasTileRoadType(ti->tile, ROADTYPE_TRAM)) {
-			DrawGroundSprite(SPR_TRAMWAY_OVERLAY + axis, GetRoadside(ti->tile) == ROADSIDE_BARREN ? PALETTE_TO_BARE_LAND : PAL_NONE);
+		if (GetRoadTileByType(ti->tile, ROADTYPE_TRAM) != NULL) {
+			DrawGroundSprite(SPR_TRAMWAY_OVERLAY + axis, GetRoadside(GetTileByType(ti->tile, MP_ROAD)) == ROADSIDE_BARREN ? PALETTE_TO_BARE_LAND : PAL_NONE);
 			DrawTramCatenary(ti, GetRoadBits(ti->tile, ROADTYPE_TRAM));
 		}
 

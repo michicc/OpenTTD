@@ -264,14 +264,14 @@ void RoadVehUpdateCache(RoadVehicle *v, bool same_length)
  */
 CommandCost CmdBuildRoadVehicle(TileIndex tile, DoCommandFlag flags, const Engine *e, uint16 data, Vehicle **ret)
 {
-	if (HasTileRoadType(tile, ROADTYPE_TRAM) != HasBit(e->info.misc_flags, EF_ROAD_TRAM)) return_cmd_error(STR_ERROR_DEPOT_WRONG_DEPOT_TYPE);
+	if (HasTileRoadType(GetRoadDepotTile(tile), ROADTYPE_TRAM) != HasBit(e->info.misc_flags, EF_ROAD_TRAM)) return_cmd_error(STR_ERROR_DEPOT_WRONG_DEPOT_TYPE);
 
 	if (flags & DC_EXEC) {
 		const RoadVehicleInfo *rvi = &e->u.road;
 
 		RoadVehicle *v = new RoadVehicle();
 		*ret = v;
-		v->direction = DiagDirToDir(GetRoadDepotDirection(tile));
+		v->direction = DiagDirToDir(GetRoadDepotDirection(GetRoadDepotTile(tile)));
 		v->owner = _current_company;
 
 		v->tile = tile;
@@ -389,7 +389,7 @@ CommandCost CmdTurnRoadVeh(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 		return CMD_ERROR;
 	}
 
-	if (IsNormalRoadTile(v->tile) && GetDisallowedRoadDirections(v->tile) != DRD_NONE) return CMD_ERROR;
+	if (IsNormalRoadTile(v->tile) && GetRoadTileByType(v->tile, ROADTYPE_ROAD) != NULL && GetDisallowedRoadDirections(GetRoadTileByType(v->tile, ROADTYPE_ROAD)) != DRD_NONE) return CMD_ERROR;
 
 	if (IsTileType(v->tile, MP_TUNNELBRIDGE) && DirToDiagDir(v->direction) == GetTunnelBridgeDirection(v->tile)) return CMD_ERROR;
 
@@ -888,8 +888,9 @@ static Trackdir RoadFindPathToDest(RoadVehicle *v, TileIndex tile, DiagDirection
 	TrackdirBits red_signals = TrackStatusToRedSignals(ts); // crossing
 	TrackdirBits trackdirs = TrackStatusToTrackdirBits(ts);
 
-	if (IsTileType(tile, MP_ROAD)) {
-		if (IsRoadDepot(tile) && (!IsTileOwner(tile, v->owner) || GetRoadDepotDirection(tile) == enterdir || (GetRoadTypes(tile) & v->compatible_roadtypes) == 0)) {
+	if (HasTileByType(tile, MP_ROAD)) {
+		Tile *road = GetTileByType(tile, MP_ROAD); // If it really is a road depot, there's just one associated tile anyway.
+		if (IsRoadDepot(road) && (!IsTileOwner(road, v->owner) || GetRoadDepotDirection(road) == enterdir || (GetRoadTypes(road) & v->compatible_roadtypes) == 0)) {
 			/* Road depot owned by another company or with the wrong orientation */
 			trackdirs = TRACKDIR_BIT_NONE;
 		}
@@ -985,7 +986,7 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 		if (u->state != RVSB_IN_DEPOT || u->tile != v->tile) return false;
 	}
 
-	DiagDirection dir = GetRoadDepotDirection(v->tile);
+	DiagDirection dir = GetRoadDepotDirection(GetRoadDepotTile(v->tile));
 	v->direction = DiagDirToDir(dir);
 
 	Trackdir tdir = _roadveh_depot_exit_trackdir[dir];
@@ -1042,7 +1043,7 @@ static Trackdir FollowPreviousRoadVehicle(const RoadVehicle *v, const RoadVehicl
 		if (IsTileType(tile, MP_TUNNELBRIDGE)) {
 			diag_dir = GetTunnelBridgeDirection(tile);
 		} else if (IsRoadDepotTile(tile)) {
-			diag_dir = ReverseDiagDir(GetRoadDepotDirection(tile));
+			diag_dir = ReverseDiagDir(GetRoadDepotDirection(GetRoadDepotTile(tile)));
 		}
 
 		if (diag_dir == INVALID_DIAGDIR) return INVALID_TRACKDIR;
@@ -1232,7 +1233,7 @@ again:
 					v->cur_speed = 0;
 					return false;
 				}
-			} else if (IsNormalRoadTile(v->tile) && GetDisallowedRoadDirections(v->tile) != DRD_NONE) {
+			} else if (IsNormalRoadTile(v->tile) && GetRoadTileByType(v->tile, ROADTYPE_ROAD) != NULL && GetDisallowedRoadDirections(GetRoadTileByType(v->tile, ROADTYPE_ROAD)) != DRD_NONE) {
 				v->cur_speed = 0;
 				return false;
 			} else {
@@ -1673,7 +1674,7 @@ Trackdir RoadVehicle::GetVehicleTrackdir() const
 
 	if (this->IsInDepot()) {
 		/* We'll assume the road vehicle is facing outwards */
-		return DiagDirToDiagTrackdir(GetRoadDepotDirection(this->tile));
+		return DiagDirToDiagTrackdir(GetRoadDepotDirection(GetRoadDepotTile(this->tile)));
 	}
 
 	if (IsStandardRoadStopTile(this->tile)) {

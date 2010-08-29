@@ -81,7 +81,7 @@ Town::~Town()
 	/* Check no tile is related to us. */
 	for (TileIndex tile = 0; tile < MapSize(); ++tile) {
 		if (HasTileByType(tile, MP_ROAD)) {
-			assert(!HasTownOwnedRoad(tile) || GetTownIndex(_m.ToTile(tile)) != this->index);
+			assert(!HasTownOwnedRoad(tile) || GetTownIndex(GetRoadTileByType(tile, ROADTYPE_ROAD)) != this->index);
 			continue;
 		}
 
@@ -1352,15 +1352,16 @@ static int GrowTownAtRoad(Town *t, TileIndex tile)
 		}
 		tile = TileAddByDiagDir(tile, target_dir);
 
-		if (IsTileType(tile, MP_ROAD) && !IsRoadDepot(tile) && HasTileRoadType(tile, ROADTYPE_ROAD)) {
+		Tile *road_tile = GetRoadTileByType(tile, ROADTYPE_ROAD);
+		if (road_tile != NULL && !IsRoadDepot(road_tile)) {
 			/* Don't allow building over roads of other cities */
-			if (IsRoadOwner(tile, ROADTYPE_ROAD, OWNER_TOWN) && Town::GetByTile(tile) != t) {
+			if (IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN) && Town::GetByTile(tile) != t) {
 				_grow_town_result = GROWTH_SUCCEED;
-			} else if (IsRoadOwner(tile, ROADTYPE_ROAD, OWNER_NONE) && _game_mode == GM_EDITOR) {
+			} else if (IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_NONE) && _game_mode == GM_EDITOR) {
 				/* If we are in the SE, and this road-piece has no town owner yet, it just found an
 				 * owner :) (happy happy happy road now) */
-				SetRoadOwner(tile, ROADTYPE_ROAD, OWNER_TOWN);
-				SetTownIndex(_m.ToTile(tile), t->index);
+				SetRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN);
+				SetTownIndex(road_tile, t->index);
 			}
 		}
 
@@ -2649,11 +2650,10 @@ CommandCost CmdDeleteTown(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 	/* Check all tiles for town ownership. */
 	for (TileIndex tile = 0; tile < MapSize(); ++tile) {
 		bool try_clear = false;
+		if (HasTileByType(tile, MP_ROAD)) {
+			try_clear = HasTownOwnedRoad(tile) && GetTownIndex(GetRoadTileByType(tile, ROADTYPE_ROAD)) == t->index;
+		}
 		switch (GetTileType(tile)) {
-			case MP_ROAD:
-				try_clear = HasTownOwnedRoad(tile) && GetTownIndex(_m.ToTile(tile)) == t->index;
-				break;
-
 			case MP_TUNNELBRIDGE:
 				try_clear = IsTileOwner(tile, OWNER_TOWN) && ClosestTownFromTile(tile, UINT_MAX) == t;
 				break;

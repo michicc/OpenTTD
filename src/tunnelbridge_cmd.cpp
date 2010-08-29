@@ -405,14 +405,14 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 				}
 				goto do_exec;
 			}
+			if (HasTileByType(tile, MP_ROAD)) {
+				if (IsRoadDepotTile(tile)) goto not_valid_below;
+				goto do_exec;
+			}
 
 			switch (GetTileType(tile)) {
 				case MP_WATER:
 					if (!IsWater(tile) && !IsCoast(tile)) goto not_valid_below;
-					break;
-
-				case MP_ROAD:
-					if (IsRoadDepot(tile)) goto not_valid_below;
 					break;
 
 				case MP_TUNNELBRIDGE:
@@ -918,9 +918,9 @@ static CommandCost DoClearBridge(TileIndex tile, DoCommandFlag flags)
 		DoClearSquare(endtile);
 		for (TileIndex c = tile + delta; c != endtile; c += delta) {
 			/* do not let trees appear from 'nowhere' after removing bridge */
-			if (IsNormalRoadTile(c) && GetRoadside(c) == ROADSIDE_TREES) {
+			if (IsNormalRoadTile(c) && GetRoadside(GetTileByType(c, MP_ROAD)) == ROADSIDE_TREES) {
 				int minz = GetTileMaxZ(c) + 3;
-				if (height < minz) SetRoadside(c, ROADSIDE_PAVED);
+				if (height < minz) SetRoadside(GetTileByType(c, MP_ROAD), ROADSIDE_PAVED);
 			}
 			ClearBridgeMiddle(c);
 			MarkTileDirtyByTile(c);
