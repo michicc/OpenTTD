@@ -278,15 +278,16 @@ static void NPFMarkTile(TileIndex tile)
 #ifndef NO_DEBUG_MESSAGES
 	if (_debug_npf_level < 1 || _networking) return;
 
-	if (HasTileByType(tile, MP_RAILWAY)) {
+	if (HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD)) {
 		/* DEBUG: mark visited tiles by mowing the grass under them ;-) */
 		if (IsTileType(tile, MP_CLEAR)) {
 			SetClearDensity(tile, 0);
 			MarkTileDirtyByTile(tile);
 		}
-	} else if (HasTileByType(tile, MP_ROAD) && !IsRoadDepotTile(tile)) {
-		SetRoadside(GetTileByType(tile, MP_ROAD), ROADSIDE_NONE);
-		MarkTileDirtyByTile(tile);
+		if (IsNormalRoadTile(tile)) {
+			SetRoadside(GetTileByType(tile, MP_ROAD), ROADSIDE_NONE);
+			MarkTileDirtyByTile(tile);
+		}
 	}
 #endif
 }
@@ -319,15 +320,15 @@ static int32 NPFRoadPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	int32 cost = 0;
 
 	/* Determine base length */
+	if (HasTileByType(tile, MP_ROAD)) {
+		cost = NPF_TILE_LENGTH;
+		/* Increase the cost for level crossings */
+		if (IsLevelCrossingTile(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
+	}
+
 	switch (GetTileType(tile)) {
 		case MP_TUNNELBRIDGE:
 			cost = IsTunnel(tile) ? NPFTunnelCost(current) : NPFBridgeCost(current);
-			break;
-
-		case MP_ROAD:
-			cost = NPF_TILE_LENGTH;
-			/* Increase the cost for level crossings */
-			if (IsLevelCrossingTile(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
 			break;
 
 		case MP_STATION: {

@@ -63,6 +63,14 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 				continue;
 			}
 
+			if (HasTileByType(neighbor_tile, MP_ROAD)) {
+				const RoadBits neighbor_rb = GetAnyRoadBits(neighbor_tile, ROADTYPE_ROAD) | GetAnyRoadBits(neighbor_tile, ROADTYPE_TRAM);
+
+				/* Accept only connective tiles */
+				if (!(neighbor_rb & MirrorRoadBits(target_rb)) && !HasExactlyOneBit(neighbor_rb)) org_rb ^= target_rb;
+				continue;
+			}
+
 			bool connective = false;
 			const RoadBits mirrored_rb = MirrorRoadBits(target_rb);
 			switch (GetTileType(neighbor_tile)) {
@@ -73,8 +81,7 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 
 				/* The conditionally connective ones */
 				case MP_TUNNELBRIDGE:
-				case MP_STATION:
-				case MP_ROAD: {
+				case MP_STATION: {
 					const RoadBits neighbor_rb = GetAnyRoadBits(neighbor_tile, ROADTYPE_ROAD) | GetAnyRoadBits(neighbor_tile, ROADTYPE_TRAM);
 
 					/* Accept only connective tiles */

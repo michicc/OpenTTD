@@ -76,7 +76,7 @@ static void GenerateRockyArea(TileIndex end, TileIndex start)
 	TileArea ta(start, end);
 
 	TILE_AREA_LOOP(tile, ta) {
-		if (HasTileByType(tile, MP_RAILWAY)) continue;
+		if (HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD)) continue;
 		if (IsTileType(tile, MP_CLEAR)) {
 			Tile *trees = GetTileByType(tile, MP_TREES);
 			if (trees != NULL) _m.RemoveTile(tile, trees);

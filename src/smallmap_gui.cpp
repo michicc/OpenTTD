@@ -425,6 +425,7 @@ static inline TileType GetEffectiveTileType(TileIndex tile)
 	TileType t = GetTileType(tile);
 
 	if (HasTileByType(tile, MP_TREES)) t = MP_TREES;
+	if (HasTileByType(tile, MP_ROAD)) t = MP_ROAD;
 	if (HasTileByType(tile, MP_RAILWAY)) t = MP_RAILWAY;
 
 	if (t == MP_TUNNELBRIDGE) {
@@ -596,11 +597,12 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 			if (HasTileByType(tile, MP_RAILWAY)) {
 				/* Use owner of first associated tile for map colour. */
 				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
-			} else {
+			} else if (HasTileByType(tile, MP_ROAD)) {
 				/* FIXME: For MP_ROAD there are multiple owners.
 				 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
-				 * even if there are no ROADTYPE_ROAD bits on the tile.
-				 */
+				 * even if there are no ROADTYPE_ROAD bits on the tile. */
+				o = GetTileOwner(GetTileByType(tile, MP_ROAD));
+			} else {
 				o = GetTileOwner(tile);
 			}
 			break;
