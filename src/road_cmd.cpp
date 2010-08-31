@@ -168,6 +168,126 @@ CommandCost CheckAllowRemoveRoad(TileIndex tile, RoadBits remove, Owner owner, R
 	return CommandCost();
 }
 
+/**
+ * Delete a piece of road from a MP_ROAD tile.
+ * @param tile Tile to remove road from.
+ * @param road_tile Pointer to the actual road tile.
+ * @param flags Operation to perform.
+ * @param pieces Road bits to remove.
+ * @param rt Road type to remove.
+ * @param crossing_check Should we check if there is a tram track when we are removing road from crossing?
+ * @param town_check Should we check if the town allows removal?
+ */
+static CommandCost RemoveRoadReal(TileIndex tile, Tile *road_tile, DoCommandFlag flags, RoadBits pieces, RoadType rt, bool crossing_check, bool town_check = true)
+{
+	/* Check for normal road tile. */
+	if (!IsNormalRoadTile(road_tile) || !HasTileRoadType(road_tile, rt)) return CMD_ERROR;
+
+	CommandCost ret = EnsureNoVehicleOnGround(tile);
+	if (ret.Failed()) return ret;
+
+	Owner road_owner = GetRoadOwner(road_tile, rt);
+	ret = CheckAllowRemoveRoad(tile, pieces, road_owner, rt, flags, town_check);
+	if (ret.Failed()) return ret;
+
+	/* Steep slopes behave the same as slopes with one corner raised. */
+	Slope tileh = GetTileSlope(tile);
+	if (IsSteepSlope(tileh)) tileh = SlopeWithOneCornerRaised(GetHighestSlopeCorner(tileh));
+
+	RoadBits present = GetRoadBits(road_tile, rt);
+	const RoadBits other = GetOtherRoadBits(tile, rt);
+	const Foundation f = GetRoadFoundation(tileh, present);
+
+	if (HasRoadWorks(tile) && _current_company != OWNER_WATER) return_cmd_error(STR_ERROR_ROAD_WORKS_IN_PROGRESS);
+
+	/* Autocomplete to a straight road
+	 * @li if the bits of the other roadtypes result in another foundation
+	 * @li if build on slopes is disabled
+	 * @li if the tile is a level crossing */
+	if ((IsStraightRoad(other) && (other & _invalid_tileh_slopes_road[0][tileh & SLOPE_ELEVATED]) != ROAD_NONE) ||
+			(tileh != SLOPE_FLAT && !_settings_game.construction.build_on_slopes) || IsLevelCrossingTile(tile)) {
+		pieces |= MirrorRoadBits(pieces);
+	}
+
+	/* Don't allow road to be removed from the crossing when there is tram;
+	 * we can't draw the crossing without roadbits ;) */
+	if (IsLevelCrossingTile(tile) && rt == ROADTYPE_ROAD && HasTileRoadType(road_tile, ROADTYPE_TRAM) && (flags & DC_EXEC || crossing_check)) return CMD_ERROR;
+
+	/* limit the bits to delete to the existing bits. */
+	pieces &= present;
+	if (pieces == ROAD_NONE) return_cmd_error(rt == ROADTYPE_TRAM ? STR_ERROR_THERE_IS_NO_TRAMWAY : STR_ERROR_THERE_IS_NO_ROAD);
+
+	/* Now set present what it will be after the remove */
+	present ^= pieces;
+
+	/* Check for invalid RoadBit combinations on slopes */
+	if (tileh != SLOPE_FLAT && present != ROAD_NONE &&
+			(present & _invalid_tileh_slopes_road[0][tileh & SLOPE_ELEVATED]) == present) {
+		return CMD_ERROR;
+	}
+
+	if (flags & DC_EXEC) {
+		if (HasRoadWorks(tile)) {
+			/* flooding tile with road works, don't forget to remove the effect vehicle too */
+			assert(_current_company == OWNER_WATER);
+			EffectVehicle *v;
+			FOR_ALL_EFFECTVEHICLES(v) {
+				if (TileVirtXY(v->x_pos, v->y_pos) == tile) {
+					delete v;
+				}
+			}
+		}
+
+		/* Update infrastructure counts. */
+		Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
+		if (c != NULL) {
+			c->infrastructure.road[rt] -= CountBits(pieces);
+			DirtyCompanyInfrastructureWindows(c->index);
+		}
+
+		if (present == ROAD_NONE) {
+			RoadTypes rts = GetRoadTypes(road_tile) & ComplementRoadTypes(RoadTypeToRoadTypes(rt));
+			if (rts == ROADTYPES_NONE) {
+				if (IsLevelCrossingTile(tile)) {
+					Tile *crossing = GetLevelCrossingTile(tile);
+					UnbarCrossing(crossing);
+					SetLevelCrossing(crossing, false);
+					c = Company::GetIfValid(GetTileOwner(crossing));
+					/* Subtract count for a level crossing and add count for a single straight rail piece instead. */
+					if (c != NULL) {
+						c->infrastructure.rail[GetRailType(crossing)] -= LEVELCROSSING_TRACKBIT_FACTOR - 1;
+						DirtyCompanyInfrastructureWindows(c->index);
+					}
+					YapfNotifyTrackLayoutChange(tile, INVALID_TRACK);
+				}
+				MakeClearGrass(tile);
+				MarkTileDirtyByTile(tile);
+			} else {
+				if (rt == ROADTYPE_ROAD && IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN)) {
+					/* Update nearest-town index */
+					const Town *town = CalcClosestTownFromTile(tile);
+					SetTownIndex(road_tile, town == NULL ? (TownID)INVALID_TOWN : town->index);
+				}
+				SetRoadBits(road_tile, ROAD_NONE, rt);
+				SetRoadTypes(road_tile, rts);
+				MarkTileDirtyByTile(tile);
+			}
+		} else {
+			/* When bits are removed, you *always* end up with something that
+			 * is not a complete straight road tile. However, trams do not have
+			 * onewayness, so they cannot remove it either. */
+			if (rt != ROADTYPE_TRAM) SetDisallowedRoadDirections(road_tile, DRD_NONE);
+			SetRoadBits(road_tile, present, rt);
+			MarkTileDirtyByTile(tile);
+		}
+	}
+
+	CommandCost cost(EXPENSES_CONSTRUCTION, CountBits(pieces) * _price[PR_CLEAR_ROAD]);
+	/* If we build a foundation we have to pay for it. */
+	if (f == FOUNDATION_NONE && GetRoadFoundation(tileh, present) != FOUNDATION_NONE) cost.AddCost(_price[PR_BUILD_FOUNDATION]);
+
+	return cost;
+}
 
 /**
  * Delete a piece of road.
@@ -184,200 +304,88 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 	/* The tile doesn't have the given road type */
 	if (!HasBit(rts, rt)) return_cmd_error(rt == ROADTYPE_TRAM ? STR_ERROR_THERE_IS_NO_TRAMWAY : STR_ERROR_THERE_IS_NO_ROAD);
 
-	Owner road_owner = OWNER_NONE;
 	if (HasTileByType(tile, MP_ROAD)) {
-		CommandCost ret = EnsureNoVehicleOnGround(tile);
-		if (ret.Failed()) return ret;
-		road_owner = GetRoadOwner(GetRoadTileByType(tile, rt), rt);
-	} else {
-		switch (GetTileType(tile)) {
-			case MP_STATION: {
-				if (!IsDriveThroughStopTile(tile)) return CMD_ERROR;
-
-				CommandCost ret = EnsureNoVehicleOnGround(tile);
-				if (ret.Failed()) return ret;
-				break;
-			}
-
-			case MP_TUNNELBRIDGE: {
-				if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return CMD_ERROR;
-				CommandCost ret = TunnelBridgeIsFree(tile, GetOtherTunnelBridgeEnd(tile));
-				if (ret.Failed()) return ret;
-				break;
-			}
-
-			default:
-				return CMD_ERROR;
-		}
-		road_owner = GetRoadOwner(tile, rt);
+		Tile *road_tile = GetRoadTileByType(tile, rt);
+		return RemoveRoadReal(tile, road_tile, flags, pieces, rt, crossing_check, town_check);
 	}
 
+	switch (GetTileType(tile)) {
+		case MP_STATION: {
+			if (!IsDriveThroughStopTile(tile)) return CMD_ERROR;
+
+			CommandCost ret = EnsureNoVehicleOnGround(tile);
+			if (ret.Failed()) return ret;
+			break;
+		}
+
+		case MP_TUNNELBRIDGE: {
+			if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return CMD_ERROR;
+			CommandCost ret = TunnelBridgeIsFree(tile, GetOtherTunnelBridgeEnd(tile));
+			if (ret.Failed()) return ret;
+			break;
+		}
+
+		default:
+			return CMD_ERROR;
+	}
+
+	Owner road_owner = GetRoadOwner(tile, rt);
 	CommandCost ret = CheckAllowRemoveRoad(tile, pieces, road_owner, rt, flags, town_check);
 	if (ret.Failed()) return ret;
 
-	if (!IsTileType(tile, MP_ROAD)) {
-		/* If it's the last roadtype, just clear the whole tile */
-		if (rts == RoadTypeToRoadTypes(rt)) return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+	/* If it's the last roadtype, just clear the whole tile */
+	if (rts == RoadTypeToRoadTypes(rt)) return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
 
-		CommandCost cost(EXPENSES_CONSTRUCTION);
-		if (IsTileType(tile, MP_TUNNELBRIDGE)) {
-			/* Removing any roadbit in the bridge axis removes the roadtype (that's the behaviour remove-long-roads needs) */
-			if ((AxisToRoadBits(DiagDirToAxis(GetTunnelBridgeDirection(tile))) & pieces) == ROAD_NONE) return_cmd_error(rt == ROADTYPE_TRAM ? STR_ERROR_THERE_IS_NO_TRAMWAY : STR_ERROR_THERE_IS_NO_ROAD);
-
-			TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
-			/* Pay for *every* tile of the bridge or tunnel */
-			uint len = GetTunnelBridgeLength(other_end, tile) + 2;
-			cost.AddCost(len * _price[PR_CLEAR_ROAD]);
-			if (flags & DC_EXEC) {
-				Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
-				if (c != NULL) {
-					/* A full diagonal road tile has two road bits. */
-					c->infrastructure.road[rt] -= len * 2 * TUNNELBRIDGE_TRACKBIT_FACTOR;
-					DirtyCompanyInfrastructureWindows(c->index);
-				}
-
-				SetRoadTypes(other_end, GetRoadTypes(other_end) & ~RoadTypeToRoadTypes(rt));
-				SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
-
-				/* If the owner of the bridge sells all its road, also move the ownership
-				 * to the owner of the other roadtype. */
-				RoadType other_rt = (rt == ROADTYPE_ROAD) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
-				Owner other_owner = GetRoadOwner(tile, other_rt);
-				if (other_owner != GetTileOwner(tile)) {
-					SetTileOwner(tile, other_owner);
-					SetTileOwner(other_end, other_owner);
-				}
-
-				/* Mark tiles dirty that have been repaved */
-				MarkTileDirtyByTile(tile);
-				MarkTileDirtyByTile(other_end);
-				if (IsBridge(tile)) {
-					TileIndexDiff delta = TileOffsByDiagDir(GetTunnelBridgeDirection(tile));
-
-					for (TileIndex t = tile + delta; t != other_end; t += delta) MarkTileDirtyByTile(t);
-				}
-			}
-		} else {
-			assert(IsDriveThroughStopTile(tile));
-			cost.AddCost(_price[PR_CLEAR_ROAD] * 2);
-			if (flags & DC_EXEC) {
-				Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
-				if (c != NULL) {
-					/* A full diagonal road tile has two road bits. */
-					c->infrastructure.road[rt] -= 2;
-					DirtyCompanyInfrastructureWindows(c->index);
-				}
-				SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
-				MarkTileDirtyByTile(tile);
-			}
-		}
-		return cost;
-	}
-
-	Tile *road_tile = GetTileByType(tile, MP_ROAD);
-	if (IsNormalRoad(road_tile)) {
-		 Slope tileh = GetTileSlope(tile);
-
-		/* Steep slopes behave the same as slopes with one corner raised. */
-		if (IsSteepSlope(tileh)) {
-			tileh = SlopeWithOneCornerRaised(GetHighestSlopeCorner(tileh));
-		}
-
-		RoadBits present = GetRoadBits(road_tile, rt);
-		const RoadBits other = GetOtherRoadBits(tile, rt);
-		const Foundation f = GetRoadFoundation(tileh, present);
-
-		if (HasRoadWorks(tile) && _current_company != OWNER_WATER) return_cmd_error(STR_ERROR_ROAD_WORKS_IN_PROGRESS);
-
-		/* Autocomplete to a straight road
-		 * @li if the bits of the other roadtypes result in another foundation
-		 * @li if build on slopes is disabled
-		 * @li if the tile is a level crossing */
-		if ((IsStraightRoad(other) && (other & _invalid_tileh_slopes_road[0][tileh & SLOPE_ELEVATED]) != ROAD_NONE) ||
-				(tileh != SLOPE_FLAT && !_settings_game.construction.build_on_slopes) || IsLevelCrossingTile(tile)) {
-			pieces |= MirrorRoadBits(pieces);
-		}
-
-		/* Don't allow road to be removed from the crossing when there is tram;
-		 * we can't draw the crossing without roadbits ;) */
-		if (IsLevelCrossingTile(tile) && rt == ROADTYPE_ROAD && HasTileRoadType(road_tile, ROADTYPE_TRAM) && (flags & DC_EXEC || crossing_check)) return CMD_ERROR;
-
-		/* limit the bits to delete to the existing bits. */
-		pieces &= present;
-		if (pieces == ROAD_NONE) return_cmd_error(rt == ROADTYPE_TRAM ? STR_ERROR_THERE_IS_NO_TRAMWAY : STR_ERROR_THERE_IS_NO_ROAD);
-
-		/* Now set present what it will be after the remove */
-		present ^= pieces;
-
-		/* Check for invalid RoadBit combinations on slopes */
-		if (tileh != SLOPE_FLAT && present != ROAD_NONE &&
-			(present & _invalid_tileh_slopes_road[0][tileh & SLOPE_ELEVATED]) == present) {
-				return CMD_ERROR;
-		}
-
+	CommandCost cost(EXPENSES_CONSTRUCTION);
+	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+		TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
+		/* Pay for *every* tile of the bridge or tunnel */
+		uint len = GetTunnelBridgeLength(other_end, tile) + 2;
+		cost.AddCost(len * _price[PR_CLEAR_ROAD]);
 		if (flags & DC_EXEC) {
-			if (HasRoadWorks(tile)) {
-				/* flooding tile with road works, don't forget to remove the effect vehicle too */
-				assert(_current_company == OWNER_WATER);
-				EffectVehicle *v;
-				FOR_ALL_EFFECTVEHICLES(v) {
-					if (TileVirtXY(v->x_pos, v->y_pos) == tile) {
-						delete v;
-					}
-				}
-			}
-
 			Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
 			if (c != NULL) {
-				c->infrastructure.road[rt] -= CountBits(pieces);
+				/* A full diagonal road tile has two road bits. */
+				c->infrastructure.road[rt] -= len * 2 * TUNNELBRIDGE_TRACKBIT_FACTOR;
 				DirtyCompanyInfrastructureWindows(c->index);
 			}
 
-			if (present == ROAD_NONE) {
-				RoadTypes rts = GetRoadTypes(road_tile) & ComplementRoadTypes(RoadTypeToRoadTypes(rt));
-				if (rts == ROADTYPES_NONE) {
-					if (IsLevelCrossingTile(tile)) {
-						Tile *crossing = GetLevelCrossingTile(tile);
-						UnbarCrossing(crossing);
-						SetLevelCrossing(crossing, false);
-						c = Company::GetIfValid(GetTileOwner(crossing));
-						/* Subtract count for a level crossing and add count for a single straight rail piece instead. */
-						if (c != NULL) {
-							c->infrastructure.rail[GetRailType(crossing)] -= LEVELCROSSING_TRACKBIT_FACTOR - 1;
-							DirtyCompanyInfrastructureWindows(c->index);
-						}
-						YapfNotifyTrackLayoutChange(tile, INVALID_TRACK);
-					}
-					MakeClearGrass(tile);
-					MarkTileDirtyByTile(tile);
-				} else {
-					if (rt == ROADTYPE_ROAD && IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN)) {
-						/* Update nearest-town index */
-						const Town *town = CalcClosestTownFromTile(tile);
-						SetTownIndex(road_tile, town == NULL ? (TownID)INVALID_TOWN : town->index);
-					}
-					SetRoadBits(road_tile, ROAD_NONE, rt);
-					SetRoadTypes(road_tile, rts);
-					MarkTileDirtyByTile(tile);
-				}
-			} else {
-				/* When bits are removed, you *always* end up with something that
-				 * is not a complete straight road tile. However, trams do not have
-				 * onewayness, so they cannot remove it either. */
-				if (rt != ROADTYPE_TRAM) SetDisallowedRoadDirections(road_tile, DRD_NONE);
-				SetRoadBits(road_tile, present, rt);
-				MarkTileDirtyByTile(tile);
+			SetRoadTypes(other_end, GetRoadTypes(other_end) & ~RoadTypeToRoadTypes(rt));
+			SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
+
+			/* If the owner of the bridge sells all its road, also move the ownership
+			 * to the owner of the other roadtype. */
+			RoadType other_rt = (rt == ROADTYPE_ROAD) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
+			Owner other_owner = GetRoadOwner(tile, other_rt);
+			if (other_owner != GetTileOwner(tile)) {
+				SetTileOwner(tile, other_owner);
+				SetTileOwner(other_end, other_owner);
+			}
+
+			/* Mark tiles dirty that have been repaved. */
+			MarkTileDirtyByTile(tile);
+			MarkTileDirtyByTile(other_end);
+			if (IsBridge(tile)) {
+				TileIndexDiff delta = TileOffsByDiagDir(GetTunnelBridgeDirection(tile));
+
+				for (TileIndex t = tile + delta; t != other_end; t += delta) MarkTileDirtyByTile(t);
 			}
 		}
-
-		CommandCost cost(EXPENSES_CONSTRUCTION, CountBits(pieces) * _price[PR_CLEAR_ROAD]);
-		/* If we build a foundation we have to pay for it. */
-		if (f == FOUNDATION_NONE && GetRoadFoundation(tileh, present) != FOUNDATION_NONE) cost.AddCost(_price[PR_BUILD_FOUNDATION]);
-
-		return cost;
+	} else {
+		assert(IsDriveThroughStopTile(tile));
+		cost.AddCost(_price[PR_CLEAR_ROAD] * 2);
+		if (flags & DC_EXEC) {
+			Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
+			if (c != NULL) {
+				/* A full diagonal road tile has two road bits. */
+				c->infrastructure.road[rt] -= 2;
+				DirtyCompanyInfrastructureWindows(c->index);
+			}
+			SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
+			MarkTileDirtyByTile(tile);
+		}
 	}
-
-	return CMD_ERROR;
+	return cost;
 }
 
 
@@ -1066,7 +1074,7 @@ static CommandCost ClearTile_Road(TileIndex tile, Tile *tptr, DoCommandFlag flag
 				RoadType rt = (RoadType)(ROADTYPE_END - 1);
 				do {
 					if (HasBit(rts, rt)) {
-						CommandCost tmp_ret = RemoveRoad(tile, flags, GetRoadBits(tptr, rt), rt, true);
+						CommandCost tmp_ret = RemoveRoadReal(tile, tptr, flags, GetRoadBits(tptr, rt), rt, true);
 						if (tmp_ret.Failed()) return tmp_ret;
 						ret.AddCost(tmp_ret);
 					}
