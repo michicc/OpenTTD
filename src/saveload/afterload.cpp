@@ -553,9 +553,15 @@ static void FixOwnerOfRailTrack(TileIndex t)
 
 	if (IsTileType(t, MP_ROAD) && GetRoadTileType(_m.ToTile(t)) == 1 /* ROAD_TILE_CROSSING */) {
 		Tile *road = _m.ToTile(t);
-		/* else change the crossing to normal road (road vehicles won't care) */
-		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(road), GetTownIndex(road),
-			GetRoadOwner(road, ROADTYPE_ROAD), GetRoadOwner(road, ROADTYPE_TRAM));
+		/* Else change the crossing to normal road (road vehicles won't care).
+		 * As this is still before conversion to associated tiles, we construct
+		 * an old format road tile manually. */
+		RoadTypes rts = GetRoadTypes(road);
+		RoadBits rbs = HasBit(road->m5, 0) ? ROAD_Y : ROAD_X;
+		SetTileOwner(road, (Owner)GB(road->m7, 0, 5));
+		SB(road->m3, 0, 4, HasBit(rts, ROADTYPE_TRAM) ? rbs : 0);
+		road->m4 = (HasBit(rts, ROADTYPE_ROAD) ? rbs : 0) | ROAD_TILE_NORMAL << 6;
+		road->m7 = rts << 6;
 		return;
 	}
 
@@ -1214,14 +1220,16 @@ bool AfterLoadGame()
 							);
 						} else {
 							TownID town = IsTileOwner(t, OWNER_TOWN) ? ClosestTownFromTile(t, UINT_MAX)->index : 0;
-
-							MakeRoadNormal(
-								t,
-								axis == AXIS_X ? ROAD_Y : ROAD_X,
-								ROADTYPES_ROAD,
-								town,
-								GetTileOwner(t), OWNER_NONE
-							);
+							/* Change to road tile. As this is still pre associated tiles, we
+							 * need to construct the road tile manually. */
+							Tile *road_tile = _m.ToTile(t);
+							SetTileType(road_tile, MP_ROAD);
+							SetTownIndex(road_tile, town);
+							road_tile->m3 = OWNER_TOWN << 4; // OWNER_NONE is saved as OWNER_TOWN for tram.
+							road_tile->m4 = 0;
+							road_tile->m5 = (axis == AXIS_X ? ROAD_Y : ROAD_X) | ROAD_TILE_NORMAL << 6;
+							SB(road_tile->m6, 2, 4, 0);
+							road_tile->m7 = ROADTYPES_ROAD << 6;
 						}
 					} else {
 						if (GB(_m[t].m5, 3, 2) == 0) {
