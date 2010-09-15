@@ -1,0 +1,272 @@
+//
+// $Id$
+//
+    -1 * 0	 0C "Road graphics without ground"
+
+// Road temperate
+   -1 * 6	 07 83 01 \7! 00 \b20
+   -1 * 5	 0A 01 \b19 \w1332
+   -1 sprites/road_noground.png 8bpp  66    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 146    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 226    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 306    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 386    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 466    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 546    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 626    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 706    8  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2   56  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82   56  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162   56  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 242   56  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322   56  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402   56  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 482   56  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562   56  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642   56  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722   56  64  31 -31   0 normal
+
+// Road snow
+   -1 * 6	 07 83 01 \7> 01 \b20
+   -1 * 5	 0A 01 \b19 \w1351
+   -1 sprites/road_noground.png 8bpp  34  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 114  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 194  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 274  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 354  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 434  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 514  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 594  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 674  120  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  168  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  168  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  168  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 242  168  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  168  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  168  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 482  168  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  168  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  168  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  168  64  31 -31   0 normal
+
+// Road arctic
+   -1 * 6	 07 83 01 \7! 01 \b20
+   -1 * 5	 0A 01 \b19 \w1332
+   -1 sprites/road_noground.png 8bpp  34  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 114  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 194  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 274  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 354  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 434  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 514  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 594  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 674  232  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  280  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  280  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  280  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 242  280  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  280  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  280  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 482  280  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  280  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  280  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  280  64  31 -31   0 normal
+
+// Road tropic + desert
+   -1 * 6	 07 83 01 \7! 02 \b39
+   -1 * 8	 0A 02 \b19 \w1332 \b19 \w1351
+   -1 sprites/road_noground.png 8bpp  34  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 114  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 194  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 274  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 354  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 434  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 514  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 594  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 674  344  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  392  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  392  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  392  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 242  392  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  392  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  392  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 482  392  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  392  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  392  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  392  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp   2  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  456  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  504  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  504  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 162  504  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  504  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  504  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 402  504  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  504  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  504  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  504  64  31 -31   0 normal
+
+// Road toyland
+   -1 * 6	 07 83 01 \7! 03 \b20
+   -1 * 5	 0A 01 \b19 \w1332
+   -1 sprites/road_noground.png 8bpp   2  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  568  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  616  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  616  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 162  616  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  616  64  23 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  616  64  39 -31  -8 normal
+   -1 sprites/road_noground.png 8bpp 402  616  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  616  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  616  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  616  64  31 -31   0 normal
+
+// Level crossings temperate + snow
+   -1 * 6	07 83 01 \7> 01 \b37
+   -1 * 5	0A 01 \b36 \w1370
+   -1 sprites/road_noground.png 8bpp   2  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  680  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  728  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  776  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  824  64  31 -31   0 normal
+
+// Level crossings arctic
+   -1 * 6	07 83 01 \7! 01 \b21
+   -1 * 11	0A 03 \b8 \w1370 \b8 \w1382 \b4 \w1394
+   -1 sprites/road_noground.png 8bpp 514  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 594  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 674  824  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  872  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp 402  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  872  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  920  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp 242  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  920  64  31 -31   0 normal
+
+// Level crossings tropic/desert
+   -1 * 6	07 83 01 \7! 02 \b33
+   -1 * 8	0A 02 \b28 \w1370 \b4 \w1402
+   -1 sprites/road_noground.png 8bpp 594  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 674  920  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722  968  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722 1016  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402 1064  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp 482 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 562 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642 1064  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722 1064  64  31 -31   0 normal
+
+// Level crossings toyland
+   -1 * 6	07 83 01 \7! 03 \b25
+   -1 * 11	0A 03 \b8 \w1370 \b8 \w1382 \b8 \w1394
+   -1 sprites/road_noground.png 8bpp  34 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 114 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 194 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 274 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 354 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 434 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 514 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 594 1112  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp 674 1112  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 402 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 482 1160  64  31 -31   0 normal
+
+   -1 sprites/road_noground.png 8bpp 562 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 642 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 722 1160  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp   2 1208  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp  82 1208  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 162 1208  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 242 1208  64  31 -31   0 normal
+   -1 sprites/road_noground.png 8bpp 322 1208  64  31 -31   0 normal
