@@ -577,19 +577,6 @@ bool IsWateredTile(TileIndex tile, Direction from)
 					}
 			}
 
-		case MP_RAILWAY:
-			if (GetRailGroundType(tile) == RAIL_GROUND_WATER) {
-				assert(IsPlainRail(_m.ToTile(tile)));
-				switch (GetTileSlope(tile)) {
-					case SLOPE_W: return (from == DIR_SE) || (from == DIR_E) || (from == DIR_NE);
-					case SLOPE_S: return (from == DIR_NE) || (from == DIR_N) || (from == DIR_NW);
-					case SLOPE_E: return (from == DIR_NW) || (from == DIR_W) || (from == DIR_SW);
-					case SLOPE_N: return (from == DIR_SW) || (from == DIR_S) || (from == DIR_SE);
-					default: return false;
-				}
-			}
-			return false;
-
 		case MP_STATION:
 			if (IsOilRig(tile)) {
 				/* Do not draw waterborders inside of industries.
@@ -1035,12 +1022,6 @@ FloodingBehaviour GetFloodingBehaviour(TileIndex tile)
 		case MP_OBJECT:
 			return (GetWaterClass(tile) == WATER_CLASS_SEA) ? FLOOD_ACTIVE : FLOOD_NONE;
 
-		case MP_RAILWAY:
-			if (GetRailGroundType(tile) == RAIL_GROUND_WATER) {
-				return (IsSlopeWithOneCornerRaised(GetTileSlope(tile)) ? FLOOD_ACTIVE : FLOOD_DRYUP);
-			}
-			return FLOOD_NONE;
-
 		default:
 			return FLOOD_NONE;
 	}
@@ -1060,32 +1041,23 @@ void DoFloodTile(TileIndex target)
 	Slope tileh = GetTileSlope(target);
 	if (tileh != SLOPE_FLAT) {
 		/* make coast.. */
-		switch (GetTileType(target)) {
-			case MP_RAILWAY: {
-				if (!IsPlainRail(_m.ToTile(target))) break;
+		if (HasTileByType(target, MP_RAILWAY)) {
+			if (IsPlainRail(GetTileByType(target, MP_RAILWAY))) {
 				FloodVehicles(target);
 				flooded = FloodHalftile(target);
-				break;
+				if (flooded) MarkTileDirtyByTile(target);
 			}
-
-			case MP_CLEAR:
-				if (!IsSlopeWithOneCornerRaised(tileh) && HasTileByType(target, MP_TREES)) {
-					/* Slope with trees, convert to shore. */
-					MakeShore(target);
-					MarkTileDirtyByTile(target);
-					flooded = true;
-					break;
-				}
-
-				if (DoCommand(target, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
-					MakeShore(target);
-					MarkTileDirtyByTile(target);
-					flooded = true;
-				}
-				break;
-
-			default:
-				break;
+		} else if (IsTileType(target, MP_CLEAR)) {
+			if (!IsSlopeWithOneCornerRaised(tileh) && HasTileByType(target, MP_TREES)) {
+				/* Slope with trees, convert to shore. */
+				MakeShore(target);
+				MarkTileDirtyByTile(target);
+				flooded = true;
+			} else if (DoCommand(target, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
+				MakeShore(target);
+				MarkTileDirtyByTile(target);
+				flooded = true;
+			}
 		}
 	} else {
 		/* Flood vehicles */
@@ -1117,36 +1089,29 @@ static void DoDryUp(TileIndex tile)
 {
 	Backup<CompanyByte> cur_company(_current_company, OWNER_WATER, FILE_LINE);
 
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY: {
-			Tile *rail_tile = _m.ToTile(tile);
-			assert(IsPlainRail(rail_tile));
-			assert(GetRailGroundType(tile) == RAIL_GROUND_WATER);
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		assert(IsPlainRail(rail_tile));
 
-			RailGroundType new_ground;
-			switch (GetTrackBits(rail_tile)) {
-				case TRACK_BIT_UPPER: new_ground = RAIL_GROUND_FENCE_HORIZ1; break;
-				case TRACK_BIT_LOWER: new_ground = RAIL_GROUND_FENCE_HORIZ2; break;
-				case TRACK_BIT_LEFT:  new_ground = RAIL_GROUND_FENCE_VERT1;  break;
-				case TRACK_BIT_RIGHT: new_ground = RAIL_GROUND_FENCE_VERT2;  break;
+		RailFenceType new_fences;
+		switch (GetTrackBits(rail_tile)) {
+				case TRACK_BIT_UPPER: new_fences = RAIL_FENCE_HORIZ1; break;
+				case TRACK_BIT_LOWER: new_fences = RAIL_FENCE_HORIZ2; break;
+				case TRACK_BIT_LEFT:  new_fences = RAIL_FENCE_VERT1;  break;
+				case TRACK_BIT_RIGHT: new_fences = RAIL_FENCE_VERT2;  break;
 				default: NOT_REACHED();
-			}
-			SetRailGroundType(tile, new_ground);
-			MarkTileDirtyByTile(tile);
-			break;
 		}
+		SetRailFenceType(rail_tile, new_fences);
+		if (IsTileType(tile, MP_WATER)) MakeClear(tile, CLEAR_GRASS, 3);
+		MarkTileDirtyByTile(tile);
+	} else if (IsTileType(tile, MP_WATER)) {
+		assert(IsCoast(tile));
 
-		case MP_WATER:
-			assert(IsCoast(tile));
-
-			/* Don't clear trees on coastal tiles. */
-			if (HasTileByType(tile, MP_TREES) || DoCommand(tile, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
-				MakeClear(tile, CLEAR_GRASS, 3);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
-
-		default: NOT_REACHED();
+		/* Don't clear trees on coastal tiles. */
+		if (HasTileByType(tile, MP_TREES) || DoCommand(tile, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
+			MakeClear(tile, CLEAR_GRASS, 3);
+			MarkTileDirtyByTile(tile);
+		}
 	}
 
 	cur_company.Restore();

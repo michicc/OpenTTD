@@ -116,8 +116,9 @@ void SetWaterClassDependingOnSurroundings(TileIndex t, bool include_invalid_wate
 				break;
 
 			case MP_RAILWAY:
-				/* Shore or flooded halftile */
-				has_water |= (GetRailGroundType(neighbour) == RAIL_GROUND_WATER);
+				/* Shore or flooded halftile. Only called for old savegames which still
+				 * have this as MP_RAILWAY tiles. */
+				has_water |= (GB(_m[neighbour].m4, 0, 4) == 13); // RAIL_GROUND_WATER
 				break;
 
 			case MP_TREES:
@@ -245,6 +246,37 @@ static void DecomposeTile(TileIndex tile)
 					NOT_REACHED();
 			}
 			SetAssociatedTileFlag(new_tile - 1, true);
+			break;
+		}
+
+		case MP_RAILWAY: {
+			Tile *new_tile = _m.NewTile(tile, MP_RAILWAY, true);
+			Tile *old_tile = _m.ToTile(tile);
+
+			/* Copy old tile to the new tile. */
+			MemCpyT(new_tile, old_tile);
+
+			/* Save bridge info. */
+			byte bridge = GB(old_tile->m6, 6, 2);
+
+			/* Make new ground tile. */
+			uint ground_type = GB(new_tile->m4, 0, 4);
+			RailFenceType fences = RAIL_FENCE_NONE;
+			if (ground_type == 12 || ground_type == 14) {
+				/* Snow or desert */
+				MakeClear(tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, 3);
+				if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(tile, ground_type == 14 ? 0 : 3);
+			} else if (ground_type == 13) {
+				/* Shore */
+				MakeShore(tile);
+			} else {
+				/* Some kind of clear grass. */
+				MakeClear(tile, CLEAR_GRASS, ground_type > 0 ? 3 : 0);
+				fences = IsInsideMM(ground_type, 1, 12) ? (RailFenceType)(ground_type - 1) : RAIL_FENCE_NONE;
+			}
+			SetRailFenceType(new_tile, fences);
+			SetAssociatedTileFlag(old_tile, true);
+			SB(old_tile->m6, 6, 2, bridge);
 			break;
 		}
 
@@ -1153,7 +1185,7 @@ bool AfterLoadGame()
 					if (HasBit(_m[t].m5, 5)) { // transport route under bridge?
 						if (GB(_m[t].m5, 3, 2) == TRANSPORT_RAIL) {
 							MakeRailNormal(
-								t,
+								_m.ToTile(t),
 								GetTileOwner(t),
 								axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X,
 								GetRailType(_m.ToTile(t))
