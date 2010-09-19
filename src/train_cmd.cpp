@@ -2348,7 +2348,7 @@ static PBSTileInfo ExtendTrainReservation(const Train *v, TrackBits *new_tracks,
 		}
 
 		/* Station, depot or waypoint are a possible target. */
-		bool target_seen = ft.m_is_station || (IsTileType(ft.m_new_tile, MP_RAILWAY) && !IsPlainRail(ft.m_new_tile));
+		bool target_seen = ft.m_is_station || (HasTileByType(ft.m_new_tile, MP_RAILWAY) && !IsPlainRail(GetTileByType(ft.m_new_tile, MP_RAILWAY)));
 		if (target_seen || KillFirstBit(ft.m_new_td_bits) != TRACKDIR_BIT_NONE) {
 			/* Choice found or possible target encountered.
 			 * On finding a possible target, we need to stop and let the pathfinder handle the
@@ -2887,11 +2887,11 @@ static inline void AffectSpeedByZChange(Train *v, int old_z)
 
 static bool TrainMovedChangeSignals(TileIndex tile, DiagDirection dir)
 {
-	if (IsTileType(tile, MP_RAILWAY) &&
-			GetRailTileType(tile) == RAIL_TILE_SIGNALS) {
+	Tile *rail = GetTileByType(tile, MP_RAILWAY);
+	if (rail != NULL &&	GetRailTileType(rail) == RAIL_TILE_SIGNALS) {
 		TrackdirBits tracks = TrackBitsToTrackdirBits(GetTrackBits(tile)) & DiagdirReachesTrackdirs(dir);
 		Trackdir trackdir = FindFirstTrackdir(tracks);
-		if (UpdateSignalsOnSegment(tile,  TrackdirToExitdir(trackdir), GetTileOwner(tile)) == SIGSEG_PBS && HasSignalOnTrackdir(tile, trackdir)) {
+		if (UpdateSignalsOnSegment(tile,  TrackdirToExitdir(trackdir), GetTileOwner(rail)) == SIGSEG_PBS && HasSignalOnTrackdir(tile, trackdir)) {
 			/* A PBS block with a non-PBS signal facing us? */
 			if (!IsPbsSignal(GetSignalType(tile, TrackdirToTrack(trackdir)))) return true;
 		}

@@ -26,10 +26,12 @@
 TrackBits GetReservedTrackbits(TileIndex t)
 {
 	switch (GetTileType(t)) {
-		case MP_RAILWAY:
-			if (IsRailDepot(t)) return GetDepotReservationTrackBits(t);
-			if (IsPlainRail(t)) return GetRailReservationTrackBits(t);
+		case MP_RAILWAY: {
+			Tile *rail_tile = _m.ToTile(t);
+			if (IsRailDepot(rail_tile)) return GetDepotReservationTrackBits(t);
+			if (IsPlainRail(rail_tile)) return GetRailReservationTrackBits(t);
 			break;
+		}
 
 		case MP_ROAD:
 			if (IsLevelCrossing(t)) return GetCrossingReservationTrackBits(t);
@@ -89,9 +91,10 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			if (IsPlainRail(tile)) return TryReserveTrack(tile, t);
-			if (IsRailDepot(tile)) {
+		case MP_RAILWAY: {
+			Tile *rail_tile = _m.ToTile(tile);
+			if (IsPlainRail(rail_tile)) return TryReserveTrack(tile, t);
+			if (IsRailDepot(rail_tile)) {
 				if (!HasDepotReservation(tile)) {
 					SetDepotReservation(tile, true);
 					MarkTileDirtyByTile(tile); // some GRFs change their appearance when tile is reserved
@@ -99,6 +102,7 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 				}
 			}
 			break;
+		}
 
 		case MP_ROAD:
 			if (IsLevelCrossing(tile) && !HasCrossingReservation(tile)) {
@@ -145,14 +149,16 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			if (IsRailDepot(tile)) {
+		case MP_RAILWAY: {
+			Tile *rail_tile = _m.ToTile(tile);
+			if (IsRailDepot(rail_tile)) {
 				SetDepotReservation(tile, false);
 				MarkTileDirtyByTile(tile);
 				break;
 			}
-			if (IsPlainRail(tile)) UnreserveTrack(tile, t);
+			if (IsPlainRail(rail_tile)) UnreserveTrack(tile, t);
 			break;
+		}
 
 		case MP_ROAD:
 			if (IsLevelCrossing(tile)) {

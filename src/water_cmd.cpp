@@ -579,7 +579,7 @@ bool IsWateredTile(TileIndex tile, Direction from)
 
 		case MP_RAILWAY:
 			if (GetRailGroundType(tile) == RAIL_GROUND_WATER) {
-				assert(IsPlainRail(tile));
+				assert(IsPlainRail(_m.ToTile(tile)));
 				switch (GetTileSlope(tile)) {
 					case SLOPE_W: return (from == DIR_SE) || (from == DIR_E) || (from == DIR_NE);
 					case SLOPE_S: return (from == DIR_NE) || (from == DIR_N) || (from == DIR_NW);
@@ -1062,7 +1062,7 @@ void DoFloodTile(TileIndex target)
 		/* make coast.. */
 		switch (GetTileType(target)) {
 			case MP_RAILWAY: {
-				if (!IsPlainRail(target)) break;
+				if (!IsPlainRail(_m.ToTile(target))) break;
 				FloodVehicles(target);
 				flooded = FloodHalftile(target);
 				break;
@@ -1118,8 +1118,9 @@ static void DoDryUp(TileIndex tile)
 	Backup<CompanyByte> cur_company(_current_company, OWNER_WATER, FILE_LINE);
 
 	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			assert(IsPlainRail(tile));
+		case MP_RAILWAY: {
+			Tile *rail_tile = _m.ToTile(tile);
+			assert(IsPlainRail(rail_tile));
 			assert(GetRailGroundType(tile) == RAIL_GROUND_WATER);
 
 			RailGroundType new_ground;
@@ -1133,6 +1134,7 @@ static void DoDryUp(TileIndex tile)
 			SetRailGroundType(tile, new_ground);
 			MarkTileDirtyByTile(tile);
 			break;
+		}
 
 		case MP_WATER:
 			assert(IsCoast(tile));
