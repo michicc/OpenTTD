@@ -1124,7 +1124,7 @@ static void DoDryUp(TileIndex tile)
 			assert(GetRailGroundType(tile) == RAIL_GROUND_WATER);
 
 			RailGroundType new_ground;
-			switch (GetTrackBits(tile)) {
+			switch (GetTrackBits(rail_tile)) {
 				case TRACK_BIT_UPPER: new_ground = RAIL_GROUND_FENCE_HORIZ1; break;
 				case TRACK_BIT_LOWER: new_ground = RAIL_GROUND_FENCE_HORIZ2; break;
 				case TRACK_BIT_LEFT:  new_ground = RAIL_GROUND_FENCE_VERT1;  break;
