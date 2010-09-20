@@ -1291,7 +1291,7 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			switch (GetTileType(t)) {
 				case MP_RAILWAY:
-					if (HasSignals(t)) {
+					if (HasSignals(_m.ToTile(t))) {
 						/* Original signal type/variant was stored in m4 but since saveload
 						 * version 48 they are in m2. The bits has been already moved to m2
 						 * (see the code somewhere above) so don't use m4, use m2 instead. */
@@ -1583,12 +1583,13 @@ bool AfterLoadGame()
 		/* Since now we allow different signal types and variants on a single tile.
 		 * Move signal states to m4 to make room and clone the signal type/variant. */
 		for (TileIndex t = 0; t < map_size; t++) {
-			if (IsTileType(t, MP_RAILWAY) && HasSignals(t)) {
+			Tile *tile = _m.ToTile(t);
+			if (IsTileType(t, MP_RAILWAY) && HasSignals(tile)) {
 				/* move signal states */
-				SetSignalStates(t, GB(_m[t].m2, 4, 4));
-				SB(_m[t].m2, 4, 4, 0);
+				SetSignalStates(tile, GB(tile->m2, 4, 4));
+				SB(tile->m2, 4, 4, 0);
 				/* clone signal type and variant */
-				SB(_m[t].m2, 4, 3, GB(_m[t].m2, 0, 3));
+				SB(tile->m2, 4, 3, GB(tile->m2, 0, 3));
 			}
 		}
 	}
@@ -1908,11 +1909,12 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(100)) {
 		for (TileIndex t = 0; t < map_size; t++) {
 			switch (GetTileType(t)) {
-				case MP_RAILWAY:
-					if (HasSignals(t)) {
+				case MP_RAILWAY: {
+					Tile *rail_tile = _m.ToTile(t);
+					if (HasSignals(rail_tile)) {
 						/* move the signal variant */
-						SetSignalVariant(t, TRACK_UPPER, HasBit(_m[t].m2, 2) ? SIG_SEMAPHORE : SIG_ELECTRIC);
-						SetSignalVariant(t, TRACK_LOWER, HasBit(_m[t].m2, 6) ? SIG_SEMAPHORE : SIG_ELECTRIC);
+						SetSignalVariant(rail_tile, TRACK_UPPER, HasBit(_m[t].m2, 2) ? SIG_SEMAPHORE : SIG_ELECTRIC);
+						SetSignalVariant(rail_tile, TRACK_LOWER, HasBit(_m[t].m2, 6) ? SIG_SEMAPHORE : SIG_ELECTRIC);
 						ClrBit(_m[t].m2, 2);
 						ClrBit(_m[t].m2, 6);
 					}
@@ -1924,6 +1926,7 @@ bool AfterLoadGame()
 						SetTrackReservation(t, TRACK_BIT_NONE);
 					}
 					break;
+				}
 
 				case MP_ROAD: // Clear PBS reservation on crossing
 					if (IsLevelCrossing(t)) SetCrossingReservation(t, false);

@@ -119,7 +119,7 @@ void AfterLoadCompanyStats()
 				}
 				c->infrastructure.rail[GetRailType(tile)] += pieces;
 
-				if (HasSignals(tile)) c->infrastructure.signal += CountBits(GetPresentSignals(tile));
+				if (HasSignals(rail_tile)) c->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
 			}
 		}
 
