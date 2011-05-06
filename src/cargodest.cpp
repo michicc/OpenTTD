@@ -737,3 +737,33 @@ void UpdateCargoLinks()
 	InvalidateWindowClassesData(WC_TOWN_VIEW, 1);
 	InvalidateWindowClassesData(WC_INDUSTRY_VIEW, 1);
 }
+
+/**
+ * Get a random demand link.
+ * @param cid Cargo type
+ * @param allow_self Indicates if the local link is acceptable as a result.
+ * @param allow_random Indicates if the random dest link is acceptable as a result.
+ * @return Pointer to a demand link or this->cargo_links[cid].End() if no link found.
+ */
+CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool allow_random)
+{
+	/* Randomly choose a cargo link. */
+	uint weight = RandomRange(this->cargo_links_weight[cid] - 1);
+	uint cur_sum = 0;
+
+	CargoLink *l;
+	for (l = this->cargo_links[cid].Begin(); l != this->cargo_links[cid].End(); ++l) {
+		cur_sum += l->weight;
+		if (weight < cur_sum) {
+			if (l->dest == NULL) {
+				/* Random destination acceptable? Valid link. */
+				if (allow_random) break;
+			} else {
+				/* Not the local link if not allowed and accepts the cargo? Valid link. */
+				if ((allow_self || l->dest != this) && l->dest->AcceptsCargo(cid)) break;
+			}
+		}
+	}
+
+	return l;
+}
