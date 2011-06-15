@@ -97,6 +97,64 @@ void Map::Clear()
 	}
 }
 
+/**
+ * Insert a new tile after an existing tile.
+ * @param tile The new tile is inserted after this tile.
+ * @param type TileType of the new tile.
+ * @param raw_alloc Don't set any tile flags. Used by save/load code.
+ * @param after Insert the new tile directly after this tile. Used by save/load code.
+ * @return Pointer to the new tile. The tile is zeroed.
+ */
+Tile *Map::NewTile(TileIndex tile, TileType type, bool raw_alloc, Tile *after)
+{
+	if (after == NULL) {
+		after = this->ToTile(tile);
+		while (HasAssociatedTile(after)) after++;
+	}
+	bool has_next = HasAssociatedTile(after);
+	if (!raw_alloc) SetAssociatedTileFlag(after, true);
+
+	/* Fixup tile offsets. */
+	uint count = this->size_x - TileX(tile);
+	for (uint i = 1; i < count; i++) {
+		this->offset[tile + i]++;
+	}
+
+	Tile *new_tile = this->tiles[TileY(tile)].Insert(after + 1);
+	MemSetT(new_tile, 0);
+	if (!raw_alloc) {
+		SetTileType(new_tile, type);
+		if (has_next) SetAssociatedTileFlag(new_tile, true);
+	}
+	return new_tile;
+}
+
+/**
+ * Remove a tile from the map.
+ * @param tile The tile to remove
+ */
+void Map::RemoveTile(TileIndex index, Tile *tile)
+{
+	Tile *cur_tile = this->ToTile(index);
+	while (HasAssociatedTile(cur_tile)) {
+		if (cur_tile + 1 == tile) {
+			SetAssociatedTileFlag(cur_tile, HasAssociatedTile(tile));
+			this->tiles[TileY(index)].Extract(tile);
+
+			/* Fixup tile offsets. */
+			uint count = this->size_x - TileX(index);
+			for (uint i = 1; i < count; i++) {
+				this->offset[index + i]--;
+			}
+
+			return;
+		}
+		cur_tile++;
+	}
+
+	NOT_REACHED();
+}
+
 size_t Map::GetTileCount() const
 {
 	size_t count = 0;

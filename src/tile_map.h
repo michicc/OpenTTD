@@ -114,6 +114,21 @@ static inline bool IsInnerTile(TileIndex tile)
  *
  * @param tile The tile to save the new type
  * @param type The type to save
+ */
+static inline void SetTileType(Tile *tile, TileType type)
+{
+	SB(tile->type_height, 4, 4, type);
+}
+
+/**
+ * Set the type of a tile
+ *
+ * This functions sets the type of a tile. If the type
+ * MP_VOID is selected the tile must be at the south-west or
+ * south-east edges of the map and vice versa.
+ *
+ * @param tile The tile to save the new type
+ * @param type The type to save
  * @pre tile < MapSize()
  * @pre type MP_VOID <=> tile is on the south-east or south-west edge.
  */
@@ -124,7 +139,7 @@ static inline void SetTileType(TileIndex tile, TileType type)
 	 * edges of the map. If _settings_game.construction.freeform_edges is true,
 	 * the upper edges of the map are also VOID tiles. */
 	assert(IsInnerTile(tile) == (type != MP_VOID));
-	SB(_m[tile].type_height, 4, 4, type);
+	SetTileType(_m.ToTile(tile), type);
 }
 
 /**
