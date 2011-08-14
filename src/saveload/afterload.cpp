@@ -259,6 +259,9 @@ static void InitializeWindowsAndCaches()
 	RebuildSubsidisedSourceAndDestinationCache();
 	RebuildCargoLinkCounts();
 
+	Industry *ind;
+	FOR_ALL_INDUSTRIES(ind) UpdateIndustryStationCoverage(ind);
+
 	/* Towns have a noise controlled number of airports system
 	 * So each airport's noise value must be added to the town->noise_reached value
 	 * Reset each town's noise_reached value to '0' before. */

@@ -58,6 +58,8 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 	uint16 average_production[2];       ///< average production during the last months
 	uint16 counter;                     ///< used for animation and/or production (if available cargo)
 
+	bool station_coverage;              ///< NOSAVE: is this industry inside the coverage rect of any station?
+
 	IndustryType type;                  ///< type of industry.
 	OwnerByte owner;                    ///< owner of the industry.  Which SHOULD always be (imho) OWNER_NONE
 	byte random_colour;                 ///< randomized colour of the industry, for display purpose
@@ -182,6 +184,7 @@ void PlantRandomFarmField(const Industry *i);
 void ReleaseDisastersTargetingIndustry(IndustryID);
 
 void UpdateIndustryAcceptance(Industry *ind);
+void UpdateIndustryStationCoverage(Industry *ind);
 
 #define FOR_ALL_INDUSTRIES_FROM(var, start) FOR_ALL_ITEMS_FROM(Industry, industry_index, var, start)
 #define FOR_ALL_INDUSTRIES(var) FOR_ALL_INDUSTRIES_FROM(var, 0)

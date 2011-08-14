@@ -1572,6 +1572,17 @@ void UpdateIndustryAcceptance(Industry *ind)
 	ind->produced_accepted_mask = always_accepted & produced;
 }
 
+/** Update station coverage cache. */
+void UpdateIndustryStationCoverage(Industry *ind)
+{
+	ind->station_coverage = false;
+
+	Station *st;
+	FOR_ALL_STATIONS(st) {
+		if (st->rect.AreaInExtendedRect(ind->location, st->GetCatchmentRadius())) ind->station_coverage = true;
+	}
+}
+
 /**
  * Put an industry on the map.
  * @param i       Just allocated poolitem, mostly empty.
@@ -1702,6 +1713,7 @@ static void DoCreateNewIndustry(Industry *i, TileIndex tile, IndustryType type, 
 
 	UpdateIndustryAcceptance(i);
 	Station::RecomputeIndustriesNearForAll();
+	UpdateIndustryStationCoverage(i);
 }
 
 /**

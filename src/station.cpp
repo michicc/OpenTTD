@@ -329,6 +329,10 @@ void Station::UpdateCoverageCache()
 	FOR_ALL_TOWNS(t) {
 		if (this->rect.AreaInExtendedRect(t->cargo_accepted.GetArea(), this->GetCatchmentRadius())) UpdateTownCargos(t, true);
 	}
+
+	for (Industry **ind = this->industries_near.Begin(); ind != this->industries_near.End(); ind++) {
+		UpdateIndustryStationCoverage(*ind);
+	}
 }
 
 /**
