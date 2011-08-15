@@ -1214,5 +1214,12 @@ void AgeRouteLinks(Station *st)
 				++link;
 			}
 		}
+
+		/* Update the next hop of some cargo if the last update was at least
+		 * route_recalc_delay ticks earlier and some vehicles are loading. */
+		if (CargoHasDestinations(cid) && st->goods[cid].cargo_counter == 0 && !st->loading_vehicles.empty()) {
+			st->goods[cid].cargo.UpdateCargoNextHop(st, cid);
+			st->goods[cid].cargo_counter = _settings_game.economy.cargodest.route_recalc_delay;
+		}
 	}
 }
