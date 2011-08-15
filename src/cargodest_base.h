@@ -85,7 +85,7 @@ struct CargoSourceSink {
 	virtual void CreateSpecialLinks(CargoID cid);
 
 	/** Get a random destination tile index for this cargo. */
-	virtual TileArea GetTileForDestination(CargoID cid) = 0;
+	virtual TileArea GetTileForDestination(CargoID cid, bool *has_station) = 0;
 
 	void SaveCargoSourceSink();
 	void LoadCargoSourceSink();

@@ -153,7 +153,7 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 
 	/* virtual */ uint GetDestinationWeight(CargoID cid, byte weight_mod) const;
 	/* virtual */ void CreateSpecialLinks(CargoID cid);
-	/* virtual */ TileArea GetTileForDestination(CargoID cid);
+	/* virtual */ TileArea GetTileForDestination(CargoID cid, bool *has_station);
 
 	/**
 	 * Calculate the max town noise.

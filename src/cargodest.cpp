@@ -775,7 +775,7 @@ CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool all
 
 
 /** Get a random destination tile index for this cargo. */
-/* virtual */ TileArea Town::GetTileForDestination(CargoID cid)
+/* virtual */ TileArea Town::GetTileForDestination(CargoID cid, bool *has_station)
 {
 	assert(this->cargo_accepted_weights[cid] != 0);
 
@@ -789,7 +789,10 @@ CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool all
 		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0) {
 			weight_sum += this->cargo_accepted_max_weight - (DistanceMax(this->xy_aligned, tile) / AcceptanceMatrix::GRID) * 2;
 			/* Return tile area inside the grid square if this is the chosen square. */
-			if (weight < weight_sum) return TileArea(tile + TileDiffXY(1, 1), 2, 2);
+			if (weight < weight_sum) {
+				*has_station = this->station_coverage[tile];
+				return TileArea(tile + TileDiffXY(1, 1), 2, 2);
+			}
 		}
 	}
 
@@ -847,8 +850,21 @@ bool MoveCargoWithDestinationToStationWorker(CargoID cid, uint *amount, SourceTy
 	/* Still no luck, nothing left to try. */
 	if (dest == NULL) return false;
 
+	/* Routing to a destination, but no source station present? Won't find a route this way. */
+	if (all_stations->Length() == 0) {
+		*amount = 0;
+		return true;
+	}
+
 	/* Pick a tile that belongs to the destination. */
-	TileArea dest_area = dest->GetTileForDestination(cid);
+	bool has_dest_station;
+	TileArea dest_area = dest->GetTileForDestination(cid, &has_dest_station);
+
+	/* To station near the destination? Won't find a route then. */
+	if (!has_dest_station) {
+		*amount = 0;
+		return true;
+	}
 
 	/* Maximum pathfinder penalty based on distance. */
 	uint r = RandomRange(_settings_game.economy.cargodest.max_route_penalty[1]);

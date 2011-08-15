@@ -114,8 +114,9 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 
 	/* virtual */ uint GetDestinationWeight(CargoID cid, byte weight_mod) const;
 
-	/* virtual */ TileArea GetTileForDestination(CargoID cid)
+	/* virtual */ TileArea GetTileForDestination(CargoID cid, bool *has_station)
 	{
+		*has_station = this->station_coverage;
 		return this->location;
 	}
 
