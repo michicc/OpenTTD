@@ -26,6 +26,7 @@
 #include "industry.h"
 #include "core/random_func.hpp"
 #include "cargodest_func.h"
+#include "town.h"
 
 #include "table/strings.h"
 
@@ -319,6 +320,15 @@ static bool FindIndustryToDeliver(TileIndex ind_tile, void *user_data)
 	*riv->industries_near->Append() = ind;
 
 	return false;
+}
+
+/** Update the station coverage of all affected industries and towns. */
+void Station::UpdateCoverageCache()
+{
+	Town *t;
+	FOR_ALL_TOWNS(t) {
+		if (this->rect.AreaInExtendedRect(t->cargo_accepted.GetArea(), this->GetCatchmentRadius())) UpdateTownCargos(t, true);
+	}
 }
 
 /**

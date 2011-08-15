@@ -27,6 +27,7 @@ struct BuildingCounts {
 };
 
 typedef TileMatrix<uint32, 4> AcceptanceMatrix;
+typedef TileMatrix<bool, 4> StationCoverageMatrix;
 
 static const uint CUSTOM_TOWN_NUMBER_DIFFICULTY  = 4; ///< value for custom town number in difficulty settings
 static const uint CUSTOM_TOWN_MAX_NUMBER = 5000;  ///< this is the maximum number of towns a user can specify in customisation
@@ -110,6 +111,8 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	uint32 cargo_accepted_total;     ///< NOSAVE: Bitmap of all cargos accepted by houses in this town.
 	uint32 cargo_accepted_weights[NUM_CARGO]; ///< NOSAVE: Weight sum of accepting squares per cargo.
 	uint32 cargo_accepted_max_weight; ///< NOSAVE: Cached maximum weight for an accepting square.
+
+	StationCoverageMatrix station_coverage; ///< NOSAVE: Is each 4*4 map square of the town inside the coverage area of any station?
 
 	PartOfSubsidyByte part_of_subsidy; ///< NOSAVE: is this town a source/destination of a subsidy?
 
@@ -224,7 +227,7 @@ void ResetHouses();
 void ClearTownHouse(Town *t, TileIndex tile);
 void UpdateTownMaxPass(Town *t);
 void UpdateTownRadius(Town *t);
-void UpdateTownCargos(Town *t);
+void UpdateTownCargos(Town *t, bool update_station = false);
 void UpdateTownCargoTotal(Town *t);
 CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlag flags);
 Town *ClosestTownFromTile(TileIndex tile, uint threshold);

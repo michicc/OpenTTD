@@ -1286,6 +1286,7 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 		st->UpdateVirtCoord();
 		UpdateStationAcceptance(st, false);
 		st->RecomputeIndustriesNear();
+		st->UpdateCoverageCache();
 		InvalidateWindowData(WC_SELECT_STATION, 0, 0);
 		InvalidateWindowData(WC_STATION_LIST, st->owner, 0);
 		SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_TRAINS);
@@ -1486,6 +1487,7 @@ CommandCost CmdRemoveFromRailStation(TileIndex start, DoCommandFlag flags, uint3
 
 		if (st->train_station.tile == INVALID_TILE) SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_TRAINS);
 		st->MarkTilesDirty(false);
+		st->UpdateCoverageCache();
 		st->RecomputeIndustriesNear();
 	}
 
@@ -1600,7 +1602,10 @@ static CommandCost RemoveRailStation(TileIndex tile, DoCommandFlag flags)
 	Station *st = Station::GetByTile(tile);
 	CommandCost cost = RemoveRailStation(st, flags);
 
-	if (flags & DC_EXEC) st->RecomputeIndustriesNear();
+	if (flags & DC_EXEC) {
+		st->UpdateCoverageCache();
+		st->RecomputeIndustriesNear();
+	}
 
 	return cost;
 }
@@ -1795,6 +1800,7 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 		st->UpdateVirtCoord();
 		UpdateStationAcceptance(st, false);
 		st->RecomputeIndustriesNear();
+		st->UpdateCoverageCache();
 		InvalidateWindowData(WC_SELECT_STATION, 0, 0);
 		InvalidateWindowData(WC_STATION_LIST, st->owner, 0);
 		SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_ROADVEHS);
@@ -1895,6 +1901,7 @@ static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
 		st->rect.AfterRemoveTile(st, tile);
 
 		st->UpdateVirtCoord();
+		st->UpdateCoverageCache();
 		st->RecomputeIndustriesNear();
 		DeleteStationIfEmpty(st);
 
@@ -2217,6 +2224,7 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		st->UpdateVirtCoord();
 		UpdateStationAcceptance(st, false);
 		st->RecomputeIndustriesNear();
+		st->UpdateCoverageCache();
 		InvalidateWindowData(WC_SELECT_STATION, 0, 0);
 		InvalidateWindowData(WC_STATION_LIST, st->owner, 0);
 		SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_PLANES);
@@ -2296,6 +2304,7 @@ static CommandCost RemoveAirport(TileIndex tile, DoCommandFlag flags)
 		}
 
 		st->UpdateVirtCoord();
+		st->UpdateCoverageCache();
 		st->RecomputeIndustriesNear();
 		DeleteStationIfEmpty(st);
 		DeleteNewGRFInspectWindow(GSF_AIRPORTS, st->index);
@@ -2440,6 +2449,7 @@ CommandCost CmdBuildDock(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 		st->UpdateVirtCoord();
 		UpdateStationAcceptance(st, false);
 		st->RecomputeIndustriesNear();
+		st->UpdateCoverageCache();
 		InvalidateWindowData(WC_SELECT_STATION, 0, 0);
 		InvalidateWindowData(WC_STATION_LIST, st->owner, 0);
 		SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_SHIPS);
@@ -2480,6 +2490,7 @@ static CommandCost RemoveDock(TileIndex tile, DoCommandFlag flags)
 
 		SetWindowWidgetDirty(WC_STATION_VIEW, st->index, SVW_SHIPS);
 		st->UpdateVirtCoord();
+		st->UpdateCoverageCache();
 		st->RecomputeIndustriesNear();
 		DeleteStationIfEmpty(st);
 	}
@@ -3432,6 +3443,7 @@ void BuildOilRig(TileIndex tile)
 	st->UpdateVirtCoord();
 	UpdateStationAcceptance(st, false);
 	st->RecomputeIndustriesNear();
+	st->UpdateCoverageCache();
 }
 
 void DeleteOilRig(TileIndex tile)
@@ -3448,6 +3460,7 @@ void DeleteOilRig(TileIndex tile)
 	st->rect.AfterRemoveTile(st, tile);
 
 	st->UpdateVirtCoord();
+	st->UpdateCoverageCache();
 	st->RecomputeIndustriesNear();
 	if (!st->IsInUse()) delete st;
 }

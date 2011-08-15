@@ -733,8 +733,9 @@ void UpdateTownCargoTotal(Town *t)
  * @param t The town to update.
  * @param start Update the values around this tile.
  * @param update_total Set to true if the total cargo acceptance should be updated.
+ * @param update_station Set to true if the station coverage should be updated.
  */
-static void UpdateTownCargos(Town *t, TileIndex start, bool update_total = true)
+static void UpdateTownCargos(Town *t, TileIndex start, bool update_total = true, bool update_station = false)
 {
 	CargoArray accepted, produced;
 	uint32 dummy;
@@ -758,11 +759,23 @@ static void UpdateTownCargos(Town *t, TileIndex start, bool update_total = true)
 	}
 	t->cargo_accepted[start] = acc;
 
+	if (update_station) {
+		/* Update station coverage for this map square. */
+		area = StationCoverageMatrix::GetAreaForTile(start);
+
+		bool station_coverage = false;
+		Station *st;
+		FOR_ALL_STATIONS(st) {
+			if (st->rect.AreaInExtendedRect(area, st->GetCatchmentRadius())) station_coverage = true;
+		}
+		t->station_coverage[start] = station_coverage;
+	}
+
 	if (update_total) UpdateTownCargoTotal(t);
 }
 
 /** Update cargo production and acceptance for the complete town. */
-void UpdateTownCargos(Town *t)
+void UpdateTownCargos(Town *t, bool update_station)
 {
 	t->cargo_produced = 0;
 
@@ -772,7 +785,7 @@ void UpdateTownCargos(Town *t)
 	/* Update acceptance for each grid square. */
 	TILE_AREA_LOOP(tile, area) {
 		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0) {
-			UpdateTownCargos(t, tile, false);
+			UpdateTownCargos(t, tile, false, update_station);
 		}
 	}
 
@@ -2313,7 +2326,7 @@ static bool BuildTownHouse(Town *t, TileIndex tile)
 		}
 
 		MakeTownHouse(tile, t, construction_counter, construction_stage, house, random_bits);
-		UpdateTownCargos(t, tile);
+		UpdateTownCargos(t, tile, true, true);
 
 		return true;
 	}

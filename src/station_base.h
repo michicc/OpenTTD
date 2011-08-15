@@ -212,6 +212,7 @@ public:
 
 	/* virtual */ uint GetPlatformLength(TileIndex tile, DiagDirection dir) const;
 	/* virtual */ uint GetPlatformLength(TileIndex tile) const;
+	void UpdateCoverageCache();
 	void RecomputeIndustriesNear();
 	static void RecomputeIndustriesNearForAll();
 
