@@ -87,17 +87,17 @@ static inline TLG GetTLG(TileIndex t)
  */
 static TrackBits GetRailTrackBitsUniversal(TileIndex t, byte *override)
 {
+	if (HasTileByType(t, MP_RAILWAY)) {
+		Tile *rail_tile = GetTileByType(t, MP_RAILWAY);
+		if (!HasCatenary(GetRailType(rail_tile))) return TRACK_BIT_NONE;
+		switch (GetRailTileType(rail_tile)) {
+			case RAIL_TILE_NORMAL: case RAIL_TILE_SIGNALS:
+				return GetTrackBits(rail_tile);
+			default:
+				return TRACK_BIT_NONE;
+		}
+	}
 	switch (GetTileType(t)) {
-		case MP_RAILWAY:
-			if (!HasCatenary(GetRailType(_m.ToTile(t)))) return TRACK_BIT_NONE;
-			switch (GetRailTileType(_m.ToTile(t))) {
-				case RAIL_TILE_NORMAL: case RAIL_TILE_SIGNALS:
-					return GetTrackBits(_m.ToTile(t));
-				default:
-					return TRACK_BIT_NONE;
-			}
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (!HasCatenary(GetRailType(t))) return TRACK_BIT_NONE;
 			if (override != NULL && (IsTunnel(t) || GetTunnelBridgeLength(t, GetOtherBridgeEnd(t)) > 0)) {

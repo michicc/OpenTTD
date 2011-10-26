@@ -399,14 +399,14 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 			}
 
 			if (HasTileByType(tile, MP_TREES)) goto not_valid_below;
+			if (HasTileByType(tile, MP_RAILWAY)) {
+				if (!IsPlainRail(GetTileByType(tile, MP_RAILWAY))) goto not_valid_below;
+				goto do_exec;
+			}
 
 			switch (GetTileType(tile)) {
 				case MP_WATER:
 					if (!IsWater(tile) && !IsCoast(tile)) goto not_valid_below;
-					break;
-
-				case MP_RAILWAY:
-					if (!IsPlainRail(_m.ToTile(tile))) goto not_valid_below;
 					break;
 
 				case MP_ROAD:
@@ -438,6 +438,7 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 					break;
 			}
 
+	do_exec:;
 			if (flags & DC_EXEC) {
 				/* We do this here because when replacing a bridge with another
 				 * type calling SetBridgeMiddle isn't needed. After all, the
