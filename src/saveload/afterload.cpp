@@ -281,6 +281,7 @@ static void DecomposeTile(TileIndex tile)
 		}
 
 		case MP_ROAD: {
+			Tile *old_tile = _m.ToTile(tile);
 			if (GetRoadTileType(tile) == 1) {
 				/* Level crossing, extract info. */
 				Axis road_axis = (Axis)GB(_m[tile].m5, 0, 1);
@@ -293,7 +294,7 @@ static void DecomposeTile(TileIndex tile)
 
 				/* Change road tile to normal road. */
 				RoadTypes rts = GetRoadTypes(tile);
-				TownID town = GetTownIndex(tile);
+				TownID town = GetTownIndex(old_tile);
 				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rts, town, (Owner)GB(_m[tile].m7, 0, 5), HasBit(rts, ROADTYPE_TRAM) ? GetRoadOwner(tile, ROADTYPE_TRAM) : OWNER_NONE);
 			}
 
@@ -551,8 +552,9 @@ static void FixOwnerOfRailTrack(TileIndex t)
 	}
 
 	if (IsTileType(t, MP_ROAD) && GetRoadTileType(t) == 1 /* ROAD_TILE_CROSSING */) {
+		Tile *road = _m.ToTile(t);
 		/* else change the crossing to normal road (road vehicles won't care) */
-		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(t), GetTownIndex(t),
+		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(t), GetTownIndex(road),
 			GetRoadOwner(t, ROADTYPE_ROAD), GetRoadOwner(t, ROADTYPE_TRAM));
 		return;
 	}
@@ -1007,15 +1009,15 @@ bool AfterLoadGame()
 			switch (GetTileType(t)) {
 				case MP_HOUSE:
 					_m[t].m4 = _m[t].m2;
-					SetTownIndex(t, CalcClosestTownFromTile(t)->index);
+					SetTownIndex(_m.ToTile(t), CalcClosestTownFromTile(t)->index);
 					break;
 
 				case MP_ROAD:
 					_m[t].m4 |= (_m[t].m2 << 4);
 					if ((GB(_m[t].m5, 4, 2) == 1 /* ROAD_TILE_CROSSING */ ? (Owner)_m[t].m3 : GetTileOwner(t)) == OWNER_TOWN) {
-						SetTownIndex(t, CalcClosestTownFromTile(t)->index);
+						SetTownIndex(_m.ToTile(t), CalcClosestTownFromTile(t)->index);
 					} else {
-						SetTownIndex(t, 0);
+						SetTownIndex(_m.ToTile(t), 0);
 					}
 					break;
 
@@ -1158,7 +1160,7 @@ bool AfterLoadGame()
 					}
 					if (!IsRoadDepot(t) && !HasTownOwnedRoad(t)) {
 						const Town *town = CalcClosestTownFromTile(t);
-						if (town != NULL) SetTownIndex(t, town->index);
+						if (town != NULL) SetTownIndex(_m.ToTile(t), town->index);
 					}
 					_m[t].m4 = 0;
 					break;
@@ -2871,7 +2873,7 @@ bool AfterLoadGame()
 		/* Update cargo acceptance map of towns. */
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (!IsTileType(t, MP_HOUSE)) continue;
-			Town::Get(GetTownIndex(t))->cargo_accepted.Add(t);
+			Town::Get(GetTownIndex(_m.ToTile(t)))->cargo_accepted.Add(t);
 		}
 
 		Town *town;

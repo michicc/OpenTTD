@@ -21,10 +21,10 @@
  * @pre IsTileType(t, MP_HOUSE) or IsTileType(t, MP_ROAD) but not a road depot
  * @return TownID
  */
-static inline TownID GetTownIndex(TileIndex t)
+static inline TownID GetTownIndex(const Tile *t)
 {
-	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) && !IsRoadDepot(t)));
-	return _m[t].m2;
+	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) /*&& !IsRoadDepot(t)*/));
+	return t->m2;
 }
 
 /**
@@ -33,10 +33,10 @@ static inline TownID GetTownIndex(TileIndex t)
  * @param index the index of the town
  * @pre IsTileType(t, MP_HOUSE) or IsTileType(t, MP_ROAD) but not a road depot
  */
-static inline void SetTownIndex(TileIndex t, TownID index)
+static inline void SetTownIndex(Tile *t, TownID index)
 {
-	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) && !IsRoadDepot(t)));
-	_m[t].m2 = index;
+	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) /*&& !IsRoadDepot(t)*/));
+	t->m2 = index;
 }
 
 /**
