@@ -22,6 +22,9 @@
  * API additions:
  * \li AIStation::GetCargoWaitingFromVia
  *
+ * Other changes:
+ * \li AIRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
+ *
  * \b 1.4.2
  *
  * No changes

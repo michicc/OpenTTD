@@ -957,7 +957,7 @@ struct BuildVehicleWindow : Window {
 		switch (type) {
 			default: NOT_REACHED();
 			case VEH_TRAIN:
-				this->filter.railtype = (tile == INVALID_TILE) ? RAILTYPE_END : GetTileRailType(tile);
+				this->filter.railtype = (tile == INVALID_TILE) ? RAILTYPE_END : GetTileRailType(tile, GetRailDepotTrack(GetRailDepotTile(tile)));
 				break;
 			case VEH_ROAD:
 				this->filter.roadtypes = (tile == INVALID_TILE) ? ROADTYPES_ALL : GetRoadTypes(tile);
@@ -1076,7 +1076,7 @@ struct BuildVehicleWindow : Window {
 		int num_engines = 0;
 		int num_wagons  = 0;
 
-		this->filter.railtype = (this->listview_mode) ? RAILTYPE_END : GetTileRailType(this->window_number);
+		this->filter.railtype = (this->listview_mode) ? RAILTYPE_END : GetTileRailType(this->window_number, GetRailDepotTrack(GetRailDepotTile(this->window_number)));
 
 		this->eng_list.Clear();
 

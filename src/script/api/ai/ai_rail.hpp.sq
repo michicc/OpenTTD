@@ -73,7 +73,7 @@ void SQAIRail_Register(Squirrel *engine)
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::SetCurrentRailType,              "SetCurrentRailType",              2, ".i");
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::TrainCanRunOnRail,               "TrainCanRunOnRail",               3, ".ii");
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::TrainHasPowerOnRail,             "TrainHasPowerOnRail",             3, ".ii");
-	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::GetRailType,                     "GetRailType",                     2, ".i");
+	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::GetRailType,                     "GetRailType",                     3, ".ii");
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::ConvertRailType,                 "ConvertRailType",                 4, ".iii");
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::GetRailDepotFrontTile,           "GetRailDepotFrontTile",           2, ".i");
 	SQAIRail.DefSQStaticMethod(engine, &ScriptRail::GetRailStationDirection,         "GetRailStationDirection",         2, ".i");

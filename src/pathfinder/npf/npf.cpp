@@ -777,7 +777,7 @@ static bool CanEnterTile(TileIndex tile, DiagDirection dir, TransportType type, 
 
 	/* check correct rail type (mono, maglev, etc) */
 	if (type == TRANSPORT_RAIL) {
-		RailType rail_type = GetTileRailType(tile);
+		RailType rail_type = GetTileRailType(tile, dir);
 		if (!HasBit(railtypes, rail_type)) return false;
 	}
 
