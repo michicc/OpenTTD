@@ -133,40 +133,42 @@ void AfterLoadCompanyStats()
 			}
 		}
 
-		switch (GetTileType(tile)) {
-			case MP_STATION:
-				c = Company::GetIfValid(GetTileOwner(tile));
-				if (c != NULL && GetStationType(tile) != STATION_AIRPORT && !IsBuoy(tile)) c->infrastructure.station++;
+		if (HasTileByType(tile, MP_STATION)) {
+			const Tile *station_tile = GetTileByType(tile, MP_STATION);
 
-				switch (GetStationType(tile)) {
-					case STATION_RAIL:
-					case STATION_WAYPOINT:
-						if (c != NULL && !IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]++;
-						break;
+			c = Company::GetIfValid(GetTileOwner(tile));
+			if (c != NULL && GetStationType(station_tile) != STATION_AIRPORT && !IsBuoy(tile)) c->infrastructure.station++;
 
-					case STATION_BUS:
-					case STATION_TRUCK: {
-						/* Iterate all present road types as each can have a different owner. */
-						RoadType rt;
-						FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
-							c = Company::GetIfValid(GetRoadOwner(tile, rt));
-							if (c != NULL) c->infrastructure.road[rt] += 2; // A road stop has two road bits.
-						}
-						break;
+			switch (GetStationType(station_tile)) {
+				case STATION_RAIL:
+				case STATION_WAYPOINT:
+					if (c != NULL && !IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]++;
+					break;
+
+				case STATION_BUS:
+				case STATION_TRUCK: {
+					/* Iterate all present road types as each can have a different owner. */
+					RoadType rt;
+					FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
+						c = Company::GetIfValid(GetRoadOwner(tile, rt));
+						if (c != NULL) c->infrastructure.road[rt] += 2; // A road stop has two road bits.
 					}
-
-					case STATION_DOCK:
-					case STATION_BUOY:
-						if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
-							if (c != NULL) c->infrastructure.water++;
-						}
-						break;
-
-					default:
-						break;
+					break;
 				}
-				break;
 
+				case STATION_DOCK:
+				case STATION_BUOY:
+					if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
+						if (c != NULL) c->infrastructure.water++;
+					}
+					break;
+
+				default:
+					break;
+			}
+		}
+
+		switch (GetTileType(tile)) {
 			case MP_WATER:
 				if (IsShipDepot(tile) || IsLock(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));

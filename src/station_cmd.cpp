@@ -2776,7 +2776,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		palette = PALETTE_TO_GREY;
 	}
 
-	if (layout == NULL && (t == NULL || t->seq == NULL)) t = GetStationTileLayout(GetStationType(ti->tile), gfx);
+	if (layout == NULL && (t == NULL || t->seq == NULL)) t = GetStationTileLayout(GetStationType(ti->tptr), gfx);
 
 	/* don't show foundation for docks */
 	if (ti->tileh != SLOPE_FLAT && !IsDock(ti->tile)) {
@@ -3053,7 +3053,7 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 	}
 
 	StringID str;
-	switch (GetStationType(tile)) {
+	switch (GetStationType(tptr)) {
 		default: NOT_REACHED();
 		case STATION_RAIL:     str = STR_LAI_STATION_DESCRIPTION_RAILROAD_STATION; break;
 		case STATION_AIRPORT:
@@ -3117,7 +3117,7 @@ static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 {
 	/* FIXME -- GetTileTrackStatus_Station -> animated stationtiles
 	 * hardcoded.....not good */
-	switch (GetStationType(tile)) {
+	switch (GetStationType(tptr)) {
 		case STATION_AIRPORT:
 			AirportTileAnimationTrigger(Station::GetByTile(tile), tile, AAT_TILELOOP);
 			break;
@@ -3988,7 +3988,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		Company *new_company = Company::Get(new_owner);
 
 		/* Update counts for underlying infrastructure. */
-		switch (GetStationType(tile)) {
+		switch (GetStationType(tptr)) {
 			case STATION_RAIL:
 			case STATION_WAYPOINT:
 				if (!IsStationTileBlocked(tile)) {
@@ -4026,7 +4026,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 	} else {
 		if (IsDriveThroughStopTile(tile)) {
 			/* Remove the drive-through road stop */
-			DoCommand(tile, 1 | 1 << 8, (GetStationType(tile) == STATION_TRUCK) ? ROADSTOP_TRUCK : ROADSTOP_BUS, DC_EXEC | DC_BANKRUPT, CMD_REMOVE_ROAD_STOP);
+			DoCommand(tile, 1 | 1 << 8, (GetStationType(tptr) == STATION_TRUCK) ? ROADSTOP_TRUCK : ROADSTOP_BUS, DC_EXEC | DC_BANKRUPT, CMD_REMOVE_ROAD_STOP);
 			/* Change owner of tile and all roadtypes */
 			ChangeTileOwner(tile, old_owner, new_owner);
 		} else {
@@ -4081,7 +4081,7 @@ static bool CanRemoveRoadWithStop(TileIndex tile, DoCommandFlag flags)
 CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	if (flags & DC_AUTO) {
-		switch (GetStationType(tile)) {
+		switch (GetStationType(tptr)) {
 			default: break;
 			case STATION_RAIL:     return_cmd_error(STR_ERROR_MUST_DEMOLISH_RAILROAD);
 			case STATION_WAYPOINT: return_cmd_error(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
@@ -4096,7 +4096,7 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 		}
 	}
 
-	switch (GetStationType(tile)) {
+	switch (GetStationType(tptr)) {
 		case STATION_RAIL:     return RemoveRailStation(tile, flags);
 		case STATION_WAYPOINT: return RemoveRailWaypoint(tile, flags);
 		case STATION_AIRPORT:  return RemoveAirport(tile, flags);
@@ -4125,7 +4125,7 @@ static CommandCost TerraformTile_Station(TileIndex tile, Tile *tptr, DoCommandFl
 		 *       TTDP does not call it.
 		 */
 		if (GetTileMaxZ(tile) == z_new + GetSlopeMaxZ(tileh_new)) {
-			switch (GetStationType(tile)) {
+			switch (GetStationType(tptr)) {
 				case STATION_WAYPOINT:
 				case STATION_RAIL: {
 					DiagDirection direction = AxisToDiagDir(GetRailStationAxis(tile));
