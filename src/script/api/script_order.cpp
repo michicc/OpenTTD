@@ -34,12 +34,15 @@ static OrderType GetOrderTypeByTile(TileIndex t)
 
 	if (::IsRailDepotTile(t) || ::IsRoadDepotTile(t)) return OT_GOTO_DEPOT;
 
+	if (::HasTileByType(t, MP_STATION)) {
+		const Tile *st = ::GetTileByType(t, MP_STATION);
+		if (IsBuoy(st) || IsRailWaypoint(t)) return OT_GOTO_WAYPOINT;
+		if (IsHangar(t)) return OT_GOTO_DEPOT;
+		return OT_GOTO_STATION;
+	}
+
 	switch (::GetTileType(t)) {
 		default: break;
-		case MP_STATION:
-			if (IsBuoy(t) || IsRailWaypoint(t)) return OT_GOTO_WAYPOINT;
-			if (IsHangar(t)) return OT_GOTO_DEPOT;
-			return OT_GOTO_STATION;
 
 		case MP_WATER:   if (::IsShipDepot(t)) return OT_GOTO_DEPOT; break;
 	}

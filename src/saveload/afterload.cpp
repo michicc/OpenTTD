@@ -1893,7 +1893,7 @@ bool AfterLoadGame()
 			if (!IsTileFlat(t)) continue;
 
 			if (IsTileType(t, MP_WATER) && IsLock(t)) SetWaterClassDependingOnSurroundings(t, false);
-			if (IsTileType(t, MP_STATION) && (IsDock(t) || IsBuoy(t))) SetWaterClassDependingOnSurroundings(t, false);
+			if (IsTileType(t, MP_STATION) && (IsDock(_m.ToTile(t)) || IsBuoy(_m.ToTile(t)))) SetWaterClassDependingOnSurroundings(t, false);
 		}
 	}
 
@@ -1989,7 +1989,7 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(99)) {
 		for (TileIndex t = 0; t < map_size; t++) {
 			/* Set newly introduced WaterClass of industry tiles */
-			if (IsTileType(t, MP_STATION) && IsOilRig(t)) {
+			if (IsTileType(t, MP_STATION) && IsOilRig(_m.ToTile(t))) {
 				SetWaterClassDependingOnSurroundings(t, true);
 			}
 			if (IsTileType(t, MP_INDUSTRY)) {
@@ -2569,7 +2569,8 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(149)) {
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (!IsTileType(t, MP_STATION)) continue;
-			if (!IsBuoy(t) && !IsOilRig(t) && !(IsDock(t) && IsTileFlat(t))) {
+			const Tile *tptr = _m.ToTile(t);
+			if (!IsBuoy(tptr) && !IsOilRig(tptr) && !(IsDock(tptr) && IsTileFlat(t))) {
 				SetWaterClass(t, WATER_CLASS_INVALID);
 			}
 		}

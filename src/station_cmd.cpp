@@ -2575,10 +2575,11 @@ static CommandCost RemoveDock(TileIndex tile, DoCommandFlag flags)
 	CommandCost ret = CheckOwnership(st->owner);
 	if (ret.Failed()) return ret;
 
-	TileIndex docking_location = TILE_ADD(st->dock_tile, ToTileIndexDiff(GetDockOffset(st->dock_tile)));
+	Tile *dock_tile = GetTileByType(st->dock_tile, MP_STATION);
+	TileIndex docking_location = TILE_ADD(st->dock_tile, ToTileIndexDiff(GetDockOffset(dock_tile)));
 
 	TileIndex tile1 = st->dock_tile;
-	TileIndex tile2 = tile1 + TileOffsByDiagDir(GetDockDirection(tile1));
+	TileIndex tile2 = tile1 + TileOffsByDiagDir(GetDockDirection(dock_tile));
 
 	ret = EnsureNoVehicleOnGround(tile1);
 	if (ret.Succeeded()) ret = EnsureNoVehicleOnGround(tile2);
@@ -2779,7 +2780,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	if (layout == NULL && (t == NULL || t->seq == NULL)) t = GetStationTileLayout(GetStationType(ti->tptr), gfx);
 
 	/* don't show foundation for docks */
-	if (ti->tileh != SLOPE_FLAT && !IsDock(ti->tile)) {
+	if (ti->tileh != SLOPE_FLAT && !IsDock(ti->tptr)) {
 		if (statspec != NULL && HasBit(statspec->flags, SSF_CUSTOM_FOUNDATIONS)) {
 			/* Station has custom foundations.
 			 * Check whether the foundation continues beyond the tile's upper sides. */
@@ -2848,16 +2849,16 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		}
 	}
 
-	if (IsBuoy(ti->tile)) {
+	if (IsBuoy(ti->tptr)) {
 		DrawWaterClassGround(ti);
 		SpriteID sprite = GetCanalSprite(CF_BUOY, ti->tile);
 		if (sprite != 0) total_offset = sprite - SPR_IMG_BUOY;
-	} else if (IsDock(ti->tile) || (IsOilRig(ti->tile) && IsTileOnWater(ti->tile))) {
+	} else if (IsDock(ti->tptr) || (IsOilRig(ti->tptr) && IsTileOnWater(ti->tile))) {
 		if (ti->tileh == SLOPE_FLAT) {
 			DrawWaterClassGround(ti);
 		} else {
-			assert(IsDock(ti->tile));
-			TileIndex water_tile = ti->tile + TileOffsByDiagDir(GetDockDirection(ti->tile));
+			assert(IsDock(ti->tptr));
+			TileIndex water_tile = ti->tile + TileOffsByDiagDir(GetDockDirection(ti->tptr));
 			WaterClass wc = GetWaterClass(water_tile);
 			if (wc == WATER_CLASS_SEA) {
 				DrawShoreTile(ti, draw_halftile, halftile_corner);
@@ -2962,7 +2963,7 @@ void StationPickerDrawSprite(int x, int y, StationType st, RailType railtype, Ro
 static Foundation GetFoundation_Station(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	/* Docks don't have a foundation. */
-	if (IsDock(tile)) return FOUNDATION_NONE;
+	if (IsDock(tptr)) return FOUNDATION_NONE;
 
 	/* Is this a rail station with a custom foundation? */
 	if (HasStationRail(tile) && IsCustomStationSpecIndex(tile)) {
@@ -3083,7 +3084,7 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 
 		case TRANSPORT_WATER:
 			/* buoy is coded as a station, it is always on open water */
-			if (IsBuoy(tile)) {
+			if (IsBuoy(st_tile)) {
 				trackbits = TRACK_BIT_ALL;
 				/* remove tracks that connect NE map edge */
 				if (TileX(tile) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
@@ -4015,7 +4016,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		}
 
 		/* Update station tile count. */
-		if (!IsBuoy(tile) && !IsAirport(tile)) {
+		if (!IsBuoy(tptr) && !IsAirport(tile)) {
 			old_company->infrastructure.station--;
 			new_company->infrastructure.station++;
 		}

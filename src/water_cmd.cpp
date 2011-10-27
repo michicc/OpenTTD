@@ -578,22 +578,22 @@ bool IsWateredTile(TileIndex tile, Direction from)
 			}
 
 		case MP_STATION:
-			if (IsOilRig(tile)) {
+			if (IsOilRig(_m.ToTile(tile))) {
 				/* Do not draw waterborders inside of industries.
 				 * Note: There is no easy way to detect the industry of an oilrig tile. */
 				TileIndex src_tile = tile + TileOffsByDir(from);
-				if ((IsTileType(src_tile, MP_STATION) && IsOilRig(src_tile)) ||
+				if ((IsTileType(src_tile, MP_STATION) && IsOilRig(_m.ToTile(src_tile))) ||
 				    (IsTileType(src_tile, MP_INDUSTRY))) return true;
 
 				return IsTileOnWater(tile);
 			}
-			return (IsDock(tile) && IsTileFlat(tile)) || IsBuoy(tile);
+			return (IsDockTile(tile) && IsTileFlat(tile)) || IsBuoyTile(tile);
 
 		case MP_INDUSTRY: {
 			/* Do not draw waterborders inside of industries.
 			 * Note: There is no easy way to detect the industry of an oilrig tile. */
 			TileIndex src_tile = tile + TileOffsByDir(from);
-			if ((IsTileType(src_tile, MP_STATION) && IsOilRig(src_tile)) ||
+			if ((IsTileType(src_tile, MP_STATION) && IsOilRig(_m.ToTile(src_tile))) ||
 			    (IsTileType(src_tile, MP_INDUSTRY) && GetIndustryIndex(src_tile) == GetIndustryIndex(tile))) return true;
 
 			return IsTileOnWater(tile);

@@ -172,7 +172,7 @@
 
 	const Industry *ind = ::Industry::Get(industry_id);
 	TILE_AREA_LOOP(tile_cur, ind->location) {
-		if (IsTileType(tile_cur, MP_STATION) && IsOilRig(tile_cur)) {
+		if (HasTileByType(tile_cur, MP_STATION) && IsOilRig(GetTileByType(tile_cur, MP_STATION))) {
 			return tile_cur;
 		}
 	}
@@ -194,7 +194,7 @@
 
 	const Industry *ind = ::Industry::Get(industry_id);
 	TILE_AREA_LOOP(tile_cur, ind->location) {
-		if (IsTileType(tile_cur, MP_STATION) && IsOilRig(tile_cur)) {
+		if (HasTileByType(tile_cur, MP_STATION) && IsOilRig(GetTileByType(tile_cur, MP_STATION))) {
 			return tile_cur;
 		}
 	}
