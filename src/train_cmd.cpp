@@ -1317,7 +1317,6 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 			/* Delete orders, group stuff and the unit number as we're not the
 			 * front of any vehicle anymore. */
 			DeleteVehicleOrders(src);
-			RemoveVehicleFromGroup(src);
 			src->unitnumber = 0;
 		}
 
