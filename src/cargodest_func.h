@@ -19,6 +19,7 @@
 #include "order_type.h"
 
 bool CargoHasDestinations(CargoID cid);
+bool IsSymmetricCargo(CargoID cid);
 
 RouteLink *FindRouteLinkForCargo(Station *st, CargoID cid, const struct CargoPacket *cp, StationID *next_unload, OrderID order = INVALID_ORDER, bool *found = NULL);
 bool MoveCargoWithDestinationToStation(CargoID cid, uint *amount, SourceType source_type, SourceID source_id, const StationList *all_stations, TileIndex src_tile);

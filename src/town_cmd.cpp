@@ -47,6 +47,7 @@
 #include "object_map.h"
 #include "object_base.h"
 #include "ai/ai.hpp"
+#include "cargodest_func.h"
 
 #include "table/strings.h"
 #include "table/town_land.h"
@@ -500,6 +501,9 @@ static void TileLoop_Town(TileIndex tile)
 			uint amt = GB(callback, 0, 8);
 			if (amt == 0) continue;
 
+			/* Half the cargo amount for symmetric cargoes with destinations. */
+			if (CargoHasDestinations(cargo) && IsSymmetricCargo(cargo) && HasBit(r, 31)) continue;
+
 			uint moved = MoveGoodsToStation(cargo, amt, ST_TOWN, t->index, stations.GetStations(), tile);
 
 			const CargoSpec *cs = CargoSpec::Get(cargo);
@@ -519,7 +523,8 @@ static void TileLoop_Town(TileIndex tile)
 			}
 		}
 	} else {
-		if (GB(r, 0, 8) < hs->population) {
+		/* Half the cargo amount for symmetric cargoes with destinations. */
+		if (GB(r, 0, 8) < hs->population && (!CargoHasDestinations(CT_PASSENGERS) || !IsSymmetricCargo(CT_PASSENGERS) || HasBit(r, 31))) {
 			uint amt = GB(r, 0, 8) / 8 + 1;
 
 			if (EconomyIsInRecession()) amt = (amt + 1) >> 1;
@@ -527,7 +532,7 @@ static void TileLoop_Town(TileIndex tile)
 			t->pass.new_act += MoveGoodsToStation(CT_PASSENGERS, amt, ST_TOWN, t->index, stations.GetStations(), tile);
 		}
 
-		if (GB(r, 8, 8) < hs->mail_generation) {
+		if (GB(r, 8, 8) < hs->mail_generation && (!CargoHasDestinations(CT_MAIL) || !IsSymmetricCargo(CT_MAIL) || HasBit(r, 31))) {
 			uint amt = GB(r, 8, 8) / 8 + 1;
 
 			if (EconomyIsInRecession()) amt = (amt + 1) >> 1;

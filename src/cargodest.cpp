@@ -92,7 +92,7 @@ static bool IsTownCargo(CargoID cid)
 }
 
 /** Does this cargo have a symmetric demand?  */
-static bool IsSymmetricCargo(CargoID cid)
+bool IsSymmetricCargo(CargoID cid)
 {
 	const CargoSpec *spec = CargoSpec::Get(cid);
 	return spec->town_effect == TE_PASSENGERS;
