@@ -786,8 +786,8 @@ CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool all
 	uint32 weight_sum = 0;
 	const TileArea &area = this->cargo_accepted.GetArea();
 	TILE_AREA_LOOP(tile, area) {
-		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0) {
-			weight_sum += this->cargo_accepted_max_weight - (DistanceMax(this->xy_aligned, tile) / AcceptanceMatrix::GRID) * 2;
+		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0 && HasBit(this->cargo_accepted[tile], cid)) {
+			weight_sum += this->cargo_accepted_max_weight[cid] - DistanceSquare(this->xy_aligned, tile) / (AcceptanceMatrix::GRID * AcceptanceMatrix::GRID);
 			/* Return tile area inside the grid square if this is the chosen square. */
 			if (weight < weight_sum) {
 				*has_station = this->station_coverage[tile];

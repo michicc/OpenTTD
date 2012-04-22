@@ -709,15 +709,12 @@ void UpdateTownCargoTotal(Town *t)
 {
 	t->cargo_accepted_total = 0;
 	MemSetT(t->cargo_accepted_weights, 0, lengthof(t->cargo_accepted_weights));
+	MemSetT(t->cargo_accepted_max_weight, 0, lengthof(t->cargo_accepted_max_weight));
 
-	/* Calculate the maximum weight based on the grid square furthest
-	 * from the town centre. The maximum weight is two times the L-inf
-	 * norm plus 1 so that max weight - furthest square weight == 1. */
+	/* Calculate the maximum weight based on the grid square furthest from the town
+	 * centre. The maximum weight is 1 plus the squared L2 norm scaled to the grid size
+	 * so that max weight - furthest square weight == 1. */
 	const TileArea &area = t->cargo_accepted.GetArea();
-	uint max_dist = max(DistanceMax(t->xy_aligned, area.tile), DistanceMax(t->xy_aligned, TILE_ADDXY(area.tile, area.w - 1, area.h - 1))) / AcceptanceMatrix::GRID;
-	t->cargo_accepted_max_weight = max_dist * 2 + 1;
-
-	/* Collect acceptance from all grid squares. */
 	TILE_AREA_LOOP(tile, area) {
 		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0) {
 			uint32 acc = t->cargo_accepted[tile];
@@ -725,9 +722,19 @@ void UpdateTownCargoTotal(Town *t)
 
 			CargoID cid;
 			FOR_EACH_SET_CARGO_ID(cid, acc) {
-				/* For each accepted cargo, the grid square weight is the maximum weight
-				 * minus two times the L-inf norm between this square and the centre square. */
-				t->cargo_accepted_weights[cid] += t->cargo_accepted_max_weight - (DistanceMax(t->xy_aligned, tile) / AcceptanceMatrix::GRID) * 2;
+				t->cargo_accepted_max_weight[cid] = max(t->cargo_accepted_max_weight[cid], 1 + DistanceSquare(t->xy_aligned, tile) / (AcceptanceMatrix::GRID * AcceptanceMatrix::GRID));
+			}
+		}
+	}
+
+	/* Collect acceptance from all grid squares. */
+	TILE_AREA_LOOP(tile, area) {
+		if (TileX(tile) % AcceptanceMatrix::GRID == 0 && TileY(tile) % AcceptanceMatrix::GRID == 0) {
+			/* For each accepted cargo, the grid square weight is the maximum weight
+			 * minus the squared L2 norm between this square and the centre square. */
+			CargoID cid;
+			FOR_EACH_SET_CARGO_ID(cid, t->cargo_accepted[tile]) {
+				t->cargo_accepted_weights[cid] += t->cargo_accepted_max_weight[cid] - DistanceSquare(t->xy_aligned, tile) / (AcceptanceMatrix::GRID * AcceptanceMatrix::GRID);
 			}
 		}
 	}
@@ -742,31 +749,40 @@ void UpdateTownCargoTotal(Town *t)
  */
 static void UpdateTownCargos(Town *t, TileIndex start, bool update_total = true, bool update_station = false)
 {
-	CargoArray accepted, produced;
+	CargoArray local_accepted, accepted, produced;
 	uint32 dummy;
 
-	/* Gather acceptance and production for all houses in an area around the start tile.
-	 * The area is composed of the square the tile is in, extended one square in all
-	 * directions as the coverage area of a single station is bigger than just one square. */
-	TileArea area = AcceptanceMatrix::GetAreaForTile(start, 1);
-	TILE_AREA_LOOP(tile, area) {
+	/* Gather acceptance and production for all houses in the grid square of the start tile. */
+	TILE_AREA_LOOP(tile, AcceptanceMatrix::GetAreaForTile(start)) {
+		if (!IsTileType(tile, MP_HOUSE) || GetTownIndex(tile) != t->index) continue;
+
+		AddAcceptedCargo_Town(tile, local_accepted, &dummy);
+		AddProducedCargo_Town(tile, produced);
+	}
+
+	/* Gather extended acceptance including the squares surrounding the current square.
+	 * This is needed as the coverage area for a single station is bigger than just
+	 * one grid square. */
+	TILE_AREA_LOOP(tile, AcceptanceMatrix::GetAreaForTile(start, 1)) {
 		if (!IsTileType(tile, MP_HOUSE) || GetTownIndex(tile) != t->index) continue;
 
 		AddAcceptedCargo_Town(tile, accepted, &dummy);
-		AddProducedCargo_Town(tile, produced);
 	}
+
 
 	/* Create bitmask of accepted/produced cargos. */
 	uint32 acc = 0;
 	for (uint cid = 0; cid < NUM_CARGO; cid++) {
-		if (accepted[cid] >= 8) SetBit(acc, cid);
+		/* Cargo is accepted if the grid square has acceptance at all and
+		 * is at least 8 including the surrounding squares. */
+		if (local_accepted[cid] > 0 && accepted[cid] >= 8) SetBit(acc, cid);
 		if (produced[cid] > 0) SetBit(t->cargo_produced, cid);
 	}
 	t->cargo_accepted[start] = acc;
 
 	if (update_station) {
 		/* Update station coverage for this map square. */
-		area = StationCoverageMatrix::GetAreaForTile(start);
+		TileArea area = StationCoverageMatrix::GetAreaForTile(start);
 
 		bool station_coverage = false;
 		Station *st;

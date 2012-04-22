@@ -109,8 +109,8 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	uint32 cargo_produced;           ///< Bitmap of all cargos produced by houses in this town.
 	AcceptanceMatrix cargo_accepted; ///< Bitmap of cargos accepted by houses for each 4*4 map square of the town.
 	uint32 cargo_accepted_total;     ///< NOSAVE: Bitmap of all cargos accepted by houses in this town.
-	uint32 cargo_accepted_weights[NUM_CARGO]; ///< NOSAVE: Weight sum of accepting squares per cargo.
-	uint32 cargo_accepted_max_weight; ///< NOSAVE: Cached maximum weight for an accepting square.
+	uint32 cargo_accepted_weights[NUM_CARGO];    ///< NOSAVE: Weight sum of accepting squares per cargo.
+	uint32 cargo_accepted_max_weight[NUM_CARGO]; ///< NOSAVE: Cached maximum weight of any accepting square.
 
 	StationCoverageMatrix station_coverage; ///< NOSAVE: Is each 4*4 map square of the town inside the coverage area of any station?
 
