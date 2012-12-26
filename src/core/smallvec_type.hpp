@@ -159,6 +159,23 @@ public:
 	}
 
 	/**
+	 * Insert a new item at a specific position into the vector, moving all following items.
+	 * @param item Position at which the new item should be inserted
+	 * @return pointer to the new item
+	 */
+	inline T *Insert(T *item)
+	{
+		assert(item >= this->Begin() && item <= this->End());
+
+		size_t to_move = this->End() - item;
+		size_t start = item - this->Begin();
+
+		this->Append();
+		if (to_move > 0) MemMoveT(this->Begin() + start + 1, this->Begin() + start, to_move);
+		return this->Begin() + start;
+	}
+
+	/**
 	 * Search for the first occurrence of an item.
 	 * The '!=' operator of T is used for comparison.
 	 * @param item Item to search for
@@ -239,6 +256,19 @@ public:
 		this->items -= count;
 		uint to_move = this->items - pos;
 		if (to_move > 0) MemMoveT(this->data + pos, this->data + pos + count, to_move);
+	}
+
+	/**
+	 * Extract an item from this vector, moving the following items to fill the gap.
+	 * @param item Item to extract
+	 */
+	inline void Extract(T *item)
+	{
+		assert(item >= this->Begin() && item < this->End());
+		size_t to_move = this->End() - item - 1;
+
+		if (to_move > 0) MemMoveT(item, item + 1, to_move);
+		this->items--;
 	}
 
 	/**
