@@ -1111,9 +1111,11 @@ static void ViewportAddLandscape()
 			if (IsInsideBS(tilecoord.x, 0, MapSizeX()) && IsInsideBS(tilecoord.y, 0, MapSizeY())) {
 				/* This includes the south border at MapMaxX / MapMaxY. When terraforming we still draw tile selections there. */
 				tile_info.tile = TileXY(tilecoord.x, tilecoord.y);
+				tile_info.tptr = _m.ToTile(tile_info.tile);
 				tile_type = GetTileType(tile_info.tile);
 			} else {
 				tile_info.tile = INVALID_TILE;
+				tile_info.tptr = NULL;
 				tile_type = MP_VOID;
 			}
 
@@ -1165,7 +1167,10 @@ static void ViewportAddLandscape()
 				_vd.last_foundation_child[0] = NULL;
 				_vd.last_foundation_child[1] = NULL;
 
-				_tile_type_procs[tile_type]->draw_tile_proc(&tile_info);
+				do {
+					TileType tt = tile_info.tptr != NULL ? GetTileType(tile_info.tptr) : tile_type;
+					_tile_type_procs[tile_type]->draw_tile_proc(&tile_info);
+				} while (tile_info.tptr != NULL && HasAssociatedTile(tile_info.tptr++));
 				if (tile_info.tile != INVALID_TILE) DrawTileSelection(&tile_info);
 			}
 		}
