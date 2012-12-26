@@ -47,6 +47,7 @@ struct TileInfo {
 	Slope tileh;    ///< Slope of the tile
 	TileIndex tile; ///< Tile index
 	int z;          ///< Height
+	Tile *tptr;     ///< Pointer to the tile data
 };
 
 /** Tile description for the 'land area information' tool */
