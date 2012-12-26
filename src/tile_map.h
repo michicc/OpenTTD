@@ -89,6 +89,17 @@ static inline uint TilePixelHeightOutsideMap(int x, int y)
 /**
  * Get the tiletype of a given tile.
  *
+ * @param tile Pointer to the tile to get the TileType
+ * @return The tiletype of the tile
+ */
+static inline TileType GetTileType(const Tile *tile)
+{
+	return (TileType)GB(tile->type, 4, 4);
+}
+
+/**
+ * Get the tiletype of a given tile.
+ *
  * @param tile The tile to get the TileType
  * @return The tiletype of the tile
  * @pre tile < MapSize()
@@ -96,7 +107,7 @@ static inline uint TilePixelHeightOutsideMap(int x, int y)
 static inline TileType GetTileType(TileIndex tile)
 {
 	assert(tile < MapSize());
-	return (TileType)GB(_m[tile].type, 4, 4);
+	return GetTileType(_m.ToTile(tile));
 }
 
 /**
@@ -140,6 +151,17 @@ static inline void SetTileType(TileIndex tile, TileType type)
 
 /**
  * Checks if a tile is a given tiletype.
+ * @param tile The tile to check
+ * @param type The type to check agains
+ * @return true If the type matches agains the type of the tile
+ */
+static inline bool IsTileType(const Tile *tile, TileType type)
+{
+	return GetTileType(tile) == type;
+}
+
+/**
+ * Checks if a tile is a give tiletype.
  *
  * This function checks if a tile has the given tiletype.
  *
@@ -149,7 +171,7 @@ static inline void SetTileType(TileIndex tile, TileType type)
  */
 static inline bool IsTileType(TileIndex tile, TileType type)
 {
-	return GetTileType(tile) == type;
+	return IsTileType(_m.ToTile(tile), type);
 }
 
 /**
@@ -263,6 +285,43 @@ static inline void SetAnimationFrame(TileIndex t, byte frame)
 {
 	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) ||IsTileType(t, MP_STATION));
 	_m[t].m7 = frame;
+}
+
+/**
+ * Check if a tile can have associated tiles.
+ * @param tile The tile to test
+ * @return True if the tile can have associated tiles
+ */
+static inline bool MayHaveAssociatedTile(const Tile *tile)
+{
+	TileType tt = GetTileType(tile);
+	return tt == MP_CLEAR || tt == MP_WATER;
+}
+
+/**
+ * Check if a tile has an associated tile following.
+ * @param tile the tile to check
+ * @return True if the next tile is associated with this tile
+ */
+static inline bool HasAssociatedTile(const Tile *tile)
+{
+	return MayHaveAssociatedTile(tile) && HasBit(tile->m6, 0);
+}
+
+/**
+ * Set the flag indicating if a tile has an associated tile.
+ * @param tile The tile to change
+ * @param associated True for has tile, false for has not
+ * @pre MayHaveAssociatedTile(tile)
+ */
+static inline void SetAssociatedTileFlag(Tile *tile, bool associated)
+{
+	assert(MayHaveAssociatedTile(tile));
+	if (associated) {
+		SetBit(tile->m6, 0);
+	} else {
+		ClrBit(tile->m6, 0);
+	}
 }
 
 Slope GetTileSlope(TileIndex tile, int *h = nullptr);
