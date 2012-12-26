@@ -740,7 +740,7 @@ void RunTileLoop()
 
 	/* Manually update tile 0 every 256 ticks - the LFSR never iterates over it itself.  */
 	if (_tick_counter % 256 == 0) {
-		_tile_type_procs[GetTileType(0)]->tile_loop_proc(0);
+		_tile_type_procs[GetTileType((TileIndex)0)]->tile_loop_proc(0);
 		count--;
 	}
 

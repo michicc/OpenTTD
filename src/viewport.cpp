@@ -1052,8 +1052,6 @@ static void ViewportAddLandscape()
 		uint y_cur = y;
 
 		do {
-			TileType tt = MP_VOID;
-
 			ti.x = x_cur;
 			ti.y = y_cur;
 
@@ -1061,6 +1059,7 @@ static void ViewportAddLandscape()
 
 			ti.tileh = SLOPE_FLAT;
 			ti.tile = INVALID_TILE;
+			ti.tptr = NULL;
 
 			if (x_cur < MapMaxX() * TILE_SIZE &&
 					y_cur < MapMaxY() * TILE_SIZE) {
@@ -1076,7 +1075,7 @@ static void ViewportAddLandscape()
 
 					ti.tile = tile;
 					ti.tileh = GetTilePixelSlope(tile, &ti.z);
-					tt = GetTileType(tile);
+					ti.tptr = _m.ToTile(tile);
 				}
 			}
 
@@ -1086,14 +1085,17 @@ static void ViewportAddLandscape()
 			_vd.last_foundation_child[0] = NULL;
 			_vd.last_foundation_child[1] = NULL;
 
-			_tile_type_procs[tt]->draw_tile_proc(&ti);
+			do {
+				TileType tt = ti.tptr != NULL ? GetTileType(ti.tptr) : MP_VOID;
+				_tile_type_procs[tt]->draw_tile_proc(&ti);
+			} while (ti.tptr != NULL && HasAssociatedTile(ti.tptr++));
 
 			if ((x_cur == (int)MapMaxX() * TILE_SIZE && IsInsideMM(y_cur, 0, MapMaxY() * TILE_SIZE + 1)) ||
 					(y_cur == (int)MapMaxY() * TILE_SIZE && IsInsideMM(x_cur, 0, MapMaxX() * TILE_SIZE + 1))) {
 				TileIndex tile = TileVirtXY(x_cur, y_cur);
 				ti.tile = tile;
 				ti.tileh = GetTilePixelSlope(tile, &ti.z);
-				tt = GetTileType(tile);
+				ti.tptr = _m.ToTile(tile);
 			}
 			if (ti.tile != INVALID_TILE) DrawTileSelection(&ti);
 

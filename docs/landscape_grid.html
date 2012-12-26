@@ -24,7 +24,7 @@ the array so you can quickly see what is used and what is not.
   <li><span style="font-weight: bold;"><span class="free">O</span></span> - bit is free</li>
   <li><span style="font-weight: bold;"><span class="used">X</span></span> - bit is used</li>
   <li><span style="font-weight: bold;"><span class="abuse">&nbsp;</span></span> - bit of attribute is abused for different purposes, i.e. other bits define the actual meaning.</li>
-  <li><span style="font-weight: bold;"><span class="option">~</span></span> - bit is accessed, but does not really have a meaning (e.g. owner of clear land is always OWNER_NONE)</li>
+  <li><span style="font-weight: bold;"><span class="option">~</span></span> - bit is accessed, but does not really have a meaning (e.g. owner of clear land is always OWNER_NONE), or is only accessed for the base tile at each tile index.</li>
 </ul>
 <p>
 <ul>
@@ -34,7 +34,7 @@ the array so you can quickly see what is used and what is not.
   <li><span style="font-weight: bold;">m3</span> - 8 bits in size, is used for general storage</li>
   <li><span style="font-weight: bold;">m4</span> - 8 bits in size, is used for general storage</li>
   <li><span style="font-weight: bold;">m5</span> - 8 bits in size, is used for general storage</li>
-  <li><span style="font-weight: bold;">m6</span> - 8 bits in size, special meaning : lower 2 bits only valid in tropic climate, upper 2 bits for bridges</li>
+  <li><span style="font-weight: bold;">m6</span> - 8 bits in size, special meaning : lower 2 bits only valid in tropic climate, upper 2 bits for bridges, bit 3 as an associated tile flag.</li>
   <li><span style="font-weight: bold;">m7</span> - 8 bits in size, is used for general storage</li>
 </ul>
 
@@ -71,7 +71,7 @@ the array so you can quickly see what is used and what is not.
       <td class="bits">XXXX <span class="free">OOOO</span></td>
       <td class="bits">XXXX XX<span class="free">OO</span></td>
       <td class="bits">XXXX XXXX</td>
-      <td class="bits">XXXX X<span class="free">O</span>XX</td>
+      <td class="bits">XXXX XXXX</td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
     </tr>
     <tr>
@@ -82,7 +82,7 @@ the array so you can quickly see what is used and what is not.
       <td class="bits">XXXX XXXX</td>
       <td class="bits">-inherit-</td>
       <td class="bits">-inherit-</td>
-      <td class="bits">XXXX X<span class="free">O</span>XX</td>
+      <td class="bits">XXXX XXXX</td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
     </tr>
     <tr>
@@ -264,7 +264,7 @@ the array so you can quickly see what is used and what is not.
       <td class="bits"><span class="free">OOOO OOOO</span></td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
       <td class="bits">X<span class="option">~~</span>X XXXX</td>
-      <td class="bits">XX<span class="free">OO OO</span>XX</td>
+      <td class="bits">XX<span class="free">OO O</span>XXX</td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
     </tr>
     <tr>
@@ -275,7 +275,7 @@ the array so you can quickly see what is used and what is not.
       <td class="bits"><span class="free">OOOO OOOO</span></td>
       <td class="bits">XXXX XXXX</td>
       <td class="bits">-inherit-</td>
-      <td class="bits">XX<span class="free">OO OO</span>XX</td>
+      <td class="bits">XX<span class="free">OO O</span>XXX</td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
     </tr>
     <tr>
@@ -286,7 +286,7 @@ the array so you can quickly see what is used and what is not.
       <td class="bits"><span class="free">OOOO OOOO</span></td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
       <td class="bits">-inherit-</td>
-      <td class="bits">XX<span class="free">OO OO</span>XX</td>
+      <td class="bits">XX<span class="free">OO O</span>XXX</td>
       <td class="bits"><span class="free">OOOO OOOO</span></td>
     </tr>
     <tr>
