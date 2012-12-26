@@ -228,7 +228,7 @@ static inline uint GetFence(TileIndex t, DiagDirection side)
 		case DIAGDIR_SE: return GB(_m[t].m4, 2, 3);
 		case DIAGDIR_SW: return GB(_m[t].m4, 5, 3);
 		case DIAGDIR_NE: return GB(_m[t].m3, 5, 3);
-		case DIAGDIR_NW: return GB(_m[t].m6, 2, 3);
+		case DIAGDIR_NW: return GB(_m[t].m6, 3, 3);
 	}
 }
 
@@ -247,7 +247,7 @@ static inline void SetFence(TileIndex t, DiagDirection side, uint h)
 		case DIAGDIR_SE: SB(_m[t].m4, 2, 3, h); break;
 		case DIAGDIR_SW: SB(_m[t].m4, 5, 3, h); break;
 		case DIAGDIR_NE: SB(_m[t].m3, 5, 3, h); break;
-		case DIAGDIR_NW: SB(_m[t].m6, 2, 3, h); break;
+		case DIAGDIR_NW: SB(_m[t].m6, 3, 3, h); break;
 	}
 }
 

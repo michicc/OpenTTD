@@ -2729,7 +2729,7 @@ bool AfterLoadGame()
 			}
 			fence = GB(_m[t].m4, 2, 3);
 			if (fence != 0 && IsTileType(TILE_ADDXY(t, 0, 1), MP_CLEAR) && IsClearGround(TILE_ADDXY(t, 0, 1), CLEAR_FIELDS)) {
-				SetFence(TILE_ADDXY(t, 0, 1), DIAGDIR_NW, fence);
+				SB(_m[TILE_ADDXY(t, 0, 1)].m6, 2, 3, fence); // Fence bits are moved in save version 193.
 			}
 			SB(_m[t].m4, 2, 3, 0);
 			SB(_m[t].m4, 5, 3, 0);
@@ -2911,6 +2911,16 @@ bool AfterLoadGame()
 					if (*it >= cur_skip) IndividualRoadVehicleController(u, prev);
 				}
 				cur_skip--;
+			}
+		}
+	}
+
+	if (IsSavegameVersionBefore(193)) {
+		/* Move bits for the NW fence of clear tiles from bits 2-4 to 3-5 of m6. */
+		for (TileIndex t = 0; t < map_size; t++) {
+			if (IsTileType(t, MP_CLEAR) && IsClearGround(t, CLEAR_FIELDS)) {
+				SetFence(t, DIAGDIR_NW, GB(_m[t].m6, 2, 3));
+				ClrBit(_m[t].m6, 2);
 			}
 		}
 	}
