@@ -24,12 +24,6 @@ static void DrawTile_Void(TileInfo *ti)
 	DrawGroundSprite(SPR_SHADOW_CELL, PAL_NONE);
 }
 
-
-static int GetSlopePixelZ_Void(TileIndex tile, uint x, uint y)
-{
-	return TilePixelHeight(tile);
-}
-
 static Foundation GetFoundation_Void(TileIndex tile, Slope tileh)
 {
 	return FOUNDATION_NONE;
@@ -70,7 +64,6 @@ static CommandCost TerraformTile_Void(TileIndex tile, Tile *tptr, DoCommandFlag 
 
 extern const TileTypeProcs _tile_type_void_procs = {
 	DrawTile_Void,            // draw_tile_proc
-	GetSlopePixelZ_Void,      // get_slope_z_proc
 	ClearTile_Void,           // clear_tile_proc
 	NULL,                     // add_accepted_cargo_proc
 	GetTileDesc_Void,         // get_tile_desc_proc

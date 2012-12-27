@@ -2952,11 +2952,6 @@ void StationPickerDrawSprite(int x, int y, StationType st, RailType railtype, Ro
 	DrawRailTileSeqInGUI(x, y, t, st == STATION_WAYPOINT ? 0 : total_offset, 0, pal);
 }
 
-static int GetSlopePixelZ_Station(TileIndex tile, uint x, uint y)
-{
-	return GetTileMaxPixelZ(tile);
-}
-
 static Foundation GetFoundation_Station(TileIndex tile, Slope tileh)
 {
 	return FlatteningFoundation(tileh);
@@ -4475,7 +4470,6 @@ uint GoodsEntry::GetSumFlowVia(StationID via) const
 
 extern const TileTypeProcs _tile_type_station_procs = {
 	DrawTile_Station,           // draw_tile_proc
-	GetSlopePixelZ_Station,     // get_slope_z_proc
 	ClearTile_Station,          // clear_tile_proc
 	NULL,                       // add_accepted_cargo_proc
 	GetTileDesc_Station,        // get_tile_desc_proc
