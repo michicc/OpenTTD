@@ -76,11 +76,12 @@ typedef CommandCost ClearTileProc(TileIndex tile, Tile *tptr, DoCommandFlag flag
 
 /**
  * Tile callback function signature for obtaining cargo acceptance of a tile
- * @param tile            Tile queried for its accepted cargo
+ * @param tile            Tile index queried for its accepted cargo
+ * @param tptr            Actual tile queried for its accepted cargo
  * @param acceptance      Storage destination of the cargo acceptance in 1/8
  * @param always_accepted Bitmask of always accepted cargo types
  */
-typedef void AddAcceptedCargoProc(TileIndex tile, CargoArray &acceptance, uint32 *always_accepted);
+typedef void AddAcceptedCargoProc(TileIndex tile, Tile *tptr, CargoArray &acceptance, uint32 *always_accepted);
 
 /**
  * Tile callback function signature for obtaining a tile description
@@ -106,10 +107,11 @@ typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, Tile *tptr, Transport
 
 /**
  * Tile callback function signature for obtaining the produced cargo of a tile.
- * @param tile      Tile being queried
+ * @param tile      Tile index being queried
+ * @param tptr      Actual tile being queried
  * @param produced  Destination array for produced cargo
  */
-typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
+typedef void AddProducedCargoProc(TileIndex tile, Tile *tptr, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex tile, Tile *tptr);
 typedef void AnimateTileProc(TileIndex tile, Tile *tptr);
 typedef bool TileLoopProc(TileIndex tile, Tile *&tptr);
@@ -166,17 +168,21 @@ void GetTileDesc(TileIndex tile, Tile *tptr, TileDesc *td);
 
 static inline void AddAcceptedCargo(TileIndex tile, CargoArray &acceptance, uint32 *always_accepted)
 {
-	AddAcceptedCargoProc *proc = _tile_type_procs[GetTileType(tile)]->add_accepted_cargo_proc;
-	if (proc == NULL) return;
 	uint32 dummy = 0; // use dummy bitmask so there don't need to be several 'always_accepted != NULL' checks
-	proc(tile, acceptance, always_accepted == NULL ? &dummy : always_accepted);
+	Tile *tptr = _m.ToTile(tile);
+	do {
+		AddAcceptedCargoProc *proc = _tile_type_procs[GetTileType(tptr)]->add_accepted_cargo_proc;
+		if (proc != NULL) proc(tile, tptr, acceptance, always_accepted == NULL ? &dummy : always_accepted);
+	} while (HasAssociatedTile(tptr++));
 }
 
 static inline void AddProducedCargo(TileIndex tile, CargoArray &produced)
 {
-	AddProducedCargoProc *proc = _tile_type_procs[GetTileType(tile)]->add_produced_cargo_proc;
-	if (proc == NULL) return;
-	proc(tile, produced);
+	Tile *tptr = _m.ToTile(tile);
+	do {
+		AddProducedCargoProc *proc = _tile_type_procs[GetTileType(tptr)]->add_produced_cargo_proc;
+		if (proc != NULL) proc(tile, tptr, produced);
+	} while (HasAssociatedTile(tptr++));
 }
 
 static inline void AnimateTile(TileIndex tile)
