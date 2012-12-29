@@ -317,6 +317,32 @@ static inline void SetAssociatedTileFlag(Tile *tile, bool associated)
 	}
 }
 
+/**
+ * Get the tile with a specific tile type associated with a tile index.
+ * @param tile Tile index to query.
+ * @param type Tile type to search for.
+ * @return The associated tile having the asked tile type or NULL if no such tile exists.
+ */
+static inline Tile *GetTileByType(TileIndex tile, TileType type)
+{
+	Tile *t = _m.ToTile(tile);
+	do {
+		if (IsTileType(t, type)) return t;
+	} while (HasAssociatedTile(t++));
+	return NULL;
+}
+
+/**
+ * Check if a tile index has an associated tile with a given type.
+ * @param tile Tile index to query.
+ * @param type Tile type to search for.
+ * @return Whether such a tile exists.
+ */
+static inline bool HasTileByType(TileIndex tile, TileType type)
+{
+	return GetTileByType(tile, type) != NULL;
+}
+
 Slope GetTileSlope(TileIndex tile, int *h = NULL);
 int GetTileZ(TileIndex tile);
 int GetTileMaxZ(TileIndex tile);

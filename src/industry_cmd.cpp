@@ -1049,7 +1049,8 @@ void PlantRandomFarmField(const Industry *i)
  */
 static bool SearchLumberMillTrees(TileIndex tile, void *user_data)
 {
-	if (IsTileType(tile, MP_TREES) && GetTreeGrowth(tile) > 2) { ///< 3 and up means all fully grown trees
+	Tile *tree_tile = GetTileByType(tile, MP_TREES);
+	if (tree_tile != NULL && GetTreeGrowth(tree_tile) > 2) { ///< 3 and up means all fully grown trees
 		/* found a tree */
 
 		Backup<CompanyByte> cur_company(_current_company, OWNER_NONE, FILE_LINE);
