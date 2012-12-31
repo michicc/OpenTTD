@@ -801,7 +801,7 @@ CommandCost CmdInsertOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 					if (dp == NULL) return CMD_ERROR;
 
-					CommandCost ret = CheckOwnership(GetTileOwner(dp->xy));
+					CommandCost ret = CheckOwnership(GetDepotOwner(dp->xy));
 					if (ret.Failed()) return ret;
 
 					switch (v->type) {
