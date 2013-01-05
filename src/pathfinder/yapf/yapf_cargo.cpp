@@ -133,7 +133,8 @@ class CYapfCostRouteLinkT {
 		const Station *from = Station::Get(parent->GetDestination());
 		const Station *to = Station::Get(link->GetDestination());
 //		cost = DistanceManhattan(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
-		cost = DistanceSquare(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
+//		cost = DistanceSquare(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
+		cost = link->dist * this->Yapf().PfGetSettings().route_distance_factor;
 
 		/* Modulate the distance by a vehicle-type specific factor to
 		 * simulate the different costs. Cost is doubled if the cargo

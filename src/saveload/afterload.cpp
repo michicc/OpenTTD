@@ -2633,6 +2633,16 @@ bool AfterLoadGame()
 		}
 	}
 
+	Station *st;
+	FOR_ALL_STATIONS(st) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			/* Don't increment the iterator directly in the for loop as we don't want to increment when deleting a link. */
+			for (RouteLinkList::iterator link = st->goods[cid].routes.begin(); link != st->goods[cid].routes.end(); link++) {
+				(*link)->dist = DistanceSquare(st->xy, Station::Get((*link)->GetDestination())->xy);
+			}
+		}
+	}
+
 	/* Road stops is 'only' updating some caches */
 	AfterLoadRoadStops();
 	AfterLoadLabelMaps();
