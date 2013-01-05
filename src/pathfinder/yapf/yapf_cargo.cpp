@@ -132,7 +132,8 @@ class CYapfCostRouteLinkT {
 		/* Distance cost. */
 		const Station *from = Station::Get(parent->GetDestination());
 		const Station *to = Station::Get(link->GetDestination());
-		cost = DistanceManhattan(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
+//		cost = DistanceManhattan(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
+		cost = DistanceSquare(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
 
 		/* Modulate the distance by a vehicle-type specific factor to
 		 * simulate the different costs. Cost is doubled if the cargo
@@ -263,6 +264,7 @@ class CYapfDestinationRouteLinkT {
 
 	TileArea m_dest;
 	int m_max_cost;            ///< Maximum node cost.
+	int m_h_mul;
 
 	/** To access inherited path finder. */
 	FORCEINLINE Tpf& Yapf() { return *static_cast<Tpf*>(this); }
@@ -275,10 +277,11 @@ public:
 	}
 
 	/** Set destination. */
-	void SetDestination(const TileArea &dest, uint max_cost)
+	void SetDestination(const TileArea &dest, uint max_cost, int h_mul)
 	{
 		this->m_dest = dest;
 		this->m_max_cost = max_cost;
+		this->m_h_mul = h_mul;
 	}
 
 	/** Cost for delivering the cargo to the final destination tile. */
@@ -319,10 +322,11 @@ public:
 
 		/* Estimate based on Manhattan distance to destination. */
 		Station *from = Station::Get(n.GetRouteLink()->GetDestination());
-		int d = DistanceManhattan(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor;
+//		int d = DistanceManhattan(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor;
+		int d = DistanceSquare(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor * m_h_mul;
 
 		n.m_estimate = n.m_cost + d;
-		assert(n.m_estimate >= n.m_parent->m_estimate);
+		//assert(n.m_estimate >= n.m_parent->m_estimate);
 		return true;
 	}
 };
@@ -367,12 +371,12 @@ public:
 	}
 
 	/** Find the best cargo routing from a station to a destination. */
-	static RouteLink *ChooseRouteLink(CargoID cid, const StationList *stations, TileIndex src, const TileArea &dest, StationID *start_station, StationID *next_unload, byte flags, bool *found, OrderID order, int max_cost)
+	static RouteLink *ChooseRouteLink(CargoID cid, const StationList *stations, TileIndex src, const TileArea &dest, StationID *start_station, StationID *next_unload, byte flags, bool *found, OrderID order, int max_cost, int h_mul)
 	{
 		/* Initialize pathfinder instance. */
 		Tpf pf;
 		pf.SetOrigin(cid, src, stations, start_station != NULL, order, flags);
-		pf.SetDestination(dest, max_cost);
+		pf.SetDestination(dest, max_cost, h_mul);
 
 		*next_unload = INVALID_STATION;
 
@@ -436,7 +440,7 @@ struct CYapfRouteLink : CYapfT<CYapfRouteLink_TypesT<CYapfRouteLink> > {};
  * @param max_cost Maxmimum allowed node cost.
  * @return The best RouteLink to the target or NULL if either no link found or one of the origin stations is the best destination.
  */
-RouteLink *YapfChooseRouteLink(CargoID cid, const StationList *stations, TileIndex src, const TileArea &dest, StationID *start_station, StationID *next_unload, byte flags, bool *found, OrderID order, int max_cost)
+RouteLink *YapfChooseRouteLink(CargoID cid, const StationList *stations, TileIndex src, const TileArea &dest, StationID *start_station, StationID *next_unload, byte flags, bool *found, OrderID order, int max_cost, int h_mul)
 {
-	return CYapfRouteLink::ChooseRouteLink(cid, stations, src, dest, start_station, next_unload, flags, found, order, max_cost);
+	return CYapfRouteLink::ChooseRouteLink(cid, stations, src, dest, start_station, next_unload, flags, found, order, max_cost, h_mul);
 }

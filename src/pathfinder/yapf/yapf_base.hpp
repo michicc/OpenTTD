@@ -291,7 +291,7 @@ public:
 				 *  - PfCalcEstimate() gives too large numbers
 				 *  - PfCalcCost() gives too small numbers
 				 *  - You have used negative cost penalty in some cases (cost bonus) */
-				NOT_REACHED();
+				//NOT_REACHED();
 			}
 			return;
 		}

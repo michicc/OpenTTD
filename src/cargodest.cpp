@@ -878,7 +878,7 @@ bool MoveCargoWithDestinationToStationWorker(CargoID cid, uint *amount, SourceTy
 	/* Find a route to the destination. */
 	StationID st, st_unload;
 	bool found = false;
-	RouteLink *route_link = YapfChooseRouteLink(cid, all_stations, src_tile, dest_area, &st, &st_unload, flags, &found, INVALID_ORDER, max_cost);
+	RouteLink *route_link = YapfChooseRouteLink(cid, all_stations, src_tile, dest_area, &st, &st_unload, flags, &found, INVALID_ORDER, max_cost, 8);
 
 	if (route_link == NULL) {
 		/* No suitable link found (or direct delivery), nothing is
@@ -921,7 +921,7 @@ bool MoveCargoWithDestinationToStationWorker(CargoID cid, uint *amount, SourceTy
 		}
 
 		/* Find a route and update transported amount if found. */
-		route_link = YapfChooseRouteLink(cid, stf.GetStations(), tile, dest_area, &st, &st_unload, flags, &found, INVALID_ORDER, max_cost);
+		route_link = YapfChooseRouteLink(cid, stf.GetStations(), tile, dest_area, &st, &st_unload, flags, &found, INVALID_ORDER, max_cost, 8);
 		if (found) back_link->amount.new_act += *amount;
 
 		if (route_link != NULL) {
