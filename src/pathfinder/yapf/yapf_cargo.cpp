@@ -48,13 +48,15 @@ struct CYapfRouteLinkNodeT : public CYapfNodeT<CYapfRouteLinkNodeKeyT, CYapfRout
 	typedef CYapfNodeT<CYapfRouteLinkNodeKeyT, CYapfRouteLinkNodeT> Base;
 
 	uint m_num_transfers; ///< Number of transfers to reach this node.
+	uint m_depth;
 
 	/** Initialize this node. */
-	FORCEINLINE void Set(CYapfRouteLinkNodeT *parent, RouteLink *link)
+	FORCEINLINE void Set(CYapfRouteLinkNodeT *parent, RouteLink *link, uint depth)
 	{
 		Base::Set(parent, false);
 		this->m_key.Set(link);
 		this->m_num_transfers = (parent != NULL) ? parent->m_num_transfers : 0;
+		this->m_depth = depth;
 	}
 
 	/** Get the route link of this node. */
@@ -92,11 +94,13 @@ class CYapfCostRouteLinkT {
 	typedef typename Types::TrackFollower Follower;      ///< The route follower.
 	typedef typename Types::NodeList::Titem Node;        ///< This will be our node type.
 
+public:
 	static const int PENALTY_DIVISOR      = 16;          ///< Penalty factor divisor for fixed-point arithmetics.
 	static const int LOCAL_PENALTY_FACTOR = 16;          ///< Penalty factor for source-local delivery.
 	static const int RF_DISTANCE_FACTOR   = 2;           ///< Vehicle modifier for "cheap" cargo packets.
 	static const int RF_TIME_FACTOR       = 3;           ///< Time modifier for "fast" cargo packets.
 
+private:
 	/** To access inherited path finder. */
 	FORCEINLINE Tpf& Yapf() { return *static_cast<Tpf*>(this); }
 	FORCEINLINE const Tpf& Yapf() const { return *static_cast<const Tpf*>(this); }
@@ -249,7 +253,7 @@ public:
 	{
 		for (RouteLink *link = this->m_origin.Begin(); link != this->m_origin.End(); link++) {
 			Node &n = this->Yapf().CreateNewNode();
-			n.Set(NULL, link);
+			n.Set(NULL, link, 0);
 			/* Prefer stations closer to the source tile. */
 			n.m_cost = DistanceSquare(this->m_src, Station::Get(link->GetDestination())->xy) * this->Yapf().PfGetSettings().route_distance_factor;
 			this->Yapf().AddStartupNode(n);
@@ -266,6 +270,9 @@ class CYapfDestinationRouteLinkT {
 	TileArea m_dest;
 	int m_max_cost;            ///< Maximum node cost.
 	int m_h_mul;
+	uint N;
+
+	int m_distance;
 
 	/** To access inherited path finder. */
 	FORCEINLINE Tpf& Yapf() { return *static_cast<Tpf*>(this); }
@@ -278,11 +285,14 @@ public:
 	}
 
 	/** Set destination. */
-	void SetDestination(const TileArea &dest, uint max_cost, int h_mul)
+	void SetDestination(const TileArea &dest, uint max_cost, int h_mul, int dist)
 	{
 		this->m_dest = dest;
 		this->m_max_cost = max_cost;
 		this->m_h_mul = h_mul;
+		this->m_distance = dist;
+
+		N = Yapf().PfGetSettings().route_max_transfers * 3;
 	}
 
 	/** Cost for delivering the cargo to the final destination tile. */
@@ -324,9 +334,11 @@ public:
 		/* Estimate based on Manhattan distance to destination. */
 		Station *from = Station::Get(n.GetRouteLink()->GetDestination());
 //		int d = DistanceManhattan(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor;
-		int d = DistanceSquare(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor * m_h_mul;
-
-		n.m_estimate = n.m_cost + d;
+		int d = DistanceSquare(from->xy, this->m_dest.tile);
+//		if (d <= m_distance) d = d * (m_distance + m_h_mul*(m_distance - d)) / m_distance;
+		if (n.m_depth <= N) d = d * (N + m_h_mul*(N - n.m_depth)) / N;
+		if (HasBit(this->Yapf().GetFlags(), RF_WANT_CHEAP)) d *= CYapfRouteLink::RF_DISTANCE_FACTOR;
+		n.m_estimate = n.m_cost + d * this->Yapf().PfGetSettings().route_distance_factor;
 		//assert(n.m_estimate >= n.m_parent->m_estimate);
 		return true;
 	}
@@ -351,7 +363,7 @@ public:
 		if (this->Yapf().PfDetectDestination(old_node.GetRouteLink()->GetDestination()) && (old_node.GetRouteLink()->GetDestOrderId() == INVALID_ORDER || (Order::Get(old_node.GetRouteLink()->GetDestOrderId())->GetUnloadType() & OUFB_NO_UNLOAD) == 0)) {
 			/* Possible destination? Add sentinel node for final delivery. */
 			Node &n = this->Yapf().CreateNewNode();
-			n.Set(&old_node, NULL);
+			n.Set(&old_node, NULL, old_node.m_depth + 1);
 			this->Yapf().AddNewNode(n, f);
 		}
 
@@ -359,7 +371,7 @@ public:
 			for (RouteLinkList::iterator link = f.m_new_links->begin(); link != f.m_new_links->end(); ++link) {
 				/* Add new node. */
 				Node &n = this->Yapf().CreateNewNode();
-				n.Set(&old_node, *link);
+				n.Set(&old_node, *link, old_node.m_depth + 1);
 				this->Yapf().AddNewNode(n, f);
 			}
 		}
@@ -377,7 +389,7 @@ public:
 		/* Initialize pathfinder instance. */
 		Tpf pf;
 		pf.SetOrigin(cid, src, stations, start_station != NULL, order, flags);
-		pf.SetDestination(dest, max_cost, h_mul);
+		pf.SetDestination(dest, max_cost, h_mul, 0 /*DistanceSquare(src, dest.tile)*/);
 
 		*next_unload = INVALID_STATION;
 
