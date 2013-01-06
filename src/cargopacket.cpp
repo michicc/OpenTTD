@@ -310,6 +310,11 @@ bool CargoList<Tinst>::MoveTo(Tother_inst *dest, uint max_move, MoveToAction mta
 	assert(mta == MTA_UNLOAD || mta == MTA_CARGO_LOAD || payment != NULL);
 	assert(st != INVALID_STATION || (mta != MTA_CARGO_LOAD && payment == NULL));
 
+	SourceType prev_dest_type = ST_INDUSTRY;
+	TileIndex  prev_dest = INVALID_TILE;
+	RouteLink *prev_link = NULL;
+	StationID  prev_next_unload = INVALID_STATION;
+
 restart:;
 	Iterator it(this->packets.begin());
 	while (it != this->packets.end() && max_move > 0) {
@@ -349,12 +354,24 @@ restart:;
 
 			bool found;
 			StationID next_unload;
-			RouteLink *link = FindRouteLinkForCargo(station, cid, cp, &next_unload, cur_order, &found);
+			RouteLink *link;
+			if (cp->DestinationType() == prev_dest_type && cp->DestinationXY() == prev_dest) {
+				link = prev_link;
+				next_unload = prev_next_unload;
+				found = true;
+			} else {
+				link = FindRouteLinkForCargo(station, cid, cp, &next_unload, cur_order, &found);
+				prev_dest_type = cp->DestinationType();
+				prev_dest = cp->DestinationXY();
+				prev_link = link;
+				prev_next_unload = next_unload;
+			}
 			if (!found) {
 				/* Sorry, link to destination vanished, make cargo disappear. */
 				static_cast<Tinst *>(this)->RemoveFromCache(cp);
 				delete cp;
 				it = this->packets.erase(it);
+				prev_dest = INVALID_TILE;
 				continue;
 			}
 
