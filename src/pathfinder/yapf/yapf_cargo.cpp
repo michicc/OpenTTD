@@ -115,14 +115,14 @@ private:
 
 		/* Check for no loading/no unloading when transferring. */
 		if (link->GetOriginOrderId() != parent->GetDestOrderId() || (Order::Get(link->GetOriginOrderId())->GetUnloadType() & OUFB_UNLOAD) != 0) {
+			/* Increase transfer counter and stop if max number of transfers is exceeded. */
+			if (++n.m_num_transfers > Yapf().PfGetSettings().route_max_transfers) return false;
+
 			/* Can't transfer if the current order prohibits loading. */
 			if ((Order::Get(link->GetOriginOrderId())->GetLoadType() & OLFB_NO_LOAD) != 0) return false;
 
 			/* Can't transfer if the last order prohibits unloading. */
 			if (parent->GetDestOrderId() != INVALID_ORDER && (Order::Get(parent->GetDestOrderId())->GetUnloadType() & OUFB_NO_UNLOAD) != 0) return false;
-
-			/* Increase transfer counter and stop if max number of transfers is exceeded. */
-			if (++n.m_num_transfers > Yapf().PfGetSettings().route_max_transfers) return false;
 		}
 
 		return true;
