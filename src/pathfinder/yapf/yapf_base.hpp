@@ -47,7 +47,7 @@ extern int _total_pf_time_us;
  *  declaration. There are some examples. For another example look at
  *  test_yapf.h (part or unittest project).
  */
-template <class Types>
+template <class Types, bool AlphaA = false>
 class CYapfBaseT {
 public:
 	typedef typename Types::Tpf Tpf;           ///< the pathfinder class (derived from THIS class)
@@ -69,6 +69,8 @@ protected:
 	int                  m_stats_cost_calcs;   ///< stats - how many node's costs were calculated
 	int                  m_stats_cache_hits;   ///< stats - how many node's costs were reused from cache
 
+	int                  m_last_cost;
+
 public:
 	CPerformanceTimer    m_perf_cost;          ///< stats - total CPU time of this run
 	CPerformanceTimer    m_perf_slope_cost;    ///< stats - slope calculation CPU time
@@ -89,6 +91,7 @@ public:
 		, m_stats_cost_calcs(0)
 		, m_stats_cache_hits(0)
 		, m_num_steps(0)
+		, m_last_cost(0)
 	{
 	}
 
@@ -141,6 +144,8 @@ public:
 			if (m_pBestDestNode != NULL && m_pBestDestNode->GetCost() < n->GetCostEstimate()) {
 				break;
 			}
+
+			m_last_cost = n->GetCost();
 
 			Yapf().PfFollowNode(*n);
 			if (m_max_search_nodes == 0 || m_nodes.ClosedCount() < m_max_search_nodes) {
@@ -256,6 +261,12 @@ public:
 			}
 			m_nodes.FoundBestNode(n);
 			return;
+		}
+
+		if (AlphaA) {
+			/* */
+			int omega = n.m_parent->GetCost() <= m_last_cost ? 2 : 1;
+			n.m_estimate *= omega;
 		}
 
 		if (m_max_search_nodes > 0 && (m_pBestIntermediateNode == NULL || (m_pBestIntermediateNode->GetCostEstimate() - m_pBestIntermediateNode->GetCost()) > (n.GetCostEstimate() - n.GetCost()))) {

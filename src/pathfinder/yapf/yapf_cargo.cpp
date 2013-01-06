@@ -429,7 +429,7 @@ struct CYapfRouteLink_TypesT {
 	typedef CRouteLinkNodeList NodeList;      ///< Node list type
 	typedef Vehicle            VehicleType;   ///< Dummy type
 
-	typedef CYapfBaseT<Types>                 PfBase;        ///< Base pathfinder class
+	typedef CYapfBaseT<Types, true>           PfBase;        ///< Base pathfinder class
 	typedef CYapfFollowRouteLinkT<Types>      PfFollow;      ///< Node follower
 	typedef CYapfOriginRouteLinkT<Types>      PfOrigin;      ///< Origin provider
 	typedef CYapfDestinationRouteLinkT<Types> PfDestination; ///< Destination/distance provider
