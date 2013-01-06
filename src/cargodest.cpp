@@ -971,6 +971,13 @@ bool MoveCargoWithDestinationToStation(CargoID cid, uint *amount, SourceType sou
 	return true;
 }
 
+/** */
+static bool IsPossibleDestination(Station *st, CargoID cid, const TileArea &area)
+{
+	if (!HasBit(st->goods[cid].acceptance_pickup, GoodsEntry::ACCEPTANCE)) return false;
+	return st->rect.AreaInExtendedRect(area, st->GetCatchmentRadius());
+}
+
 /**
  * Get the current best route link for a cargo packet at a station.
  * @param st Station the route starts at.
@@ -984,10 +991,16 @@ RouteLink *FindRouteLinkForCargo(Station *st, CargoID cid, const CargoPacket *cp
 {
 	if (cp->DestinationID() == INVALID_SOURCE) return NULL;
 
+	TileArea area = (cp->DestinationType() == ST_INDUSTRY) ? Industry::Get(cp->DestinationID())->location : TileArea(cp->DestinationXY(), 2, 2);
+
+	/* Check if this is a destination for incoming cargo. */
+	if (order != INVALID_ORDER && IsPossibleDestination(st, cid, area)) {
+		if (found != NULL) *found = true;
+		return NULL;
+	}
+
 	StationList sl;
 	*sl.Append() = st;
-
-	TileArea area = (cp->DestinationType() == ST_INDUSTRY) ? Industry::Get(cp->DestinationID())->location : TileArea(cp->DestinationXY(), 2, 2);
 	return YapfChooseRouteLink(cid, &sl, st->xy, area, NULL, next_unload, cp->Flags(), found, order);
 }
 
