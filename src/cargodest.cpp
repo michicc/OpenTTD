@@ -1033,7 +1033,6 @@ void UpdateVehicleRouteLinks(const Vehicle *v, uint32 cargos, bool clear_others,
 					/* Update destination if necessary. */
 					(*link)->SetDestination(to_id, to_oid);
 					(*link)->UpdateTravelTime(travel_time);
-					(*link)->dist = DistanceSquare(from->xy, Station::Get(to_id)->xy);
 				} else {
 					/* Remove link. */
 					delete *link;
@@ -1046,7 +1045,6 @@ void UpdateVehicleRouteLinks(const Vehicle *v, uint32 cargos, bool clear_others,
 		/* No link found? Append a new one. */
 		if (has_cargo && link == from->goods[cid].routes.end() && RouteLink::CanAllocateItem()) {
 			from->goods[cid].routes.push_back(new RouteLink(to_id, from_oid, to_oid, v->owner, travel_time, v->type));
-			from->goods[cid].routes.back()->dist = DistanceSquare(from->xy, Station::Get(to_id)->xy);
 		}
 	}
 }

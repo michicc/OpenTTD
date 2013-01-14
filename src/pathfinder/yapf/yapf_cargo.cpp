@@ -136,9 +136,7 @@ private:
 		/* Distance cost. */
 		const Station *from = Station::Get(parent->GetDestination());
 		const Station *to = Station::Get(link->GetDestination());
-//		cost = DistanceManhattan(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
-//		cost = DistanceSquare(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
-		cost = link->dist * this->Yapf().PfGetSettings().route_distance_factor;
+		cost = DistanceManhattan(from->xy, to->xy) * this->Yapf().PfGetSettings().route_distance_factor;
 
 		/* Modulate the distance by a vehicle-type specific factor to
 		 * simulate the different costs. Cost is doubled if the cargo
@@ -333,13 +331,10 @@ public:
 
 		/* Estimate based on Manhattan distance to destination. */
 		Station *from = Station::Get(n.GetRouteLink()->GetDestination());
-//		int d = DistanceManhattan(from->xy, this->m_dest.tile) * this->Yapf().PfGetSettings().route_distance_factor;
-		int d = DistanceSquare(from->xy, this->m_dest.tile);
-//		if (d <= m_distance) d = d * (m_distance + m_h_mul*(m_distance - d)) / m_distance;
-		if (n.m_depth <= N) d = d * (N + m_h_mul*(N - n.m_depth)) / N;
-		if (HasBit(this->Yapf().GetFlags(), RF_WANT_CHEAP)) d *= CYapfRouteLink::RF_DISTANCE_FACTOR;
+		int d = DistanceManhattan(from->xy, this->m_dest.tile);
+//		d = d * (m_distance + d) * m_h_mul / m_distance;
+//		if (n.m_depth <= N) d = d * (N + m_h_mul*(N - n.m_depth)) / N;
 		n.m_estimate = n.m_cost + d * this->Yapf().PfGetSettings().route_distance_factor;
-		//assert(n.m_estimate >= n.m_parent->m_estimate);
 		return true;
 	}
 };
@@ -389,7 +384,7 @@ public:
 		/* Initialize pathfinder instance. */
 		Tpf pf;
 		pf.SetOrigin(cid, src, stations, start_station != NULL, order, flags);
-		pf.SetDestination(dest, max_cost, h_mul, 0 /*DistanceSquare(src, dest.tile)*/);
+		pf.SetDestination(dest, max_cost, h_mul, DistanceManhattan(src, dest.tile));
 
 		*next_unload = INVALID_STATION;
 

@@ -113,7 +113,6 @@ private:
 	uint16          wait_time;       ///< Days since the last vehicle traveled this link.
 
 public:
-	uint dist;
 
 	/** Constructor */
 	RouteLink(StationID dest = INVALID_STATION, OrderID prev_order = INVALID_ORDER, OrderID next_order = INVALID_ORDER, Owner owner = INVALID_OWNER, uint32 travel_time = 0, VehicleType vtype = VEH_INVALID)
