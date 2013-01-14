@@ -735,6 +735,7 @@ void UpdateTownCargoTotal(Town *t)
 			CargoID cid;
 			FOR_EACH_SET_CARGO_ID(cid, t->cargo_accepted[tile]) {
 				t->cargo_accepted_weights[cid] += t->cargo_accepted_max_weight[cid] - DistanceSquare(t->xy_aligned, tile) / (AcceptanceMatrix::GRID * AcceptanceMatrix::GRID);
+				t->cargo_dest_square[cid][t->cargo_accepted_weights[cid]] = tile + TileDiffXY(1, 1);
 			}
 		}
 	}

@@ -19,6 +19,7 @@
 #include "subsidy_type.h"
 #include "cargodest_base.h"
 #include "tilematrix_type.hpp"
+#include <map>
 
 template <typename T>
 struct BuildingCounts {
@@ -111,6 +112,7 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	uint32 cargo_accepted_total;     ///< NOSAVE: Bitmap of all cargos accepted by houses in this town.
 	uint32 cargo_accepted_weights[NUM_CARGO];    ///< NOSAVE: Weight sum of accepting squares per cargo.
 	uint32 cargo_accepted_max_weight[NUM_CARGO]; ///< NOSAVE: Cached maximum weight of any accepting square.
+	std::map<uint32, TileIndex> cargo_dest_square[NUM_CARGO];
 
 	StationCoverageMatrix station_coverage; ///< NOSAVE: Is each 4*4 map square of the town inside the coverage area of any station?
 
