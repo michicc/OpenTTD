@@ -784,6 +784,7 @@ CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool all
 
 	std::map<uint32, TileIndex>::const_iterator tile = this->cargo_dest_square[cid].lower_bound(weight);
 	assert(tile != this->cargo_dest_square[cid].end());
+	*has_station = this->station_coverage[tile->second];
 	return TileArea(tile->second, 2, 2);
 }
 
