@@ -129,26 +129,21 @@ static inline Tile *GetRoadDepotTile(TileIndex t)
 }
 
 /**
- * Get the present road bits for a specific road type.
+ * Get the present road bits.
  * @param t  The tile to query.
- * @param rt Road type.
  * @pre IsNormalRoad(t)
  * @return The present road bits for the road type.
  */
-static inline RoadBits GetRoadBits(const Tile *t, RoadType rt)
+static inline RoadBits GetRoadBits(const Tile *t)
 {
 	assert(IsNormalRoad(t));
-	switch (rt) {
-		default: NOT_REACHED();
-		case ROADTYPE_ROAD: return (RoadBits)GB(t->m5, 0, 4);
-		case ROADTYPE_TRAM: return (RoadBits)GB(t->m3, 0, 4);
-	}
+	return (RoadBits)GB(t->m5, 0, 4);
 }
 
 static inline RoadBits GetRoadBits(TileIndex t, RoadType rt)
 {
 	const Tile *road = GetRoadTileByType(t, rt);
-	return road != NULL ? GetRoadBits(road, rt) : ROAD_NONE;
+	return road != NULL ? GetRoadBits(road) : ROAD_NONE;
 }
 
 /**
@@ -171,25 +166,23 @@ static inline RoadBits GetOtherRoadBits(TileIndex t, RoadType rt)
  */
 static inline RoadBits GetAllRoadBits(TileIndex tile)
 {
-	Tile *road_tile = _m.ToTile(tile);
-	return GetRoadBits(road_tile, ROADTYPE_ROAD) | GetRoadBits(road_tile, ROADTYPE_TRAM);
+	RoadBits rbs = ROAD_NONE;
+	FOR_ALL_ROAD_TILES(road_tile, tile) {
+		rbs |= GetRoadBits(road_tile);
+	}
+	return rbs;
 }
 
 /**
  * Set the present road bits for a specific road type.
  * @param t  The tile to change.
  * @param r  The new road bits.
- * @param rt Road type.
  * @pre IsNormalRoad(t)
  */
-static inline void SetRoadBits(Tile *t, RoadBits r, RoadType rt)
+static inline void SetRoadBits(Tile *t, RoadBits r)
 {
 	assert(IsNormalRoad(t)); // XXX incomplete
-	switch (rt) {
-		default: NOT_REACHED();
-		case ROADTYPE_ROAD: SB(t->m5, 0, 4, r); break;
-		case ROADTYPE_TRAM: SB(t->m3, 0, 4, r); break;
-	}
+	SB(t->m5, 0, 4, r);
 }
 
 /**
@@ -325,20 +318,6 @@ static inline void SetRoadOwner(TileIndex t, RoadType rt, Owner o)
 }
 
 /**
- * Check if a specific road type is owned by an owner.
- * @param t  The tile to query.
- * @param rt The road type to compare the owner of.
- * @param o  Owner to compare with.
- * @pre HasTileRoadType(t, rt)
- * @return True if the road type is owned by the given owner.
- */
-static inline bool IsRoadOwner(const Tile *t, RoadType rt, Owner o)
-{
-	assert(HasTileRoadType(t, rt));
-	return (GetRoadOwner(t, rt) == o);
-}
-
-/**
  * Checks if given tile has town owned road
  * @param t tile to check
  * @return true iff tile has road and the road is owned by a town
@@ -346,7 +325,7 @@ static inline bool IsRoadOwner(const Tile *t, RoadType rt, Owner o)
 static inline bool HasTownOwnedRoad(TileIndex t)
 {
 	const Tile *road = GetRoadTileByType(t, ROADTYPE_ROAD);
-	return road != NULL && HasTileRoadType(road, ROADTYPE_ROAD) && IsRoadOwner(road, ROADTYPE_ROAD, OWNER_TOWN);
+	return road != NULL && IsTileOwner(road, OWNER_TOWN);
 }
 
 /** Which directions are disallowed ? */
@@ -382,29 +361,6 @@ static inline void SetDisallowedRoadDirections(Tile *t, DisallowedRoadDirections
 	assert(IsNormalRoad(t));
 	assert(drd < DRD_END);
 	SB(t->m5, 4, 2, drd);
-}
-
-/** Check if a road tile has snow/desert. */
-#define IsOnDesert IsOnSnow
-/**
- * Check if a road tile has snow/desert.
- * @param t The tile to query.
- * @return True if the tile has snow/desert.
- */
-static inline bool IsOnSnow(TileIndex t)
-{
-	return HasBit(_m[t].m7, 5);
-}
-
-/** Toggle the snow/desert state of a road tile. */
-#define ToggleDesert ToggleSnow
-/**
- * Toggle the snow/desert state of a road tile.
- * @param t The tile to change.
- */
-static inline void ToggleSnow(TileIndex t)
-{
-	ToggleBit(_m[t].m7, 5);
 }
 
 
@@ -523,26 +479,22 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge
  * Make a normal road tile.
  * @param t    Tile to make a normal road.
  * @param bits Road bits to set for all present road types.
- * @param rot  New present road types.
+ * @param rt   New road type.
  * @param town Town ID if the road is a town-owned road.
  * @param road New owner of road.
  * @param tram New owner of tram tracks.
+ * @return Pointer to the new road tile.
  */
-static inline void MakeRoadNormal(TileIndex t, RoadBits bits, RoadTypes rot, TownID town, Owner road, Owner tram)
+static inline Tile *MakeRoadNormal(TileIndex t, RoadBits bits, RoadType rt, TownID town, Owner o)
 {
-	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 2);
-
-	Tile *road_tile = _m.ToTile(t);
-
-	SetTileType(road_tile, MP_ROAD);
-	SetTileOwner(road_tile, road);
+	/* Insert ROADTYPE_ROAD in front, all other types at the back. */
+	Tile *road_tile = _m.NewTile(t, MP_ROAD, false, rt == ROADTYPE_ROAD ? _m.ToTile(t) : NULL);
+	SetTileOwner(road_tile, o);
 	road_tile->m2 = town;
-	road_tile->m3 = (HasBit(rot, ROADTYPE_TRAM) ? bits : 0);
-	road_tile->m4 = 0;
-	road_tile->m5 = (HasBit(rot, ROADTYPE_ROAD) ? bits : 0) | ROAD_TILE_NORMAL << 6;
-	SB(road_tile->m6, 3, 3, 0);
-	road_tile->m7 = rot << 6;
-	SetRoadOwner(road_tile, ROADTYPE_TRAM, tram);
+	road_tile->m3 = bits;
+	road_tile->m5 = bits | ROAD_TILE_NORMAL << 6;
+	road_tile->m7 = RoadTypeToRoadTypes(rt) << 6;
+	return road_tile;
 }
 
 /**
@@ -555,16 +507,11 @@ static inline void MakeRoadNormal(TileIndex t, RoadBits bits, RoadTypes rot, Tow
  */
 static inline void MakeRoadDepot(TileIndex t, Owner owner, DepotID did, DiagDirection dir, RoadType rt)
 {
-	Tile *road_tile = _m.ToTile(t);
-	SetTileType(road_tile, MP_ROAD);
+	Tile *road_tile = _m.NewTile(t, MP_ROAD);
 	SetTileOwner(road_tile, owner);
 	road_tile->m2 = did;
-	road_tile->m3 = 0;
-	road_tile->m4 = 0;
 	road_tile->m5 = ROAD_TILE_DEPOT << 6 | dir;
-	SB(road_tile->m6, 2, 4, 0);
 	road_tile->m7 = RoadTypeToRoadTypes(rt) << 6 | owner;
-	SetRoadOwner(road_tile, ROADTYPE_TRAM, owner);
 }
 
 #endif /* ROAD_MAP_H */

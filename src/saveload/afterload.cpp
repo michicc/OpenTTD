@@ -282,6 +282,14 @@ static void DecomposeTile(TileIndex tile)
 
 		case MP_ROAD: {
 			Tile *old_tile = _m.ToTile(tile);
+
+			/* Extract some data from the old tile. */
+			RoadTypes rts = GetRoadTypes(old_tile);
+			Roadside rs = GetRoadside(old_tile);
+			bool on_snow = HasBit(old_tile->m7, 5);
+			Owner tram_owner = (Owner)GB(old_tile->m3, 4, 4);
+			if (tram_owner == OWNER_TOWN) tram_owner = OWNER_NONE;
+
 			if (GetRoadTileType(old_tile) == 1) {
 				/* Level crossing, extract info. */
 				Axis road_axis = (Axis)GB(_m[tile].m5, 0, 1);
@@ -291,11 +299,44 @@ static void DecomposeTile(TileIndex tile)
 				/* Create new rail tile. */
 				Tile *rail_tile = MakeLevelCrossing(tile, GetTileOwner(tile), tracks, GetRailType(tile));
 				if (reserved) SetTrackReservation(rail_tile, tracks);
+				old_tile = _m.ToTile(tile);
 
 				/* Change road tile to normal road. */
-				RoadTypes rts = GetRoadTypes(old_tile);
-				TownID town = GetTownIndex(old_tile);
-				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rts, town, (Owner)GB(_m[tile].m7, 0, 5), HasBit(rts, ROADTYPE_TRAM) ? GetRoadOwner(old_tile, ROADTYPE_TRAM) : OWNER_NONE);
+				RoadBits rbs = road_axis == AXIS_X ? ROAD_X : ROAD_Y;
+				SetTileOwner(old_tile, (Owner)GB(old_tile->m7, 0, 5));
+				old_tile->m3 = HasBit(rts, ROADTYPE_TRAM) ? rbs | tram_owner << 4 : 0;
+				old_tile->m5 = (HasBit(rts, ROADTYPE_ROAD) ? rbs : 0) | ROAD_TILE_NORMAL << 6;
+				old_tile->m7 = rts << 6;
+			}
+
+			/* Create new road tiles for each road type. */
+			RoadType rt;
+			FOR_EACH_SET_ROADTYPE(rt, rts) {
+				/* Allocate a new tile. If the current road type is road and the tile
+				 * is a level crossing tile, insert the new tile at the front, otherwise
+				 * at the back as normal. */
+				bool road_level_crossing = (rt == ROADTYPE_ROAD) && IsLevelCrossingTile(tile);
+				Tile *new_tile = _m.NewTile(tile, MP_ROAD, false, road_level_crossing ? old_tile : NULL);
+				old_tile = _m.ToTile(tile);
+
+				MemCpyT(new_tile, old_tile);
+				SetAssociatedTileFlag(new_tile, road_level_crossing);
+				SetRoadTypes(new_tile, RoadTypeToRoadTypes(rt));
+				if (rt == ROADTYPE_TRAM && IsNormalRoad(new_tile)) {
+					/* Move tram stuff to the default location for road. */
+					SetTileOwner(new_tile, tram_owner);
+					SetRoadBits(new_tile, (RoadBits)GB(new_tile->m3, 0, 4));
+					/* Set roadside to none if we have road as well which means draw track overlay only. */
+					if (HasBit(rts, ROADTYPE_ROAD)) SetRoadside(new_tile, ROADSIDE_NONE);
+				}
+			}
+
+			/* Make new ground tile. */
+			if (on_snow) {
+				MakeClear(tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, 3);
+				if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(tile, 2);
+			} else {
+				MakeClear(tile, CLEAR_GRASS, rs == 0 ? 0 : 3);
 			}
 
 			break;

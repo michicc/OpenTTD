@@ -105,7 +105,7 @@ struct CFollowTrackT
 
 		Tile *road = GetRoadTileByType(tile, ROADTYPE_TRAM);
 		if (IsNormalRoadTile(road)) {
-			RoadBits rb = GetRoadBits(road, ROADTYPE_TRAM);
+			RoadBits rb = GetRoadBits(road);
 			switch (rb) {
 				case ROAD_NW: return DIAGDIR_NW;
 				case ROAD_SW: return DIAGDIR_SW;

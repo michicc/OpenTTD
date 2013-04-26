@@ -32,9 +32,11 @@
 		/* Depots aren't considered buildable. */
 		if (::IsRoadDepotTile(tile)) return false;
 		const Tile *road = ::GetRoadTileByType(tile, ROADTYPE_ROAD);
-		if (!HasExactlyOneBit(::GetRoadBits(road, ROADTYPE_ROAD))) return false;
-		if (::IsRoadOwner(road, ROADTYPE_ROAD, OWNER_TOWN)) return true;
-		if (::IsRoadOwner(road, ROADTYPE_ROAD, ScriptObject::GetCompany())) return true;
+		if (road != NULL) {
+			if (!HasExactlyOneBit(::GetRoadBits(road))) return false;
+			if (::IsTileOwner(road, OWNER_TOWN)) return true;
+			if (::IsTileOwner(road, ScriptObject::GetCompany())) return true;
+		}
 		return false;
 	}
 

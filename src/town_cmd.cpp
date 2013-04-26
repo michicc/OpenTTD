@@ -1355,12 +1355,12 @@ static int GrowTownAtRoad(Town *t, TileIndex tile)
 		Tile *road_tile = GetRoadTileByType(tile, ROADTYPE_ROAD);
 		if (road_tile != NULL && !IsRoadDepot(road_tile)) {
 			/* Don't allow building over roads of other cities */
-			if (IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN) && Town::GetByTile(tile) != t) {
+			if (IsTileOwner(road_tile, OWNER_TOWN) && Town::GetByTile(tile) != t) {
 				_grow_town_result = GROWTH_SUCCEED;
-			} else if (IsRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_NONE) && _game_mode == GM_EDITOR) {
+			} else if (IsTileOwner(road_tile, OWNER_NONE) && _game_mode == GM_EDITOR) {
 				/* If we are in the SE, and this road-piece has no town owner yet, it just found an
 				 * owner :) (happy happy happy road now) */
-				SetRoadOwner(road_tile, ROADTYPE_ROAD, OWNER_TOWN);
+				SetTileOwner(road_tile, OWNER_TOWN);
 				SetTownIndex(road_tile, t->index);
 			}
 		}
