@@ -548,7 +548,7 @@ static int32 NPFFindStationOrTile(AyStar *as, OpenListNode *current)
 	if (fstd->station_index == INVALID_STATION && tile == fstd->dest_coords) return AYSTAR_FOUND_END_NODE;
 
 	const Tile *station = GetTileByType(tile, MP_STATION);
-	if (station != NULL && GetStationIndex(tile) == fstd->station_index) {
+	if (station != NULL && GetStationIndex(station) == fstd->station_index) {
 		if (fstd->v->type == VEH_TRAIN) return AYSTAR_FOUND_END_NODE;
 
 		assert(fstd->v->type == VEH_ROAD);

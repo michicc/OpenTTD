@@ -23,13 +23,25 @@ typedef byte StationGfx; ///< Index of station graphics. @see _station_display_d
 /**
  * Get StationID from a tile
  * @param t Tile to query station ID from
- * @pre IsTileType(t, MP_STATION)
+ * @pre t != NULL && IsTileType(t, MP_STATION)
+ * @return Station ID of the station at \a t
+ */
+static inline StationID GetStationIndex(const Tile *t)
+{
+	assert(t != NULL && IsTileType(t, MP_STATION));
+	return (StationID)t->m2;
+}
+
+/**
+ * Get StationID from a tile
+ * @param t Tile to query station ID from
+ * @pre HasTileByType(t, MP_STATION)
  * @return Station ID of the station at \a t
  */
 static inline StationID GetStationIndex(TileIndex t)
 {
-	assert(IsTileType(t, MP_STATION));
-	return (StationID)_m[t].m2;
+	assert(HasTileByType(t, MP_STATION));
+	return GetStationIndex(GetTileByType(t, MP_STATION));
 }
 
 
@@ -391,9 +403,11 @@ static inline TrackBits GetRailStationTrackBits(TileIndex t)
 static inline bool IsCompatibleTrainStationTile(TileIndex test_tile, TileIndex station_tile)
 {
 	assert(IsRailStationTile(station_tile));
-	return IsRailStationTile(test_tile) && IsCompatibleRail(GetRailType(_m.ToTile(test_tile)), GetRailType(_m.ToTile(station_tile))) &&
+	const Tile *test_ptr = GetTileByType(test_tile, MP_STATION);
+	const Tile *station_ptr = GetTileByType(station_tile, MP_STATION);
+	return IsRailStationTile(test_tile) && IsCompatibleRail(GetRailType(test_ptr), GetRailType(station_ptr)) &&
 			GetRailStationAxis(test_tile) == GetRailStationAxis(station_tile) &&
-			GetStationIndex(test_tile) == GetStationIndex(station_tile) &&
+			GetStationIndex(test_ptr) == GetStationIndex(station_ptr) &&
 			!IsStationTileBlocked(test_tile);
 }
 

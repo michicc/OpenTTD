@@ -478,10 +478,10 @@ static int ScriptOrderPositionToRealOrderPosition(VehicleID vehicle_id, ScriptOr
 				/* Check explicitly if the order is to a station (for aircraft) or
 				 * to a depot (other vehicle types). */
 				if (::Vehicle::Get(vehicle_id)->type == VEH_AIRCRAFT) {
-					if (!::IsTileType(destination, MP_STATION)) return false;
+					if (!::HasTileByType(destination, MP_STATION)) return false;
 					order.MakeGoToDepot(::GetStationIndex(destination), odtf, onsf, odaf);
 				} else {
-					if (::IsTileType(destination, MP_STATION)) return false;
+					if (::HasTileByType(destination, MP_STATION)) return false;
 					order.MakeGoToDepot(::GetDepotIndex(destination), odtf, onsf, odaf);
 				}
 			}

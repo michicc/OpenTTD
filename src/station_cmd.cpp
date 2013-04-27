@@ -97,7 +97,7 @@ CommandCost GetStationAround(TileArea ta, StationID closest_station, T **st)
 
 	/* check around to see if there's any stations there */
 	TILE_AREA_LOOP(tile_cur, ta) {
-		if (IsTileType(tile_cur, MP_STATION)) {
+		if (HasTileByType(tile_cur, MP_STATION)) {
 			StationID t = GetStationIndex(tile_cur);
 			if (!T::IsValidID(t)) continue;
 
@@ -824,11 +824,12 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 		/* if station is set, then we have special handling to allow building on top of already existing stations.
 		 * so station points to INVALID_STATION if we can build on any station.
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
-		if (station != NULL && IsTileType(tile_cur, MP_STATION)) {
+		Tile *st_tile = GetTileByType(tile_cur, MP_STATION);
+		if (station != NULL && st_tile != NULL) {
 			if (!IsRailStation(tile_cur)) {
-				return ClearTile_Station(tile_cur, _m.ToTile(tile_cur), DC_AUTO, NULL); // get error message
+				return ClearTile_Station(tile_cur, st_tile, DC_AUTO, NULL); // get error message
 			} else {
-				StationID st = GetStationIndex(tile_cur);
+				StationID st = GetStationIndex(st_tile);
 				if (*station == INVALID_STATION) {
 					*station = st;
 				} else if (*station != st) {
@@ -902,19 +903,20 @@ static CommandCost CheckFlatLandRoadStop(TileArea tile_area, DoCommandFlag flags
 		/* If station is set, then we have special handling to allow building on top of already existing stations.
 		 * Station points to INVALID_STATION if we can build on any station.
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
-		if (station != NULL && IsTileType(cur_tile, MP_STATION)) {
+		Tile *st_tile = GetTileByType(cur_tile, MP_STATION);
+		if (station != NULL && st_tile != NULL) {
 			if (!IsRoadStop(cur_tile)) {
-				return ClearTile_Station(cur_tile, _m.ToTile(cur_tile), DC_AUTO, NULL); // Get error message.
+				return ClearTile_Station(cur_tile, st_tile, DC_AUTO, NULL); // Get error message.
 			} else {
 				if (is_truck_stop != IsTruckStop(cur_tile) ||
 						is_drive_through != IsDriveThroughStopTile(cur_tile)) {
-					return ClearTile_Station(cur_tile, _m.ToTile(cur_tile), DC_AUTO, NULL); // Get error message.
+					return ClearTile_Station(cur_tile, st_tile, DC_AUTO, NULL); // Get error message.
 				}
 				/* Drive-through station in the wrong direction. */
 				if (is_drive_through && IsDriveThroughStopTile(cur_tile) && DiagDirToAxis(GetRoadStopDir(cur_tile)) != axis){
 					return_cmd_error(STR_ERROR_DRIVE_THROUGH_DIRECTION);
 				}
-				StationID st = GetStationIndex(cur_tile);
+				StationID st = GetStationIndex(st_tile);
 				if (*station == INVALID_STATION) {
 					*station = st;
 				} else if (*station != st) {
@@ -3167,7 +3169,7 @@ static bool ClickTile_Station(TileIndex tile, Tile *tptr)
 static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, Tile *st_tile, int x, int y)
 {
 	if (v->type == VEH_TRAIN) {
-		StationID station_id = GetStationIndex(tile);
+		StationID station_id = GetStationIndex(st_tile);
 		if (!v->current_order.ShouldStopAtStation(v, station_id)) return VETSB_CONTINUE;
 		if (!IsRailStation(tile) || !v->IsFrontEngine()) return VETSB_CONTINUE;
 
