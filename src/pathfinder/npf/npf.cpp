@@ -326,33 +326,28 @@ static int32 NPFRoadPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 		if (IsLevelCrossingTile(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_TUNNELBRIDGE:
-			cost = IsTunnel(tile) ? NPFTunnelCost(current) : NPFBridgeCost(current);
-			break;
-
-		case MP_STATION: {
-			cost = NPF_TILE_LENGTH;
-			const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(tile));
-			if (IsDriveThroughStopTile(tile)) {
-				/* Increase the cost for drive-through road stops */
-				cost += _settings_game.pf.npf.npf_road_drive_through_penalty;
-				DiagDirection dir = TrackdirToExitdir(current->direction);
-				if (!RoadStop::IsDriveThroughRoadStopContinuation(tile, tile - TileOffsByDiagDir(dir))) {
-					/* When we're the first road stop in a 'queue' of them we increase
-					 * cost based on the fill percentage of the whole queue. */
-					const RoadStop::Entry *entry = rs->GetEntry(dir);
-					cost += entry->GetOccupied() * _settings_game.pf.npf.npf_road_dt_occupied_penalty / entry->GetLength();
-				}
-			} else {
-				/* Increase cost for filled road stops */
-				cost += _settings_game.pf.npf.npf_road_bay_occupied_penalty * (!rs->IsFreeBay(0) + !rs->IsFreeBay(1)) / 2;
+	if (HasTileByType(tile, MP_STATION)) {
+		const Tile *st_tile = GetTileByType(tile, MP_STATION);
+		cost = NPF_TILE_LENGTH;
+		const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(st_tile));
+		if (IsDriveThroughStop(st_tile)) {
+			/* Increase the cost for drive-through road stops */
+			cost += _settings_game.pf.npf.npf_road_drive_through_penalty;
+			DiagDirection dir = TrackdirToExitdir(current->direction);
+			if (!RoadStop::IsDriveThroughRoadStopContinuation(tile, tile - TileOffsByDiagDir(dir))) {
+				/* When we're the first road stop in a 'queue' of them we increase
+				 * cost based on the fill percentage of the whole queue. */
+				const RoadStop::Entry *entry = rs->GetEntry(dir);
+				cost += entry->GetOccupied() * _settings_game.pf.npf.npf_road_dt_occupied_penalty / entry->GetLength();
 			}
-			break;
+		} else {
+			/* Increase cost for filled road stops */
+			cost += _settings_game.pf.npf.npf_road_bay_occupied_penalty * (!rs->IsFreeBay(0) + !rs->IsFreeBay(1)) / 2;
 		}
+	}
 
-		default:
-			break;
+	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+		cost = IsTunnel(tile) ? NPFTunnelCost(current) : NPFBridgeCost(current);
 	}
 
 	/* Determine extra costs */
@@ -727,7 +722,7 @@ static DiagDirection GetTileSingleEntry(TileIndex tile, TransportType type, uint
 	if (type != TRANSPORT_WATER && IsDepotTypeTile(tile, type)) return GetDepotDirection(tile, type);
 
 	if (type == TRANSPORT_ROAD) {
-		if (IsStandardRoadStopTile(tile)) return GetRoadStopDir(tile);
+		if (IsStandardRoadStopTile(tile)) return GetRoadStopDir(GetTileByType(tile, MP_STATION));
 		if (HasBit(subtype, ROADTYPE_TRAM)) return GetSingleTramBit(tile);
 	}
 

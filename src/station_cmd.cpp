@@ -905,15 +905,15 @@ static CommandCost CheckFlatLandRoadStop(TileArea tile_area, DoCommandFlag flags
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
 		Tile *st_tile = GetTileByType(cur_tile, MP_STATION);
 		if (station != NULL && st_tile != NULL) {
-			if (!IsRoadStop(cur_tile)) {
+			if (!IsRoadStop(st_tile)) {
 				return ClearTile_Station(cur_tile, st_tile, DC_AUTO, NULL); // Get error message.
 			} else {
-				if (is_truck_stop != IsTruckStop(cur_tile) ||
-						is_drive_through != IsDriveThroughStopTile(cur_tile)) {
+				if (is_truck_stop != IsTruckStop(st_tile) ||
+						is_drive_through != IsDriveThroughStop(st_tile)) {
 					return ClearTile_Station(cur_tile, st_tile, DC_AUTO, NULL); // Get error message.
 				}
 				/* Drive-through station in the wrong direction. */
-				if (is_drive_through && IsDriveThroughStopTile(cur_tile) && DiagDirToAxis(GetRoadStopDir(cur_tile)) != axis){
+				if (is_drive_through && IsDriveThroughStop(st_tile) && DiagDirToAxis(GetRoadStopDir(st_tile)) != axis){
 					return_cmd_error(STR_ERROR_DRIVE_THROUGH_DIRECTION);
 				}
 				StationID st = GetStationIndex(st_tile);
@@ -1747,7 +1747,7 @@ static RoadStop **FindRoadStopSpot(bool truck_station, Station *st)
 	}
 }
 
-static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags);
+static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags);
 
 /**
  * Find a nearby station that joins this road stop.
@@ -1847,9 +1847,7 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 			Owner road_owner = HasBit(cur_rts, ROADTYPE_ROAD) ? GetTileOwner(GetRoadTileByType(cur_tile, ROADTYPE_ROAD)) : _current_company;
 			Owner tram_owner = HasBit(cur_rts, ROADTYPE_TRAM) ? GetTileOwner(GetRoadTileByType(cur_tile, ROADTYPE_TRAM)) : _current_company;
 
-			if (IsTileType(cur_tile, MP_STATION) && IsRoadStop(cur_tile)) {
-				RemoveRoadStop(cur_tile, flags);
-			}
+			if (IsRoadStopTile(cur_tile)) RemoveRoadStop(cur_tile, GetTileByType(cur_tile, MP_STATION), flags);
 
 			RoadStop *road_stop = new RoadStop(cur_tile);
 			/* Insert into linked list of RoadStops. */
@@ -1931,7 +1929,7 @@ static Vehicle *ClearRoadStopStatusEnum(Vehicle *v, void *)
  * @param flags operation to perform
  * @return cost or failure of operation
  */
-static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
+static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags)
 {
 	Station *st = Station::GetByTile(tile);
 
@@ -1940,7 +1938,7 @@ static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
 		if (ret.Failed()) return ret;
 	}
 
-	bool is_truck = IsTruckStop(tile);
+	bool is_truck = IsTruckStop(st_tile);
 
 	RoadStop **primary_stop;
 	RoadStop *cur_stop;
@@ -1955,7 +1953,7 @@ static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
 	assert(cur_stop != NULL);
 
 	/* don't do the check for drive-through road stops when company bankrupts */
-	if (IsDriveThroughStopTile(tile) && (flags & DC_BANKRUPT)) {
+	if (IsDriveThroughStop(st_tile) && (flags & DC_BANKRUPT)) {
 		/* remove the 'going through road stop' status from all vehicles on that tile */
 		if (flags & DC_EXEC) FindVehicleOnPos(tile, NULL, &ClearRoadStopStatusEnum);
 	} else {
@@ -1989,7 +1987,7 @@ static CommandCost RemoveRoadStop(TileIndex tile, DoCommandFlag flags)
 		}
 		Company::Get(st->owner)->infrastructure.station--;
 
-		if (IsDriveThroughStopTile(tile)) {
+		if (IsDriveThroughStop(st_tile)) {
 			/* Clears the tile for us */
 			cur_stop->ClearDriveThrough();
 		} else {
@@ -2053,18 +2051,19 @@ CommandCost CmdRemoveRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 	CommandCost cost(EXPENSES_CONSTRUCTION);
 	TILE_AREA_LOOP(cur_tile, roadstop_area) {
 		/* Make sure the specified tile is a road stop of the correct type */
-		if (!IsTileType(cur_tile, MP_STATION) || !IsRoadStop(cur_tile) || (uint32)GetRoadStopType(cur_tile) != GB(p2, 0, 1)) continue;
+		Tile *st_tile = GetTileByType(cur_tile, MP_STATION);
+		if (st_tile == NULL || !IsRoadStop(st_tile) || (uint32)GetRoadStopType(st_tile) != GB(p2, 0, 1)) continue;
 
 		/* Save the stop info before it is removed */
-		bool is_drive_through = IsDriveThroughStopTile(cur_tile);
+		bool is_drive_through = IsDriveThroughStop(st_tile);
 		RoadTypes rts = GetRoadTypes(cur_tile);
-		RoadBits road_bits = IsDriveThroughStopTile(cur_tile) ?
-				((GetRoadStopDir(cur_tile) == DIAGDIR_NE) ? ROAD_X : ROAD_Y) :
-				DiagDirToRoadBits(GetRoadStopDir(cur_tile));
+		RoadBits road_bits = IsDriveThroughStop(st_tile) ?
+				((GetRoadStopDir(st_tile) == DIAGDIR_NE) ? ROAD_X : ROAD_Y) :
+				DiagDirToRoadBits(GetRoadStopDir(st_tile));
 
 		Owner road_owner = GetRoadOwner(cur_tile, ROADTYPE_ROAD);
 		Owner tram_owner = GetRoadOwner(cur_tile, ROADTYPE_TRAM);
-		CommandCost ret = RemoveRoadStop(cur_tile, flags);
+		CommandCost ret = RemoveRoadStop(cur_tile, st_tile, flags);
 		if (ret.Failed()) return ret;
 		cost.AddCost(ret);
 
@@ -2733,7 +2732,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 			}
 		}
 	} else {
-		roadtypes = IsRoadStop(ti->tile) ? GetRoadTypes(ti->tile) : ROADTYPES_NONE;
+		roadtypes = IsRoadStopTile(ti->tile) ? GetRoadTypes(ti->tile) : ROADTYPES_NONE;
 		total_offset = 0;
 	}
 
@@ -2919,7 +2918,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	if (HasStationRail(ti->tile) && HasCatenaryDrawn(GetRailType(ti->tile))) DrawCatenary(ti);
 
 	if (HasBit(roadtypes, ROADTYPE_TRAM)) {
-		Axis axis = GetRoadStopDir(ti->tile) == DIAGDIR_NE ? AXIS_X : AXIS_Y;
+		Axis axis = GetRoadStopDir(ti->tptr) == DIAGDIR_NE ? AXIS_X : AXIS_Y;
 		DrawGroundSprite((HasBit(roadtypes, ROADTYPE_ROAD) ? SPR_TRAMWAY_OVERLAY : SPR_TRAMWAY_TRAM) + (axis ^ 1), PAL_NONE);
 		DrawTramCatenary(ti, axis == AXIS_X ? ROAD_X : ROAD_Y);
 	}
@@ -2995,9 +2994,9 @@ static Foundation GetFoundation_Station(TileIndex tile, Tile *tptr, Slope tileh)
 
 static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 {
-	td->owner[0] = GetTileOwner(tile);
+	td->owner[0] = GetTileOwner(tptr);
 	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
-	if (IsDriveThroughStopTile(tile)) {
+	if (IsDriveThroughStop(tptr)) {
 		Owner road_owner = INVALID_OWNER;
 		Owner tram_owner = INVALID_OWNER;
 		RoadTypes rts = GetRoadTypes(tile);
@@ -3096,8 +3095,8 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 			break;
 
 		case TRANSPORT_ROAD:
-			if ((GetRoadTypes(tile) & sub_mode) != 0 && IsRoadStop(tile)) {
-				DiagDirection dir = GetRoadStopDir(tile);
+			if (IsRoadStop(st_tile) && (GetRoadTypes(st_tile) & sub_mode) != 0) {
+				DiagDirection dir = GetRoadStopDir(st_tile);
 				Axis axis = DiagDirToAxis(dir);
 
 				if (side != INVALID_DIAGDIR) {
@@ -3204,9 +3203,9 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, T
 	} else if (v->type == VEH_ROAD) {
 		RoadVehicle *rv = RoadVehicle::From(v);
 		if (rv->state < RVSB_IN_ROAD_STOP && !IsReversingRoadTrackdir((Trackdir)rv->state) && rv->frame == 0) {
-			if (IsRoadStop(tile) && rv->IsFrontEngine()) {
+			if (IsRoadStop(st_tile) && rv->IsFrontEngine()) {
 				/* Attempt to allocate a parking bay in a road stop */
-				return RoadStop::GetByTile(tile, GetRoadStopType(tile))->Enter(rv) ? VETSB_CONTINUE : VETSB_CANNOT_ENTER;
+				return RoadStop::GetByTile(tile, GetRoadStopType(st_tile))->Enter(rv) ? VETSB_CONTINUE : VETSB_CANNOT_ENTER;
 			}
 		}
 	}
@@ -4107,12 +4106,12 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 			if (IsDriveThroughStopTile(tile) && !CanRemoveRoadWithStop(tile, flags)) {
 				return_cmd_error(STR_ERROR_MUST_DEMOLISH_TRUCK_STATION_FIRST);
 			}
-			return RemoveRoadStop(tile, flags);
+			return RemoveRoadStop(tile, tptr, flags);
 		case STATION_BUS:
 			if (IsDriveThroughStopTile(tile) && !CanRemoveRoadWithStop(tile, flags)) {
 				return_cmd_error(STR_ERROR_MUST_DEMOLISH_BUS_STATION_FIRST);
 			}
-			return RemoveRoadStop(tile, flags);
+			return RemoveRoadStop(tile, tptr, flags);
 		case STATION_BUOY:     return RemoveBuoy(tile, flags);
 		case STATION_DOCK:     return RemoveDock(tile, flags);
 		default: break;
@@ -4142,7 +4141,7 @@ static CommandCost TerraformTile_Station(TileIndex tile, Tile *tptr, DoCommandFl
 
 				case STATION_TRUCK:
 				case STATION_BUS: {
-					DiagDirection direction = GetRoadStopDir(tile);
+					DiagDirection direction = GetRoadStopDir(tptr);
 					if (!AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, direction)) break;
 					if (IsDriveThroughStopTile(tile)) {
 						if (!AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, ReverseDiagDir(direction))) break;

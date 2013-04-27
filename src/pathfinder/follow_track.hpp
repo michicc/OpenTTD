@@ -281,7 +281,7 @@ protected:
 	{
 		/* road stop can be left at one direction only unless it's a drive-through stop */
 		if (IsRoadTT() && IsStandardRoadStopTile(m_old_tile)) {
-			DiagDirection exitdir = GetRoadStopDir(m_old_tile);
+			DiagDirection exitdir = GetRoadStopDir(GetTileByType(m_old_tile, MP_STATION));
 			if (exitdir != m_exitdir) {
 				m_err = EC_NO_WAY;
 				return false;
@@ -313,7 +313,7 @@ protected:
 	{
 		if (IsRoadTT() && IsStandardRoadStopTile(m_new_tile)) {
 			/* road stop can be entered from one direction only unless it's a drive-through stop */
-			DiagDirection exitdir = GetRoadStopDir(m_new_tile);
+			DiagDirection exitdir = GetRoadStopDir(GetTileByType(m_new_tile, MP_STATION));
 			if (ReverseDiagDir(exitdir) != m_exitdir) {
 				m_err = EC_NO_WAY;
 				return false;
