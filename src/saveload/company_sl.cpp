@@ -137,7 +137,7 @@ void AfterLoadCompanyStats()
 			const Tile *station_tile = GetTileByType(tile, MP_STATION);
 
 			c = Company::GetIfValid(GetTileOwner(tile));
-			if (c != NULL && GetStationType(station_tile) != STATION_AIRPORT && !IsBuoy(station_tile)) c->infrastructure.station++;
+			if (c != NULL && !IsAirport(station_tile) && !IsBuoy(station_tile)) c->infrastructure.station++;
 
 			switch (GetStationType(station_tile)) {
 				case STATION_RAIL:

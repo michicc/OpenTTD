@@ -454,16 +454,16 @@ static const NICallback _nic_airporttiles[] = {
 };
 
 class NIHAirportTile : public NIHelper {
-	bool IsInspectable(uint index) const                 { return AirportTileSpec::Get(GetAirportGfx(index))->grf_prop.grffile != NULL; }
+	bool IsInspectable(uint index) const                 { return AirportTileSpec::Get(GetAirportGfx(GetTileByType(index, MP_STATION)))->grf_prop.grffile != NULL; }
 	uint GetParent(uint index) const                     { return GetInspectWindowNumber(GSF_FAKE_TOWNS, Station::GetByTile(index)->town->index); }
 	const void *GetInstance(uint index)const             { return NULL; }
-	const void *GetSpec(uint index) const                { return AirportTileSpec::Get(GetAirportGfx(index)); }
-	void SetStringParameters(uint index) const           { this->SetObjectAtStringParameters(STR_STATION_NAME, GetStationIndex(index), index); }
-	uint32 GetGRFID(uint index) const                    { return (this->IsInspectable(index)) ? AirportTileSpec::Get(GetAirportGfx(index))->grf_prop.grffile->grfid : 0; }
+	const void *GetSpec(uint index) const                { return AirportTileSpec::Get(GetAirportGfx(GetTileByType(index, MP_STATION))); }
+	void SetStringParameters(uint index) const           { this->SetObjectAtStringParameters(STR_STATION_NAME, GetStationIndex(GetTileByType(index, MP_STATION)), index); }
+	uint32 GetGRFID(uint index) const                    { return (this->IsInspectable(index)) ? AirportTileSpec::Get(GetAirportGfx(GetTileByType(index, MP_STATION)))->grf_prop.grffile->grfid : 0; }
 
 	/* virtual */ uint Resolve(uint index, uint var, uint param, bool *avail) const
 	{
-		AirportTileResolverObject ro(AirportTileSpec::GetByTile(index), index, Station::GetByTile(index));
+		AirportTileResolverObject ro(AirportTileSpec::GetByTile(GetTileByType(index, MP_STATION)), index, Station::GetByTile(index));
 		return ro.GetScope(VSG_SCOPE_SELF)->GetVariable(var, param, avail);
 	}
 };
