@@ -35,10 +35,11 @@ struct AnimationBase {
 	 * @param spec        Specification related to the tile.
 	 * @param obj         Object related to the tile.
 	 * @param tile        Tile to animate changes for.
+	 * @param tptr        Pointer to the tile to animate.
 	 * @param random_animation Whether to pass random bits to the "next frame" callback.
 	 * @param extra_data  Custom extra callback data.
 	 */
-	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex tile, bool random_animation, Textra extra_data = 0)
+	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex tile, Tile *tptr, bool random_animation, Textra extra_data = 0)
 	{
 		assert(spec != NULL);
 
@@ -58,7 +59,7 @@ struct AnimationBase {
 		 * maximum, corresponding to around 33 minutes. */
 		if (_tick_counter % (1 << animation_speed) != 0) return;
 
-		uint8 frame      = GetAnimationFrame(tile);
+		uint8 frame      = GetAnimationFrame(tptr);
 		uint8 num_frames = spec->animation.frames;
 
 		bool frame_set_by_callback = false;
@@ -101,7 +102,7 @@ struct AnimationBase {
 			}
 		}
 
-		SetAnimationFrame(tile, frame);
+		SetAnimationFrame(tptr, frame);
 		MarkTileDirtyByTile(tile);
 	}
 
@@ -113,11 +114,12 @@ struct AnimationBase {
 	 * @param spec        Specification related to the tile.
 	 * @param obj         Object related to the tile.
 	 * @param tile        Tile to consider animation changes for.
+	 * @param tptr        Pointer to the tile to animate.
 	 * @param random_bits Random bits for this update. To be passed as parameter to the NewGRF.
 	 * @param trigger     What triggered this update? To be passed as parameter to the NewGRF.
 	 * @param extra_data  Custom extra data for callback processing.
 	 */
-	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex tile, uint32 random_bits, uint32 trigger, Textra extra_data = 0)
+	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex tile, Tile *tptr, uint32 random_bits, uint32 trigger, Textra extra_data = 0)
 	{
 		uint16 callback = GetCallback(cb, random_bits, trigger, spec, obj, tile, extra_data);
 		if (callback == CALLBACK_FAILED) return;
@@ -127,7 +129,7 @@ struct AnimationBase {
 			case 0xFE: AddAnimatedTile(tile);    break;
 			case 0xFF: DeleteAnimatedTile(tile); break;
 			default:
-				SetAnimationFrame(tile, callback);
+				SetAnimationFrame(tptr, callback);
 				AddAnimatedTile(tile);
 				break;
 		}

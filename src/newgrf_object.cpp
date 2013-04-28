@@ -533,7 +533,7 @@ void AnimateNewObjectTile(TileIndex tile)
 	const ObjectSpec *spec = ObjectSpec::GetByTile(tile);
 	if (spec == NULL || !(spec->flags & OBJECT_FLAG_ANIMATION)) return;
 
-	ObjectAnimationBase::AnimateTile(spec, Object::GetByTile(tile), tile, (spec->flags & OBJECT_FLAG_ANIM_RANDOM_BITS) != 0);
+	ObjectAnimationBase::AnimateTile(spec, Object::GetByTile(tile), tile, _m.ToTile(tile), (spec->flags & OBJECT_FLAG_ANIM_RANDOM_BITS) != 0);
 }
 
 /**
@@ -547,7 +547,7 @@ void TriggerObjectTileAnimation(Object *o, TileIndex tile, ObjectAnimationTrigge
 {
 	if (!HasBit(spec->animation.triggers, trigger)) return;
 
-	ObjectAnimationBase::ChangeAnimationFrame(CBID_OBJECT_ANIMATION_START_STOP, spec, o, tile, Random(), trigger);
+	ObjectAnimationBase::ChangeAnimationFrame(CBID_OBJECT_ANIMATION_START_STOP, spec, o, tile, _m.ToTile(tile), Random(), trigger);
 }
 
 /**

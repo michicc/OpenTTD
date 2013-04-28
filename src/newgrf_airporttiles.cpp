@@ -178,7 +178,7 @@ static uint32 GetAirportTileIDAtOffset(TileIndex tile, const Station *st, uint32
 		case 0x43: return GetRelativePosition(this->tile, this->st->airport.tile);
 
 		/* Animation frame of tile */
-		case 0x44: return GetAnimationFrame(this->tile);
+		case 0x44: return GetAnimationFrame(GetTileByType(this->tile, MP_STATION));
 
 		/* Land info of nearby tiles */
 		case 0x60: return GetNearbyAirportTileInformation(parameter, this->tile, this->st->index, this->ro.grffile->grf_version >= 8);
@@ -187,7 +187,7 @@ static uint32 GetAirportTileIDAtOffset(TileIndex tile, const Station *st, uint32
 		case 0x61: {
 			TileIndex tile = GetNearbyTile(parameter, this->tile);
 			if (this->st->TileBelongsToAirport(tile)) {
-				return GetAnimationFrame(tile);
+				return GetAnimationFrame(GetTileByType(tile, MP_STATION));
 			}
 			return UINT_MAX;
 		}
@@ -289,7 +289,7 @@ void AnimateAirportTile(TileIndex tile, const Tile *tptr)
 	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tptr);
 	if (ats == NULL) return;
 
-	AirportTileAnimationBase::AnimateTile(ats, Station::GetByTile(tptr), tile, HasBit(ats->animation_special_flags, 0));
+	AirportTileAnimationBase::AnimateTile(ats, Station::GetByTile(tptr), tile, GetTileByType(tile, MP_STATION), HasBit(ats->animation_special_flags, 0));
 }
 
 void AirportTileAnimationTrigger(Station *st, TileIndex tile, const Tile *tptr, AirpAnimationTrigger trigger, CargoID cargo_type)
@@ -297,7 +297,7 @@ void AirportTileAnimationTrigger(Station *st, TileIndex tile, const Tile *tptr, 
 	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tptr);
 	if (!HasBit(ats->animation.triggers, trigger)) return;
 
-	AirportTileAnimationBase::ChangeAnimationFrame(CBID_AIRPTILE_ANIM_START_STOP, ats, st, tile, Random(), (uint8)trigger | (cargo_type << 8));
+	AirportTileAnimationBase::ChangeAnimationFrame(CBID_AIRPTILE_ANIM_START_STOP, ats, st, tile, GetTileByType(tile, MP_STATION), Random(), (uint8)trigger | (cargo_type << 8));
 }
 
 void AirportAnimationTrigger(Station *st, AirpAnimationTrigger trigger, CargoID cargo_type)
