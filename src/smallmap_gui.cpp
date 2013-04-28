@@ -427,6 +427,7 @@ static inline TileType GetEffectiveTileType(TileIndex tile)
 	if (HasTileByType(tile, MP_TREES)) t = MP_TREES;
 	if (HasTileByType(tile, MP_ROAD)) t = MP_ROAD;
 	if (HasTileByType(tile, MP_RAILWAY)) t = MP_RAILWAY;
+	if (HasTileByType(tile, MP_STATION)) t = MP_STATION;
 
 	if (t == MP_TUNNELBRIDGE) {
 		TransportType tt = GetTunnelBridgeTransportType(tile);
@@ -594,7 +595,9 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 		case MP_INDUSTRY: return MKCOLOUR_XXXX(PC_DARK_GREY);
 		case MP_HOUSE:    return MKCOLOUR_XXXX(PC_DARK_RED);
 		default:
-			if (HasTileByType(tile, MP_RAILWAY)) {
+			if (HasTileByType(tile, MP_STATION)) {
+				o = GetTileOwner(GetTileByType(tile, MP_STATION));
+			} else if (HasTileByType(tile, MP_RAILWAY)) {
 				/* Use owner of first associated tile for map colour. */
 				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
 			} else if (HasTileByType(tile, MP_ROAD)) {

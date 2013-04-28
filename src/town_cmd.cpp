@@ -1595,7 +1595,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile)
 	}
 
 	/* Can only build on clear flat areas, possibly with trees. */
-	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile) || HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD)) {
+	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile) || HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD) || HasTileByType(tile, MP_STATION)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -1800,7 +1800,8 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
 			IsTileFlat(tile) &&
 			IsTileAlignedToGrid(tile, sp->layout) &&
 			!HasTileByType(tile, MP_RAILWAY) &&
-			!HasTileByType(tile, MP_ROAD)) {
+			!HasTileByType(tile, MP_ROAD) &&
+			!HasTileByType(tile, MP_STATION)) {
 		sp->tile = tile;
 		sp->max_dist = dist;
 	}
@@ -1816,7 +1817,7 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
  */
 static bool FindNearestEmptyLand(TileIndex tile, void *user_data)
 {
-	return IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD);
+	return IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD) && !HasTileByType(tile, MP_STATION);
 }
 
 /**
@@ -2795,7 +2796,7 @@ static bool SearchTileForStatue(TileIndex tile, void *user_data)
 	if (MayHaveBridgeAbove(tile) && IsBridgeAbove(tile)) return false;
 
 	/* A clear-able open space is always preferred. */
-	if (IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD) && TryClearTile(tile)) {
+	if (IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD) && !HasTileByType(tile, MP_STATION) && TryClearTile(tile)) {
 		statue_data->best_position = tile;
 		return true;
 	}

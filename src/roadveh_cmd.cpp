@@ -816,7 +816,7 @@ static void RoadVehCheckOvertake(RoadVehicle *v, RoadVehicle *u)
 	if (v->roadtype == ROADTYPE_TRAM) return;
 
 	/* Don't overtake in stations */
-	if (IsTileType(v->tile, MP_STATION) || IsTileType(u->tile, MP_STATION)) return;
+	if (HasTileByType(v->tile, MP_STATION) || HasTileByType(u->tile, MP_STATION)) return;
 
 	/* For now, articulated road vehicles can't overtake anything. */
 	if (v->HasArticulatedPart()) return;
@@ -1114,7 +1114,7 @@ static bool CanBuildTramTrackOnTile(CompanyID c, TileIndex t, RoadBits r)
 bool IndividualRoadVehicleController(RoadVehicle *v, const RoadVehicle *prev)
 {
 	if (v->overtaking != 0)  {
-		if (IsTileType(v->tile, MP_STATION)) {
+		if (HasTileByType(v->tile, MP_STATION)) {
 			/* Force us to be not overtaking! */
 			v->overtaking = 0;
 		} else if (++v->overtaking_ctr >= RV_OVERTAKE_TIMEOUT) {

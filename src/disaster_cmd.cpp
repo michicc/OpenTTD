@@ -76,6 +76,7 @@ static void DisasterClearSquare(TileIndex tile)
 {
 	if (EnsureNoVehicleOnGround(tile).Failed()) return;
 
+	if (HasTileByType(tile, MP_STATION)) return;
 	if (HasTileByType(tile, MP_RAILWAY)) {
 		/* Clear the square if all rail is owned by a human player. */
 		bool only_human = true;
