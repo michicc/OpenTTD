@@ -1352,7 +1352,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION:
-					if (HasStationRail(t)) {
+					if (HasStationRail(tptr)) {
 						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
@@ -2037,7 +2037,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION: // Clear PBS reservation on station
-					if (HasStationRail(t)) SetRailStationReservation(t, false);
+					if (HasStationRail(_m.ToTile(t))) SetRailStationReservation(t, false);
 					break;
 
 				case MP_TUNNELBRIDGE: // Clear PBS reservation on tunnels/bridges

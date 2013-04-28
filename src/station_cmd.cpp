@@ -826,7 +826,7 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
 		Tile *st_tile = GetTileByType(tile_cur, MP_STATION);
 		if (station != NULL && st_tile != NULL) {
-			if (!IsRailStation(tile_cur)) {
+			if (!IsRailStation(st_tile)) {
 				return ClearTile_Station(tile_cur, st_tile, DC_AUTO, NULL); // get error message
 			} else {
 				StationID st = GetStationIndex(st_tile);
@@ -1292,7 +1292,7 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 
 				/* Remove animation if overbuilding */
 				DeleteAnimatedTile(tile);
-				byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(tile) : 0;
+				byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION)) : 0;
 				MakeRailStation(tile, st->owner, st->index, axis, layout & ~1, rt);
 				/* Free the spec if we overbuild something */
 				DeallocateSpecFromStation(st, old_specindex);
@@ -1491,7 +1491,7 @@ CommandCost RemoveFromRailBaseStation(TileArea ta, SmallVector<T *, 4> &affected
 
 		if (flags & DC_EXEC) {
 			/* read variables before the station tile is removed */
-			uint specindex = GetCustomStationSpecIndex(tile);
+			uint specindex = GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION));
 			Track track = GetRailStationTrack(tile);
 			Owner owner = GetTileOwner(tile);
 			RailType rt = GetRailType(tile);
@@ -2703,18 +2703,18 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	const StationSpec *statspec = NULL;
 	uint tile_layout = 0;
 
-	if (HasStationRail(ti->tile)) {
+	if (HasStationRail(ti->tptr)) {
 		rti = GetRailTypeInfo(GetRailType(ti->tile));
 		roadtypes = ROADTYPES_NONE;
 		total_offset = rti->GetRailtypeSpriteOffset();
 
-		if (IsCustomStationSpecIndex(ti->tile)) {
+		if (IsCustomStationSpecIndex(ti->tptr)) {
 			/* look for customization */
-			st = BaseStation::GetByTile(ti->tile);
-			statspec = st->speclist[GetCustomStationSpecIndex(ti->tile)].spec;
+			st = BaseStation::GetByTile(ti->tptr);
+			statspec = st->speclist[GetCustomStationSpecIndex(ti->tptr)].spec;
 
 			if (statspec != NULL) {
-				tile_layout = GetStationGfx(ti->tile);
+				tile_layout = GetStationGfx(ti->tptr);
 
 				if (HasBit(statspec->callback_mask, CBM_STATION_SPRITE_LAYOUT)) {
 					uint16 callback = GetStationCallback(CBID_STATION_SPRITE_LAYOUT, 0, 0, statspec, st, ti->tile);
@@ -2908,14 +2908,14 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 			DrawGroundSprite(image, GroundSpritePaletteTransform(image, pal, palette));
 
 			/* PBS debugging, draw reserved tracks darker */
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationRail(ti->tile) && HasStationReservation(ti->tile)) {
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationRail(ti->tptr) && HasStationReservation(ti->tile)) {
 				const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
 				DrawGroundSprite(GetRailStationAxis(ti->tile) == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH);
 			}
 		}
 	}
 
-	if (HasStationRail(ti->tile) && HasCatenaryDrawn(GetRailType(ti->tile))) DrawCatenary(ti);
+	if (HasStationRail(ti->tptr) && HasCatenaryDrawn(GetRailType(ti->tile))) DrawCatenary(ti);
 
 	if (HasBit(roadtypes, ROADTYPE_TRAM)) {
 		Axis axis = GetRoadStopDir(ti->tptr) == DIAGDIR_NE ? AXIS_X : AXIS_Y;
@@ -2923,7 +2923,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		DrawTramCatenary(ti, axis == AXIS_X ? ROAD_X : ROAD_Y);
 	}
 
-	if (IsRailWaypoint(ti->tile)) {
+	if (IsRailWaypoint(ti->tptr)) {
 		/* Don't offset the waypoint graphics; they're always the same. */
 		total_offset = 0;
 	}
@@ -2967,9 +2967,9 @@ static Foundation GetFoundation_Station(TileIndex tile, Tile *tptr, Slope tileh)
 	if (IsDock(tptr)) return FOUNDATION_NONE;
 
 	/* Is this a rail station with a custom foundation? */
-	if (HasStationRail(tile) && IsCustomStationSpecIndex(tile)) {
-		const BaseStation *st = BaseStation::GetByTile(tile);
-		const StationSpec *statspec = st->speclist[GetCustomStationSpecIndex(tile)].spec;
+	if (HasStationRail(tptr) && IsCustomStationSpecIndex(tptr)) {
+		const BaseStation *st = BaseStation::GetByTile(tptr);
+		const StationSpec *statspec = st->speclist[GetCustomStationSpecIndex(tptr)].spec;
 
 		if (statspec != NULL && HasBit(statspec->flags, SSF_CUSTOM_FOUNDATIONS)) {
 			/* Custom foundations are handled by the station drawing code. */
@@ -3018,10 +3018,10 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 			}
 		}
 	}
-	td->build_date = BaseStation::GetByTile(tile)->build_date;
+	td->build_date = BaseStation::GetByTile(tptr)->build_date;
 
-	if (HasStationTileRail(tile)) {
-		const StationSpec *spec = GetStationSpec(tile);
+	if (HasStationRail(tptr)) {
+		const StationSpec *spec = GetStationSpec(tptr);
 
 		if (spec != NULL) {
 			td->station_class = StationClass::Get(spec->cls_id)->name;
@@ -3078,7 +3078,7 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 
 	switch (mode) {
 		case TRANSPORT_RAIL:
-			if (HasStationRail(tile) && !IsStationTileBlocked(tile)) {
+			if (HasStationRail(st_tile) && !IsStationTileBlocked(tile)) {
 				trackbits = TrackToTrackBits(GetRailStationTrack(tile));
 			}
 			break;
@@ -3139,7 +3139,7 @@ static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 
 static void AnimateTile_Station(TileIndex tile, Tile *tptr)
 {
-	if (HasStationRail(tile)) {
+	if (HasStationRail(tptr)) {
 		AnimateStationTile(tile);
 		return;
 	}
@@ -3170,7 +3170,7 @@ static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, T
 	if (v->type == VEH_TRAIN) {
 		StationID station_id = GetStationIndex(st_tile);
 		if (!v->current_order.ShouldStopAtStation(v, station_id)) return VETSB_CONTINUE;
-		if (!IsRailStation(tile) || !v->IsFrontEngine()) return VETSB_CONTINUE;
+		if (!IsRailStation(st_tile) || !v->IsFrontEngine()) return VETSB_CONTINUE;
 
 		int station_ahead;
 		int station_length;

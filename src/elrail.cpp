@@ -91,7 +91,7 @@ static TrackBits GetRailTrackBitsUniversalHelper(TileIndex t, byte *override)
 			return DiagDirToDiagTrackBits(GetTunnelBridgeDirection(t));
 
 		case MP_STATION:
-			if (!HasStationRail(t)) return TRACK_BIT_NONE;
+			if (!HasStationTileRail(t)) return TRACK_BIT_NONE;
 			if (!HasCatenary(GetRailType(t))) return TRACK_BIT_NONE;
 			return TrackToTrackBits(GetRailStationTrack(t));
 

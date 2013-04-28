@@ -165,6 +165,7 @@ struct StationSpec {
 /** Struct containing information relating to station classes. */
 typedef NewGRFClass<StationSpec, StationClassID, STAT_CLASS_MAX> StationClass;
 
+const StationSpec *GetStationSpec(const Tile *t);
 const StationSpec *GetStationSpec(TileIndex t);
 
 /* Evaluate a tile's position within a station, and return the result a bitstuffed format. */

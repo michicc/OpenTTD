@@ -36,7 +36,7 @@ static OrderType GetOrderTypeByTile(TileIndex t)
 
 	if (::HasTileByType(t, MP_STATION)) {
 		const Tile *st = ::GetTileByType(t, MP_STATION);
-		if (IsBuoy(st) || IsRailWaypoint(t)) return OT_GOTO_WAYPOINT;
+		if (IsBuoy(st) || IsRailWaypoint(st)) return OT_GOTO_WAYPOINT;
 		if (IsHangar(st)) return OT_GOTO_DEPOT;
 		return OT_GOTO_STATION;
 	}

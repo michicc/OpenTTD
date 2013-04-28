@@ -204,7 +204,7 @@ static uint32 GetAirportTileIDAtOffset(TileIndex tile, const Station *st, uint32
 
 /* virtual */ uint32 AirportTileScopeResolver::GetRandomBits() const
 {
-	return (this->st == NULL ? 0 : this->st->random_bits) | (this->tile == INVALID_TILE ? 0 : GetStationTileRandomBits(this->tile) << 16);
+	return (this->st == NULL ? 0 : this->st->random_bits) | (this->tile == INVALID_TILE ? 0 : GetStationTileRandomBits(GetTileByType(this->tile, MP_STATION)) << 16);
 }
 
 /**

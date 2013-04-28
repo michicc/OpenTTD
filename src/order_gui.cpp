@@ -377,7 +377,7 @@ static Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
 		Tile *st_tile = GetTileByType(tile, MP_STATION);
 
 		/* check rail waypoint */
-		if (IsRailWaypointTile(tile) &&
+		if (IsRailWaypoint(st_tile) &&
 				v->type == VEH_TRAIN &&
 				IsTileOwner(st_tile, _local_company)) {
 			order.MakeGoToWaypoint(GetStationIndex(st_tile));

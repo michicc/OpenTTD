@@ -149,7 +149,7 @@ static TileIndex FindRailStationEnd(TileIndex tile, TileIndexDiff delta, bool ch
 	const Tile *st_tile = GetTileByType(tile, MP_STATION);
 	StationID sid = GetStationIndex(st_tile);
 
-	if (check_type) orig_type = GetCustomStationSpecIndex(tile);
+	if (check_type) orig_type = GetCustomStationSpecIndex(st_tile);
 	if (check_axis) orig_axis = GetRailStationAxis(tile);
 
 	for (;;) {
@@ -157,8 +157,8 @@ static TileIndex FindRailStationEnd(TileIndex tile, TileIndexDiff delta, bool ch
 		st_tile = GetTileByType(new_tile, MP_STATION);
 
 		if (st_tile == NULL || GetStationIndex(st_tile) != sid) break;
-		if (!HasStationRail(new_tile)) break;
-		if (check_type && GetCustomStationSpecIndex(new_tile) != orig_type) break;
+		if (!HasStationRail(st_tile)) break;
+		if (check_type && GetCustomStationSpecIndex(st_tile) != orig_type) break;
 		if (check_axis && GetRailStationAxis(new_tile) != orig_axis) break;
 
 		tile = new_tile;
@@ -227,7 +227,7 @@ static uint32 GetRailContinuationInfo(TileIndex tile)
 /* Station Resolver Functions */
 /* virtual */ uint32 StationScopeResolver::GetRandomBits() const
 {
-	return (this->st == NULL ? 0 : this->st->random_bits) | (this->tile == INVALID_TILE ? 0 : GetStationTileRandomBits(this->tile) << 16);
+	return (this->st == NULL ? 0 : this->st->random_bits) | (this->tile == INVALID_TILE ? 0 : GetStationTileRandomBits(GetTileByType(this->tile, MP_STATION)) << 16);
 }
 
 
@@ -367,13 +367,16 @@ TownScopeResolver *StationResolverObject::GetTown()
 
 			if (!HasStationTileRail(nearby_tile)) return 0xFFFFFFFF;
 
-			uint32 grfid = this->st->speclist[GetCustomStationSpecIndex(this->tile)].grfid;
+			const Tile *tile_st   = GetTileByType(this->tile, MP_STATION);
+			const Tile *nearby_st = GetTileByType(nearby_tile, MP_STATION);
+
+			uint32 grfid = this->st->speclist[GetCustomStationSpecIndex(tile_st)].grfid;
 			bool perpendicular = GetRailStationAxis(this->tile) != GetRailStationAxis(nearby_tile);
 			bool same_station = this->st->TileBelongsToRailStation(nearby_tile);
-			uint32 res = GB(GetStationGfx(nearby_tile), 1, 2) << 12 | !!perpendicular << 11 | !!same_station << 10;
+			uint32 res = GB(GetStationGfx(nearby_st), 1, 2) << 12 | !!perpendicular << 11 | !!same_station << 10;
 
-			if (IsCustomStationSpecIndex(nearby_tile)) {
-				const StationSpecList ssl = BaseStation::GetByTile(nearby_tile)->speclist[GetCustomStationSpecIndex(nearby_tile)];
+			if (IsCustomStationSpecIndex(nearby_st)) {
+				const StationSpecList ssl = BaseStation::GetByTile(nearby_tile)->speclist[GetCustomStationSpecIndex(nearby_st)];
 				res |= 1 << (ssl.grfid != grfid ? 9 : 8) | ssl.localidx;
 			}
 			return res;
@@ -747,7 +750,7 @@ void DeallocateSpecFromStation(BaseStation *st, byte specindex)
 	ETileArea area = ETileArea(st, INVALID_TILE, TA_WHOLE);
 	/* Check all tiles over the station to check if the specindex is still in use */
 	TILE_AREA_LOOP(tile, area) {
-		if (st->TileBelongsToRailStation(tile) && GetCustomStationSpecIndex(tile) == specindex) {
+		if (st->TileBelongsToRailStation(tile) && GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION)) == specindex) {
 			return;
 		}
 	}
@@ -858,13 +861,18 @@ bool DrawStationTile(int x, int y, RailType railtype, Axis axis, StationClassID 
 }
 
 
-const StationSpec *GetStationSpec(TileIndex t)
+const StationSpec *GetStationSpec(const Tile *t)
 {
 	if (!IsCustomStationSpecIndex(t)) return NULL;
 
 	const BaseStation *st = BaseStation::GetByTile(t);
 	uint specindex = GetCustomStationSpecIndex(t);
 	return specindex < st->num_specs ? st->speclist[specindex].spec : NULL;
+}
+
+const StationSpec *GetStationSpec(TileIndex t)
+{
+	return GetStationSpec(GetTileByType(t, MP_STATION));
 }
 
 
@@ -1027,7 +1035,7 @@ void TriggerStationRandomisation(Station *st, TileIndex tile, StationRandomTrigg
 					reseed >>= 16;
 
 					/* Set individual tile random bits */
-					uint8 random_bits = GetStationTileRandomBits(tile);
+					uint8 random_bits = GetStationTileRandomBits(GetTileByType(tile, MP_STATION));
 					random_bits &= ~reseed;
 					random_bits |= Random() & reseed;
 					SetStationTileRandomBits(tile, random_bits);
