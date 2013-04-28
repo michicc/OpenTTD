@@ -577,23 +577,11 @@ bool IsWateredTile(TileIndex tile, Direction from)
 					}
 			}
 
-		case MP_STATION:
-			if (IsOilRig(_m.ToTile(tile))) {
-				/* Do not draw waterborders inside of industries.
-				 * Note: There is no easy way to detect the industry of an oilrig tile. */
-				TileIndex src_tile = tile + TileOffsByDir(from);
-				if ((IsTileType(src_tile, MP_STATION) && IsOilRig(_m.ToTile(src_tile))) ||
-				    (IsTileType(src_tile, MP_INDUSTRY))) return true;
-
-				return IsTileOnWater(tile);
-			}
-			return (IsDockTile(tile) && IsTileFlat(tile)) || IsBuoyTile(tile);
-
 		case MP_INDUSTRY: {
 			/* Do not draw waterborders inside of industries.
 			 * Note: There is no easy way to detect the industry of an oilrig tile. */
 			TileIndex src_tile = tile + TileOffsByDir(from);
-			if ((IsTileType(src_tile, MP_STATION) && IsOilRig(_m.ToTile(src_tile))) ||
+			if ((HasTileByType(src_tile, MP_STATION) && IsOilRig(_m.ToTile(src_tile))) ||
 			    (IsTileType(src_tile, MP_INDUSTRY) && GetIndustryIndex(src_tile) == GetIndustryIndex(tile))) return true;
 
 			return IsTileOnWater(tile);
@@ -1017,7 +1005,6 @@ FloodingBehaviour GetFloodingBehaviour(TileIndex tile)
 				return (IsSlopeWithOneCornerRaised(tileh) ? FLOOD_ACTIVE : FLOOD_DRYUP);
 			}
 			/* FALL THROUGH */
-		case MP_STATION:
 		case MP_INDUSTRY:
 		case MP_OBJECT:
 			return (GetWaterClass(tile) == WATER_CLASS_SEA) ? FLOOD_ACTIVE : FLOOD_NONE;
@@ -1049,8 +1036,8 @@ void DoFloodTile(TileIndex target)
 				if (flooded) MarkTileDirtyByTile(target);
 			}
 		} else if (IsTileType(target, MP_CLEAR) && !HasTileByType(target, MP_ROAD)) {
-			if (!IsSlopeWithOneCornerRaised(tileh) && HasTileByType(target, MP_TREES)) {
-				/* Slope with trees, convert to shore. */
+			if (!IsSlopeWithOneCornerRaised(tileh) && (HasTileByType(target, MP_TREES) || HasTileByType(target, MP_STATION))) {
+				/* Slope with trees or station, convert to shore. */
 				MakeShore(target);
 				MarkTileDirtyByTile(target);
 				flooded = true;
@@ -1212,6 +1199,8 @@ static TrackStatus GetTileTrackStatus_Water(TileIndex tile, Tile *tptr, Transpor
 	TrackBits ts;
 
 	if (mode != TRANSPORT_WATER) return 0;
+
+	if (IsDockTile(tile)) return 0;
 
 	switch (GetWaterTileType(tile)) {
 		case WATER_TILE_CLEAR: ts = IsTileFlat(tile) ? TRACK_BIT_ALL : TRACK_BIT_NONE; break;

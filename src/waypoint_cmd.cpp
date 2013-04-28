@@ -335,7 +335,7 @@ CommandCost CmdBuildBuoy(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 
 		if (wp->town == NULL) MakeDefaultName(wp);
 
-		MakeBuoy(tile, wp->index, GetWaterClass(tile));
+		MakeBuoy(tile, wp->owner, wp->index);
 
 		wp->UpdateVirtCoord();
 		InvalidateWindowData(WC_WAYPOINT_VIEW, wp->index);
@@ -347,16 +347,18 @@ CommandCost CmdBuildBuoy(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 /**
  * Remove a buoy
  * @param tile TileIndex been queried
+ * @param st_tile Pointer to the station tile
  * @param flags operation to perform
+ * @param[out] tile_deleted Set to true if the station tile was deleted
  * @pre IsBuoyTile(tile)
  * @return cost or failure of operation
  */
-CommandCost RemoveBuoy(TileIndex tile, DoCommandFlag flags)
+CommandCost RemoveBuoy(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted)
 {
 	/* XXX: strange stuff, allow clearing as invalid company when clearing landscape */
 	if (!Company::IsValidID(_current_company) && !(flags & DC_BANKRUPT)) return_cmd_error(INVALID_STRING_ID);
 
-	Waypoint *wp = Waypoint::GetByTile(tile);
+	Waypoint *wp = Waypoint::GetByTile(st_tile);
 
 	if (HasStationInUse(wp->index, false, _current_company)) return_cmd_error(STR_ERROR_BUOY_IS_IN_USE);
 	/* remove the buoy if there is a ship on tile when company goes bankrupt... */
@@ -370,10 +372,8 @@ CommandCost RemoveBuoy(TileIndex tile, DoCommandFlag flags)
 
 		InvalidateWindowData(WC_WAYPOINT_VIEW, wp->index);
 
-		/* We have to set the water tile's state to the same state as before the
-		 * buoy was placed. Otherwise one could plant a buoy on a canal edge,
-		 * remove it and flood the land (if the canal edge is at level 0) */
-		MakeWaterKeepingClass(tile, GetTileOwner(tile));
+		_m.RemoveTile(tile, st_tile);
+		*tile_deleted = true;
 
 		wp->rect.AfterRemoveTile(wp, tile);
 

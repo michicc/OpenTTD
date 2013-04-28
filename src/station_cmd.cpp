@@ -2504,20 +2504,18 @@ CommandCost CmdBuildDock(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 
 	TileIndex tile_cur = tile + TileOffsByDiagDir(direction);
 
-	if (!IsTileType(tile_cur, MP_WATER) || !IsTileFlat(tile_cur)) {
+	if (!IsTileType(tile_cur, MP_WATER) || HasTileByType(tile_cur, MP_STATION) || !IsTileFlat(tile_cur)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
 	if (MayHaveBridgeAbove(tile_cur) && IsBridgeAbove(tile_cur)) return_cmd_error(STR_ERROR_MUST_DEMOLISH_BRIDGE_FIRST);
 
-	/* Get the water class of the water tile before it is cleared.*/
-	WaterClass wc = GetWaterClass(tile_cur);
-
-	ret = DoCommand(tile_cur, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+	/* Test if the tile is a free water tile. */
+	ret = DoCommand(tile_cur, 0, 0, flags & ~DC_EXEC, CMD_LANDSCAPE_CLEAR);
 	if (ret.Failed()) return ret;
 
 	tile_cur += TileOffsByDiagDir(direction);
-	if (!IsTileType(tile_cur, MP_WATER) || !IsTileFlat(tile_cur)) {
+	if (!IsTileType(tile_cur, MP_WATER) || HasTileByType(tile_cur, MP_STATION) || !IsTileFlat(tile_cur)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -2543,15 +2541,10 @@ CommandCost CmdBuildDock(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 
 		st->rect.BeforeAddRect(dock_area.tile, dock_area.w, dock_area.h, StationRect::ADD_TRY);
 
-		/* If the water part of the dock is on a canal, update infrastructure counts.
-		 * This is needed as we've unconditionally cleared that tile before. */
-		if (wc == WATER_CLASS_CANAL) {
-			Company::Get(st->owner)->infrastructure.water++;
-		}
 		Company::Get(st->owner)->infrastructure.station += 2;
 		DirtyCompanyInfrastructureWindows(st->owner);
 
-		MakeDock(tile, st->owner, st->index, direction, wc);
+		MakeDock(tile, st->owner, st->index, direction);
 
 		st->UpdateVirtCoord();
 		UpdateStationAcceptance(st, false);
@@ -2567,12 +2560,14 @@ CommandCost CmdBuildDock(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 /**
  * Remove a dock
  * @param tile TileIndex been queried
+ * @param st_tile Pointer to the station tile.
  * @param flags operation to perform
+ * @param[out] tile_deleted Set to true if the tile was removed.
  * @return cost or failure of operation
  */
-static CommandCost RemoveDock(TileIndex tile, DoCommandFlag flags)
+static CommandCost RemoveDock(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted)
 {
-	Station *st = Station::GetByTile(tile);
+	Station *st = Station::GetByTile(st_tile);
 	CommandCost ret = CheckOwnership(st->owner);
 	if (ret.Failed()) return ret;
 
@@ -2588,8 +2583,8 @@ static CommandCost RemoveDock(TileIndex tile, DoCommandFlag flags)
 
 	if (flags & DC_EXEC) {
 		DoClearSquare(tile1);
-		MarkTileDirtyByTile(tile1);
-		MakeWaterKeepingClass(tile2, st->owner);
+		_m.RemoveTile(tile2, GetTileByType(tile2, MP_STATION));
+		*tile_deleted = true;
 
 		st->rect.AfterRemoveTile(st, tile1);
 		st->rect.AfterRemoveTile(st, tile2);
@@ -2768,7 +2763,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		}
 	}
 
-	Owner owner = GetTileOwner(ti->tile);
+	Owner owner = GetTileOwner(ti->tptr);
 
 	PaletteID palette;
 	if (Company::IsValidID(owner)) {
@@ -2851,23 +2846,9 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	}
 
 	if (IsBuoy(ti->tptr)) {
-		DrawWaterClassGround(ti);
 		SpriteID sprite = GetCanalSprite(CF_BUOY, ti->tile);
 		if (sprite != 0) total_offset = sprite - SPR_IMG_BUOY;
-	} else if (IsDock(ti->tptr) || (IsOilRig(ti->tptr) && IsTileOnWater(ti->tile))) {
-		if (ti->tileh == SLOPE_FLAT) {
-			DrawWaterClassGround(ti);
-		} else {
-			assert(IsDock(ti->tptr));
-			TileIndex water_tile = ti->tile + TileOffsByDiagDir(GetDockDirection(ti->tptr));
-			WaterClass wc = GetWaterClass(water_tile);
-			if (wc == WATER_CLASS_SEA) {
-				DrawShoreTile(ti, draw_halftile, halftile_corner);
-			} else {
-				DrawClearLandTile(ti, 3, draw_halftile, halftile_corner);
-			}
-		}
-	} else {
+	} else if (!IsDock(ti->tptr) && (!IsOilRig(ti->tptr) || !IsTileType(ti->tile, MP_WATER))) {
 		if (layout != NULL) {
 			/* Sprite layout which needs preprocessing */
 			bool separate_ground = HasBit(statspec->flags, SSF_SEPARATE_GROUND);
@@ -3083,17 +3064,6 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 			}
 			break;
 
-		case TRANSPORT_WATER:
-			/* buoy is coded as a station, it is always on open water */
-			if (IsBuoy(st_tile)) {
-				trackbits = TRACK_BIT_ALL;
-				/* remove tracks that connect NE map edge */
-				if (TileX(tile) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
-				/* remove tracks that connect NW map edge */
-				if (TileY(tile) == 0) trackbits &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
-			}
-			break;
-
 		case TRANSPORT_ROAD:
 			if (IsRoadStop(st_tile) && (GetRoadTypes(st_tile) & sub_mode) != 0) {
 				DiagDirection dir = GetRoadStopDir(st_tile);
@@ -3123,13 +3093,6 @@ static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 		case STATION_AIRPORT:
 			AirportTileAnimationTrigger(Station::GetByTile(tile), tile, tptr, AAT_TILELOOP);
 			break;
-
-		case STATION_DOCK:
-			if (!IsTileFlat(tile)) break; // only handle water part
-			/* FALL THROUGH */
-		case STATION_OILRIG: //(station part)
-		case STATION_BUOY:
-			return TileLoop_Water(tile, tptr);
 
 		default: break;
 	}
@@ -3928,8 +3891,8 @@ void BuildOilRig(TileIndex tile)
 	st->string_id = GenerateStationName(st, tile, STATIONNAMING_OILRIG);
 
 	assert(IsTileType(tile, MP_INDUSTRY));
-	DeleteAnimatedTile(tile);
-	MakeOilrig(tile, st->index, GetWaterClass(tile));
+	MakeWaterKeepingClass(tile, OWNER_NONE);
+	MakeOilrig(tile, st->index);
 
 	st->owner = OWNER_NONE;
 	st->airport.type = AT_OILRIG;
@@ -3965,6 +3928,8 @@ void DeleteOilRig(TileIndex tile)
 
 static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
+	bool tile_delted = false;
+
 	if (IsRoadStopTile(tile)) {
 		for (RoadType rt = ROADTYPE_ROAD; rt < ROADTYPE_END; rt++) {
 			/* Update all roadtypes, no matter if they are present */
@@ -4004,14 +3969,6 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 				/* Road stops were already handled above. */
 				break;
 
-			case STATION_BUOY:
-			case STATION_DOCK:
-				if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
-					old_company->infrastructure.water--;
-					new_company->infrastructure.water++;
-				}
-				break;
-
 			default:
 				break;
 		}
@@ -4031,15 +3988,16 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 			DoCommand(tile, 1 | 1 << 8, (GetStationType(tptr) == STATION_TRUCK) ? ROADSTOP_TRUCK : ROADSTOP_BUS, DC_EXEC | DC_BANKRUPT, CMD_REMOVE_ROAD_STOP);
 			/* Change owner of tile and all roadtypes */
 			ChangeTileOwner(tile, old_owner, new_owner);
-		} else {
-			DoCommand(tile, 0, 0, DC_EXEC | DC_BANKRUPT, CMD_LANDSCAPE_CLEAR);
-			/* Set tile owner of water under (now removed) buoy and dock to OWNER_NONE.
-			 * Update owner of buoy if it was not removed (was in orders).
+		} else if (IsBuoy(tptr)) {
+			RemoveBuoy(tile, tptr, DC_EXEC | DC_BANKRUPT, &tile_delted);
+			/* Update owner of buoy if it was not removed (was in orders).
 			 * Do not update when owned by OWNER_WATER (sea and rivers). */
-			if ((IsTileType(tile, MP_WATER) || IsBuoyTile(tile)) && IsTileOwner(tile, old_owner)) SetTileOwner(tile, OWNER_NONE);
+			if (!tile_delted && IsTileOwner(tptr, old_owner)) SetTileOwner(tptr, OWNER_NONE);
+		} else {
+			ClearTile_Station(tile, tptr, DC_EXEC | DC_BANKRUPT, &tile_delted);
 		}
 	}
-	return true;
+	return !tile_delted;
 }
 
 /**
@@ -4112,8 +4070,8 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 				return_cmd_error(STR_ERROR_MUST_DEMOLISH_BUS_STATION_FIRST);
 			}
 			return RemoveRoadStop(tile, tptr, flags);
-		case STATION_BUOY:     return RemoveBuoy(tile, flags);
-		case STATION_DOCK:     return RemoveDock(tile, flags);
+		case STATION_BUOY:     return RemoveBuoy(tile, tptr, flags, tile_deleted);
+		case STATION_DOCK:     return RemoveDock(tile, tptr, flags, tile_deleted);
 		default: break;
 	}
 
