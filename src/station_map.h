@@ -546,10 +546,10 @@ static inline uint GetCustomStationSpecIndex(const Tile *t)
  * @param random_bits The random bits.
  * @pre IsTileType(t, MP_STATION)
  */
-static inline void SetStationTileRandomBits(TileIndex t, byte random_bits)
+static inline void SetStationTileRandomBits(Tile *t, byte random_bits)
 {
 	assert(IsTileType(t, MP_STATION));
-	SB(_m[t].m3, 4, 4, random_bits);
+	SB(t->m3, 4, 4, random_bits);
 }
 
 /**

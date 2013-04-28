@@ -1298,7 +1298,7 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 				DeallocateSpecFromStation(st, old_specindex);
 
 				SetCustomStationSpecIndex(tile, specindex);
-				SetStationTileRandomBits(tile, GB(Random(), 0, 4));
+				SetStationTileRandomBits(GetTileByType(tile, MP_STATION), GB(Random(), 0, 4));
 				SetAnimationFrame(tile, 0);
 
 				if (!IsStationTileBlocked(tile)) c->infrastructure.rail[rt]++;
@@ -2297,7 +2297,7 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 
 		for (AirportTileTableIterator iter(as->table[layout], tile); iter != INVALID_TILE; ++iter) {
 			MakeAirport(iter, st->owner, st->index, iter.GetStationGfx(), WATER_CLASS_INVALID);
-			SetStationTileRandomBits(iter, GB(Random(), 0, 4));
+			SetStationTileRandomBits(GetTileByType(iter, MP_STATION), GB(Random(), 0, 4));
 			st->airport.Add(iter);
 
 			if (AirportTileSpec::Get(GetTranslatedAirportTileID(iter.GetStationGfx()))->animation.status != ANIM_STATUS_NO_ANIMATION) AddAnimatedTile(iter);
