@@ -238,8 +238,18 @@ public:
 			if (cargo_creation) {
 				/* Exclusive rights in effect? Only serve those stations. */
 				if ((*st)->town->exclusive_counter > 0 && (*st)->town->exclusivity != (*st)->owner) continue;
+				/* Lowest possible rating, better not to give cargo anymore. */
+				if ((*st)->goods[cid].rating == 0) continue;
 				/* Selectively servicing stations, and not this one. */
 				if (_settings_game.order.selectgoods && (*st)->goods[cid].last_speed == 0) continue;
+
+				if (IsCargoInClass(cid, CC_PASSENGERS)) {
+					/* Passengers are never served by just a truck stop. */
+					if ((*st)->facilities == FACIL_TRUCK_STOP) continue;
+				} else {
+					/* Non-passengers are never served by just a bus stop. */
+					if ((*st)->facilities == FACIL_BUS_STOP) continue;
+				}
 			}
 
 			*this->m_origin.Append() = RouteLink((*st)->index, INVALID_ORDER, this->m_order);
