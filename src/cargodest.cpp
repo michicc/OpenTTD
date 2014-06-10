@@ -1185,6 +1185,7 @@ void InvalidateOrderRouteLinks(OrderID order)
 					delete *link;
 					link = st->goods[cid].routes.erase(link);
 				} else {
+//					while ((*link)->dead_ends.size() > 48) (*link)->dead_ends.pop_back();
 					++link;
 				}
 			}

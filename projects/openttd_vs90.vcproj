@@ -1348,6 +1348,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\..\src\quadtree_type.hpp"
+				>
+			</File>
+			<File
 				RelativePath=".\..\src\querystring_gui.h"
 				>
 			</File>

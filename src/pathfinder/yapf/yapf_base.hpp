@@ -165,7 +165,7 @@ public:
 			int t = perf.Get(1000000);
 			_total_pf_time_us += t;
 
-			if (_debug_yapf_level >= 3) {
+			if (_debug_yapf_level >= 3 && Yapf().TransportTypeChar() == 'c') {
 				UnitID veh_idx = (m_veh != NULL) ? m_veh->unitnumber : 0;
 				char ttc = Yapf().TransportTypeChar();
 				float cache_hit_ratio = (m_stats_cache_hits == 0) ? 0.0f : ((float)m_stats_cache_hits / (float)(m_stats_cache_hits + m_stats_cost_calcs) * 100.0f);
@@ -232,7 +232,7 @@ public:
 	 * AddNewNode() - called by Tderived::PfFollowNode() for each child node.
 	 *  Nodes are evaluated here and added into open list
 	 */
-	void AddNewNode(Node &n, const TrackFollower &tf)
+	bool AddNewNode(Node &n, const TrackFollower &tf)
 	{
 		/* evaluate the node */
 		bool bCached = Yapf().PfNodeCacheFetch(n);
@@ -251,7 +251,7 @@ public:
 		if (bValid) bValid = Yapf().PfCalcEstimate(n);
 
 		/* have the cost or estimate callbacks marked this node as invalid? */
-		if (!bValid) return;
+		if (!bValid) return false;
 
 		/* detect the destination */
 		bool bDestination = Yapf().PfDetectDestination(n);
@@ -260,7 +260,7 @@ public:
 				m_pBestDestNode = &n;
 			}
 			m_nodes.FoundBestNode(n);
-			return;
+			return true;
 		}
 
 		if (AlphaA) {
@@ -285,7 +285,7 @@ public:
 				/* add the updated old node back to open list */
 				m_nodes.InsertOpenNode(*openNode);
 			}
-			return;
+			return true;
 		}
 
 		/* check new node against closed list */
@@ -304,11 +304,12 @@ public:
 				 *  - You have used negative cost penalty in some cases (cost bonus) */
 				//NOT_REACHED();
 			}
-			return;
+			return true;
 		}
 		/* the new node is really new
 		 * add it to the open list */
 		m_nodes.InsertOpenNode(n);
+		return true;
 	}
 
 	const VehicleType * GetVehicle() const

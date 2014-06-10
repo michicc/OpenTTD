@@ -21,6 +21,7 @@
 #include "station_type.h"
 #include "company_type.h"
 #include "vehicle_type.h"
+#include <list>
 
 struct CargoSourceSink;
 
@@ -93,6 +94,25 @@ struct CargoSourceSink {
 };
 
 
+struct RouteLinkCacheEntry {
+	TileArea dest;
+
+	int cost_dist;
+	int cost_time;
+
+	StationID next_unload;
+
+	RouteLinkCacheEntry(const TileArea &dest) : dest(dest) {}
+
+	inline bool operator == (const TileArea &area) const
+	{
+		return this->dest == area;
+	}
+};
+
+typedef std::list<RouteLinkCacheEntry> RouteLinkDestCache;
+
+
 /** Pool of route links. */
 typedef Pool<RouteLink, RouteLinkID, 512, 262144> RouteLinkPool;
 extern RouteLinkPool _routelink_pool;
@@ -113,6 +133,7 @@ private:
 	uint16          wait_time;       ///< Days since the last vehicle traveled this link.
 
 public:
+	RouteLinkDestCache dest_cache;
 
 	/** Constructor */
 	RouteLink(StationID dest = INVALID_STATION, OrderID prev_order = INVALID_ORDER, OrderID next_order = INVALID_ORDER, Owner owner = INVALID_OWNER, uint32 travel_time = 0, VehicleType vtype = VEH_INVALID)

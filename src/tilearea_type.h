@@ -60,6 +60,19 @@ struct TileArea {
 	{
 		return TILE_ADDXY(this->tile, this->w / 2, this->h / 2);
 	}
+
+	/** */
+	bool operator == (const TileArea &other) const
+	{
+		return this->tile == other.tile && this->w == other.w && this->h == other.h;
+	}
+
+	/** */
+	bool operator < (const TileArea &other) const
+	{
+		if (this->tile != other.tile) return this->tile < other.tile;
+		return this->w == other.w ? this->h < other.h : this->w < other.w;
+	}
 };
 
 /** Base class for tile iterators. */

@@ -519,6 +519,7 @@
     <ClInclude Include="..\src\order_func.h" />
     <ClInclude Include="..\src\order_type.h" />
     <ClInclude Include="..\src\pbs.h" />
+    <ClInclude Include="..\src\quadtree_type.hpp" />
     <ClInclude Include="..\src\querystring_gui.h" />
     <ClInclude Include="..\src\rail.h" />
     <ClInclude Include="..\src\rail_gui.h" />

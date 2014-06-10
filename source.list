@@ -252,6 +252,7 @@ order_base.h
 order_func.h
 order_type.h
 pbs.h
+quadtree_type.hpp
 querystring_gui.h
 rail.h
 rail_gui.h

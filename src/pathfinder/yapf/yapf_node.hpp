@@ -95,4 +95,24 @@ struct CYapfNodeTrackT : public CYapfNodeT<Tkey_, Tnode>
 	FORCEINLINE Trackdir GetTrackdir() const { return this->m_key.m_td; }
 };
 
+template <class Tkey_, class Tnode>
+struct CYapfChoiceNodeT : public CYapfNodeT<Tkey_, Tnode>
+{
+	typedef CYapfNodeT<Tkey_, Tnode> Base;
+	typedef Tnode                    Node;
+
+	bool m_is_choice;
+
+	inline void Set(Node *parent, bool is_choice)
+	{
+		Base::Set(parent, is_choice);
+		this->m_is_choice = is_choice;
+	}
+
+	inline bool IsChoice() const
+	{
+		return this->m_is_choice;
+	}
+};
+
 #endif /* YAPF_NODE_HPP */

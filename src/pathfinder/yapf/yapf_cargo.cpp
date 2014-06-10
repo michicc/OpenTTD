@@ -14,7 +14,11 @@
 #include "../../station_base.h"
 #include "../../town.h"
 #include "yapf.hpp"
+#include <algorithm>
 
+int deadend_hits = 0;
+int deadend_adds = 0;
+int deadend_misses = 0;
 
 /** YAPF node key for cargo routing. */
 struct CYapfRouteLinkNodeKeyT {
@@ -44,16 +48,16 @@ struct CYapfRouteLinkNodeKeyT {
 };
 
 /** YAPF node class for cargo routing. */
-struct CYapfRouteLinkNodeT : public CYapfNodeT<CYapfRouteLinkNodeKeyT, CYapfRouteLinkNodeT> {
-	typedef CYapfNodeT<CYapfRouteLinkNodeKeyT, CYapfRouteLinkNodeT> Base;
+struct CYapfRouteLinkNodeT : public CYapfChoiceNodeT<CYapfRouteLinkNodeKeyT, CYapfRouteLinkNodeT> {
+	typedef CYapfChoiceNodeT<CYapfRouteLinkNodeKeyT, CYapfRouteLinkNodeT> Base;
 
 	uint m_num_transfers; ///< Number of transfers to reach this node.
 	uint m_depth;
 
 	/** Initialize this node. */
-	FORCEINLINE void Set(CYapfRouteLinkNodeT *parent, RouteLink *link, uint depth)
+	FORCEINLINE void Set(CYapfRouteLinkNodeT *parent, RouteLink *link, bool is_choice, uint depth)
 	{
-		Base::Set(parent, false);
+		Base::Set(parent, is_choice);
 		this->m_key.Set(link);
 		this->m_num_transfers = (parent != NULL) ? parent->m_num_transfers : 0;
 		this->m_depth = depth;
@@ -106,23 +110,56 @@ private:
 	FORCEINLINE const Tpf& Yapf() const { return *static_cast<const Tpf*>(this); }
 
 	/** Check if this is a valid connection. */
-	FORCEINLINE bool ValidLink(Node &n, const RouteLink *link, const RouteLink *parent) const
+	FORCEINLINE bool ValidLink(Node &n, RouteLink *link, const RouteLink *parent) const
 	{
+/*		RouteLinkDeadEnds::iterator dead_end = std::find(link->dead_ends.begin(), link->dead_ends.end(), Yapf().GetDestination());
+		if (dead_end != link->dead_ends.end()) {
+			link->dead_ends.splice(link->dead_ends.begin(), link->dead_ends, dead_end);
+			deadend_hits++;
+			return false;
+		}*/
+
+		deadend_misses++;
+
 		/* If the parent link has an owner, and the owner is different to
 		 * the new owner, discard the node. Otherwise cargo could switch
 		 * companies at oil rigs, which would mess up payment. */
-		if (parent->GetOwner() != INVALID_OWNER && link->GetOwner() != parent->GetOwner()) return false;
+		if (parent->GetOwner() != INVALID_OWNER && link->GetOwner() != parent->GetOwner()) {
+			return false;
+		}
 
 		/* Check for no loading/no unloading when transferring. */
 		if (link->GetOriginOrderId() != parent->GetDestOrderId() || (Order::Get(link->GetOriginOrderId())->GetUnloadType() & OUFB_UNLOAD) != 0) {
 			/* Increase transfer counter and stop if max number of transfers is exceeded. */
-			if (++n.m_num_transfers > Yapf().PfGetSettings().route_max_transfers) return false;
+			if (++n.m_num_transfers > Yapf().PfGetSettings().route_max_transfers) {
+				return false;
+			}
 
 			/* Can't transfer if the current order prohibits loading. */
-			if ((Order::Get(link->GetOriginOrderId())->GetLoadType() & OLFB_NO_LOAD) != 0) return false;
+			if ((Order::Get(link->GetOriginOrderId())->GetLoadType() & OLFB_NO_LOAD) != 0) {
+				return false;
+			}
 
 			/* Can't transfer if the last order prohibits unloading. */
-			if (parent->GetDestOrderId() != INVALID_ORDER && (Order::Get(parent->GetDestOrderId())->GetUnloadType() & OUFB_NO_UNLOAD) != 0) return false;
+			if (parent->GetDestOrderId() != INVALID_ORDER && (Order::Get(parent->GetDestOrderId())->GetUnloadType() & OUFB_NO_UNLOAD) != 0) {
+				return false;
+			}
+
+			/* Routing loops never make sense. */
+			for (const Node *p = n.m_parent; p != NULL; p = p->m_parent) {
+				if (p->GetRouteLink()->GetDestination() == link->GetDestination()) {
+					/* Found a loop, make a negative cache entry. */
+/*					for (Node *last = &n; last->m_parent != NULL; last = last->m_parent) {
+						if (last->IsChoice()) {
+							if (std::find(last->GetRouteLink()->dead_ends.begin(), last->GetRouteLink()->dead_ends.end(), Yapf().GetDestination()) == last->GetRouteLink()->dead_ends.end()) {
+								last->GetRouteLink()->dead_ends.push_front(RouteLinkDeadEnd(Yapf().GetDestination()));
+								deadend_adds++;
+							}
+						}
+					} */
+					return false;
+				}
+			}
 		}
 
 		return true;
@@ -252,7 +289,7 @@ public:
 				}
 			}
 
-			*this->m_origin.Append() = RouteLink((*st)->index, INVALID_ORDER, this->m_order);
+			new (this->m_origin.Append()) RouteLink((*st)->index, INVALID_ORDER, this->m_order);
 		}
 	}
 
@@ -261,7 +298,7 @@ public:
 	{
 		for (RouteLink *link = this->m_origin.Begin(); link != this->m_origin.End(); link++) {
 			Node &n = this->Yapf().CreateNewNode();
-			n.Set(NULL, link, 0);
+			n.Set(NULL, link, false, 0);
 			/* Prefer stations closer to the source tile. */
 			n.m_cost = DistanceSquare(this->m_src, Station::Get(link->GetDestination())->xy) * this->Yapf().PfGetSettings().route_distance_factor;
 			this->Yapf().AddStartupNode(n);
@@ -303,6 +340,11 @@ public:
 		N = Yapf().PfGetSettings().route_max_transfers * 3;
 	}
 
+	inline const TileArea& GetDestination() const
+	{
+		return this->m_dest;
+	}
+
 	/** Cost for delivering the cargo to the final destination tile. */
 	FORCEINLINE int DeliveryCost(Station *st)
 	{
@@ -341,8 +383,8 @@ public:
 
 		/* Estimate based on Manhattan distance to destination. */
 		Station *from = Station::Get(n.GetRouteLink()->GetDestination());
-		int d = DistanceManhattan(from->xy, this->m_dest.tile);
-//		d = d * (m_distance + d) * m_h_mul / m_distance;
+		int d = DistanceManhattan(from->xy, this->m_dest.tile) * m_h_mul;
+//		d = d * (m_distance + d * m_h_mul) / m_distance;
 //		if (n.m_depth <= N) d = d * (N + m_h_mul*(N - n.m_depth)) / N;
 		n.m_estimate = n.m_cost + d * this->Yapf().PfGetSettings().route_distance_factor;
 		return true;
@@ -365,19 +407,27 @@ public:
 	{
 		Follower f(this->Yapf().GetCargoID());
 
+		bool dead_end = true;
+
 		if (this->Yapf().PfDetectDestination(old_node.GetRouteLink()->GetDestination()) && (old_node.GetRouteLink()->GetDestOrderId() == INVALID_ORDER || (Order::Get(old_node.GetRouteLink()->GetDestOrderId())->GetUnloadType() & OUFB_NO_UNLOAD) == 0)) {
 			/* Possible destination? Add sentinel node for final delivery. */
 			Node &n = this->Yapf().CreateNewNode();
-			n.Set(&old_node, NULL, old_node.m_depth + 1);
-			this->Yapf().AddNewNode(n, f);
+			n.Set(&old_node, NULL, false, old_node.m_depth + 1);
+			if (this->Yapf().AddNewNode(n, f)) dead_end = false;
 		}
 
 		if (f.Follow(old_node.GetRouteLink())) {
+			int out_links = 0;
+			StationID old_source = old_node.m_parent != NULL ? old_node.m_parent->GetRouteLink()->GetDestination() : INVALID_STATION;
+			for (RouteLinkList::const_iterator link = f.m_new_links->begin(); out_links < 2 && link != f.m_new_links->end(); ++link) {
+				if ((*link)->GetDestination() != old_source) out_links++;
+			}
+
 			for (RouteLinkList::iterator link = f.m_new_links->begin(); link != f.m_new_links->end(); ++link) {
 				/* Add new node. */
 				Node &n = this->Yapf().CreateNewNode();
-				n.Set(&old_node, *link, old_node.m_depth + 1);
-				this->Yapf().AddNewNode(n, f);
+				n.Set(&old_node, *link, out_links >= 2, old_node.m_depth + 1);
+				if (this->Yapf().AddNewNode(n, f)) dead_end = false;
 			}
 		}
 	}

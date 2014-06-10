@@ -777,6 +777,9 @@
     <ClInclude Include="..\src\pbs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\quadtree_type.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\querystring_gui.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -20,6 +20,7 @@
 #include "rail_gui.h"
 #include "saveload/saveload.h"
 #include "cargodest_func.h"
+#include "debug.h"
 
 Year      _cur_year;   ///< Current year, starting at 0
 Month     _cur_month;  ///< Current month (0..11)
@@ -245,6 +246,10 @@ static void OnNewMonth()
 #endif /* ENABLE_NETWORK */
 }
 
+extern int deadend_hits;
+extern int deadend_adds;
+extern int deadend_misses;
+
 /**
  * Runs various procedures that have to be done daily
  */
@@ -262,6 +267,11 @@ static void OnNewDay()
 
 	/* Refresh after possible snowline change */
 	SetWindowClassesDirty(WC_TOWN_VIEW);
+
+	DEBUG(cargodest, 1, "Cache hits %d/%d/%d (%.1f%%)", deadend_hits, deadend_adds, deadend_misses, (float)deadend_hits / (deadend_hits + deadend_misses) * 100.f);
+	deadend_hits = 0;
+	deadend_adds = 0;
+	deadend_misses = 0;
 }
 
 /**
