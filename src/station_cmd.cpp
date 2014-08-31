@@ -2296,8 +2296,8 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		st->rect.BeforeAddRect(tile, w, h, StationRect::ADD_TRY);
 
 		for (AirportTileTableIterator iter(as->table[layout], tile); iter != INVALID_TILE; ++iter) {
-			MakeAirport(iter, st->owner, st->index, iter.GetStationGfx(), WATER_CLASS_INVALID);
-			SetStationTileRandomBits(GetTileByType(iter, MP_STATION), GB(Random(), 0, 4));
+			Tile *t = MakeAirport(iter, st->owner, st->index, iter.GetStationGfx());
+			SetStationTileRandomBits(t, GB(Random(), 0, 4));
 			st->airport.Add(iter);
 
 			if (AirportTileSpec::Get(GetTranslatedAirportTileID(iter.GetStationGfx()))->animation.status != ANIM_STATUS_NO_ANIMATION) AddAnimatedTile(iter);
@@ -2331,12 +2331,14 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 /**
  * Remove an airport
  * @param tile TileIndex been queried
+ * @param st_tile Pointer to the station tile
  * @param flags operation to perform
+ * @param[out] tile_deleted Set to true if the station tiles was deleted
  * @return cost or failure of operation
  */
-static CommandCost RemoveAirport(TileIndex tile, DoCommandFlag flags)
+static CommandCost RemoveAirport(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted)
 {
-	Station *st = Station::GetByTile(tile);
+	Station *st = Station::GetByTile(st_tile);
 
 	if (_current_company != OWNER_WATER) {
 		CommandCost ret = CheckOwnership(st->owner);
@@ -2407,6 +2409,8 @@ static CommandCost RemoveAirport(TileIndex tile, DoCommandFlag flags)
 		st->RecomputeIndustriesNear();
 		DeleteStationIfEmpty(st);
 		DeleteNewGRFInspectWindow(GSF_AIRPORTS, st->index);
+
+		*tile_deleted = true;
 	}
 
 	return cost;
@@ -3087,15 +3091,10 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 
 static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 {
-	/* FIXME -- GetTileTrackStatus_Station -> animated stationtiles
-	 * hardcoded.....not good */
-	switch (GetStationType(tptr)) {
-		case STATION_AIRPORT:
-			AirportTileAnimationTrigger(Station::GetByTile(tile), tile, tptr, AAT_TILELOOP);
-			break;
-
-		default: break;
+	if (IsAirport(tptr)) {
+		AirportTileAnimationTrigger(Station::GetByTile(tptr), tile, tptr, AAT_TILELOOP);
 	}
+
 	return true;
 }
 
@@ -4059,7 +4058,7 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 	switch (GetStationType(tptr)) {
 		case STATION_RAIL:     return RemoveRailStation(tile, flags);
 		case STATION_WAYPOINT: return RemoveRailWaypoint(tile, flags);
-		case STATION_AIRPORT:  return RemoveAirport(tile, flags);
+		case STATION_AIRPORT:  return RemoveAirport(tile, tptr, flags, tile_deleted);
 		case STATION_TRUCK:
 			if (IsDriveThroughStopTile(tile) && !CanRemoveRoadWithStop(tile, flags)) {
 				return_cmd_error(STR_ERROR_MUST_DEMOLISH_TRUCK_STATION_FIRST);
