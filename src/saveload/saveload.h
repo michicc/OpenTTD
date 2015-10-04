@@ -302,6 +302,8 @@ enum SaveLoadVersion : uint16 {
 
 	SLV_SCRIPT_MEMLIMIT,                    ///< 215  PR#7516 Limit on AI/GS memory consumption.
 
+	SLV_YACD,                               ///< 214          Cargo d_e_stinations.
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
 

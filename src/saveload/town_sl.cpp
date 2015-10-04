@@ -261,6 +261,8 @@ static void RealSave_Town(Town *t)
 		uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
 		SlArray(t->cargo_accepted.data, arr_len, SLE_UINT32);
 	}
+
+	t->SaveCargoSourceSink();
 }
 
 static void Save_TOWN()
@@ -304,6 +306,8 @@ static void Load_TOWN()
 			/* Rebuild total cargo acceptance. */
 			UpdateTownCargoTotal(t);
 		}
+
+		t->LoadCargoSourceSink();
 	}
 }
 
@@ -316,6 +320,8 @@ static void Ptrs_TOWN()
 	Town *t;
 	FOR_ALL_TOWNS(t) {
 		SlObject(t, _town_desc);
+
+		t->PtrsCargoSourceSink();
 	}
 }
 
