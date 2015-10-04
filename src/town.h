@@ -18,6 +18,7 @@
 #include "newgrf_storage.h"
 #include "cargotype.h"
 #include "tilematrix_type.hpp"
+#include "cargodest_base.h"
 #include <list>
 
 template <typename T>
@@ -52,7 +53,7 @@ struct TownCache {
 };
 
 /** Town data structure. */
-struct Town : TownPool::PoolItem<&_town_pool> {
+struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	TileIndex xy;                  ///< town center tile
 
 	TownCache cache; ///< Container for all cacheable data.
@@ -113,6 +114,21 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 	~Town();
 
 	void InitializeLayout(TownLayout layout);
+
+	SourceType GetType() const override
+	{
+		return ST_TOWN;
+	}
+
+	SourceID GetID() const override
+	{
+		return this->index;
+	}
+
+	TileIndex GetXY() const override
+	{
+		return this->xy;
+	}
 
 	/**
 	 * Calculate the max town noise.
