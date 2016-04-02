@@ -245,6 +245,9 @@ public:
 		return *this->ToTile(tile);
 	}
 
+	Tile *NewTile(TileIndex tile, TileType type, bool raw_alloc = false, Tile *after = NULL);
+	void RemoveTile(TileIndex index, Tile *tile);
+
 	/** Helper class for iterating over all tiles in the map. */
 	class Iterator {
 	public:
