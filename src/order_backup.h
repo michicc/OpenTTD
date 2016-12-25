@@ -17,6 +17,7 @@
 #include "tile_type.h"
 #include "vehicle_type.h"
 #include "base_consist.h"
+#include "consist_type.h"
 
 /** Unique identifier for an order backup. */
 typedef uint8 OrderBackupID;
@@ -47,22 +48,22 @@ private:
 
 	/** Creation for savegame restoration. */
 	OrderBackup() {}
-	OrderBackup(const Vehicle *v, uint32 user);
+	OrderBackup(const Consist *cs, uint32 user);
 
-	void DoRestore(Vehicle *v);
+	void DoRestore(Consist *cs);
 
 public:
 	~OrderBackup();
 
-	static void Backup(const Vehicle *v, uint32 user);
-	static void Restore(Vehicle *v, uint32 user);
+	static void Backup(const Consist *cs, uint32 user);
+	static void Restore(Consist *cs, uint32 user);
 
 	static void ResetOfUser(TileIndex tile, uint32 user);
 	static void ResetUser(uint32 user);
 	static void Reset(TileIndex tile = INVALID_TILE, bool from_gui = true);
 
 	static void ClearGroup(GroupID group);
-	static void ClearVehicle(const Vehicle *v);
+	static void ClearConsist(const Consist *cs);
 	static void RemoveOrder(OrderType type, DestinationID destination);
 };
 

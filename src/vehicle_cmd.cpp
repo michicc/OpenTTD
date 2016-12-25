@@ -150,10 +150,8 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		GroupStatistics::CountEngine(v, 1);
 		GroupStatistics::UpdateAutoreplace(_current_company);
 
-		if (v->IsPrimaryVehicle()) {
-			GroupStatistics::CountVehicle(v, 1);
-			OrderBackup::Restore(v, p2);
-		}
+		if (v->IsPrimaryVehicle()) GroupStatistics::CountVehicle(v, 1);
+		if (unit_num != 0) OrderBackup::Restore(v->GetConsist(), p2);
 	}
 
 	return value;
@@ -204,8 +202,9 @@ CommandCost CmdSellVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 		if (flags & DC_EXEC) {
 			if (front->IsPrimaryVehicle()) {
-				if (p1 & MAKE_ORDER_BACKUP_FLAG) OrderBackup::Backup(front, p2);
-				delete front->GetConsist();
+				Consist *cs = front->GetConsist();
+				if (p1 & MAKE_ORDER_BACKUP_FLAG) OrderBackup::Backup(cs, p2);
+				delete cs;
 				front->SetConsist(NULL);
 			}
 			delete front;

@@ -17,6 +17,7 @@
 #include "roadveh.h"
 #include "ship.h"
 #include "train.h"
+#include "order_backup.h"
 
 /** The pool with all our consists. */
 ConsistPool _consist_pool("Consist");
@@ -25,6 +26,13 @@ INSTANTIATE_POOL_METHODS(Consist)
 Consist::Consist(VehicleType type)
 {
 	this->type = type;
+}
+
+void Consist::PreDestructor()
+{
+	if (CleaningPool()) return;
+
+	OrderBackup::ClearConsist(this);
 }
 
 /**

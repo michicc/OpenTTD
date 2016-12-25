@@ -25,6 +25,8 @@ class Consist : public ConsistPool::PoolItem<&_consist_pool> {
 private:
 	Vehicle *front;             ///< Pointer to the first vehicle of the associated vehicle chain.
 
+	void PreDestructor();
+
 	friend void Load_VEHS();
 	friend bool LoadOldVehicle(struct LoadgameState *ls, int num);
 
@@ -33,7 +35,7 @@ public:
 
 	Consist(VehicleType type = VEH_INVALID);
 	/** We want to 'destruct' the right class. */
-	virtual ~Consist() {}
+	virtual ~Consist() { this->PreDestructor();  }
 
 	bool Tick();
 
