@@ -179,7 +179,7 @@ struct TimetableWindow : Window {
 	 */
 	static bool BuildArrivalDepartureList(const Vehicle *v, TimetableArrivalDeparture *table)
 	{
-		assert(HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED));
+		assert(HasBit(v->consist_flags, CF_TIMETABLE_STARTED));
 
 		bool travelling = (!v->current_order.IsType(OT_LOADING) || v->current_order.GetNonStopType() == ONSF_STOP_EVERYWHERE);
 		Ticks start_time = _date_fract - v->current_order_time;
@@ -336,7 +336,7 @@ struct TimetableWindow : Window {
 			this->DisableWidget(WID_VT_SHARED_ORDER_LIST);
 		}
 
-		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE));
+		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE));
 
 		this->DrawWidgets();
 	}
@@ -425,7 +425,7 @@ struct TimetableWindow : Window {
 				 * Excluding order lists with only one order makes some things easier.
 				 */
 				Ticks total_time = v->orders.list != NULL ? v->orders.list->GetTimetableDurationIncomplete() : 0;
-				if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED)) break;
+				if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) break;
 
 				TimetableArrivalDeparture *arr_dep = AllocaM(TimetableArrivalDeparture, v->GetNumOrders());
 				const VehicleOrderID cur_order = v->cur_real_order_index % v->GetNumOrders();
@@ -488,7 +488,7 @@ struct TimetableWindow : Window {
 					SetDParam(0, STR_JUST_DATE_TINY);
 					SetDParam(1, v->timetable_start);
 					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_STATUS_START_AT);
-				} else if (!HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED)) {
+				} else if (!HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) {
 					/* We aren't running on a timetable yet, so how can we be "on time"
 					 * when we aren't even "on service"/"on duty"? */
 					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_STATUS_NOT_STARTED);
@@ -596,7 +596,7 @@ struct TimetableWindow : Window {
 
 			case WID_VT_AUTOFILL: { // Autofill the timetable.
 				uint32 p2 = 0;
-				if (!HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
+				if (!HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
 				if (_ctrl_pressed) SetBit(p2, 1);
 				DoCommandP(0, v->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;

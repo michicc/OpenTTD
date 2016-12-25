@@ -952,6 +952,13 @@ void Load_VEHS()
 
 				c->front = v;
 			}
+
+			/* Vehicle flags were split into vehicle and consists flags. */
+			if (HasBit(v->vehicle_flags, 3)) SetBit(v->consist_flags, CF_TIMETABLE_STARTED);
+			if (HasBit(v->vehicle_flags, 4)) SetBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
+			if (HasBit(v->vehicle_flags, 5)) SetBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+			if (HasBit(v->vehicle_flags, 8)) SetBit(v->consist_flags, CF_SERVINT_IS_CUSTOM);
+			if (HasBit(v->vehicle_flags, 9)) SetBit(v->consist_flags, CF_SERVINT_IS_PERCENT);
 		}
 	}
 }

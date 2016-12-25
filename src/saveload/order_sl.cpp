@@ -263,8 +263,8 @@ const SaveLoad *GetOrderBackupDescription()
 		 SLE_CONDVAR(OrderBackup, current_order_time,       SLE_UINT32,                176, SL_MAX_VERSION),
 		 SLE_CONDVAR(OrderBackup, lateness_counter,         SLE_INT32,                 176, SL_MAX_VERSION),
 		 SLE_CONDVAR(OrderBackup, timetable_start,          SLE_INT32,                 176, SL_MAX_VERSION),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags,            SLE_FILE_U8 | SLE_VAR_U16, 176, 179),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags,            SLE_UINT16,                180, SL_MAX_VERSION),
+		 SLE_CONDVAR(OrderBackup, consist_flags,            SLE_FILE_U8 | SLE_VAR_U16, 176, 179),
+		 SLE_CONDVAR(OrderBackup, consist_flags,            SLE_UINT16,                180, SL_MAX_VERSION),
 		     SLE_REF(OrderBackup, orders,                   REF_ORDER),
 		     SLE_END()
 	};

@@ -15,6 +15,17 @@
 #include "order_type.h"
 #include "date_type.h"
 
+
+/** Bit numbers in #Consists::flags. */
+enum ConsistFlags {
+	CF_TIMETABLE_STARTED       = 0, ///< Whether the vehicle has started running on the timetable yet.
+	CF_AUTOFILL_TIMETABLE      = 1, ///< Whether the vehicle should fill in the timetable automatically.
+	CF_AUTOFILL_PRES_WAIT_TIME = 2, ///< Whether non-destructive auto-fill should preserve waiting times
+	CF_SERVINT_IS_CUSTOM       = 3, ///< Service interval is custom.
+	CF_SERVINT_IS_PERCENT      = 4, ///< Service interval is percent.
+};
+
+
 /** Various front vehicle properties that are preserved when autoreplacing, using order-backup or switching front engines within a consist. */
 struct BaseConsist {
 	char *name;                         ///< Name of vehicle
@@ -29,7 +40,7 @@ struct BaseConsist {
 	VehicleOrderID cur_real_order_index;///< The index to the current real (non-implicit) order
 	VehicleOrderID cur_implicit_order_index;///< The index to the current implicit order
 
-	uint16 vehicle_flags;               ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
+	uint16 consist_flags;               ///< Various state flags for the consist.
 
 	BaseConsist() : name(NULL) {}
 	virtual ~BaseConsist();

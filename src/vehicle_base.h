@@ -42,16 +42,11 @@ enum VehStatus {
 
 /** Bit numbers in #Vehicle::vehicle_flags. */
 enum VehicleFlags {
-	VF_LOADING_FINISHED,        ///< Vehicle has finished loading.
-	VF_CARGO_UNLOADING,         ///< Vehicle is unloading cargo.
-	VF_BUILT_AS_PROTOTYPE,      ///< Vehicle is a prototype (accepted as exclusive preview).
-	VF_TIMETABLE_STARTED,       ///< Whether the vehicle has started running on the timetable yet.
-	VF_AUTOFILL_TIMETABLE,      ///< Whether the vehicle should fill in the timetable automatically.
-	VF_AUTOFILL_PRES_WAIT_TIME, ///< Whether non-destructive auto-fill should preserve waiting times
-	VF_STOP_LOADING,            ///< Don't load anymore during the next load cycle.
-	VF_PATHFINDER_LOST,         ///< Vehicle's pathfinder is lost.
-	VF_SERVINT_IS_CUSTOM,       ///< Service interval is custom.
-	VF_SERVINT_IS_PERCENT,      ///< Service interval is percent.
+	VF_LOADING_FINISHED        =  0, ///< Vehicle has finished loading.
+	VF_CARGO_UNLOADING         =  1, ///< Vehicle is unloading cargo.
+	VF_BUILT_AS_PROTOTYPE      =  2, ///< Vehicle is a prototype (accepted as exclusive preview).
+	VF_STOP_LOADING            =  6, ///< Don't load anymore during the next load cycle.
+	VF_PATHFINDER_LOST         =  7, ///< Vehicle's pathfinder is lost.
 };
 
 /** Bit numbers used to indicate which of the #NewGRFCache values are valid. */
@@ -316,6 +311,8 @@ public:
 	byte day_counter;                   ///< Increased by one for each day
 	byte tick_counter;                  ///< Increased by one for each tick
 	byte running_ticks;                 ///< Number of ticks this vehicle was not stopped this day
+
+	uint16 vehicle_flags;               ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
 
 	byte vehstatus;                     ///< Status
 	Order current_order;                ///< The current order (+ status, like: loading)
@@ -775,13 +772,13 @@ public:
 
 	inline void SetServiceInterval(uint16 interval) { this->service_interval = interval; }
 
-	inline bool ServiceIntervalIsCustom() const { return HasBit(this->vehicle_flags, VF_SERVINT_IS_CUSTOM); }
+	inline bool ServiceIntervalIsCustom() const { return HasBit(this->consist_flags, CF_SERVINT_IS_CUSTOM); }
 
-	inline bool ServiceIntervalIsPercent() const { return HasBit(this->vehicle_flags, VF_SERVINT_IS_PERCENT); }
+	inline bool ServiceIntervalIsPercent() const { return HasBit(this->consist_flags, CF_SERVINT_IS_PERCENT); }
 
-	inline void SetServiceIntervalIsCustom(bool on) { SB(this->vehicle_flags, VF_SERVINT_IS_CUSTOM, 1, on); }
+	inline void SetServiceIntervalIsCustom(bool on) { SB(this->consist_flags, CF_SERVINT_IS_CUSTOM, 1, on); }
 
-	inline void SetServiceIntervalIsPercent(bool on) { SB(this->vehicle_flags, VF_SERVINT_IS_PERCENT, 1, on); }
+	inline void SetServiceIntervalIsPercent(bool on) { SB(this->consist_flags, CF_SERVINT_IS_PERCENT, 1, on); }
 
 private:
 	/**
