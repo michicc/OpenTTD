@@ -1510,10 +1510,9 @@ again:
 	return true;
 }
 
-static bool RoadVehController(RoadVehicle *v)
+bool RoadVehController(RoadVehicle *v)
 {
 	/* decrease counters */
-	v->current_order_time++;
 	if (v->reverse_ctr != 0) v->reverse_ctr--;
 
 	/* handle crashed */
@@ -1588,11 +1587,6 @@ Money RoadVehicle::GetRunningCost() const
 bool RoadVehicle::Tick()
 {
 	this->tick_counter++;
-
-	if (this->IsFrontEngine()) {
-		if (!(this->vehstatus & VS_STOPPED)) this->running_ticks++;
-		return RoadVehController(this);
-	}
 
 	return true;
 }

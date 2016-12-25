@@ -1001,6 +1001,11 @@ void CallVehicleTicks()
 		}
 	}
 
+	Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		cs->Tick();
+	}
+
 	Backup<CompanyByte> cur_company(_current_company, FILE_LINE);
 	for (AutoreplaceMap::iterator it = _vehicles_to_autoreplace.Begin(); it != _vehicles_to_autoreplace.End(); it++) {
 		v = it->first;

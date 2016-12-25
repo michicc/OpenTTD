@@ -35,6 +35,8 @@ public:
 	/** We want to 'destruct' the right class. */
 	virtual ~Consist() {}
 
+	bool Tick();
+
 	/**
 	 * Gets the front vehicle of the associated vehicle chain.
 	 * @return The front vehicle.

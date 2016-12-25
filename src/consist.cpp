@@ -13,6 +13,10 @@
 #include "consist_base.h"
 #include "vehicle_base.h"
 #include "core/pool_func.hpp"
+#include "aircraft.h"
+#include "roadveh.h"
+#include "ship.h"
+#include "train.h"
 
 /** The pool with all our consists. */
 ConsistPool _consist_pool("Consist");
@@ -33,4 +37,42 @@ void Consist::SetFront(Vehicle *front)
 
 	this->front = front;
 	front->SetConsist(this);
+}
+
+/**
+ * The tick handler for consists.
+ * @return True if the consist is still valid.
+ */
+bool Consist::Tick()
+{
+	Vehicle *v = this->Front();
+
+	/* Update counters. */
+	v->current_order_time++;
+	if (!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0) v->running_ticks++;
+
+	/* Call movement function. */
+	for (int i = 0; i < (this->type == VEH_TRAIN || this->type == VEH_AIRCRAFT ? 2 : 1); i++) {
+		switch (this->type) {
+			case VEH_TRAIN:
+				if (!TrainLocoHandler(Train::From(v), i != 0)) return false;
+				break;
+
+			case VEH_ROAD:
+				if (!RoadVehController(RoadVehicle::From(v))) return false;
+				break;
+
+			case VEH_SHIP:
+				ShipController(Ship::From(v));
+				break;
+
+			case VEH_AIRCRAFT:
+				if (!AircraftEventHandler(Aircraft::From(v), i)) return false;
+				break;
+
+			default: NOT_REACHED();
+		}
+	}
+
+	return true;
 }

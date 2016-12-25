@@ -493,16 +493,13 @@ static const byte _ship_subcoord[4][6][3] = {
 	}
 };
 
-static void ShipController(Ship *v)
+void ShipController(Ship *v)
 {
 	uint32 r;
 	const byte *b;
 	Direction dir;
 	Track track;
 	TrackBits tracks;
-
-	v->tick_counter++;
-	v->current_order_time++;
 
 	if (v->HandleBreakdown()) return;
 
@@ -634,9 +631,7 @@ reverse_direction:
 
 bool Ship::Tick()
 {
-	if (!(this->vehstatus & VS_STOPPED)) this->running_ticks++;
-
-	ShipController(this);
+	this->tick_counter++;
 
 	return true;
 }

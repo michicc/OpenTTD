@@ -3779,7 +3779,7 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 }
 
 
-static bool TrainLocoHandler(Train *v, bool mode)
+bool TrainLocoHandler(Train *v, bool mode)
 {
 	/* train has crashed? */
 	if (v->vehstatus & VS_CRASHED) {
@@ -3952,15 +3952,7 @@ bool Train::Tick()
 {
 	this->tick_counter++;
 
-	if (this->IsFrontEngine()) {
-		if (!(this->vehstatus & VS_STOPPED) || this->cur_speed > 0) this->running_ticks++;
-
-		this->current_order_time++;
-
-		if (!TrainLocoHandler(this, false)) return false;
-
-		return TrainLocoHandler(this, true);
-	} else if (this->IsFreeWagon() && (this->vehstatus & VS_CRASHED)) {
+	if (this->IsFreeWagon() && (this->vehstatus & VS_CRASHED)) {
 		/* Delete flooded standalone wagon chain */
 		if (++this->crash_anim_pos >= 4400) {
 			delete this;
