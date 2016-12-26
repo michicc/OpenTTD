@@ -38,6 +38,7 @@ extern void MakeNewgameSettingsLive();
 void InitializeSound();
 void InitializeMusic();
 void InitializeVehicles();
+void InitializeConsist();
 void InitializeRailGui();
 void InitializeRoadGui();
 void InitializeAirportGui();
@@ -80,6 +81,7 @@ void InitializeGame(uint size_x, uint size_y, bool reset_date, bool reset_settin
 	InitializeMusic();
 
 	InitializeVehicles();
+	InitializeConsist();
 
 	InitNewsItemStructs();
 	InitializeLandscape();

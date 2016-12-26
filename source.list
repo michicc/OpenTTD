@@ -161,6 +161,7 @@ company_gui.h
 company_manager_face.h
 company_type.h
 consist_base.h
+consist_func.h
 consist_type.h
 console_func.h
 console_gui.h

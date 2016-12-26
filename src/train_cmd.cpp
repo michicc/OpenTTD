@@ -36,6 +36,7 @@
 #include "zoom_func.h"
 #include "newgrf_debug.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 #include "table/train_cmd.h"
@@ -2199,7 +2200,7 @@ static bool CheckTrainStayInDepot(Train *v)
 		/* We need to have a reservation for this to work. */
 		if (HasDepotReservation(v->tile)) return true;
 		SetDepotReservation(v->tile, true);
-		VehicleEnterDepot(v);
+		ConsistEnterDepot(v->GetConsist());
 		return true;
 	}
 

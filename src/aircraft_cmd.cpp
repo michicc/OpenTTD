@@ -37,6 +37,7 @@
 #include "core/backup_type.hpp"
 #include "zoom_func.h"
 #include "disaster_vehicle.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -1427,7 +1428,7 @@ static void AircraftEventHandler_EnterTerminal(Aircraft *v, const AirportFTAClas
  */
 static void AircraftEventHandler_EnterHangar(Aircraft *v, const AirportFTAClass *apc)
 {
-	VehicleEnterDepot(v);
+	ConsistEnterDepot(v->GetConsist());
 	v->state = apc->layout[v->pos].heading;
 }
 
@@ -1456,7 +1457,7 @@ static void AircraftEventHandler_InHangar(Aircraft *v, const AirportFTAClass *ap
 
 	/* We are leaving a hangar, but have to go to the exact same one; re-enter */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) && v->current_order.GetDestination() == v->targetairport) {
-		VehicleEnterDepot(v);
+		ConsistEnterDepot(v->GetConsist());
 		return;
 	}
 

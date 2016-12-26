@@ -960,6 +960,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\..\src\consist_func.h"
+				>
+			</File>
+			<File
 				RelativePath=".\..\src\consist_type.h"
 				>
 			</File>

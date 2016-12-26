@@ -35,6 +35,7 @@
 #include "date_func.h"
 #include "genworld.h"
 #include "company_gui.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -1747,7 +1748,7 @@ static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, int 
 				rv->state = RVSB_IN_DEPOT;
 				rv->vehstatus |= VS_HIDDEN;
 				rv->direction = ReverseDir(rv->direction);
-				if (rv->Next() == NULL) VehicleEnterDepot(rv->First());
+				if (rv->Next() == NULL) ConsistEnterDepot(rv->GetConsist());
 				rv->tile = tile;
 
 				InvalidateWindowData(WC_VEHICLE_DEPOT, rv->tile);

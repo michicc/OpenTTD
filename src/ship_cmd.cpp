@@ -35,6 +35,7 @@
 #include "tunnelbridge_map.h"
 #include "zoom_func.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -326,7 +327,7 @@ static bool CheckShipLeaveDepot(Ship *v)
 	/* We are leaving a depot, but have to go to the exact same one; re-enter */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) &&
 			IsShipDepotTile(v->tile) && GetDepotIndex(v->tile) == v->current_order.GetDestination()) {
-		VehicleEnterDepot(v);
+		ConsistEnterDepot(v->GetConsist());
 		return true;
 	}
 
@@ -545,7 +546,7 @@ void ShipController(Ship *v)
 						if (v->dest_tile == gp.new_tile) {
 							if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 								if ((gp.x & 0xF) == 8 && (gp.y & 0xF) == 8) {
-									VehicleEnterDepot(v);
+									ConsistEnterDepot(v->GetConsist());
 									return;
 								}
 							} else if (v->current_order.IsType(OT_GOTO_STATION)) {

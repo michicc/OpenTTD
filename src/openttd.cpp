@@ -64,6 +64,7 @@
 #include "gfx_layout.h"
 #include "viewport_sprite_sorter.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "linkgraph/linkgraphschedule.h"
 
@@ -1366,6 +1367,7 @@ void StateGameLoop()
 		BasePersistentStorageArray::SwitchMode(PSM_ENTER_GAMELOOP);
 		RunTileLoop();
 		CallVehicleTicks();
+		CallConsistTicks();
 		CallLandscapeTick();
 		BasePersistentStorageArray::SwitchMode(PSM_LEAVE_GAMELOOP);
 		UpdateLandscapingLimits();
@@ -1391,6 +1393,7 @@ void StateGameLoop()
 		IncreaseDate();
 		RunTileLoop();
 		CallVehicleTicks();
+		CallConsistTicks();
 		CallLandscapeTick();
 		BasePersistentStorageArray::SwitchMode(PSM_LEAVE_GAMELOOP);
 

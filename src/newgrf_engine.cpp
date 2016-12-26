@@ -25,6 +25,7 @@
 #include "newgrf_railtype.h"
 #include "ship.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "safeguards.h"
 
@@ -1196,7 +1197,7 @@ void TriggerVehicle(Vehicle *v, VehicleTrigger trigger)
 {
 	if (trigger == VEHICLE_TRIGGER_DEPOT) {
 		/* store that the vehicle entered a depot this tick */
-		VehicleEnteredDepotThisTick(v);
+		ConsistEnteredDepotThisTick(v->GetConsist());
 	}
 
 	v->InvalidateNewGRFCacheOfChain();

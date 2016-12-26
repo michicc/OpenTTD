@@ -36,6 +36,7 @@
 #include "newgrf.h"
 #include "zoom_func.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -994,7 +995,7 @@ static bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 	if (first) {
 		/* We are leaving a depot, but have to go to the exact same one; re-enter */
 		if (v->current_order.IsType(OT_GOTO_DEPOT) && v->tile == v->dest_tile) {
-			VehicleEnterDepot(v);
+			ConsistEnterDepot(v->GetConsist());
 			return true;
 		}
 
