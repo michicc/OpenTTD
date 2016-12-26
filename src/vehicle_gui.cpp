@@ -38,6 +38,7 @@
 #include "station_base.h"
 #include "tilehighlight_func.h"
 #include "zoom_func.h"
+#include "consist_base.h"
 
 #include "safeguards.h"
 
@@ -1202,7 +1203,7 @@ static int CDECL VehicleTimeToLiveSorter(const Vehicle * const *a, const Vehicle
 /** Sort vehicles by the timetable delay */
 static int CDECL VehicleTimetableDelaySorter(const Vehicle * const *a, const Vehicle * const *b)
 {
-	int r = (*a)->lateness_counter - (*b)->lateness_counter;
+	int r = (*a)->GetConsist()->lateness_counter - (*b)->GetConsist()->lateness_counter;
 	return (r != 0) ? r : VehicleNumberSorter(a, b);
 }
 
@@ -1290,9 +1291,9 @@ static const NWidgetPart _nested_vehicle_list[] = {
 	EndContainer(),
 };
 
-static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, VehicleOrderID start = 0)
+static void DrawSmallOrderList(const Consist *cs, int left, int right, int y, VehicleOrderID start = 0)
 {
-	const Order *order = v->GetOrder(start);
+	const Order *order = cs->Front()->GetOrder(start);
 	if (order == NULL) return;
 
 	bool rtl = _current_text_dir == TD_RTL;
@@ -1302,7 +1303,7 @@ static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, Veh
 	VehicleOrderID oid = start;
 
 	do {
-		if (oid == v->cur_real_order_index) DrawString(left, right, y, STR_TINY_RIGHT_ARROW, TC_BLACK);
+		if (oid == cs->cur_real_order_index) DrawString(left, right, y, STR_TINY_RIGHT_ARROW, TC_BLACK);
 
 		if (order->IsType(OT_GOTO_STATION)) {
 			SetDParam(0, order->GetDestination());
@@ -1315,7 +1316,7 @@ static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, Veh
 		oid++;
 		order = order->next;
 		if (order == NULL) {
-			order = v->orders.list->GetFirstOrder();
+			order = cs->Front()->orders.list->GetFirstOrder();
 			oid = 0;
 		}
 	} while (oid != start);
@@ -1391,6 +1392,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 	uint max = min(this->vscroll->GetPosition() + this->vscroll->GetCapacity(), this->vehicles.Length());
 	for (uint i = this->vscroll->GetPosition(); i < max; ++i) {
 		const Vehicle *v = this->vehicles[i];
+		const Consist *cs = v->GetConsist();
 		StringID str;
 
 		SetDParam(0, v->GetDisplayProfitThisYear());
@@ -1399,7 +1401,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 		DrawVehicleImage(v, image_left, image_right, y + FONT_HEIGHT_SMALL - 1, selected_vehicle, EIT_IN_LIST, 0);
 		DrawString(text_left, text_right, y + line_height - FONT_HEIGHT_SMALL - WD_FRAMERECT_BOTTOM - 1, STR_VEHICLE_LIST_PROFIT_THIS_YEAR_LAST_YEAR);
 
-		if (v->name != NULL) {
+		if (cs->name != NULL) {
 			/* The vehicle got a name so we will print it */
 			SetDParam(0, v->index);
 			DrawString(text_left, text_right, y, STR_TINY_BLACK_VEHICLE);
@@ -1409,7 +1411,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 			DrawString(text_left, text_right, y, STR_TINY_GROUP, TC_BLACK);
 		}
 
-		if (show_orderlist) DrawSmallOrderList(v, orderlist_left, orderlist_right, y, v->cur_real_order_index);
+		if (show_orderlist) DrawSmallOrderList(cs, orderlist_left, orderlist_right, y, cs->cur_real_order_index);
 
 		if (v->IsChainInDepot()) {
 			str = STR_BLUE_COMMA;
@@ -2039,6 +2041,7 @@ struct VehicleDetailsWindow : Window {
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
 		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = v->GetConsist();
 
 		switch (widget) {
 			case WID_VD_TOP_DETAILS: {
@@ -2125,10 +2128,10 @@ struct VehicleDetailsWindow : Window {
 
 			case WID_VD_SERVICING_INTERVAL:
 				/* Draw service interval text */
-				SetDParam(0, v->GetServiceInterval());
+				SetDParam(0, cs->GetServiceInterval());
 				SetDParam(1, v->date_of_last_service);
 				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, r.top + (r.bottom - r.top + 1 - FONT_HEIGHT_NORMAL) / 2,
-						v->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_DAYS);
+						cs->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_DAYS);
 				break;
 		}
 	}
@@ -2137,6 +2140,7 @@ struct VehicleDetailsWindow : Window {
 	virtual void OnPaint()
 	{
 		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = v->GetConsist();
 
 		this->SetWidgetDisabledState(WID_VD_RENAME_VEHICLE, v->owner != _local_company);
 
@@ -2151,8 +2155,8 @@ struct VehicleDetailsWindow : Window {
 			WID_VD_DECREASE_SERVICING_INTERVAL,
 			WIDGET_LIST_END);
 
-		StringID str = v->ServiceIntervalIsCustom() ?
-			(v->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_PERCENT : STR_VEHICLE_DETAILS_DAYS) :
+		StringID str = cs->ServiceIntervalIsCustom() ?
+			(cs->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_PERCENT : STR_VEHICLE_DETAILS_DAYS) :
 			STR_VEHICLE_DETAILS_DEFAULT;
 		this->GetWidget<NWidgetCore>(WID_VD_SERVICE_INTERVAL_DROPDOWN)->widget_data = str;
 
@@ -2174,18 +2178,19 @@ struct VehicleDetailsWindow : Window {
 			case WID_VD_DECREASE_SERVICING_INTERVAL: { // decrease int
 				int mod = _ctrl_pressed ? 5 : 10;
 				const Vehicle *v = Vehicle::Get(this->window_number);
+				const Consist *cs = v->GetConsist();
 
 				mod = (widget == WID_VD_DECREASE_SERVICING_INTERVAL) ? -mod : mod;
-				mod = GetServiceIntervalClamped(mod + v->GetServiceInterval(), v->ServiceIntervalIsPercent());
-				if (mod == v->GetServiceInterval()) return;
+				mod = GetServiceIntervalClamped(mod + cs->GetServiceInterval(), cs->ServiceIntervalIsPercent());
+				if (mod == cs->GetServiceInterval()) return;
 
-				DoCommandP(v->tile, v->index, mod | (1 << 16) | (v->ServiceIntervalIsPercent() << 17), CMD_CHANGE_SERVICE_INT | CMD_MSG(STR_ERROR_CAN_T_CHANGE_SERVICING));
+				DoCommandP(v->tile, v->index, mod | (1 << 16) | (cs->ServiceIntervalIsPercent() << 17), CMD_CHANGE_SERVICE_INT | CMD_MSG(STR_ERROR_CAN_T_CHANGE_SERVICING));
 				break;
 			}
 
 			case WID_VD_SERVICE_INTERVAL_DROPDOWN: {
-				const Vehicle *v = Vehicle::Get(this->window_number);
-				ShowDropDownMenu(this, _service_interval_dropdown, v->ServiceIntervalIsCustom() ? (v->ServiceIntervalIsPercent() ? 2 : 1) : 0, widget, 0, 0);
+				const Consist *cs = Vehicle::Get(this->window_number)->GetConsist();
+				ShowDropDownMenu(this, _service_interval_dropdown, cs->ServiceIntervalIsCustom() ? (cs->ServiceIntervalIsPercent() ? 2 : 1) : 0, widget, 0, 0);
 				break;
 			}
 
@@ -2214,7 +2219,7 @@ struct VehicleDetailsWindow : Window {
 				const Vehicle *v = Vehicle::Get(this->window_number);
 				bool iscustom = index != 0;
 				bool ispercent = iscustom ? (index == 2) : Company::Get(v->owner)->settings.vehicle.servint_ispercent;
-				uint16 interval = GetServiceIntervalClamped(v->GetServiceInterval(), ispercent);
+				uint16 interval = GetServiceIntervalClamped(v->GetConsist()->GetServiceInterval(), ispercent);
 				DoCommandP(v->tile, v->index, interval | (iscustom << 16) | (ispercent << 17), CMD_CHANGE_SERVICE_INT | CMD_MSG(STR_ERROR_CAN_T_CHANGE_SERVICING));
 				break;
 			}

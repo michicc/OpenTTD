@@ -205,7 +205,7 @@ struct RefitDesc {
 };
 
 /** %Vehicle data structure. */
-struct Vehicle : VehiclePool::PoolItem<&_vehicle_pool>, BaseVehicle, BaseConsist {
+struct Vehicle : VehiclePool::PoolItem<&_vehicle_pool>, BaseVehicle {
 private:
 	typedef std::list<RefitDesc> RefitList;
 	typedef std::map<CargoID, uint> CapacitiesMap;
@@ -720,8 +720,6 @@ public:
 	 */
 	inline void CopyVehicleConfigAndStatistics(const Vehicle *src)
 	{
-		this->CopyConsistPropertiesFrom(src);
-
 		this->unitnumber = src->unitnumber;
 
 		this->current_order = src->current_order;
@@ -767,97 +765,6 @@ public:
 	void UpdateViewport(bool dirty);
 	void UpdatePositionAndViewport();
 	void MarkAllViewportsDirty() const;
-
-	inline uint16 GetServiceInterval() const { return this->service_interval; }
-
-	inline void SetServiceInterval(uint16 interval) { this->service_interval = interval; }
-
-	inline bool ServiceIntervalIsCustom() const { return HasBit(this->consist_flags, CF_SERVINT_IS_CUSTOM); }
-
-	inline bool ServiceIntervalIsPercent() const { return HasBit(this->consist_flags, CF_SERVINT_IS_PERCENT); }
-
-	inline void SetServiceIntervalIsCustom(bool on) { SB(this->consist_flags, CF_SERVINT_IS_CUSTOM, 1, on); }
-
-	inline void SetServiceIntervalIsPercent(bool on) { SB(this->consist_flags, CF_SERVINT_IS_PERCENT, 1, on); }
-
-private:
-	/**
-	 * Advance cur_real_order_index to the next real order.
-	 * cur_implicit_order_index is not touched.
-	 */
-	void SkipToNextRealOrderIndex()
-	{
-		if (this->GetNumManualOrders() > 0) {
-			/* Advance to next real order */
-			do {
-				this->cur_real_order_index++;
-				if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-			} while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT));
-		} else {
-			this->cur_real_order_index = 0;
-		}
-	}
-
-public:
-	/**
-	 * Increments cur_implicit_order_index, keeps care of the wrap-around and invalidates the GUI.
-	 * cur_real_order_index is incremented as well, if needed.
-	 * Note: current_order is not invalidated.
-	 */
-	void IncrementImplicitOrderIndex()
-	{
-		if (this->cur_implicit_order_index == this->cur_real_order_index) {
-			/* Increment real order index as well */
-			this->SkipToNextRealOrderIndex();
-		}
-
-		assert(this->cur_real_order_index == 0 || this->cur_real_order_index < this->GetNumOrders());
-
-		/* Advance to next implicit order */
-		do {
-			this->cur_implicit_order_index++;
-			if (this->cur_implicit_order_index >= this->GetNumOrders()) this->cur_implicit_order_index = 0;
-		} while (this->cur_implicit_order_index != this->cur_real_order_index && !this->GetOrder(this->cur_implicit_order_index)->IsType(OT_IMPLICIT));
-
-		InvalidateVehicleOrder(this, 0);
-	}
-
-	/**
-	 * Advanced cur_real_order_index to the next real order, keeps care of the wrap-around and invalidates the GUI.
-	 * cur_implicit_order_index is incremented as well, if it was equal to cur_real_order_index, i.e. cur_real_order_index is skipped
-	 * but not any implicit orders.
-	 * Note: current_order is not invalidated.
-	 */
-	void IncrementRealOrderIndex()
-	{
-		if (this->cur_implicit_order_index == this->cur_real_order_index) {
-			/* Increment both real and implicit order */
-			this->IncrementImplicitOrderIndex();
-		} else {
-			/* Increment real order only */
-			this->SkipToNextRealOrderIndex();
-			InvalidateVehicleOrder(this, 0);
-		}
-	}
-
-	/**
-	 * Skip implicit orders until cur_real_order_index is a non-implicit order.
-	 */
-	void UpdateRealOrderIndex()
-	{
-		/* Make sure the index is valid */
-		if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-
-		if (this->GetNumManualOrders() > 0) {
-			/* Advance to next real order */
-			while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT)) {
-				this->cur_real_order_index++;
-				if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-			}
-		} else {
-			this->cur_real_order_index = 0;
-		}
-	}
 
 	/**
 	 * Returns order 'index' of a vehicle or NULL when it doesn't exists

@@ -14,6 +14,7 @@
 #include "../station_func.h"
 #include "../engine_base.h"
 #include "../vehicle_func.h"
+#include "../consist_base.h"
 #include "refresh.h"
 #include "linkgraph.h"
 
@@ -31,7 +32,7 @@
 	if (v->orders.list == NULL) return;
 
 	/* Make sure the first order is a useful order. */
-	const Order *first = v->orders.list->GetNextDecisionNode(v->GetOrder(v->cur_implicit_order_index), 0);
+	const Order *first = v->orders.list->GetNextDecisionNode(v->GetOrder(v->GetConsist()->cur_implicit_order_index), 0);
 	if (first == NULL) return;
 
 	HopSet seen_hops;
@@ -229,7 +230,7 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next)
 			if (this->is_full_loading && this->vehicle->orders.list != NULL &&
 					st->index == vehicle->last_station_visited &&
 					this->vehicle->orders.list->GetTotalDuration() >
-					(Ticks)this->vehicle->current_order_time) {
+					(Ticks)this->vehicle->GetConsist()->current_order_time) {
 				uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
 				if (effective_capacity > (uint)this->vehicle->orders.list->GetTotalDuration()) {
 					IncreaseStats(st, c, next_station, effective_capacity /

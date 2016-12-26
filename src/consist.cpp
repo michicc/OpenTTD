@@ -56,7 +56,7 @@ bool Consist::Tick()
 	Vehicle *v = this->Front();
 
 	/* Update counters. */
-	v->current_order_time++;
+	this->current_order_time++;
 	if (!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0) v->running_ticks++;
 
 	/* Call movement function. */

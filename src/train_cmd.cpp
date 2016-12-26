@@ -779,14 +779,12 @@ CommandCost CmdBuildRailVehicle(TileIndex tile, DoCommandFlag flags, const Engin
 		v->railtype = rvi->railtype;
 		_new_vehicle_id = v->index;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_trains);
 		v->date_of_last_service = _date;
 		v->build_year = _cur_year;
 		v->sprite_seq.Set(SPR_IMG_QUERY);
 		v->random_bits = VehicleRandomBits();
 
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->group_id = DEFAULT_GROUP;
 
@@ -2492,7 +2490,7 @@ public:
 		old_order(_v->current_order),
 		old_dest_tile(_v->dest_tile),
 		old_last_station_visited(_v->last_station_visited),
-		index(_v->cur_real_order_index),
+		index(_v->GetConsist()->cur_real_order_index),
 		suppress_implicit_orders(HasBit(_v->gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS))
 	{
 	}
@@ -2551,7 +2549,7 @@ public:
 			 * orders can lead to an infinite loop. */
 			++this->index;
 			depth++;
-		} while (this->index != this->v->cur_real_order_index && depth < this->v->GetNumOrders());
+		} while (this->index != this->v->GetConsist()->cur_real_order_index && depth < this->v->GetNumOrders());
 
 		return false;
 	}
@@ -2817,7 +2815,7 @@ TileIndex Train::GetOrderStationLocation(StationID station)
 	const Station *st = Station::Get(station);
 	if (!(st->facilities & FACIL_TRAIN)) {
 		/* The destination station has no trainstation tiles. */
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return 0;
 	}
 

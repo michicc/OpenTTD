@@ -24,6 +24,7 @@
 #include "date_gui.h"
 #include "vehicle_gui.h"
 #include "settings_type.h"
+#include "consist_base.h"
 
 #include "widgets/timetable_widget.h"
 
@@ -151,6 +152,7 @@ static void ChangeTimetableStartCallback(const Window *w, Date date)
 struct TimetableWindow : Window {
 	int sel_index;
 	const Vehicle *vehicle; ///< Vehicle monitored by the window.
+	const Consist *consist; ///< Consist monitored by the window.
 	bool show_expected;     ///< Whether we show expected arrival or scheduled
 	uint deparr_time_width; ///< The width of the departure/arrival time
 	uint deparr_abbr_width; ///< The width of the departure/arrival abbreviation
@@ -161,6 +163,7 @@ struct TimetableWindow : Window {
 			Window(desc),
 			sel_index(-1),
 			vehicle(Vehicle::Get(window_number)),
+		    consist(vehicle->GetConsist()),
 			show_expected(true)
 	{
 		this->CreateNestedTree();
@@ -172,21 +175,22 @@ struct TimetableWindow : Window {
 	}
 
 	/**
-	 * Build the arrival-departure list for a given vehicle
-	 * @param v the vehicle to make the list for
+	 * Build the arrival-departure list for a given consist.
+	 * @param cs the consist to make the list for
 	 * @param table the table to fill
 	 * @return if next arrival will be early
 	 */
-	static bool BuildArrivalDepartureList(const Vehicle *v, TimetableArrivalDeparture *table)
+	static bool BuildArrivalDepartureList(const Consist *cs, TimetableArrivalDeparture *table)
 	{
-		assert(HasBit(v->consist_flags, CF_TIMETABLE_STARTED));
+		assert(HasBit(cs->consist_flags, CF_TIMETABLE_STARTED));
 
+		const Vehicle *v = cs->Front();
 		bool travelling = (!v->current_order.IsType(OT_LOADING) || v->current_order.GetNonStopType() == ONSF_STOP_EVERYWHERE);
-		Ticks start_time = _date_fract - v->current_order_time;
+		Ticks start_time = _date_fract - cs->current_order_time;
 
-		FillTimetableArrivalDepartureTable(v, v->cur_real_order_index % v->GetNumOrders(), travelling, table, start_time);
+		FillTimetableArrivalDepartureTable(v, cs->cur_real_order_index % v->GetNumOrders(), travelling, table, start_time);
 
-		return (travelling && v->lateness_counter < 0);
+		return (travelling && cs->lateness_counter < 0);
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
@@ -233,6 +237,7 @@ struct TimetableWindow : Window {
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
 				this->vehicle = Vehicle::Get(this->window_number);
+				this->consist = this->vehicle->GetConsist();
 				break;
 
 			case VIWD_REMOVE_ALL_ORDERS:
@@ -336,7 +341,7 @@ struct TimetableWindow : Window {
 			this->DisableWidget(WID_VT_SHARED_ORDER_LIST);
 		}
 
-		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE));
+		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(this->consist->consist_flags, CF_AUTOFILL_TIMETABLE));
 
 		this->DrawWidgets();
 	}
@@ -352,6 +357,7 @@ struct TimetableWindow : Window {
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
 		const Vehicle *v = this->vehicle;
+		const Consist *cs = this->consist;
 		int selected = this->sel_index;
 
 		switch (widget) {
@@ -425,17 +431,17 @@ struct TimetableWindow : Window {
 				 * Excluding order lists with only one order makes some things easier.
 				 */
 				Ticks total_time = v->orders.list != NULL ? v->orders.list->GetTimetableDurationIncomplete() : 0;
-				if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) break;
+				if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) break;
 
 				TimetableArrivalDeparture *arr_dep = AllocaM(TimetableArrivalDeparture, v->GetNumOrders());
-				const VehicleOrderID cur_order = v->cur_real_order_index % v->GetNumOrders();
+				const VehicleOrderID cur_order = cs->cur_real_order_index % v->GetNumOrders();
 
-				VehicleOrderID earlyID = BuildArrivalDepartureList(v, arr_dep) ? cur_order : (VehicleOrderID)INVALID_VEH_ORDER_ID;
+				VehicleOrderID earlyID = BuildArrivalDepartureList(cs, arr_dep) ? cur_order : (VehicleOrderID)INVALID_VEH_ORDER_ID;
 
 				int y = r.top + WD_FRAMERECT_TOP;
 
-				bool show_late = this->show_expected && v->lateness_counter > DAY_TICKS;
-				Ticks offset = show_late ? 0 : -v->lateness_counter;
+				bool show_late = this->show_expected && cs->lateness_counter > DAY_TICKS;
+				Ticks offset = show_late ? 0 : -cs->lateness_counter;
 
 				bool rtl = _current_text_dir == TD_RTL;
 				int abbr_left  = rtl ? r.right - WD_FRAMERECT_RIGHT - this->deparr_abbr_width : r.left + WD_FRAMERECT_LEFT;
@@ -482,21 +488,21 @@ struct TimetableWindow : Window {
 				}
 				y += FONT_HEIGHT_NORMAL;
 
-				if (v->timetable_start != 0) {
+				if (cs->timetable_start != 0) {
 					/* We are running towards the first station so we can start the
 					 * timetable at the given time. */
 					SetDParam(0, STR_JUST_DATE_TINY);
-					SetDParam(1, v->timetable_start);
+					SetDParam(1, cs->timetable_start);
 					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_STATUS_START_AT);
-				} else if (!HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) {
+				} else if (!HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) {
 					/* We aren't running on a timetable yet, so how can we be "on time"
 					 * when we aren't even "on service"/"on duty"? */
 					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_STATUS_NOT_STARTED);
-				} else if (v->lateness_counter == 0 || (!_settings_client.gui.timetable_in_ticks && v->lateness_counter / DAY_TICKS == 0)) {
+				} else if (cs->lateness_counter == 0 || (!_settings_client.gui.timetable_in_ticks && cs->lateness_counter / DAY_TICKS == 0)) {
 					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_TIMETABLE_STATUS_ON_TIME);
 				} else {
-					SetTimetableParams(0, 1, abs(v->lateness_counter));
-					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, v->lateness_counter < 0 ? STR_TIMETABLE_STATUS_EARLY : STR_TIMETABLE_STATUS_LATE);
+					SetTimetableParams(0, 1, abs(cs->lateness_counter));
+					DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, cs->lateness_counter < 0 ? STR_TIMETABLE_STATUS_EARLY : STR_TIMETABLE_STATUS_LATE);
 				}
 				break;
 			}
@@ -596,7 +602,7 @@ struct TimetableWindow : Window {
 
 			case WID_VT_AUTOFILL: { // Autofill the timetable.
 				uint32 p2 = 0;
-				if (!HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
+				if (!HasBit(this->consist->consist_flags, CF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
 				if (_ctrl_pressed) SetBit(p2, 1);
 				DoCommandP(0, v->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;

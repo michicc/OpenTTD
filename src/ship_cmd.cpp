@@ -34,6 +34,7 @@
 #include "company_base.h"
 #include "tunnelbridge_map.h"
 #include "zoom_func.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -291,7 +292,7 @@ TileIndex Ship::GetOrderStationLocation(StationID station)
 	if (st->dock_tile != INVALID_TILE) {
 		return TILE_ADD(st->dock_tile, ToTileIndexDiff(GetDockOffset(st->dock_tile)));
 	} else {
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return 0;
 	}
 }
@@ -541,7 +542,7 @@ void ShipController(Ship *v)
 						/* We got within 3 tiles of our target buoy, so let's skip to our
 						 * next order */
 						UpdateVehicleTimetable(v, true);
-						v->IncrementRealOrderIndex();
+						v->GetConsist()->IncrementRealOrderIndex();
 						v->current_order.MakeDummy();
 					} else {
 						/* Non-buoy orders really need to reach the tile */
@@ -561,7 +562,7 @@ void ShipController(Ship *v)
 									v->BeginLoading();
 								} else { // leave stations without docks right aways
 									v->current_order.MakeLeaveStation();
-									v->IncrementRealOrderIndex();
+									v->GetConsist()->IncrementRealOrderIndex();
 								}
 							}
 						}
@@ -684,7 +685,6 @@ CommandCost CmdBuildShip(TileIndex tile, DoCommandFlag flags, const Engine *e, u
 
 		v->state = TRACK_BIT_DEPOT;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_ships);
 		v->date_of_last_service = _date;
 		v->build_year = _cur_year;
 		v->sprite_seq.Set(SPR_IMG_QUERY);
@@ -693,7 +693,6 @@ CommandCost CmdBuildShip(TileIndex tile, DoCommandFlag flags, const Engine *e, u
 		v->UpdateCache();
 
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();
 

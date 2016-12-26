@@ -138,6 +138,16 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 				c = new Consist(type);
 				c->SetFront(v);
 			}
+
+			c->name = NULL;
+
+			c->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
+			switch (c->type) {
+				case VEH_TRAIN:    c->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_trains); break;
+				case VEH_ROAD:     c->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_roadveh); break;
+				case VEH_SHIP:     c->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_ships); break;
+				case VEH_AIRCRAFT: c->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_aircraft); break;
+			}
 		}
 
 		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
@@ -723,10 +733,10 @@ CommandCost CmdDepotMassAutoReplace(TileIndex tile, DoCommandFlag flags, uint32 
  */
 static bool IsUniqueVehicleName(const char *name)
 {
-	const Vehicle *v;
+	const Consist *cs;
 
-	FOR_ALL_VEHICLES(v) {
-		if (v->name != NULL && strcmp(v->name, name) == 0) return false;
+	FOR_ALL_CONSISTS(cs) {
+		if (cs->name != NULL && strcmp(cs->name, name) == 0) return false;
 	}
 
 	return true;
@@ -737,7 +747,7 @@ static bool IsUniqueVehicleName(const char *name)
  * @param src Source vehicle, with a custom name.
  * @param dst Destination vehicle.
  */
-static void CloneVehicleName(const Vehicle *src, Vehicle *dst)
+static void CloneVehicleName(const Consist *src, Consist *dst)
 {
 	char buf[256];
 
@@ -875,9 +885,10 @@ CommandCost CmdCloneVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 			} else {
 				/* this is a front engine or not a train. */
 				w_front = w;
-				w->service_interval = v->service_interval;
-				w->SetServiceIntervalIsCustom(v->ServiceIntervalIsCustom());
-				w->SetServiceIntervalIsPercent(v->ServiceIntervalIsPercent());
+				Consist *wc = w->GetConsist(), *vc = v->GetConsist();
+				wc->service_interval = vc->service_interval;
+				wc->SetServiceIntervalIsCustom(vc->ServiceIntervalIsCustom());
+				wc->SetServiceIntervalIsPercent(vc->ServiceIntervalIsPercent());
 			}
 			w_rear = w; // trains needs to know the last car in the train, so they can add more in next loop
 		}
@@ -950,7 +961,7 @@ CommandCost CmdCloneVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		DoCommand(0, w_front->index | (p2 & 1 ? CO_SHARE : CO_COPY) << 30, v_front->index, flags, CMD_CLONE_ORDER);
 
 		/* Now clone the vehicle's name, if it has one. */
-		if (v_front->name != NULL) CloneVehicleName(v_front, w_front);
+		if (v_front->GetConsist()->name != NULL) CloneVehicleName(v_front->GetConsist(), w_front->GetConsist());
 	}
 
 	/* Since we can't estimate the cost of cloning a vehicle accurately we must
@@ -1038,7 +1049,8 @@ CommandCost CmdSendVehicleToDepot(TileIndex tile, DoCommandFlag flags, uint32 p1
 CommandCost CmdRenameVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	Vehicle *v = Vehicle::GetIfValid(p1);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	if (v == NULL || v->GetConsist() == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = v->GetConsist();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1051,8 +1063,8 @@ CommandCost CmdRenameVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 	}
 
 	if (flags & DC_EXEC) {
-		free(v->name);
-		v->name = reset ? NULL : stredup(text);
+		free(cs->name);
+		cs->name = reset ? NULL : stredup(text);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 1);
 		MarkWholeScreenDirty();
 	}
@@ -1076,7 +1088,8 @@ CommandCost CmdRenameVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 CommandCost CmdChangeServiceInt(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	Vehicle *v = Vehicle::GetIfValid(p1);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	if (v == NULL || v->GetConsist() == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = v->GetConsist();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1094,9 +1107,9 @@ CommandCost CmdChangeServiceInt(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 	}
 
 	if (flags & DC_EXEC) {
-		v->SetServiceInterval(serv_int);
-		v->SetServiceIntervalIsCustom(iscustom);
-		v->SetServiceIntervalIsPercent(ispercent);
+		cs->SetServiceInterval(serv_int);
+		cs->SetServiceIntervalIsCustom(iscustom);
+		cs->SetServiceIntervalIsPercent(ispercent);
 		SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
 	}
 

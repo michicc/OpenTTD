@@ -371,8 +371,9 @@ void AfterLoadVehicles(bool part_of_load)
 				const Company *c = Company::Get(v->owner);
 				int interval = CompanyServiceInterval(c, v->type);
 
-				v->SetServiceIntervalIsCustom(v->GetServiceInterval() != interval);
-				v->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
+				Consist *cs = v->GetConsist();
+				cs->SetServiceIntervalIsCustom(cs->GetServiceInterval() != interval);
+				cs->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
 			}
 		}
 	}
@@ -573,6 +574,14 @@ static uint16 _cargo_paid_for;
 static Money  _cargo_feeder_share;
 static uint32 _cargo_loaded_at_xy;
 
+static char*          _veh_name;
+static uint32         _veh_current_order_time;
+static int32          _veh_lateness_counter;
+static Date           _veh_timetable_start;
+static uint16         _veh_service_interval;
+static VehicleOrderID _veh_cur_real_order_index;
+static VehicleOrderID _veh_cur_implicit_order_index;
+
 /**
  * Make it possible to make the saveload tables "friends" of other classes.
  * @param vt the vehicle type. Can be VEH_END for the common vehicle description data
@@ -585,8 +594,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		     SLE_VAR(Vehicle, subtype,               SLE_UINT8),
 
 		     SLE_REF(Vehicle, next,                  REF_VEHICLE_OLD),
-		 SLE_CONDVAR(Vehicle, name,                  SLE_NAME,                     0,  83),
-		 SLE_CONDSTR(Vehicle, name,                  SLE_STR | SLF_ALLOW_CONTROL, 0, 84, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_name,             SLE_NAME,                     0,  83),
+		SLEG_CONDSTR(         _veh_name,             SLE_STR | SLF_ALLOW_CONTROL,  0,  84, 195),
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_FILE_U8  | SLE_VAR_U16,   0,   7),
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_UINT16,                   8, SL_MAX_VERSION),
 		     SLE_VAR(Vehicle, owner,                 SLE_UINT8),
@@ -636,8 +645,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		     SLE_VAR(Vehicle, tick_counter,          SLE_UINT8),
 		 SLE_CONDVAR(Vehicle, running_ticks,         SLE_UINT8,                   88, SL_MAX_VERSION),
 
-		     SLE_VAR(Vehicle, cur_implicit_order_index,  SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, cur_real_order_index,  SLE_UINT8,                  158, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_cur_implicit_order_index,  SLE_UINT8,           0, 195),
+		SLEG_CONDVAR(         _veh_cur_real_order_index,  SLE_UINT8,             158, 195),
 		/* num_orders is now part of OrderList and is not saved but counted */
 		SLE_CONDNULL(1,                                                            0, 104),
 
@@ -660,7 +669,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, current_order.wait_time,     SLE_UINT16,            67, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.travel_time,   SLE_UINT16,            67, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.max_speed,     SLE_UINT16,           174, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, timetable_start,       SLE_INT32,                  129, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_timetable_start,        SLE_INT32,            129, 195),
 
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDER,                    0, 104),
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDERLIST,              105, SL_MAX_VERSION),
@@ -671,9 +680,9 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, max_age,               SLE_INT32,                   31, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, date_of_last_service,  SLE_FILE_U16 | SLE_VAR_I32,   0,  30),
 		 SLE_CONDVAR(Vehicle, date_of_last_service,  SLE_INT32,                   31, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_UINT16,                   0,  30),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_FILE_U32 | SLE_VAR_U16,  31, 179),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_UINT16,                 180, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_service_interval, SLE_UINT16,                   0,  30),
+		SLEG_CONDVAR(         _veh_service_interval, SLE_FILE_U32 | SLE_VAR_U16,  31, 179),
+		SLEG_CONDVAR(         _veh_service_interval, SLE_UINT16,                 180, 195),
 		     SLE_VAR(Vehicle, reliability,           SLE_UINT16),
 		     SLE_VAR(Vehicle, reliability_spd_dec,   SLE_UINT16),
 		     SLE_VAR(Vehicle, breakdown_ctr,         SLE_UINT8),
@@ -707,8 +716,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 
 		 SLE_CONDVAR(Vehicle, group_id,              SLE_UINT16,                  60, SL_MAX_VERSION),
 
-		 SLE_CONDVAR(Vehicle, current_order_time,    SLE_UINT32,                  67, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, lateness_counter,      SLE_INT32,                   67, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_current_order_time, SLE_UINT32,                67, 195),
+		SLEG_CONDVAR(         _veh_lateness_counter, SLE_INT32,                   67, 195),
 
 		SLE_CONDNULL(10,                                                           2, 143), // old reserved space
 
@@ -908,6 +917,12 @@ void Load_VEHS()
 			default: SlErrorCorrupt("Invalid vehicle type");
 		}
 
+		/* Clear stuff that is conditionally read from the save. */
+		_veh_name = NULL; // Needed else the previously read name will be free'd.
+		_veh_current_order_time = 0;
+		_veh_lateness_counter = 0;
+		_veh_timetable_start = 0;
+		_veh_cur_real_order_index = 0;
 		SlObject(v, GetVehicleDescription(vtype));
 
 		if (_cargo_count != 0 && IsCompanyBuildableVehicleType(v) && CargoPacket::CanAllocateItem()) {
@@ -951,14 +966,22 @@ void Load_VEHS()
 				Consist *c = new Consist(v->type);
 
 				c->front = v;
-			}
 
-			/* Vehicle flags were split into vehicle and consists flags. */
-			if (HasBit(v->vehicle_flags, 3)) SetBit(v->consist_flags, CF_TIMETABLE_STARTED);
-			if (HasBit(v->vehicle_flags, 4)) SetBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
-			if (HasBit(v->vehicle_flags, 5)) SetBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
-			if (HasBit(v->vehicle_flags, 8)) SetBit(v->consist_flags, CF_SERVINT_IS_CUSTOM);
-			if (HasBit(v->vehicle_flags, 9)) SetBit(v->consist_flags, CF_SERVINT_IS_PERCENT);
+				/* Vehicle flags were split into vehicle and consists flags. */
+				if (HasBit(v->vehicle_flags, 3)) SetBit(c->consist_flags, CF_TIMETABLE_STARTED);
+				if (HasBit(v->vehicle_flags, 4)) SetBit(c->consist_flags, CF_AUTOFILL_TIMETABLE);
+				if (HasBit(v->vehicle_flags, 5)) SetBit(c->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+				if (HasBit(v->vehicle_flags, 8)) SetBit(c->consist_flags, CF_SERVINT_IS_CUSTOM);
+				if (HasBit(v->vehicle_flags, 9)) SetBit(c->consist_flags, CF_SERVINT_IS_PERCENT);
+
+				c->name                     = _veh_name;
+				c->current_order_time       = _veh_current_order_time;
+				c->lateness_counter         = _veh_lateness_counter;
+				c->timetable_start          = _veh_timetable_start;
+				c->service_interval         = _veh_service_interval;
+				c->cur_real_order_index     = _veh_cur_real_order_index;
+				c->cur_implicit_order_index = _veh_cur_implicit_order_index;
+			}
 		}
 	}
 }

@@ -2652,6 +2652,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\..\src\saveload\consist_sl.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\..\src\saveload\depot_sl.cpp"
 				>
 			</File>

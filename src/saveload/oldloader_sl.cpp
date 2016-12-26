@@ -193,8 +193,6 @@ void FixOldVehicles()
 		/* Vehicle-subtype is different in TTD(Patch) */
 		if (v->type == VEH_EFFECT) v->subtype = v->subtype >> 1;
 
-		v->name = CopyFromOldName(_old_vehicle_names[v->index]);
-
 		/* We haven't used this bit for stations for ages */
 		if (v->type == VEH_ROAD) {
 			RoadVehicle *rv = RoadVehicle::From(v);
@@ -220,6 +218,11 @@ void FixOldVehicles()
 		}
 
 		/* Shared orders are fixed in AfterLoadVehicles now */
+	}
+
+	Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		cs->name = CopyFromOldName(_old_vehicle_names[cs->Front()->index]);
 	}
 }
 
@@ -1135,6 +1138,8 @@ static bool LoadOldVehicleUnion(LoadgameState *ls, int num)
 }
 
 static uint16 _cargo_count;
+static uint8  _cur_implicit_order_index;
+static uint16 _service_interval;
 
 static const OldChunks vehicle_chunk[] = {
 	OCL_SVAR(  OC_UINT8, Vehicle, subtype ),
@@ -1146,11 +1151,11 @@ static const OldChunks vehicle_chunk[] = {
 	OCL_VAR ( OC_UINT16,   1, &_old_order ),
 
 	OCL_NULL ( 1 ), ///< num_orders, now calculated
-	OCL_SVAR(  OC_UINT8, Vehicle, cur_implicit_order_index ),
+	OCL_VAR (  OC_UINT8, 1, &_cur_implicit_order_index ),
 	OCL_SVAR(   OC_TILE, Vehicle, dest_tile ),
 	OCL_SVAR( OC_UINT16, Vehicle, load_unload_ticks ),
 	OCL_SVAR( OC_FILE_U16 | OC_VAR_U32, Vehicle, date_of_last_service ),
-	OCL_SVAR( OC_UINT16, Vehicle, service_interval ),
+	OCL_VAR ( OC_UINT16, 1, &_service_interval ),
 	OCL_SVAR( OC_FILE_U8 | OC_VAR_U16, Vehicle, last_station_visited ),
 	OCL_SVAR( OC_TTD | OC_UINT8, Vehicle, tick_counter ),
 	OCL_CNULL( OC_TTD, 2 ), ///< max_speed, now it is calculated.
@@ -1356,6 +1361,8 @@ bool LoadOldVehicle(LoadgameState *ls, int num)
 			Consist *c = new Consist(v->type);
 
 			c->front = v;
+			c->service_interval = _service_interval;
+			c->cur_implicit_order_index = _cur_implicit_order_index;
 		}
 
 		if (_old_order_ptr != 0 && _old_order_ptr != 0xFFFFFFFF) {

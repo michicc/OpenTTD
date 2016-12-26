@@ -64,6 +64,7 @@
 #include "roadveh.h"
 #include "fios.h"
 #include "strings_func.h"
+#include "consist_base.h"
 
 #include "void_map.h"
 #include "station_base.h"
@@ -905,11 +906,11 @@ static bool CheckInterval(int32 p1)
 
 	if (update_vehicles) {
 		const Company *c = Company::Get(_current_company);
-		Vehicle *v;
-		FOR_ALL_VEHICLES(v) {
-			if (v->owner == _current_company && v->IsPrimaryVehicle() && !v->ServiceIntervalIsCustom()) {
-				v->SetServiceInterval(CompanyServiceInterval(c, v->type));
-				v->SetServiceIntervalIsPercent(p1 != 0);
+		Consist *cs;
+		FOR_ALL_CONSISTS(cs) {
+			if (cs->Front()->owner == _current_company && !cs->ServiceIntervalIsCustom()) {
+				cs->SetServiceInterval(CompanyServiceInterval(c, cs->type));
+				cs->SetServiceIntervalIsPercent(p1 != 0);
 			}
 		}
 	}
@@ -936,10 +937,10 @@ static bool UpdateInterval(VehicleType type, int32 p1)
 	if (interval != p1) return false;
 
 	if (update_vehicles) {
-		Vehicle *v;
-		FOR_ALL_VEHICLES(v) {
-			if (v->owner == _current_company && v->type == type && v->IsPrimaryVehicle() && !v->ServiceIntervalIsCustom()) {
-				v->SetServiceInterval(p1);
+		Consist *cs;
+		FOR_ALL_CONSISTS(cs) {
+			if (cs->Front()->owner == _current_company && cs->type == type && !cs->ServiceIntervalIsCustom()) {
+				cs->SetServiceInterval(p1);
 			}
 		}
 	}

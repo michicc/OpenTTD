@@ -35,6 +35,7 @@
 #include "window_func.h"
 #include "debug.h"
 #include "game/game_text.hpp"
+#include "consist_base.h"
 #ifdef ENABLE_NETWORK
 #	include "network/network_content_gui.h"
 #endif /* ENABLE_NETWORK */
@@ -1458,9 +1459,10 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 			case SCC_VEHICLE_NAME: { // {VEHICLE}
 				const Vehicle *v = Vehicle::GetIfValid(args->GetInt32(SCC_VEHICLE_NAME));
 				if (v == NULL) break;
+				const Consist *cs = v->GetConsist();
 
-				if (v->name != NULL) {
-					int64 args_array[] = {(int64)(size_t)v->name};
+				if (cs->name != NULL) {
+					int64 args_array[] = {(int64)(size_t)cs->name};
 					StringParameters tmp_params(args_array);
 					buff = GetStringWithArgs(buff, STR_JUST_RAW_STRING, &tmp_params, last);
 				} else {

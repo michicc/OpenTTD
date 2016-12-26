@@ -1749,6 +1749,9 @@
     <ClCompile Include="..\src\saveload\company_sl.cpp">
       <Filter>Save/Load handlers</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\saveload\consist_sl.cpp">
+      <Filter>Save/Load handlers</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\saveload\depot_sl.cpp">
       <Filter>Save/Load handlers</Filter>
     </ClCompile>

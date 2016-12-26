@@ -55,6 +55,7 @@
 #include "../order_backup.h"
 #include "../error.h"
 #include "../disaster_vehicle.h"
+#include "../consist_base.h"
 
 
 #include "saveload_internal.h"
@@ -2666,13 +2667,14 @@ bool AfterLoadGame()
 
 		/* Fill Vehicle::cur_real_order_index */
 		FOR_ALL_VEHICLES(v) {
-			if (!v->IsPrimaryVehicle()) continue;
+			Consist *cs = v->GetConsist();
+			if (!v->IsPrimaryVehicle() || cs == NULL) continue;
 
 			/* Older versions are less strict with indices being in range and fix them on the fly */
-			if (v->cur_implicit_order_index >= v->GetNumOrders()) v->cur_implicit_order_index = 0;
+			if (cs->cur_implicit_order_index >= v->GetNumOrders()) cs->cur_implicit_order_index = 0;
 
-			v->cur_real_order_index = v->cur_implicit_order_index;
-			v->UpdateRealOrderIndex();
+			cs->cur_real_order_index = cs->cur_implicit_order_index;
+			cs->UpdateRealOrderIndex();
 		}
 	}
 

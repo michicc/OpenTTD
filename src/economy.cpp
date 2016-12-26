@@ -50,6 +50,7 @@
 #include "goal_base.h"
 #include "story_base.h"
 #include "linkgraph/refresh.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 #include "table/pricebase.h"
@@ -453,7 +454,7 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 				/* Correct default values of interval settings while maintaining custom set ones.
 				 * This prevents invalid values on mismatching company defaults being accepted.
 				 */
-				if (!v->ServiceIntervalIsCustom()) {
+				if (!v->GetConsist()->ServiceIntervalIsCustom()) {
 					Company *new_company = Company::Get(new_owner);
 
 					/* Technically, passing the interval is not needed as the command will query the default value itself.
@@ -1597,6 +1598,8 @@ static void LoadUnloadVehicle(Vehicle *front)
 {
 	assert(front->current_order.IsType(OT_LOADING));
 
+	Consist *cs = front->GetConsist();
+
 	StationID last_visited = front->last_station_visited;
 	Station *st = Station::Get(last_visited);
 
@@ -1826,7 +1829,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 		/* We loaded less cargo than possible for all cargo types and it's not full
 		 * load and we're not supposed to wait any longer: stop loading. */
 		if (!anything_unloaded && full_load_amount == 0 && reservation_left == 0 && !(front->current_order.GetLoadType() & OLFB_FULL_LOAD) &&
-				front->current_order_time >= (uint)max(front->current_order.GetTimetabledWait() - front->lateness_counter, 0)) {
+				cs->current_order_time >= (uint)max(front->current_order.GetTimetabledWait() - cs->lateness_counter, 0)) {
 			SetBit(front->vehicle_flags, VF_STOP_LOADING);
 		}
 
