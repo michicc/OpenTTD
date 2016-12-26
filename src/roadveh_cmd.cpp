@@ -493,7 +493,7 @@ static void RoadVehSetRandomDirection(RoadVehicle *v)
  * @param v First roadvehicle.
  * @return whether the chain still exists.
  */
-static bool RoadVehIsCrashed(RoadVehicle *v)
+bool RoadVehIsCrashed(RoadVehicle *v)
 {
 	v->crashed_ctr++;
 	if (v->crashed_ctr == 2) {
@@ -559,7 +559,7 @@ static void RoadVehCrash(RoadVehicle *v)
 	if (_settings_client.sound.disaster) SndPlayVehicleFx(SND_12_EXPLOSION, v);
 }
 
-static bool RoadVehCheckTrainCrash(RoadVehicle *v)
+bool RoadVehCheckTrainCrash(RoadVehicle *v)
 {
 	for (RoadVehicle *u = v; u != NULL; u = u->Next()) {
 		if (u->state == RVSB_WORMHOLE) continue;
@@ -1512,15 +1512,6 @@ bool RoadVehController(RoadVehicle *v)
 {
 	/* decrease counters */
 	if (v->reverse_ctr != 0) v->reverse_ctr--;
-
-	/* handle crashed */
-	if (v->vehstatus & VS_CRASHED || RoadVehCheckTrainCrash(v)) {
-		return RoadVehIsCrashed(v);
-	}
-
-	/* road vehicle has broken down? */
-	if (v->HandleBreakdown()) return true;
-	if (v->vehstatus & VS_STOPPED) return true;
 
 	ProcessOrders(v);
 	v->HandleLoading();

@@ -31,6 +31,8 @@ private:
 
 	void PreDestructor();
 
+	bool HandleCrashedConsist(int loop);
+
 	friend void Load_VEHS();
 	friend bool LoadOldVehicle(struct LoadgameState *ls, int num);
 	friend const struct SaveLoad *GetConsistDescription(); ///< So we can use private/protected variables in the saveload code

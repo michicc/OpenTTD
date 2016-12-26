@@ -502,10 +502,6 @@ void ShipController(Ship *v)
 	Track track;
 	TrackBits tracks;
 
-	if (v->HandleBreakdown()) return;
-
-	if (v->vehstatus & VS_STOPPED) return;
-
 	ProcessOrders(v);
 	v->HandleLoading();
 

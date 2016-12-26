@@ -3572,7 +3572,7 @@ static void ChangeTrainDirRandomly(Train *v)
  * @param v First train vehicle.
  * @return %Vehicle chain still exists.
  */
-static bool HandleCrashedTrain(Train *v)
+bool HandleCrashedTrain(Train *v)
 {
 	int state = ++v->crash_anim_pos;
 
@@ -3779,18 +3779,10 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 
 bool TrainLocoHandler(Train *v, bool mode)
 {
-	/* train has crashed? */
-	if (v->vehstatus & VS_CRASHED) {
-		return mode ? true : HandleCrashedTrain(v); // 'this' can be deleted here
-	}
-
 	if (v->force_proceed != TFP_NONE) {
 		ClrBit(v->flags, VRF_TRAIN_STUCK);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 	}
-
-	/* train is broken down? */
-	if (v->HandleBreakdown()) return true;
 
 	if (HasBit(v->flags, VRF_REVERSING) && v->cur_speed == 0) {
 		ReverseTrainDirection(v);

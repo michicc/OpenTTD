@@ -1106,7 +1106,7 @@ static bool AircraftController(Aircraft *v)
  * Handle crashed aircraft \a v.
  * @param v Crashed aircraft.
  */
-static bool HandleCrashedAircraft(Aircraft *v)
+bool HandleCrashedAircraft(Aircraft *v)
 {
 	v->crashed_counter += 3;
 
@@ -1996,14 +1996,6 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 
 bool AircraftEventHandler(Aircraft *v, int loop)
 {
-	if (v->vehstatus & VS_CRASHED) {
-		return HandleCrashedAircraft(v);
-	}
-
-	if (v->vehstatus & VS_STOPPED) return true;
-
-	v->HandleBreakdown();
-
 	HandleAircraftSmoke(v, loop != 0);
 	ProcessOrders(v);
 	v->HandleLoading(loop != 0);

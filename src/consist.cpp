@@ -48,6 +48,27 @@ void Consist::SetFront(Vehicle *front)
 }
 
 /**
+ * Handle a crashed consist.
+ * @param loop Movement loop counter.
+ * @return True if the consist is still valid.
+ */
+bool Consist::HandleCrashedConsist(int loop)
+{
+	switch (this->type) {
+		case VEH_TRAIN:
+			return loop > 0 ? true : HandleCrashedTrain(Train::From(this->Front()));
+
+		case VEH_ROAD:
+			return RoadVehIsCrashed(RoadVehicle::From(this->Front()));
+
+		case VEH_AIRCRAFT:
+			return HandleCrashedAircraft(Aircraft::From(this->Front()));
+
+		default: return true;
+	}
+}
+
+/**
  * The tick handler for consists.
  * @return True if the consist is still valid.
  */
@@ -61,6 +82,14 @@ bool Consist::Tick()
 
 	/* Call movement function. */
 	for (int i = 0; i < (this->type == VEH_TRAIN || this->type == VEH_AIRCRAFT ? 2 : 1); i++) {
+		/* Check for crashed vehicles. */
+		if (v->vehstatus & VS_CRASHED) return this->HandleCrashedConsist(i);
+		if (this->type == VEH_ROAD && RoadVehCheckTrainCrash(RoadVehicle::From(v))) return this->HandleCrashedConsist(i);
+
+		/* Handle breakdowns. */
+		if (v->HandleBreakdown()) continue;
+		if (this->type != VEH_TRAIN && (v->vehstatus & VS_STOPPED) && v->cur_speed == 0) continue;
+
 		switch (this->type) {
 			case VEH_TRAIN:
 				if (!TrainLocoHandler(Train::From(v), i != 0)) return false;
