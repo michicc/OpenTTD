@@ -851,8 +851,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		SLE_CONDNULL(5,                                                            0,  57),
 		     SLE_VAR(Vehicle, owner,                 SLE_UINT8),
 		     SLE_VAR(Vehicle, vehstatus,             SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, current_order.dest,    SLE_FILE_U8 | SLE_VAR_U16,    0,   4),
-		 SLE_CONDVAR(Vehicle, current_order.dest,    SLE_UINT16,                   5, SL_MAX_VERSION),
+		 SLE_CONDVAR(DisasterVehicle, state,         SLE_FILE_U8 | SLE_VAR_U16,    0,   4),
+		 SLE_CONDVAR(DisasterVehicle, state,         SLE_UINT16,                   5, SL_MAX_VERSION),
 
 		     SLE_VAR(Vehicle, sprite_seq.seq[0].sprite, SLE_FILE_U16 | SLE_VAR_U32),
 		 SLE_CONDVAR(Vehicle, age,                   SLE_FILE_U16 | SLE_VAR_I32,   0,  30),
