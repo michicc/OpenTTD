@@ -733,12 +733,13 @@ uint GetOrderDistance(const Order *prev, const Order *cur, const Vehicle *v, int
  */
 CommandCost CmdInsertOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh          = GB(p1,  0, 20);
+	ConsistID consist      = GB(p1,  0, 20);
 	VehicleOrderID sel_ord = GB(p1, 20, 8);
 	Order new_order(p2);
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1046,12 +1047,12 @@ static CommandCost DecloneOrder(Vehicle *dst, DoCommandFlag flags)
  */
 CommandCost CmdDeleteOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh_id = GB(p1, 0, 20);
+	ConsistID consist_id = GB(p1, 0, 20);
 	VehicleOrderID sel_ord = GB(p2, 0, 8);
 
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
-
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist_id);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1153,13 +1154,12 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
  */
 CommandCost CmdSkipToOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh_id = GB(p1, 0, 20);
+	ConsistID consist_id = GB(p1, 0, 20);
 	VehicleOrderID sel_ord = GB(p2, 0, 8);
 
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
-
-	if (v == NULL ||  v->GetConsist() == NULL || !v->IsPrimaryVehicle() || sel_ord == v->GetConsist()->cur_implicit_order_index || sel_ord >= v->GetNumOrders() || v->GetNumOrders() < 2) return CMD_ERROR;
-	Consist *cs = v->GetConsist();
+	Consist *cs = Consist::GetIfValid(consist_id);
+	if (cs == NULL || cs->Front() == NULL || sel_ord >= cs->cur_implicit_order_index || sel_ord >= cs->Front()->GetNumOrders() || cs->Front()->GetNumOrders() < 2) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1195,12 +1195,13 @@ CommandCost CmdSkipToOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
  */
 CommandCost CmdMoveOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh = GB(p1, 0, 20);
+	ConsistID consist = GB(p1, 0, 20);
 	VehicleOrderID moving_order = GB(p2,  0, 16);
 	VehicleOrderID target_order = GB(p2, 16, 16);
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1301,14 +1302,15 @@ CommandCost CmdMoveOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 CommandCost CmdModifyOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	VehicleOrderID sel_ord = GB(p1, 20,  8);
-	VehicleID veh          = GB(p1,  0, 20);
+	ConsistID consist_id   = GB(p1,  0, 20);
 	ModifyOrderFlags mof   = Extract<ModifyOrderFlags, 0, 4>(p2);
 	uint16 data            = GB(p2,  4, 11);
 
 	if (mof >= MOF_END) return CMD_ERROR;
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist_id);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1569,21 +1571,22 @@ static bool CheckAircraftOrderDistance(const Aircraft *v_new, const Vehicle *v_o
  */
 CommandCost CmdCloneOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh_src = GB(p2, 0, 20);
-	VehicleID veh_dst = GB(p1, 0, 20);
+	ConsistID consist_src = GB(p2, 0, 20);
+	ConsistID consist_dst = GB(p1, 0, 20);
 
-	Vehicle *dst = Vehicle::GetIfValid(veh_dst);
-	if (dst == NULL || !dst->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs_dst = Consist::GetIfValid(consist_dst);
+	if (cs_dst == NULL || cs_dst->Front() == NULL) return CMD_ERROR;
+	Vehicle *dst = cs_dst->Front();
 
 	CommandCost ret = CheckOwnership(dst->owner);
 	if (ret.Failed()) return ret;
 
 	switch (GB(p1, 30, 2)) {
 		case CO_SHARE: {
-			Vehicle *src = Vehicle::GetIfValid(veh_src);
-
+			Consist *cs_src = Consist::GetIfValid(consist_src);
 			/* Sanity checks */
-			if (src == NULL || !src->IsPrimaryVehicle() || dst->type != src->type || dst == src) return CMD_ERROR;
+			if (cs_src == NULL || cs_src->Front() == NULL || cs_dst->type != cs_src->type || cs_dst == cs_src) return CMD_ERROR;
+			Vehicle *src = cs_src->Front();
 
 			CommandCost ret = CheckOwnership(src->owner);
 			if (ret.Failed()) return ret;
@@ -1639,10 +1642,10 @@ CommandCost CmdCloneOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 		}
 
 		case CO_COPY: {
-			Vehicle *src = Vehicle::GetIfValid(veh_src);
-
+			Consist *cs_src = Consist::GetIfValid(consist_src);
 			/* Sanity checks */
-			if (src == NULL || !src->IsPrimaryVehicle() || dst->type != src->type || dst == src) return CMD_ERROR;
+			if (cs_src == NULL || cs_src->Front() == NULL || cs_dst->type != cs_src->type || cs_dst == cs_src) return CMD_ERROR;
+			Vehicle *src = cs_src->Front();
 
 			CommandCost ret = CheckOwnership(src->owner);
 			if (ret.Failed()) return ret;
@@ -1720,14 +1723,15 @@ CommandCost CmdCloneOrder(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
  */
 CommandCost CmdOrderRefit(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh = GB(p1, 0, 20);
+	ConsistID consist_id = GB(p1, 0, 20);
 	VehicleOrderID order_number  = GB(p2, 16, 8);
 	CargoID cargo = GB(p2, 0, 8);
 
 	if (cargo >= NUM_CARGO && cargo != CT_NO_REFIT && cargo != CT_AUTO_REFIT) return CMD_ERROR;
 
-	const Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	const Consist *cs = Consist::GetIfValid(consist_id);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	const Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;

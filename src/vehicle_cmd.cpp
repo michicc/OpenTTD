@@ -959,7 +959,7 @@ CommandCost CmdCloneVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		 * the vehicle refitted before doing this, otherwise the moved
 		 * cargo types might not match (passenger vs non-passenger)
 		 */
-		DoCommand(0, w_front->index | (p2 & 1 ? CO_SHARE : CO_COPY) << 30, v_front->index, flags, CMD_CLONE_ORDER);
+		DoCommand(0, w_front->GetConsist()->index | (p2 & 1 ? CO_SHARE : CO_COPY) << 30, v_front->GetConsist()->index, flags, CMD_CLONE_ORDER);
 
 		/* Now clone the vehicle's name, if it has one. */
 		if (v_front->GetConsist()->name != NULL) CloneVehicleName(v_front->GetConsist(), w_front->GetConsist());

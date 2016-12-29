@@ -81,7 +81,7 @@ void OrderBackup::DoRestore(Consist *cs)
 
 	/* If we had shared orders, recover that */
 	if (this->clone != NULL) {
-		DoCommand(0, v->index | CO_SHARE << 30, this->clone->index, DC_EXEC, CMD_CLONE_ORDER);
+		DoCommand(0, cs->index | CO_SHARE << 30, this->clone->GetConsist()->index, DC_EXEC, CMD_CLONE_ORDER);
 	} else if (this->orders != NULL && OrderList::CanAllocateItem()) {
 		v->orders.list = new OrderList(this->orders, v);
 		this->orders = NULL;
