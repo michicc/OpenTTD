@@ -1509,12 +1509,14 @@ again:
 	return true;
 }
 
-bool RoadVehController(RoadVehicle *v)
+bool RoadVehController(Consist *cs)
 {
+	RoadVehicle *v = RoadVehicle::From(cs->Front());
+
 	/* decrease counters */
 	if (v->reverse_ctr != 0) v->reverse_ctr--;
 
-	ProcessOrders(v);
+	ProcessOrders(cs);
 	v->HandleLoading();
 
 	if (v->current_order.IsType(OT_LOADING)) return true;

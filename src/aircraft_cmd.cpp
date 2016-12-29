@@ -38,6 +38,7 @@
 #include "zoom_func.h"
 #include "disaster_vehicle.h"
 #include "consist_func.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -1995,10 +1996,12 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 	}
 }
 
-bool AircraftEventHandler(Aircraft *v, int loop)
+bool AircraftEventHandler(Consist *cs, int loop)
 {
+	Aircraft *v = Aircraft::From(cs->Front());
+
 	HandleAircraftSmoke(v, loop != 0);
-	ProcessOrders(v);
+	ProcessOrders(cs);
 	v->HandleLoading(loop != 0);
 
 	if (v->current_order.IsType(OT_LOADING) || v->current_order.IsType(OT_LEAVESTATION)) return true;

@@ -14,12 +14,13 @@
 
 #include "vehicle_base.h"
 #include "water_map.h"
+#include "consist_base.h"
 
 struct Ship;
 
 void GetShipSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 WaterClass GetEffectiveWaterClass(TileIndex tile);
-void ShipController(Ship *v);
+void ShipController(Consist *cs);
 
 /**
  * All ships have this type.

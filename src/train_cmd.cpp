@@ -2106,6 +2106,8 @@ static void CheckNextTrainTile(Train *v)
 	/* Exit if we are inside a depot. */
 	if (v->track == TRACK_BIT_DEPOT) return;
 
+	Consist *cs = v->GetConsist();
+
 	switch (v->current_order.GetType()) {
 		/* Exit if we reached our destination depot. */
 		case OT_GOTO_DEPOT:
@@ -2114,7 +2116,7 @@ static void CheckNextTrainTile(Train *v)
 
 		case OT_GOTO_WAYPOINT:
 			/* If we reached our waypoint, make sure we see that. */
-			if (IsRailWaypointTile(v->tile) && GetStationIndex(v->tile) == v->current_order.GetDestination()) ProcessOrders(v);
+			if (IsRailWaypointTile(v->tile) && GetStationIndex(v->tile) == v->current_order.GetDestination()) ProcessOrders(cs);
 			break;
 
 		case OT_NOTHING:
@@ -2586,6 +2588,8 @@ static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, 
 		best_track = track;
 	}
 
+	Consist *cs = v->GetConsist();
+
 	PBSTileInfo   res_dest(tile, INVALID_TRACKDIR, false);
 	DiagDirection dest_enterdir = enterdir;
 	if (do_track_reservation) {
@@ -2608,7 +2612,7 @@ static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, 
 		 * Also check if the current order is a service order so we don't reserve a path to
 		 * the destination but instead to the next one if service isn't needed. */
 		CheckIfTrainNeedsService(v);
-		if (v->current_order.IsType(OT_DUMMY) || v->current_order.IsType(OT_CONDITIONAL) || v->current_order.IsType(OT_GOTO_DEPOT)) ProcessOrders(v);
+		if (v->current_order.IsType(OT_DUMMY) || v->current_order.IsType(OT_CONDITIONAL) || v->current_order.IsType(OT_GOTO_DEPOT)) ProcessOrders(cs);
 	}
 
 	/* Save the current train order. The destructor will restore the old order on function exit. */
@@ -3778,8 +3782,10 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 }
 
 
-bool TrainLocoHandler(Train *v, bool mode)
+bool TrainLocoHandler(Consist *cs, bool mode)
 {
+	Train *v = Train::From(cs->Front());
+
 	if (v->force_proceed != TFP_NONE) {
 		ClrBit(v->flags, VRF_TRAIN_STUCK);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
@@ -3793,7 +3799,7 @@ bool TrainLocoHandler(Train *v, bool mode)
 	if ((v->vehstatus & VS_STOPPED) && v->cur_speed == 0) return true;
 
 	bool valid_order = !v->current_order.IsType(OT_NOTHING) && v->current_order.GetType() != OT_CONDITIONAL;
-	if (ProcessOrders(v) && CheckReverseTrain(v)) {
+	if (ProcessOrders(cs) && CheckReverseTrain(v)) {
 		v->wait_counter = 0;
 		v->cur_speed = 0;
 		v->subspeed = 0;
@@ -3893,7 +3899,7 @@ bool TrainLocoHandler(Train *v, bool mode)
 						(v->current_order.GetNonStopType() & ONSF_NO_STOP_AT_DESTINATION_STATION) &&
 						IsTileType(v->tile, MP_STATION) &&
 						v->current_order.GetDestination() == GetStationIndex(v->tile)) {
-				ProcessOrders(v);
+				ProcessOrders(cs);
 			}
 		}
 		v->SetLastSpeed();

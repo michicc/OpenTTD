@@ -2158,15 +2158,15 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 }
 
 /**
- * Handle the orders of a vehicle and determine the next place
+ * Handle the orders of a consist and determine the next place
  * to go to if needed.
- * @param v the vehicle to do this for.
- * @return true *if* the vehicle is eligible for reversing
+ * @param cs The consist to do this for.
+ * @return true *if* the consist is eligible for reversing
  *              (basically only when leaving a station).
  */
-bool ProcessOrders(Vehicle *v)
+bool ProcessOrders(Consist *cs)
 {
-	Consist *cs = v->GetConsist();
+	Vehicle *v = cs->Front();
 
 	switch (v->current_order.GetType()) {
 		case OT_GOTO_DEPOT:

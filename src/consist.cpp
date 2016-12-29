@@ -114,19 +114,19 @@ bool Consist::Tick()
 
 		switch (this->type) {
 			case VEH_TRAIN:
-				if (!TrainLocoHandler(Train::From(v), i != 0)) return false;
+				if (!TrainLocoHandler(this, i != 0)) return false;
 				break;
 
 			case VEH_ROAD:
-				if (!RoadVehController(RoadVehicle::From(v))) return false;
+				if (!RoadVehController(this)) return false;
 				break;
 
 			case VEH_SHIP:
-				ShipController(Ship::From(v));
+				ShipController(this);
 				break;
 
 			case VEH_AIRCRAFT:
-				if (!AircraftEventHandler(Aircraft::From(v), i)) return false;
+				if (!AircraftEventHandler(this, i)) return false;
 				break;
 
 			default: NOT_REACHED();

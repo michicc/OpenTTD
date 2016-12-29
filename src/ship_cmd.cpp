@@ -495,15 +495,16 @@ static const byte _ship_subcoord[4][6][3] = {
 	}
 };
 
-void ShipController(Ship *v)
+void ShipController(Consist *cs)
 {
 	uint32 r;
 	const byte *b;
 	Direction dir;
 	Track track;
 	TrackBits tracks;
+	Ship *v = Ship::From(cs->Front());
 
-	ProcessOrders(v);
+	ProcessOrders(cs);
 	v->HandleLoading();
 
 	if (v->current_order.IsType(OT_LOADING)) return;
