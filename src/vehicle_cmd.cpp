@@ -1088,9 +1088,9 @@ CommandCost CmdRenameVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
  */
 CommandCost CmdChangeServiceInt(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	Vehicle *v = Vehicle::GetIfValid(p1);
-	if (v == NULL || v->GetConsist() == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
-	Consist *cs = v->GetConsist();
+	Consist *cs = Consist::GetIfValid(p1);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;

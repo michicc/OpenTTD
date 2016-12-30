@@ -451,19 +451,6 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 			if (v->owner == old_owner && IsCompanyBuildableVehicleType(v->type)) {
 				assert(new_owner != INVALID_OWNER);
 
-				/* Correct default values of interval settings while maintaining custom set ones.
-				 * This prevents invalid values on mismatching company defaults being accepted.
-				 */
-				if (!v->GetConsist()->ServiceIntervalIsCustom()) {
-					Company *new_company = Company::Get(new_owner);
-
-					/* Technically, passing the interval is not needed as the command will query the default value itself.
-					 * However, do not rely on that behaviour.
-					 */
-					int interval = CompanyServiceInterval(new_company, v->type);
-					DoCommand(v->tile, v->index, interval | (new_company->settings.vehicle.servint_ispercent << 17), DC_EXEC | DC_BANKRUPT, CMD_CHANGE_SERVICE_INT);
-				}
-
 				v->owner = new_owner;
 
 				/* Owner changes, clear cache */
@@ -487,6 +474,19 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 		FOR_ALL_CONSISTS(cs) {
 			if (cs->owner == old_owner) {
 				assert(new_owner != INVALID_OWNER);
+
+				/* Correct default values of interval settings while maintaining custom set ones.
+				 * This prevents invalid values on mismatching company defaults being accepted.
+				 */
+				if (!cs->ServiceIntervalIsCustom()) {
+					Company *new_company = Company::Get(new_owner);
+
+					/* Technically, passing the interval is not needed as the command will query the default value itself.
+					 * However, do not rely on that behaviour.
+					 */
+					int interval = CompanyServiceInterval(new_company, cs->type);
+					DoCommand(cs->Front()->tile, cs->index, interval | (new_company->settings.vehicle.servint_ispercent << 17), DC_EXEC | DC_BANKRUPT, CMD_CHANGE_SERVICE_INT);
+				}
 
 				cs->owner = new_owner;
 			}
