@@ -966,6 +966,7 @@ void Load_VEHS()
 				Consist *c = new Consist(v->type);
 
 				c->front = v;
+				c->owner = v->owner;
 
 				/* Vehicle flags were split into vehicle and consists flags. */
 				if (HasBit(v->vehicle_flags, 3)) SetBit(c->consist_flags, CF_TIMETABLE_STARTED);

@@ -1339,6 +1339,8 @@ static void CheckCaches()
 	FOR_ALL_CONSISTS(cs) {
 		for (Vehicle *v = cs->Front(); v != NULL; v = v->Next()) {
 			assert(v->GetConsist() == cs);
+			assert(v->type == cs->type);
+			assert(v->owner == cs->owner);
 		}
 	}
 }

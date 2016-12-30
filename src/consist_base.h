@@ -38,7 +38,8 @@ private:
 	friend const struct SaveLoad *GetConsistDescription(); ///< So we can use private/protected variables in the saveload code
 
 public:
-	VehicleTypeByte type; ///< Type of the consist.
+	VehicleTypeByte type;  ///< Type of the consist.
+	OwnerByte       owner; ///< Which company owns the consist?
 
 	Consist(VehicleType type = VEH_INVALID);
 	/** We want to 'destruct' the right class. */

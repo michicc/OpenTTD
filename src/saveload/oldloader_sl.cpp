@@ -1361,6 +1361,7 @@ bool LoadOldVehicle(LoadgameState *ls, int num)
 			Consist *c = new Consist(v->type);
 
 			c->front = v;
+			c->owner = v->owner;
 			c->service_interval = _service_interval;
 			c->cur_implicit_order_index = _cur_implicit_order_index;
 		}

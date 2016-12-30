@@ -139,7 +139,8 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 				c->SetFront(v);
 			}
 
-			c->name = NULL;
+			c->name  = NULL;
+			c->owner = _current_company;
 
 			c->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 			switch (c->type) {
