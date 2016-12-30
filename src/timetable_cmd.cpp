@@ -92,7 +92,7 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16 val,
  * @param tile Not used.
  * @param flags Operation to perform.
  * @param p1 Various bitstuffed elements
- * - p1 = (bit  0-19) - Vehicle with the orders to change.
+ * - p1 = (bit  0-19) - Consist with the orders to change.
  * - p1 = (bit 20-27) - Order index to modify.
  * - p1 = (bit 28-29) - Timetable data to change (@see ModifyTimetableFlags)
  * @param p2 The amount of time to wait.
@@ -103,10 +103,11 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16 val,
  */
 CommandCost CmdChangeTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh = GB(p1, 0, 20);
+	ConsistID consist = GB(p1, 0, 20);
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == NULL || cs->Front() == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -197,16 +198,17 @@ CommandCost CmdChangeTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, u
  */
 CommandCost CmdSetVehicleOnTime(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh = GB(p1, 0, 20);
+	ConsistID consist = GB(p1, 0, 20);
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || v->GetConsist() == NULL || !v->IsPrimaryVehicle() || v->orders.list == NULL) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == NULL || cs->Front() == NULL || cs->Front()->orders.list == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
-		v->GetConsist()->lateness_counter = 0;
+		cs->lateness_counter = 0;
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 
@@ -268,8 +270,9 @@ static int CDECL VehicleTimetableSorter(Vehicle * const *ap, Vehicle * const *bp
 CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	bool timetable_all = HasBit(p1, 20);
-	Vehicle *v = Vehicle::GetIfValid(GB(p1, 0, 20));
-	if (v == NULL || !v->IsPrimaryVehicle() || v->orders.list == NULL) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(GB(p1, 0, 20));
+	if (cs == NULL || cs->Front() == NULL || cs->Front()->orders.list == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -334,16 +337,16 @@ CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1,
  */
 CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
-	VehicleID veh = GB(p1, 0, 20);
+	ConsistID consist = GB(p1, 0, 20);
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == NULL || v->GetConsist() == NULL || !v->IsPrimaryVehicle() || v->orders.list == NULL) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == NULL || cs->Front() == NULL || cs->Front()->orders.list == NULL) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
-		Consist *cs = v->GetConsist();
 		if (HasBit(p2, 0)) {
 			/* Start autofilling the timetable, which clears the
 			 * "timetable has started" bit. Times are not cleared anymore, but are

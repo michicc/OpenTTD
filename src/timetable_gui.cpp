@@ -509,19 +509,20 @@ struct TimetableWindow : Window {
 		}
 	}
 
-	static inline uint32 PackTimetableArgs(const Vehicle *v, uint selected, bool speed)
+	static inline uint32 PackTimetableArgs(const Consist *cs, uint selected, bool speed)
 	{
 		uint order_number = (selected + 1) / 2;
 		ModifyTimetableFlags mtf = (selected % 2 == 1) ? (speed ? MTF_TRAVEL_SPEED : MTF_TRAVEL_TIME) : MTF_WAIT_TIME;
 
-		if (order_number >= v->GetNumOrders()) order_number = 0;
+		if (order_number >= cs->Front()->GetNumOrders()) order_number = 0;
 
-		return v->index | (order_number << 20) | (mtf << 28);
+		return cs->index | (order_number << 20) | (mtf << 28);
 	}
 
 	virtual void OnClick(Point pt, int widget, int click_count)
 	{
 		const Vehicle *v = this->vehicle;
+		const Consist *cs = this->consist;
 
 		switch (widget) {
 			case WID_VT_ORDER_VIEW: // Order view button
@@ -537,7 +538,7 @@ struct TimetableWindow : Window {
 			}
 
 			case WID_VT_START_DATE: // Change the date that the timetable starts.
-				ShowSetDateWindow(this, v->index | (v->orders.list->IsCompleteTimetable() && _ctrl_pressed ? 1U << 20 : 0), _date, _cur_year, _cur_year + 15, ChangeTimetableStartCallback);
+				ShowSetDateWindow(this, cs->index | (v->orders.list->IsCompleteTimetable() && _ctrl_pressed ? 1U << 20 : 0), _date, _cur_year, _cur_year + 15, ChangeTimetableStartCallback);
 				break;
 
 			case WID_VT_CHANGE_TIME: { // "Wait For" button.
@@ -585,26 +586,26 @@ struct TimetableWindow : Window {
 			}
 
 			case WID_VT_CLEAR_TIME: { // Clear waiting time.
-				uint32 p1 = PackTimetableArgs(v, this->sel_index, false);
+				uint32 p1 = PackTimetableArgs(cs, this->sel_index, false);
 				DoCommandP(0, p1, 0, CMD_CHANGE_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;
 			}
 
 			case WID_VT_CLEAR_SPEED: { // Clear max speed button.
-				uint32 p1 = PackTimetableArgs(v, this->sel_index, true);
+				uint32 p1 = PackTimetableArgs(cs, this->sel_index, true);
 				DoCommandP(0, p1, UINT16_MAX, CMD_CHANGE_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;
 			}
 
 			case WID_VT_RESET_LATENESS: // Reset the vehicle's late counter.
-				DoCommandP(0, v->index, 0, CMD_SET_VEHICLE_ON_TIME | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+				DoCommandP(0, cs->index, 0, CMD_SET_VEHICLE_ON_TIME | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;
 
 			case WID_VT_AUTOFILL: { // Autofill the timetable.
 				uint32 p2 = 0;
 				if (!HasBit(this->consist->consist_flags, CF_AUTOFILL_TIMETABLE)) SetBit(p2, 0);
 				if (_ctrl_pressed) SetBit(p2, 1);
-				DoCommandP(0, v->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
+				DoCommandP(0, cs->index, p2, CMD_AUTOFILL_TIMETABLE | CMD_MSG(STR_ERROR_CAN_T_TIMETABLE_VEHICLE));
 				break;
 			}
 
@@ -626,7 +627,7 @@ struct TimetableWindow : Window {
 
 		const Vehicle *v = this->vehicle;
 
-		uint32 p1 = PackTimetableArgs(v, this->sel_index, this->query_is_speed_query);
+		uint32 p1 = PackTimetableArgs(this->consist, this->sel_index, this->query_is_speed_query);
 
 		uint64 val = StrEmpty(str) ? 0 : strtoul(str, NULL, 10);
 		if (this->query_is_speed_query) {
