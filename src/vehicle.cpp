@@ -1797,7 +1797,7 @@ void Vehicle::BeginLoading()
 
 		/* Now both order indices point to the destination station, and we can start loading */
 		this->current_order.MakeLoading(true);
-		UpdateVehicleTimetable(this, true);
+		UpdateConsistTimetable(cs, true);
 
 		/* Furthermore add the Non Stop flag to mark that this station
 		 * is the actual destination of the vehicle, which is (for example)
@@ -1936,13 +1936,15 @@ void Vehicle::CancelReservation(StationID next, Station *st)
  */
 void Vehicle::LeaveStation()
 {
+	Consist *cs = this->GetConsist();
+
 	assert(this->current_order.IsType(OT_LOADING));
 
 	delete this->cargo_payment;
 	assert(this->cargo_payment == NULL); // cleared by ~CargoPayment
 
 	/* Only update the timetable if the vehicle was supposed to stop here. */
-	if (this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) UpdateVehicleTimetable(this, false);
+	if (this->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE) UpdateConsistTimetable(cs, false);
 
 	if ((this->current_order.GetLoadType() & OLFB_NO_LOAD) == 0 ||
 			(this->current_order.GetUnloadType() & OUFB_NO_UNLOAD) == 0) {

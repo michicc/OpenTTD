@@ -280,7 +280,7 @@ void ConsistEnterDepot(Consist *cs)
 		if (v->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) {
 			/* Part of orders */
 			v->DeleteUnreachedImplicitOrders();
-			UpdateVehicleTimetable(v, true);
+			UpdateConsistTimetable(cs, true);
 			cs->IncrementImplicitOrderIndex();
 		}
 		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {

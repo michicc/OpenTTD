@@ -378,13 +378,13 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 }
 
 /**
- * Update the timetable for the vehicle.
- * @param v The vehicle to update the timetable for.
+ * Update the timetable for the consist.
+ * @param cs The consist to update the timetable for.
  * @param travelling Whether we just travelled or waited at a station.
  */
-void UpdateVehicleTimetable(Vehicle *v, bool travelling)
+void UpdateConsistTimetable(Consist *cs, bool travelling)
 {
-	Consist *cs = v->GetConsist();
+	Vehicle *v = cs->Front();
 
 	uint time_taken = cs->current_order_time;
 

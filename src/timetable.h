@@ -17,7 +17,7 @@
 #include "consist_type.h"
 
 void ShowTimetableWindow(const Consist *cs);
-void UpdateVehicleTimetable(Vehicle *v, bool travelling);
+void UpdateConsistTimetable(Consist *cs, bool travelling);
 void SetTimetableParams(int param1, int param2, Ticks ticks);
 
 #endif /* TIMETABLE_H */
