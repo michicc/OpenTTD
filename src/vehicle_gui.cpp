@@ -1243,10 +1243,8 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index)
 {
 	ChangeVehicleWindow(WC_VEHICLE_VIEW,      from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_ORDERS,    from_index, to_index);
 	ChangeVehicleWindow(WC_VEHICLE_REFIT,     from_index, to_index);
 	ChangeVehicleWindow(WC_VEHICLE_DETAILS,   from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_TIMETABLE, from_index, to_index);
 }
 
 static const NWidgetPart _nested_vehicle_list[] = {
@@ -2260,8 +2258,8 @@ static WindowDesc _nontrain_vehicle_details_desc(
 /** Shows the vehicle details window of the given vehicle. */
 static void ShowVehicleDetailsWindow(const Vehicle *v)
 {
-	DeleteWindowById(WC_VEHICLE_ORDERS, v->index, false);
-	DeleteWindowById(WC_VEHICLE_TIMETABLE, v->index, false);
+	DeleteWindowById(WC_VEHICLE_ORDERS, v->GetConsist()->index, false);
+	DeleteWindowById(WC_VEHICLE_TIMETABLE, v->GetConsist()->index, false);
 	AllocateWindowDescFront<VehicleDetailsWindow>((v->type == VEH_TRAIN) ? &_train_vehicle_details_desc : &_nontrain_vehicle_details_desc, v->index);
 }
 
@@ -2512,10 +2510,11 @@ public:
 
 	~VehicleViewWindow()
 	{
-		DeleteWindowById(WC_VEHICLE_ORDERS, this->window_number, false);
+		ConsistID consist = Vehicle::Get(this->window_number)->GetConsist()->index;
+		DeleteWindowById(WC_VEHICLE_ORDERS, consist, false);
 		DeleteWindowById(WC_VEHICLE_REFIT, this->window_number, false);
 		DeleteWindowById(WC_VEHICLE_DETAILS, this->window_number, false);
-		DeleteWindowById(WC_VEHICLE_TIMETABLE, this->window_number, false);
+		DeleteWindowById(WC_VEHICLE_TIMETABLE, consist, false);
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
@@ -2700,9 +2699,9 @@ public:
 				break;
 			case WID_VV_SHOW_ORDERS: // show orders
 				if (_ctrl_pressed) {
-					ShowTimetableWindow(v);
+					ShowTimetableWindow(v->GetConsist());
 				} else {
-					ShowOrdersWindow(v);
+					ShowOrdersWindow(v->GetConsist());
 				}
 				break;
 			case WID_VV_SHOW_DETAILS: // show details

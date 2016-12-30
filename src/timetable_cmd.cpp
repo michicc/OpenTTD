@@ -83,7 +83,7 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16 val,
 					NOT_REACHED();
 			}
 		}
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 }
 
@@ -207,7 +207,7 @@ CommandCost CmdSetVehicleOnTime(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 
 	if (flags & DC_EXEC) {
 		v->GetConsist()->lateness_counter = 0;
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 
 	return CommandCost();
@@ -304,13 +304,13 @@ CommandCost CmdSetTimetableStart(TileIndex tile, DoCommandFlag flags, uint32 p1,
 		for (Vehicle **viter = vehs.Begin(); viter != vehs.End(); viter++) {
 			int idx = (viter - vehs.Begin()) - base;
 			Vehicle *w = *viter;
-			Consist *cs = w->GetConsist();
+			Consist *cs_w = w->GetConsist();
 
-			cs->lateness_counter = 0;
-			ClrBit(cs->consist_flags, CF_TIMETABLE_STARTED);
+			cs_w->lateness_counter = 0;
+			ClrBit(cs_w->consist_flags, CF_TIMETABLE_STARTED);
 			/* Do multiplication, then division to reduce rounding errors. */
-			cs->timetable_start = start_date + idx * total_duration / num_vehs / DAY_TICKS;
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, w->index);
+			cs_w->timetable_start = start_date + idx * total_duration / num_vehs / DAY_TICKS;
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, cs_w->index);
 		}
 
 	}
@@ -367,7 +367,7 @@ CommandCost CmdAutofillTimetable(TileIndex tile, DoCommandFlag flags, uint32 p1,
 				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_TIMETABLE);
 				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 			}
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->index);
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->GetConsist()->index);
 		}
 	}
 
@@ -413,7 +413,7 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 		}
 
 		SetBit(cs->consist_flags, CF_TIMETABLE_STARTED);
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, cs->index);
 	}
 
 	if (!HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) return;
@@ -484,6 +484,6 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 	}
 
 	for (v = v->FirstShared(); v != NULL; v = v->NextShared()) {
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 }

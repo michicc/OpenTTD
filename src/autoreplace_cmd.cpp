@@ -374,6 +374,10 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 		new_head->CopyVehicleConfigAndStatistics(old_head);
 
 		/* Switch vehicle windows/news to the new vehicle, so they are not closed/deleted when the old vehicle is sold */
+		ConsistID cid = new_head->GetConsist()->index;
+		InvalidateWindowData(WC_VEHICLE_ORDERS, cid, VIWD_AUTOREPLACE);
+		InvalidateWindowData(WC_VEHICLE_TIMETABLE, cid, VIWD_AUTOREPLACE);
+
 		ChangeVehicleViewWindow(old_head->index, new_head->index);
 
 		old_head->SetConsist(NULL);
@@ -785,4 +789,3 @@ CommandCost CmdSetAutoReplace(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 
 	return cost;
 }
-

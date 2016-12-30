@@ -14,8 +14,9 @@
 
 #include "date_type.h"
 #include "vehicle_type.h"
+#include "consist_type.h"
 
-void ShowTimetableWindow(const Vehicle *v);
+void ShowTimetableWindow(const Consist *cs);
 void UpdateVehicleTimetable(Vehicle *v, bool travelling);
 void SetTimetableParams(int param1, int param2, Ticks ticks);
 

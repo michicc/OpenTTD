@@ -151,8 +151,8 @@ static void ChangeTimetableStartCallback(const Window *w, Date date)
 
 struct TimetableWindow : Window {
 	int sel_index;
-	const Vehicle *vehicle; ///< Vehicle monitored by the window.
 	const Consist *consist; ///< Consist monitored by the window.
+	const Vehicle *vehicle; ///< Vehicle monitored by the window.
 	bool show_expected;     ///< Whether we show expected arrival or scheduled
 	uint deparr_time_width; ///< The width of the departure/arrival time
 	uint deparr_abbr_width; ///< The width of the departure/arrival abbreviation
@@ -162,8 +162,8 @@ struct TimetableWindow : Window {
 	TimetableWindow(WindowDesc *desc, WindowNumber window_number) :
 			Window(desc),
 			sel_index(-1),
-			vehicle(Vehicle::Get(window_number)),
-		    consist(vehicle->GetConsist()),
+		    consist(Consist::Get(window_number)),
+			vehicle(consist->Front()),
 			show_expected(true)
 	{
 		this->CreateNestedTree();
@@ -236,8 +236,8 @@ struct TimetableWindow : Window {
 		switch (data) {
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
-				this->vehicle = Vehicle::Get(this->window_number);
-				this->consist = this->vehicle->GetConsist();
+				this->consist = Consist::Get(this->window_number);
+				this->vehicle = this->consist->Front();
 				break;
 
 			case VIWD_REMOVE_ALL_ORDERS:
@@ -525,7 +525,7 @@ struct TimetableWindow : Window {
 
 		switch (widget) {
 			case WID_VT_ORDER_VIEW: // Order view button
-				ShowOrdersWindow(v);
+				ShowOrdersWindow(v->GetConsist());
 				break;
 
 			case WID_VT_TIMETABLE_PANEL: { // Main panel.
@@ -710,12 +710,12 @@ static WindowDesc _timetable_desc(
 );
 
 /**
- * Show the timetable for a given vehicle.
- * @param v The vehicle to show the timetable for.
+ * Show the timetable for a given consist.
+ * @param cs The consist to show the timetable for.
  */
-void ShowTimetableWindow(const Vehicle *v)
+void ShowTimetableWindow(const Consist *cs)
 {
-	DeleteWindowById(WC_VEHICLE_DETAILS, v->index, false);
-	DeleteWindowById(WC_VEHICLE_ORDERS, v->index, false);
-	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, v->index);
+	DeleteWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	DeleteWindowById(WC_VEHICLE_ORDERS, cs->index, false);
+	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, cs->index);
 }

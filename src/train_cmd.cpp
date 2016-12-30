@@ -260,10 +260,13 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 	this->CargoChanged();
 
 	if (this->IsFrontEngine()) {
+		Consist *cs = this->GetConsist();
 		this->UpdateAcceleration();
 		SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
 		InvalidateWindowData(WC_VEHICLE_REFIT, this->index, VIWD_CONSIST_CHANGED);
-		InvalidateWindowData(WC_VEHICLE_ORDERS, this->index, VIWD_CONSIST_CHANGED);
+		if (cs != NULL) {
+			InvalidateWindowData(WC_VEHICLE_ORDERS, cs->index, VIWD_CONSIST_CHANGED);
+		}
 		InvalidateNewGRFInspectWindow(GSF_TRAINS, this->index);
 	}
 }
@@ -1319,10 +1322,8 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 		if (src == original_src_head && src->IsEngine() && !src->IsFrontEngine()) {
 			/* Cases #2 and #3: the front engine gets trashed. */
 			DeleteWindowById(WC_VEHICLE_VIEW, src->index);
-			DeleteWindowById(WC_VEHICLE_ORDERS, src->index);
 			DeleteWindowById(WC_VEHICLE_REFIT, src->index);
 			DeleteWindowById(WC_VEHICLE_DETAILS, src->index);
-			DeleteWindowById(WC_VEHICLE_TIMETABLE, src->index);
 			DeleteNewGRFInspectWindow(GSF_TRAINS, src->index);
 			SetWindowDirty(WC_COMPANY, _current_company);
 
