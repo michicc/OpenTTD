@@ -55,6 +55,9 @@ void Consist::PreDestructor()
 	if (CleaningPool()) return;
 
 	OrderBackup::ClearConsist(this);
+
+	extern void StopGlobalFollowVehicle(const Consist *cs);
+	StopGlobalFollowVehicle(this);
 }
 
 /**

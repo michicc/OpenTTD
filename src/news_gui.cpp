@@ -33,6 +33,7 @@
 #include "command_func.h"
 #include "company_base.h"
 #include "settings_internal.h"
+#include "consist_base.h"
 
 #include "widgets/news_widget.h"
 
@@ -281,7 +282,7 @@ struct NewsWindow : Window {
 		/* Initialize viewport if it exists. */
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_N_VIEWPORT);
 		if (nvp != NULL) {
-			nvp->InitializeViewport(this, ni->reftype1 == NR_VEHICLE ? 0x80000000 | ni->ref1 : GetReferenceTile(ni->reftype1, ni->ref1), ZOOM_LVL_NEWS);
+			nvp->InitializeViewport(this, ni->reftype1 == NR_VEHICLE ? 0x80000000 | (Vehicle::Get(ni->ref1)->GetConsist()->index) : GetReferenceTile(ni->reftype1, ni->ref1), ZOOM_LVL_NEWS);
 			if (this->ni->flags & NF_NO_TRANSPARENT) nvp->disp_flags |= ND_NO_TRANSPARENCY;
 			if ((this->ni->flags & NF_INCOLOUR) == 0) {
 				nvp->disp_flags |= ND_SHADE_GREY;

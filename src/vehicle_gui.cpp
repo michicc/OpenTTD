@@ -1224,7 +1224,6 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 	if (w != NULL) {
 		/* Update window_number */
 		w->window_number = to_index;
-		if (w->viewport != NULL) w->viewport->follow_vehicle = to_index;
 
 		/* Update vehicle drag data */
 		if (_thd.window_class == window_class && _thd.window_number == (WindowNumber)from_index) {
@@ -2500,7 +2499,7 @@ public:
 		}
 		this->FinishInitNested(window_number);
 		this->owner = v->owner;
-		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, this->window_number | (1 << 31), _vehicle_view_zoom_levels[v->type]);
+		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, v->GetConsist()->index | (1 << 31), _vehicle_view_zoom_levels[v->type]);
 
 		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATE_START_STOP_TOOLTIP + v->type;
 		this->GetWidget<NWidgetCore>(WID_VV_CENTER_MAIN_VIEW)->tool_tip = STR_VEHICLE_VIEW_TRAIN_LOCATION_TOOLTIP + v->type;
@@ -2686,7 +2685,7 @@ public:
 				const Window *mainwindow = FindWindowById(WC_MAIN_WINDOW, 0);
 				/* code to allow the main window to 'follow' the vehicle if the ctrl key is pressed */
 				if (_ctrl_pressed && mainwindow->viewport->zoom <= ZOOM_LVL_OUT_4X) {
-					mainwindow->viewport->follow_vehicle = v->index;
+					mainwindow->viewport->follow_consist = v->GetConsist()->index;
 				} else {
 					ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos);
 				}
@@ -2811,12 +2810,13 @@ bool VehicleClicked(const Vehicle *v)
 	return _thd.GetCallbackWnd()->OnVehicleSelect(v);
 }
 
-void StopGlobalFollowVehicle(const Vehicle *v)
+void StopGlobalFollowVehicle(const Consist *cs)
 {
 	Window *w = FindWindowById(WC_MAIN_WINDOW, 0);
-	if (w != NULL && w->viewport->follow_vehicle == v->index) {
+	if (w != NULL && w->viewport->follow_consist == cs->index) {
+		const Vehicle *v = cs->Front();
 		ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos, true); // lock the main view on the vehicle's last position
-		w->viewport->follow_vehicle = INVALID_VEHICLE;
+		w->viewport->follow_consist = INVALID_CONSIST;
 	}
 }
 

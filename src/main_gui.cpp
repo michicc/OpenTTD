@@ -162,7 +162,7 @@ bool DoZoomInOutWindow(ZoomStateChange how, Window *w)
 			w->viewport->scrollpos_y += vp->virtual_height >> 1;
 			w->viewport->dest_scrollpos_x = w->viewport->scrollpos_x;
 			w->viewport->dest_scrollpos_y = w->viewport->scrollpos_y;
-			w->viewport->follow_vehicle = INVALID_VEHICLE;
+			w->viewport->follow_consist = INVALID_CONSIST;
 			break;
 		case ZOOM_OUT:
 			if (vp->zoom >= _settings_client.gui.zoom_max) return false;
@@ -175,7 +175,7 @@ bool DoZoomInOutWindow(ZoomStateChange how, Window *w)
 
 			vp->virtual_width <<= 1;
 			vp->virtual_height <<= 1;
-			w->viewport->follow_vehicle = INVALID_VEHICLE;
+			w->viewport->follow_consist = INVALID_CONSIST;
 			break;
 	}
 	if (vp != NULL) { // the vp can be null when how == ZOOM_NONE

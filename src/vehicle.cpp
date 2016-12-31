@@ -830,9 +830,6 @@ void Vehicle::PreDestructor()
 	DeleteVehicleOrders(this);
 	DeleteDepotHighlightOfVehicle(this);
 
-	extern void StopGlobalFollowVehicle(const Vehicle *v);
-	StopGlobalFollowVehicle(this);
-
 	ReleaseDisastersTargetingVehicle(this->index);
 
 	if (this->IsPrimaryVehicle()) {

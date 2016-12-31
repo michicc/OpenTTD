@@ -36,6 +36,7 @@
 #include "error.h"
 #include "game/game.hpp"
 #include "video/video_driver.hpp"
+#include "consist_base.h"
 
 #include "safeguards.h"
 
@@ -2449,9 +2450,9 @@ static EventState HandleViewportScroll()
 		return ES_NOT_HANDLED;
 	}
 
-	if (_last_scroll_window == FindWindowById(WC_MAIN_WINDOW, 0) && _last_scroll_window->viewport->follow_vehicle != INVALID_VEHICLE) {
+	if (_last_scroll_window == FindWindowById(WC_MAIN_WINDOW, 0) && _last_scroll_window->viewport->follow_consist != INVALID_CONSIST) {
 		/* If the main window is following a vehicle, then first let go of it! */
-		const Vehicle *veh = Vehicle::Get(_last_scroll_window->viewport->follow_vehicle);
+		const Vehicle *veh = Consist::Get(_last_scroll_window->viewport->follow_consist)->Front();
 		ScrollMainWindowTo(veh->x_pos, veh->y_pos, veh->z_pos, true); // This also resets follow_vehicle
 		return ES_NOT_HANDLED;
 	}
@@ -3430,23 +3431,6 @@ int PositionNetworkChatWindow(Window *w)
 {
 	DEBUG(misc, 5, "Repositioning network chat window...");
 	return PositionWindow(w, WC_SEND_NETWORK_MSG, _settings_client.gui.statusbar_pos);
-}
-
-
-/**
- * Switches viewports following vehicles, which get autoreplaced
- * @param from_index the old vehicle ID
- * @param to_index the new vehicle ID
- */
-void ChangeVehicleViewports(VehicleID from_index, VehicleID to_index)
-{
-	Window *w;
-	FOR_ALL_WINDOWS_FROM_BACK(w) {
-		if (w->viewport != NULL && w->viewport->follow_vehicle == from_index) {
-			w->viewport->follow_vehicle = to_index;
-			w->SetDirty();
-		}
-	}
 }
 
 
