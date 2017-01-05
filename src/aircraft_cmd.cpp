@@ -1286,7 +1286,7 @@ static void CrashAirplane(Aircraft *v)
 	AI::NewEvent(v->owner, new ScriptEventVehicleCrashed(v->index, v->tile, st == NULL ? ScriptEventVehicleCrashed::CRASH_AIRCRAFT_NO_AIRPORT : ScriptEventVehicleCrashed::CRASH_PLANE_LANDING));
 	Game::NewEvent(new ScriptEventVehicleCrashed(v->index, v->tile, st == NULL ? ScriptEventVehicleCrashed::CRASH_AIRCRAFT_NO_AIRPORT : ScriptEventVehicleCrashed::CRASH_PLANE_LANDING));
 
-	AddVehicleNewsItem(newsitem, NT_ACCIDENT, v->index, st != NULL ? st->index : INVALID_STATION);
+	AddConsistNewsItem(newsitem, NT_ACCIDENT, v->GetConsist()->index, st != NULL ? st->index : INVALID_STATION);
 
 	ModifyStationRatingAround(v->tile, v->owner, -160, 30);
 	if (_settings_client.sound.disaster) SndPlayVehicleFx(SND_12_EXPLOSION, v);
@@ -1340,10 +1340,10 @@ static void AircraftEntersTerminal(Aircraft *v)
 		st->had_vehicle_of_type |= HVOT_AIRCRAFT;
 		SetDParam(0, st->index);
 		/* show newsitem of celebrating citizens */
-		AddVehicleNewsItem(
+		AddConsistNewsItem(
 			STR_NEWS_FIRST_AIRCRAFT_ARRIVAL,
 			(v->owner == _local_company) ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
-			v->index,
+			v->GetConsist()->index,
 			st->index
 		);
 		AI::NewEvent(v->owner, new ScriptEventStationFirstVehicle(st->index, v->index));
@@ -1981,8 +1981,8 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 			AI::NewEvent(v->owner, new ScriptEventAircraftDestTooFar(v->index));
 			if (v->owner == _local_company) {
 				/* Post a news message. */
-				SetDParam(0, v->index);
-				AddVehicleAdviceNewsItem(STR_NEWS_AIRCRAFT_DEST_TOO_FAR, v->index);
+				SetDParam(0, v->GetConsist()->index); // Special string param handling in news GUI code.
+				AddConsistAdviceNewsItem(STR_NEWS_AIRCRAFT_DEST_TOO_FAR, v->GetConsist()->index);
 			}
 		}
 		return;
@@ -1992,7 +1992,7 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 		/* Not too far anymore, clear flag and message. */
 		ClrBit(v->flags, VAF_DEST_TOO_FAR);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
-		DeleteVehicleNews(v->index, STR_NEWS_AIRCRAFT_DEST_TOO_FAR);
+		DeleteConsistNews(v->GetConsist()->index, STR_NEWS_AIRCRAFT_DEST_TOO_FAR);
 	}
 }
 

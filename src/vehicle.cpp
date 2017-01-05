@@ -753,7 +753,7 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 		/* Clear the flag as the PF's problem was solved. */
 		ClrBit(this->vehicle_flags, VF_PATHFINDER_LOST);
 		/* Delete the news item. */
-		DeleteVehicleNews(this->index, STR_NEWS_VEHICLE_IS_LOST);
+		DeleteConsistNews(this->GetConsist()->index, STR_NEWS_VEHICLE_IS_LOST);
 		return;
 	}
 
@@ -765,8 +765,8 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 	/* Notify user about the event. */
 	AI::NewEvent(this->owner, new ScriptEventVehicleLost(this->index));
 	if (_settings_client.gui.lost_vehicle_warn && this->owner == _local_company) {
-		SetDParam(0, this->index);
-		AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, this->index);
+		SetDParam(0, this->GetConsist()->index); // Special string param handling in news GUI code.
+		AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, this->GetConsist()->index);
 	}
 }
 
@@ -856,7 +856,6 @@ Vehicle::~Vehicle()
 
 	UpdateVehicleTileHash(this, true);
 	UpdateVehicleViewportHash(this, INVALID_COORD, 0);
-	DeleteVehicleNews(this->index, INVALID_STRING_ID);
 	DeleteNewGRFInspectWindow(GetGrfSpecFeature(this->type), this->index);
 }
 
@@ -1258,8 +1257,8 @@ void AgeVehicle(Vehicle *v)
 		return;
 	}
 
-	SetDParam(0, v->index);
-	AddVehicleAdviceNewsItem(str, v->index);
+	SetDParam(0, v->GetConsist()->index); // Special string param handling in news GUI code.
+	AddConsistAdviceNewsItem(str, v->GetConsist()->index);
 }
 
 /**
@@ -2524,9 +2523,9 @@ void VehiclesYearlyLoop()
 			Money profit = v->GetDisplayProfitThisYear();
 			if (v->age >= 730 && profit < 0) {
 				if (_settings_client.gui.vehicle_income_warn && v->owner == _local_company) {
-					SetDParam(0, v->index);
+					SetDParam(0, v->GetConsist()->index); // Special string param handling in news GUI code.
 					SetDParam(1, profit);
-					AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->index);
+					AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->GetConsist()->index);
 				}
 				AI::NewEvent(v->owner, new ScriptEventVehicleUnprofitable(v->index));
 			}

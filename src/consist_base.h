@@ -42,7 +42,7 @@ public:
 
 	Consist(VehicleType type = VEH_INVALID);
 	/** We want to 'destruct' the right class. */
-	virtual ~Consist() { this->PreDestructor();  }
+	virtual ~Consist();
 
 	bool Tick();
 

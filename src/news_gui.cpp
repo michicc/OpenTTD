@@ -282,7 +282,7 @@ struct NewsWindow : Window {
 		/* Initialize viewport if it exists. */
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_N_VIEWPORT);
 		if (nvp != NULL) {
-			nvp->InitializeViewport(this, ni->reftype1 == NR_VEHICLE ? 0x80000000 | (Vehicle::Get(ni->ref1)->GetConsist()->index) : GetReferenceTile(ni->reftype1, ni->ref1), ZOOM_LVL_NEWS);
+			nvp->InitializeViewport(this, ni->reftype1 == NR_CONSIST ? 0x80000000 | ni->ref1 : GetReferenceTile(ni->reftype1, ni->ref1), ZOOM_LVL_NEWS);
 			if (this->ni->flags & NF_NO_TRANSPARENT) nvp->disp_flags |= ND_NO_TRANSPARENCY;
 			if ((this->ni->flags & NF_INCOLOUR) == 0) {
 				nvp->disp_flags |= ND_SHADE_GREY;
@@ -329,6 +329,8 @@ struct NewsWindow : Window {
 
 			case WID_N_MESSAGE:
 				CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
+				/* Consist news refer to the consist index, but the string system takes the front vehicle. Do a conversion here. */
+				if ((this->ni->flags & NF_CONSIST_PARAM0) && this->ni->reftype1 == NR_CONSIST) SetDParam(0, Consist::Get(this->ni->ref1)->Front()->index);
 				str = this->ni->string_id;
 				break;
 
@@ -379,6 +381,8 @@ struct NewsWindow : Window {
 
 			case WID_N_MESSAGE:
 				CopyInDParam(0, this->ni->params, lengthof(this->ni->params));
+				/* Consist news refer to the consist index, but the string system takes the front vehicle. Do a conversion here. */
+				if ((this->ni->flags & NF_CONSIST_PARAM0) && this->ni->reftype1 == NR_CONSIST) SetDParam(0, Consist::Get(this->ni->ref1)->Front()->index);
 				DrawStringMultiLine(r.left, r.right, r.top, r.bottom, this->ni->string_id, TC_FROMSTRING, SA_CENTER);
 				break;
 
@@ -433,8 +437,8 @@ struct NewsWindow : Window {
 				break;
 
 			case WID_N_CAPTION:
-				if (this->ni->reftype1 == NR_VEHICLE) {
-					const Vehicle *v = Vehicle::Get(this->ni->ref1);
+				if (this->ni->reftype1 == NR_CONSIST) {
+					const Vehicle *v = Consist::Get(this->ni->ref1)->Front();
 					ShowVehicleViewWindow(v);
 				}
 				break;
@@ -443,8 +447,8 @@ struct NewsWindow : Window {
 				break; // Ignore clicks
 
 			default:
-				if (this->ni->reftype1 == NR_VEHICLE) {
-					const Vehicle *v = Vehicle::Get(this->ni->ref1);
+				if (this->ni->reftype1 == NR_CONSIST) {
+					const Vehicle *v = Consist::Get(this->ni->ref1)->Front();
 					ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos);
 				} else {
 					TileIndex tile1 = GetReferenceTile(this->ni->reftype1, this->ni->ref1);
@@ -711,8 +715,8 @@ CommandCost CmdCustomNewsItem(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 			if (!IsValidTile(p2)) return CMD_ERROR;
 			break;
 
-		case NR_VEHICLE:
-			if (!Vehicle::IsValidID(p2)) return CMD_ERROR;
+		case NR_CONSIST:
+			if (!Consist::IsValidID(p2)) return CMD_ERROR;
 			break;
 
 		case NR_STATION:
@@ -781,18 +785,18 @@ static void DeleteNewsItem(NewsItem *ni)
 }
 
 /**
- * Delete a news item type about a vehicle.
- * When the news item type is INVALID_STRING_ID all news about the vehicle gets deleted.
- * @param vid  The vehicle to remove the news for.
+ * Delete a news item type about a consist.
+ * When the news item type is INVALID_STRING_ID all news about the consist gets deleted.
+ * @param cid  The consist to remove the news for.
  * @param news The news type to remove.
  */
-void DeleteVehicleNews(VehicleID vid, StringID news)
+void DeleteConsistNews(ConsistID cid, StringID news)
 {
 	NewsItem *ni = _oldest_news;
 
 	while (ni != NULL) {
 		NewsItem *next = ni->next;
-		if (((ni->reftype1 == NR_VEHICLE && ni->ref1 == vid) || (ni->reftype2 == NR_VEHICLE && ni->ref2 == vid)) &&
+		if (((ni->reftype1 == NR_CONSIST && ni->ref1 == cid) || (ni->reftype2 == NR_CONSIST && ni->ref2 == cid)) &&
 				(news == INVALID_STRING_ID || ni->string_id == news)) {
 			DeleteNewsItem(ni);
 		}
@@ -804,14 +808,16 @@ void DeleteVehicleNews(VehicleID vid, StringID news)
  * Remove news regarding given station so there are no 'unknown station now accepts Mail'
  * or 'First train arrived at unknown station' news items.
  * @param sid station to remove news about
+ * @param news The news type to remove.
  */
-void DeleteStationNews(StationID sid)
+void DeleteStationNews(StationID sid, StringID news)
 {
 	NewsItem *ni = _oldest_news;
 
 	while (ni != NULL) {
 		NewsItem *next = ni->next;
-		if ((ni->reftype1 == NR_STATION && ni->ref1 == sid) || (ni->reftype2 == NR_STATION && ni->ref2 == sid)) {
+		if (((ni->reftype1 == NR_STATION && ni->ref1 == sid) || (ni->reftype2 == NR_STATION && ni->ref2 == sid)) &&
+				(news == INVALID_STRING_ID || ni->string_id == news)) {
 			DeleteNewsItem(ni);
 		}
 		ni = next;
@@ -858,21 +864,6 @@ static void RemoveOldNewsItems()
 	for (NewsItem *cur = _oldest_news; _total_news > MIN_NEWS_AMOUNT && cur != NULL; cur = next) {
 		next = cur->next;
 		if (_date - _news_type_data[cur->type].age * _settings_client.gui.news_message_timeout > cur->date) DeleteNewsItem(cur);
-	}
-}
-
-/**
- * Report a change in vehicle IDs (due to autoreplace) to affected vehicle news.
- * @note Viewports of currently displayed news is changed via #ChangeVehicleViewports
- * @param from_index the old vehicle ID
- * @param to_index the new vehicle ID
- */
-void ChangeVehicleNews(VehicleID from_index, VehicleID to_index)
-{
-	for (NewsItem *ni = _oldest_news; ni != NULL; ni = ni->next) {
-		if (ni->reftype1 == NR_VEHICLE && ni->ref1 == from_index) ni->ref1 = to_index;
-		if (ni->reftype2 == NR_VEHICLE && ni->ref2 == from_index) ni->ref2 = to_index;
-		if (ni->flags & NF_VEHICLE_PARAM0 && ni->params[0] == from_index) ni->params[0] = to_index;
 	}
 }
 
@@ -971,6 +962,8 @@ static void DrawNewsString(uint left, uint right, int y, TextColour colour, cons
 	StringID str;
 
 	CopyInDParam(0, ni->params, lengthof(ni->params));
+	/* Consist news refer to the consist index, but the string system takes the front vehicle. Do a conversion here. */
+	if ((ni->flags & NF_CONSIST_PARAM0) && ni->reftype1 == NR_CONSIST) SetDParam(0, Consist::Get(ni->ref1)->Front()->index);
 	str = ni->string_id;
 
 	GetString(buffer, str, lastof(buffer));

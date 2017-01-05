@@ -600,7 +600,7 @@ CommandCost CmdStartStopVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 	}
 
 	if (flags & DC_EXEC) {
-		if (v->IsStoppedInDepot() && (flags & DC_AUTOREPLACE) == 0) DeleteVehicleNews(p1, STR_NEWS_TRAIN_IS_WAITING + v->type);
+		if (v->IsStoppedInDepot() && (flags & DC_AUTOREPLACE) == 0) DeleteConsistNews(v->GetConsist()->index, STR_NEWS_TRAIN_IS_WAITING + v->type);
 
 		v->vehstatus ^= VS_STOPPED;
 		if (v->type != VEH_TRAIN) v->cur_speed = 0; // trains can stop 'slowly'

@@ -25,7 +25,6 @@
 
 #include "safeguards.h"
 
-extern void ChangeVehicleNews(VehicleID from_index, VehicleID to_index);
 extern void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index);
 
 /**
@@ -376,7 +375,6 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 
 		/* Switch vehicle windows/news to the new vehicle, so they are not closed/deleted when the old vehicle is sold */
 		ChangeVehicleViewWindow(old_head->index, new_head->index);
-		ChangeVehicleNews(old_head->index, new_head->index);
 
 		old_head->SetConsist(NULL);
 	}

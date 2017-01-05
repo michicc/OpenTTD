@@ -50,11 +50,21 @@ Consist::Consist(VehicleType type)
 	this->type = type;
 }
 
+/* virtual*/ Consist::~Consist()
+{
+	this->PreDestructor();
+
+	if (CleaningPool()) return;
+
+	DeleteConsistNews(this->index, INVALID_STRING_ID);
+}
+
 void Consist::PreDestructor()
 {
 	if (CleaningPool()) return;
 
 	OrderBackup::ClearConsist(this);
+	DeleteOrderWarnings(this);
 
 	extern void StopGlobalFollowVehicle(const Consist *cs);
 	StopGlobalFollowVehicle(this);
@@ -250,8 +260,8 @@ void ConsistEnterDepot(Consist *cs)
 				_consists_to_autoreplace[cs] = false;
 				if (v->owner == _local_company) {
 					/* Notify the user that we stopped the vehicle */
-					SetDParam(0, v->index);
-					AddVehicleAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, v->index);
+					SetDParam(0, cs->index); // Special string param handling in news GUI code.
+					AddConsistAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, cs->index);
 				}
 			} else if (cost.GetCost() != 0) {
 				v->profit_this_year -= cost.GetCost() << 8;
@@ -275,8 +285,8 @@ void ConsistEnterDepot(Consist *cs)
 			 * we shouldn't construct it when the vehicle visits the next stop. */
 			v->last_loading_station = INVALID_STATION;
 			if (v->owner == _local_company) {
-				SetDParam(0, v->index);
-				AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + v->type, v->index);
+				SetDParam(0, cs->index);  // Special string param handling in news GUI code.
+				AddConsistAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + cs->type, cs->index);
 			}
 			AI::NewEvent(v->owner, new ScriptEventVehicleWaitingInDepot(v->index));
 		}
@@ -336,9 +346,9 @@ void CallConsistTicks()
 			message = STR_NEWS_VEHICLE_AUTORENEW_FAILED;
 		}
 
-		SetDParam(0, v->index);
+		SetDParam(0, it->first->index); // Special string param handling in news GUI code.
 		SetDParam(1, error_message);
-		AddVehicleAdviceNewsItem(message, v->index);
+		AddConsistAdviceNewsItem(message, it->first->index);
 	}
 
 	cur_company.Restore();

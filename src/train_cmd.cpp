@@ -2874,10 +2874,10 @@ static void TrainEnterStation(Train *v, StationID station)
 	if (!(st->had_vehicle_of_type & HVOT_TRAIN)) {
 		st->had_vehicle_of_type |= HVOT_TRAIN;
 		SetDParam(0, st->index);
-		AddVehicleNewsItem(
+		AddConsistNewsItem(
 			STR_NEWS_FIRST_TRAIN_ARRIVAL,
 			v->owner == _local_company ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
-			v->index,
+			v->GetConsist()->index,
 			st->index
 		);
 		AI::NewEvent(v->owner, new ScriptEventStationFirstVehicle(st->index, v->index));
@@ -3111,7 +3111,7 @@ static bool CheckTrainCollision(Train *v)
 	if (tcc.num == 0) return false;
 
 	SetDParam(0, tcc.num);
-	AddVehicleNewsItem(STR_NEWS_TRAIN_CRASH, NT_ACCIDENT, v->index);
+	AddConsistNewsItem(STR_NEWS_TRAIN_CRASH, NT_ACCIDENT, v->index);
 
 	ModifyStationRatingAround(v->tile, v->owner, -160, 30);
 	if (_settings_client.sound.disaster) SndPlayVehicleFx(SND_13_BIG_CRASH, v);
@@ -3847,8 +3847,8 @@ bool TrainLocoHandler(Consist *cs, bool mode)
 			if (HasBit(v->flags, VRF_TRAIN_STUCK) && v->wait_counter > 2 * _settings_game.pf.wait_for_pbs_path * DAY_TICKS) {
 				/* Show message to player. */
 				if (_settings_client.gui.lost_vehicle_warn && v->owner == _local_company) {
-					SetDParam(0, v->index);
-					AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_STUCK, v->index);
+					SetDParam(0, cs->index); // Special string param handling in news GUI code.
+					AddConsistAdviceNewsItem(STR_NEWS_TRAIN_IS_STUCK, cs->index);
 				}
 				v->wait_counter = 0;
 			}

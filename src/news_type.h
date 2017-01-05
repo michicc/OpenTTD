@@ -64,7 +64,7 @@ enum NewsType {
 enum NewsReferenceType {
 	NR_NONE,      ///< Empty reference
 	NR_TILE,      ///< Reference tile.     Scroll to tile when clicking on the news.
-	NR_VEHICLE,   ///< Reference vehicle.  Scroll to vehicle when clicking on the news. Delete news when vehicle is deleted.
+	NR_CONSIST,   ///< Reference consist.  Scroll to consist when clicking on the news. Delete news when consist is deleted.
 	NR_STATION,   ///< Reference station.  Scroll to station when clicking on the news. Delete news when station is deleted.
 	NR_INDUSTRY,  ///< Reference industry. Scroll to industry when clicking on the news. Delete news when industry is deleted.
 	NR_TOWN,      ///< Reference town.     Scroll to town when clicking on the news.
@@ -81,12 +81,12 @@ enum NewsFlag {
 	NFB_SHADE          = 2,                      ///< News item uses shaded colours.
 	NFB_WINDOW_LAYOUT  = 3,                      ///< First bit for window layout.
 	NFB_WINDOW_LAYOUT_COUNT = 3,                 ///< Number of bits for window layout.
-	NFB_VEHICLE_PARAM0 = 6,                      ///< String param 0 contains a vehicle ID. (special autoreplace behaviour)
+	NFB_CONSIST_PARAM0 = 6,                      ///< String param 0 contains a consist ID. (special autoreplace behaviour)
 
 	NF_INCOLOUR       = 1 << NFB_INCOLOUR,       ///< Bit value for coloured news.
 	NF_NO_TRANSPARENT = 1 << NFB_NO_TRANSPARENT, ///< Bit value for disabling transparency.
 	NF_SHADE          = 1 << NFB_SHADE,          ///< Bit value for enabling shading.
-	NF_VEHICLE_PARAM0 = 1 << NFB_VEHICLE_PARAM0, ///< Bit value for specifying that string param 0 contains a vehicle ID. (special autoreplace behaviour)
+	NF_CONSIST_PARAM0 = 1 << NFB_CONSIST_PARAM0, ///< Bit value for specifying that string param 0 contains a consist ID. (special autoreplace behaviour)
 
 	NF_THIN           = 0 << NFB_WINDOW_LAYOUT,  ///< Thin news item. (Newspaper with headline and viewport)
 	NF_SMALL          = 1 << NFB_WINDOW_LAYOUT,  ///< Small news item. (Information window with text and viewport)

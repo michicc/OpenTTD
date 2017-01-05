@@ -173,6 +173,15 @@ DisasterVehicle::DisasterVehicle(int x, int y, Direction direction, DisasterSubT
 	this->UpdatePositionAndViewport();
 }
 
+/* virtual */ DisasterVehicle::~DisasterVehicle()
+{
+	if (CleaningPool()) return;
+
+	if (this->subtype == ST_ZEPPELINER) {
+		if (IsTileType(this->tile, MP_STATION)) DeleteStationNews(GetStationIndex(this->tile), STR_NEWS_DISASTER_ZEPPELIN);
+	}
+}
+
 /**
  * Update the position of the vehicle.
  * @param x The new X-coordinate.
@@ -245,7 +254,7 @@ static bool DisasterTick_Zeppeliner(DisasterVehicle *v)
 				v->age = 0;
 
 				SetDParam(0, GetStationIndex(v->tile));
-				AddVehicleNewsItem(STR_NEWS_DISASTER_ZEPPELIN, NT_ACCIDENT, v->index); // Delete the news, when the zeppelin is gone
+				AddNewsItem(STR_NEWS_DISASTER_ZEPPELIN, NT_ACCIDENT, NF_NO_TRANSPARENT | NF_SHADE | NF_THIN, NR_STATION, GetStationIndex(v->tile));
 				AI::NewEvent(GetTileOwner(v->tile), new ScriptEventDisasterZeppelinerCrashed(GetStationIndex(v->tile)));
 			}
 		}
@@ -378,7 +387,7 @@ static bool DisasterTick_Ufo(DisasterVehicle *v)
 			if (u->crashed_ctr == 0) {
 				u->Crash();
 
-				AddVehicleNewsItem(STR_NEWS_DISASTER_SMALL_UFO, NT_ACCIDENT, u->index); // delete the news, when the roadvehicle is gone
+				AddConsistNewsItem(STR_NEWS_DISASTER_SMALL_UFO, NT_ACCIDENT, u->GetConsist()->index); // delete the news, when the roadvehicle is gone
 
 				AI::NewEvent(u->owner, new ScriptEventVehicleCrashed(u->index, u->tile, ScriptEventVehicleCrashed::CRASH_RV_UFO));
 				Game::NewEvent(new ScriptEventVehicleCrashed(u->index, u->tile, ScriptEventVehicleCrashed::CRASH_RV_UFO));

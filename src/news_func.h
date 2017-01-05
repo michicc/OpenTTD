@@ -16,6 +16,7 @@
 #include "vehicle_type.h"
 #include "station_type.h"
 #include "industry_type.h"
+#include "consist_base.h"
 
 void AddNewsItem(StringID string, NewsType type, NewsFlag flags, NewsReferenceType reftype1 = NR_NONE, uint32 ref1 = UINT32_MAX, NewsReferenceType reftype2 = NR_NONE, uint32 ref2 = UINT32_MAX, void *free_data = NULL);
 
@@ -29,9 +30,9 @@ static inline void AddCompanyNewsItem(StringID string, CompanyNewsInformation *c
  *
  * @warning The DParams may not reference the vehicle due to autoreplace stuff. See AddVehicleAdviceNewsItem for how that can be done.
  */
-static inline void AddVehicleNewsItem(StringID string, NewsType type, VehicleID vehicle, StationID station = INVALID_STATION)
+static inline void AddConsistNewsItem(StringID string, NewsType type, ConsistID consist, StationID station = INVALID_STATION)
 {
-	AddNewsItem(string, type, NF_NO_TRANSPARENT | NF_SHADE | NF_THIN, NR_VEHICLE, vehicle, station == INVALID_STATION ? NR_NONE : NR_STATION, station);
+	AddNewsItem(string, type, NF_NO_TRANSPARENT | NF_SHADE | NF_THIN, NR_CONSIST, consist, station == INVALID_STATION ? NR_NONE : NR_STATION, station);
 }
 
 /**
@@ -39,9 +40,9 @@ static inline void AddVehicleNewsItem(StringID string, NewsType type, VehicleID 
  *
  * @warning DParam 0 must reference the vehicle!
  */
-static inline void AddVehicleAdviceNewsItem(StringID string, VehicleID vehicle)
+static inline void AddConsistAdviceNewsItem(StringID string, ConsistID consist)
 {
-	AddNewsItem(string, NT_ADVICE, NF_INCOLOUR | NF_SMALL | NF_VEHICLE_PARAM0, NR_VEHICLE, vehicle);
+	AddNewsItem(string, NT_ADVICE, NF_INCOLOUR | NF_SMALL | NF_CONSIST_PARAM0, NR_CONSIST, consist);
 }
 
 static inline void AddTileNewsItem(StringID string, NewsType type, TileIndex tile, void *free_data = NULL)
@@ -60,8 +61,8 @@ void InitNewsItemStructs();
 extern const NewsItem *_statusbar_news_item;
 
 void DeleteInvalidEngineNews();
-void DeleteVehicleNews(VehicleID vid, StringID news);
-void DeleteStationNews(StationID sid);
+void DeleteConsistNews(ConsistID vid, StringID news);
+void DeleteStationNews(StationID sid, StringID news = INVALID_STRING_ID);
 void DeleteIndustryNews(IndustryID iid);
 
 #endif /* NEWS_FUNC_H */
