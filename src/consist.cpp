@@ -70,6 +70,8 @@ void Consist::PreDestructor()
 	StopGlobalFollowVehicle(this);
 
 	DeleteWindowById(WC_VEHICLE_ORDERS, this->index);
+	DeleteWindowById(WC_VEHICLE_REFIT, this->index);
+	DeleteWindowById(WC_VEHICLE_DETAILS, this->index);
 	DeleteWindowById(WC_VEHICLE_TIMETABLE, this->index);
 }
 

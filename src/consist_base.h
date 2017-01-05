@@ -55,6 +55,15 @@ public:
 
 	void SetFront(Vehicle *front);
 
+	/**
+	 * Check if the vehicle is a ground vehicle.
+	 * @return True iff the vehicle is a train or a road vehicle.
+	 */
+	inline bool IsGroundVehicle() const
+	{
+		return this->type == VEH_TRAIN || this->type == VEH_ROAD;
+	}
+
 
 	inline uint16 GetServiceInterval() const { return this->service_interval; }
 

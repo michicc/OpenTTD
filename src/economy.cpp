@@ -1894,7 +1894,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 
 	if (dirty_vehicle) {
 		SetWindowDirty(GetWindowClassForVehicleType(front->type), front->owner);
-		SetWindowDirty(WC_VEHICLE_DETAILS, front->index);
+		SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 		front->MarkDirty();
 	}
 	if (dirty_station) {

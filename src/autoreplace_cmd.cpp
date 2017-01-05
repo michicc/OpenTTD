@@ -376,6 +376,8 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 		/* Switch vehicle windows/news to the new vehicle, so they are not closed/deleted when the old vehicle is sold */
 		ConsistID cid = new_head->GetConsist()->index;
 		InvalidateWindowData(WC_VEHICLE_ORDERS, cid, VIWD_AUTOREPLACE);
+		InvalidateWindowData(WC_VEHICLE_REFIT, cid, VIWD_AUTOREPLACE);
+		InvalidateWindowData(WC_VEHICLE_DETAILS, cid, VIWD_AUTOREPLACE);
 		InvalidateWindowData(WC_VEHICLE_TIMETABLE, cid, VIWD_AUTOREPLACE);
 
 		ChangeVehicleViewWindow(old_head->index, new_head->index);

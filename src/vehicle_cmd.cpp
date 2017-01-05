@@ -521,7 +521,7 @@ CommandCost CmdRefitVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		front->MarkDirty();
 
 		if (!free_wagon) {
-			InvalidateWindowData(WC_VEHICLE_DETAILS, front->index);
+			if (front->GetConsist() != NULL) InvalidateWindowData(WC_VEHICLE_DETAILS, front->GetConsist()->index);
 			InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 0);
 		}
 		SetWindowDirty(WC_VEHICLE_DEPOT, front->tile);
@@ -1111,7 +1111,7 @@ CommandCost CmdChangeServiceInt(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 		cs->SetServiceInterval(serv_int);
 		cs->SetServiceIntervalIsCustom(iscustom);
 		cs->SetServiceIntervalIsPercent(ispercent);
-		SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+		SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 	}
 
 	return CommandCost();

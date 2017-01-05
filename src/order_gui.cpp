@@ -750,7 +750,7 @@ private:
 			if (i == 1) { // Auto-refit to available cargo type.
 				DoCommandP(this->vehicle->tile, this->vehicle->index, (this->OrderGetSel() << 16) | CT_AUTO_REFIT, CMD_ORDER_REFIT);
 			} else {
-				ShowVehicleRefitWindow(this->vehicle, this->OrderGetSel(), this, auto_refit);
+				ShowConsistRefitWindow(this->consist, this->OrderGetSel(), this, auto_refit);
 			}
 		}
 	}
@@ -1714,7 +1714,7 @@ static WindowDesc _other_orders_desc(
 
 void ShowOrdersWindow(const Consist *cs)
 {
-	DeleteWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	DeleteWindowById(WC_VEHICLE_DETAILS, cs->index, false);
 	DeleteWindowById(WC_VEHICLE_TIMETABLE, cs->index, false);
 	if (BringWindowToFrontById(WC_VEHICLE_ORDERS, cs->index) != NULL) return;
 
@@ -1724,9 +1724,9 @@ void ShowOrdersWindow(const Consist *cs)
 	 * in crashed due to missing widges.
 	 * TODO Rewrite the order GUI to not use different WindowDescs.
 	 */
-	if (cs->Front()->owner != _local_company) {
+	if (cs->owner != _local_company) {
 		new OrdersWindow(&_other_orders_desc, cs);
 	} else {
-		new OrdersWindow(cs->Front()->IsGroundVehicle() ? &_orders_train_desc : &_orders_desc, cs);
+		new OrdersWindow(cs->IsGroundVehicle() ? &_orders_train_desc : &_orders_desc, cs);
 	}
 }

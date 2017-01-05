@@ -141,7 +141,7 @@ bool Vehicle::NeedsAutorenewing(const Company *c, bool use_renew_setting) const
 void VehicleServiceInDepot(Vehicle *v)
 {
 	assert(v != NULL);
-	SetWindowDirty(WC_VEHICLE_DETAILS, v->index); // ensure that last service date and reliability are updated
+	SetWindowDirty(WC_VEHICLE_DETAILS, v->GetConsist()->index); // ensure that last service date and reliability are updated
 
 	do {
 		v->date_of_last_service = _date;
@@ -256,7 +256,7 @@ uint Vehicle::Crash(bool flooded)
 	/* Dirty some windows */
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 	SetWindowDirty(WC_VEHICLE_DEPOT, this->tile);
 
 	delete this->cargo_payment;
@@ -818,8 +818,6 @@ void Vehicle::PreDestructor()
 
 	if (this->IsPrimaryVehicle()) {
 		DeleteWindowById(WC_VEHICLE_VIEW, this->index);
-		DeleteWindowById(WC_VEHICLE_REFIT, this->index);
-		DeleteWindowById(WC_VEHICLE_DETAILS, this->index);
 		SetWindowDirty(WC_COMPANY, this->owner);
 	}
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
@@ -1099,7 +1097,7 @@ Vehicle *CheckClickOnVehicle(const ViewPort *vp, int x, int y)
 void DecreaseVehicleValue(Vehicle *v)
 {
 	v->value -= v->value >> 8;
-	SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, v->GetConsist()->index);
 }
 
 static const byte _breakdown_chance[64] = {
@@ -1119,7 +1117,7 @@ void CheckVehicleBreakdown(Vehicle *v)
 
 	/* decrease reliability */
 	v->reliability = rel = max((rel_old = v->reliability) - v->reliability_spd_dec, 0);
-	if ((rel_old >> 8) != (rel >> 8)) SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+	if ((rel_old >> 8) != (rel >> 8)) SetWindowDirty(WC_VEHICLE_DETAILS, v->GetConsist()->index);
 
 	if (v->breakdown_ctr != 0 || (v->vehstatus & VS_STOPPED) ||
 			_settings_game.difficulty.vehicle_breakdowns < 1 ||
@@ -1194,7 +1192,7 @@ bool Vehicle::HandleBreakdown()
 
 			this->MarkDirty(); // Update graphics after speed is zeroed
 			SetWindowDirty(WC_VEHICLE_VIEW, this->index);
-			SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+			SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 
 			FALLTHROUGH;
 		case 1:
@@ -1236,7 +1234,7 @@ void AgeVehicle(Vehicle *v)
 		v->reliability_spd_dec <<= 1;
 	}
 
-	SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, v->GetConsist()->index);
 
 	/* Don't warn about non-primary or not ours vehicles or vehicles that are crashed */
 	if (v->Previous() != NULL || v->owner != _local_company || (v->vehstatus & VS_CRASHED) != 0) return;
@@ -1907,7 +1905,7 @@ void Vehicle::BeginLoading()
 
 	SetWindowDirty(GetWindowClassForVehicleType(this->type), this->owner);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 	SetWindowDirty(WC_STATION_VIEW, this->last_station_visited);
 
 	Station::Get(this->last_station_visited)->MarkTilesDirty(true);
@@ -2517,20 +2515,21 @@ void VehiclesYearlyLoop()
 	Vehicle *v;
 	FOR_ALL_VEHICLES(v) {
 		if (v->IsPrimaryVehicle()) {
+			Consist *cs = v->GetConsist();
 			/* show warning if vehicle is not generating enough income last 2 years (corresponds to a red icon in the vehicle list) */
 			Money profit = v->GetDisplayProfitThisYear();
 			if (v->age >= 730 && profit < 0) {
 				if (_settings_client.gui.vehicle_income_warn && v->owner == _local_company) {
-					SetDParam(0, v->GetConsist()->index); // Special string param handling in news GUI code.
+					SetDParam(0, cs->index); // Special string param handling in news GUI code.
 					SetDParam(1, profit);
-					AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->GetConsist()->index);
+					AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, cs->index);
 				}
 				AI::NewEvent(v->owner, new ScriptEventVehicleUnprofitable(v->index));
 			}
 
 			v->profit_last_year = v->profit_this_year;
 			v->profit_this_year = 0;
-			SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 		}
 	}
 	GroupStatistics::UpdateProfits();
