@@ -1236,16 +1236,6 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 	}
 }
 
-/**
- * Report a change in vehicle IDs (due to autoreplace) to affected vehicle windows.
- * @param from_index the old vehicle ID
- * @param to_index the new vehicle ID
- */
-void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index)
-{
-	ChangeVehicleWindow(WC_VEHICLE_VIEW,      from_index, to_index);
-}
-
 static const NWidgetPart _nested_vehicle_list[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
@@ -1627,7 +1617,7 @@ public:
 				if (id_v >= this->vehicles.Length()) return; // click out of list bound
 
 				const Vehicle *v = this->vehicles[id_v];
-				if (!VehicleClicked(v)) ShowVehicleViewWindow(v);
+				if (!VehicleClicked(v)) ShowConsistViewWindow(v->GetConsist());
 				break;
 			}
 
@@ -2467,8 +2457,8 @@ public:
 			SPR_SEND_SHIP_TODEPOT,
 			SPR_SEND_AIRCRAFT_TODEPOT,
 		};
-		const Vehicle *v = Vehicle::Get(window_number);
-		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->widget_data = vehicle_view_goto_depot_sprites[v->type];
+		const Consist *cs = Consist::Get(window_number);
+		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->widget_data = vehicle_view_goto_depot_sprites[cs->type];
 
 		/* Sprites for the 'clone vehicle' button indexed by vehicle type. */
 		static const SpriteID vehicle_view_clone_sprites[] = {
@@ -2477,9 +2467,9 @@ public:
 			SPR_CLONE_SHIP,
 			SPR_CLONE_AIRCRAFT,
 		};
-		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->widget_data = vehicle_view_clone_sprites[v->type];
+		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->widget_data = vehicle_view_clone_sprites[cs->type];
 
-		switch (v->type) {
+		switch (cs->type) {
 			case VEH_TRAIN:
 				this->GetWidget<NWidgetCore>(WID_VV_TURN_AROUND)->tool_tip = STR_VEHICLE_VIEW_TRAIN_REVERSE_TOOLTIP;
 				break;
@@ -2495,37 +2485,36 @@ public:
 			default: NOT_REACHED();
 		}
 		this->FinishInitNested(window_number);
-		this->owner = v->owner;
-		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, v->GetConsist()->index | (1 << 31), _vehicle_view_zoom_levels[v->type]);
+		this->owner = cs->owner;
+		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, cs->index | (1 << 31), _vehicle_view_zoom_levels[cs->type]);
 
-		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATE_START_STOP_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_CENTER_MAIN_VIEW)->tool_tip = STR_VEHICLE_VIEW_TRAIN_LOCATION_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_REFIT)->tool_tip            = STR_VEHICLE_VIEW_TRAIN_REFIT_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_SEND_TO_DEPOT_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_SHOW_ORDERS)->tool_tip      = STR_VEHICLE_VIEW_TRAIN_ORDERS_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_SHOW_DETAILS)->tool_tip     = STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->tool_tip            = STR_VEHICLE_VIEW_CLONE_TRAIN_INFO + v->type;
+		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATE_START_STOP_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_CENTER_MAIN_VIEW)->tool_tip = STR_VEHICLE_VIEW_TRAIN_LOCATION_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_REFIT)->tool_tip            = STR_VEHICLE_VIEW_TRAIN_REFIT_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_SEND_TO_DEPOT_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_SHOW_ORDERS)->tool_tip      = STR_VEHICLE_VIEW_TRAIN_ORDERS_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_SHOW_DETAILS)->tool_tip     = STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->tool_tip            = STR_VEHICLE_VIEW_CLONE_TRAIN_INFO + cs->type;
 	}
 
 	~VehicleViewWindow()
 	{
-		ConsistID consist = Vehicle::Get(this->window_number)->GetConsist()->index;
-		DeleteWindowById(WC_VEHICLE_ORDERS, consist, false);
-		DeleteWindowById(WC_VEHICLE_REFIT, consist, false);
-		DeleteWindowById(WC_VEHICLE_DETAILS, consist, false);
-		DeleteWindowById(WC_VEHICLE_TIMETABLE, consist, false);
+		DeleteWindowById(WC_VEHICLE_ORDERS, this->window_number, false);
+		DeleteWindowById(WC_VEHICLE_REFIT, this->window_number, false);
+		DeleteWindowById(WC_VEHICLE_DETAILS, this->window_number, false);
+		DeleteWindowById(WC_VEHICLE_TIMETABLE, this->window_number, false);
 	}
 
 	virtual void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize)
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
 		switch (widget) {
 			case WID_VV_START_STOP:
 				size->height = max(size->height, max(GetSpriteSize(SPR_FLAG_VEH_STOPPED).height, GetSpriteSize(SPR_FLAG_VEH_RUNNING).height) + WD_IMGBTN_TOP + WD_IMGBTN_BOTTOM);
 				break;
 
 			case WID_VV_FORCE_PROCEED:
-				if (v->type != VEH_TRAIN) {
+				if (cs->type != VEH_TRAIN) {
 					size->height = 0;
 					size->width = 0;
 				}
@@ -2533,23 +2522,23 @@ public:
 
 			case WID_VV_VIEWPORT:
 				size->width = VV_INITIAL_VIEWPORT_WIDTH;
-				size->height = (v->type == VEH_TRAIN) ? VV_INITIAL_VIEWPORT_HEIGHT_TRAIN : VV_INITIAL_VIEWPORT_HEIGHT;
+				size->height = (cs->type == VEH_TRAIN) ? VV_INITIAL_VIEWPORT_HEIGHT_TRAIN : VV_INITIAL_VIEWPORT_HEIGHT;
 				break;
 		}
 	}
 
 	virtual void OnPaint()
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		bool is_localcompany = v->owner == _local_company;
-		bool refitable_and_stopped_in_depot = IsVehicleRefitable(v);
+		const Consist *cs = Consist::Get(this->window_number);
+		bool is_localcompany = cs->owner == _local_company;
+		bool refitable_and_stopped_in_depot = IsVehicleRefitable(cs->Front());
 
 		this->SetWidgetDisabledState(WID_VV_GOTO_DEPOT, !is_localcompany);
 		this->SetWidgetDisabledState(WID_VV_REFIT, !refitable_and_stopped_in_depot || !is_localcompany);
 		this->SetWidgetDisabledState(WID_VV_CLONE, !is_localcompany);
 
-		if (v->type == VEH_TRAIN) {
-			this->SetWidgetLoweredState(WID_VV_FORCE_PROCEED, Train::From(v)->force_proceed == TFP_SIGNAL);
+		if (cs->type == VEH_TRAIN) {
+			this->SetWidgetLoweredState(WID_VV_FORCE_PROCEED, Train::From(cs->Front())->force_proceed == TFP_SIGNAL);
 			this->SetWidgetDisabledState(WID_VV_FORCE_PROCEED, !is_localcompany);
 			this->SetWidgetDisabledState(WID_VV_TURN_AROUND, !is_localcompany);
 		}
@@ -2561,15 +2550,16 @@ public:
 	{
 		if (widget != WID_VV_CAPTION) return;
 
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		SetDParam(0, v->index);
+		const Consist *cs = Consist::Get(this->window_number);
+		SetDParam(0, cs->Front()->index);
 	}
 
 	virtual void DrawWidget(const Rect &r, int widget) const
 	{
 		if (widget != WID_VV_START_STOP) return;
 
-		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
+		const Vehicle *v = cs->Front();
 		StringID str;
 		if (v->vehstatus & VS_CRASHED) {
 			str = STR_VEHICLE_STATUS_CRASHED;
@@ -2666,8 +2656,8 @@ public:
 
 	virtual void OnClick(Point pt, int widget, int click_count)
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		const Consist *cs = v->GetConsist();
+		const Consist *cs = Consist::Get(this->window_number);
+		const Vehicle *v = cs->Front();
 
 		switch (widget) {
 			case WID_VV_START_STOP: // start stop
@@ -2738,7 +2728,7 @@ public:
 
 	virtual void OnTick()
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Vehicle *v = Consist::Get(this->window_number)->Front();
 		bool veh_stopped = v->IsStoppedInDepot();
 
 		/* Widget WID_VV_GOTO_DEPOT must be hidden if the vehicle is already stopped in depot.
@@ -2777,20 +2767,22 @@ public:
 
 	virtual bool IsNewGRFInspectable() const
 	{
-		return ::IsNewGRFInspectable(GetGrfSpecFeature(Vehicle::Get(this->window_number)->type), this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
+		return ::IsNewGRFInspectable(GetGrfSpecFeature(cs->type), cs->Front()->index);
 	}
 
 	virtual void ShowNewGRFInspectWindow() const
 	{
-		::ShowNewGRFInspectWindow(GetGrfSpecFeature(Vehicle::Get(this->window_number)->type), this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
+		::ShowNewGRFInspectWindow(GetGrfSpecFeature(cs->type), cs->Front()->index);
 	}
 };
 
 
-/** Shows the vehicle view window of the given vehicle. */
-void ShowVehicleViewWindow(const Vehicle *v)
+/** Shows the vehicle view window of the given consist. */
+void ShowConsistViewWindow(const Consist *cs)
 {
-	AllocateWindowDescFront<VehicleViewWindow>((v->type == VEH_TRAIN) ? &_train_view_desc : &_vehicle_view_desc, v->index);
+	AllocateWindowDescFront<VehicleViewWindow>((cs->type == VEH_TRAIN) ? &_train_view_desc : &_vehicle_view_desc, cs->index);
 }
 
 /**
@@ -2832,7 +2824,7 @@ void CcBuildPrimaryVehicle(const CommandCost &result, TileIndex tile, uint32 p1,
 	if (result.Failed()) return;
 
 	const Vehicle *v = Vehicle::Get(_new_vehicle_id);
-	ShowVehicleViewWindow(v);
+	ShowConsistViewWindow(v->GetConsist());
 }
 
 /**

@@ -188,14 +188,14 @@ static void CheckIfShipNeedsService(Vehicle *v)
 	if (depot == NULL) {
 		if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 			v->current_order.MakeDummy();
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		}
 		return;
 	}
 
 	v->current_order.MakeGoToDepot(depot->index, ODTFB_SERVICE);
 	v->dest_tile = depot->xy;
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 }
 
 /**
@@ -391,7 +391,7 @@ static bool ShipAccelerate(Vehicle *v)
 	/* updates statusbar only if speed have changed to save CPU time */
 	if (spd != v->cur_speed) {
 		v->cur_speed = spd;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 
 	/* Convert direction-independent speed into direction-dependent speed. (old movement method) */
@@ -532,7 +532,7 @@ void ShipController(Consist *cs)
 				 * always skip ahead. */
 				if (v->current_order.IsType(OT_LEAVESTATION)) {
 					v->current_order.Free();
-					SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+					SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 				} else if (v->dest_tile != 0) {
 					/* We have a target, let's see if we reached it... */
 					if (v->current_order.IsType(OT_GOTO_WAYPOINT) &&
@@ -540,14 +540,14 @@ void ShipController(Consist *cs)
 						/* We got within 3 tiles of our target buoy, so let's skip to our
 						 * next order */
 						UpdateVehicleTimetable(v, true);
-						v->GetConsist()->IncrementRealOrderIndex();
+						cs->IncrementRealOrderIndex();
 						v->current_order.MakeDummy();
 					} else {
 						/* Non-buoy orders really need to reach the tile */
 						if (v->dest_tile == gp.new_tile) {
 							if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 								if ((gp.x & 0xF) == 8 && (gp.y & 0xF) == 8) {
-									ConsistEnterDepot(v->GetConsist());
+									ConsistEnterDepot(cs);
 									return;
 								}
 							} else if (v->current_order.IsType(OT_GOTO_STATION)) {
@@ -560,7 +560,7 @@ void ShipController(Consist *cs)
 									v->BeginLoading();
 								} else { // leave stations without docks right aways
 									v->current_order.MakeLeaveStation();
-									v->GetConsist()->IncrementRealOrderIndex();
+									cs->IncrementRealOrderIndex();
 								}
 							}
 						}

@@ -70,8 +70,8 @@ void GroundVehicle<T, Type>::PowerChanged()
 		const Consist *cs = this->GetConsist();
 		if (cs != NULL) {
 			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 		}
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	}
 
 	this->gcache.cached_max_track_speed = max_track_speed;

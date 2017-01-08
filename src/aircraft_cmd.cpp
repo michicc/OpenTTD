@@ -410,10 +410,10 @@ static void CheckIfAircraftNeedsService(Aircraft *v)
 	/* only goto depot if the target airport has a depot */
 	if (st->airport.HasHangar() && CanVehicleUseStation(v, st)) {
 		v->current_order.MakeGoToDepot(st->index, ODTFB_SERVICE);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	} else if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 		v->current_order.MakeDummy();
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 }
 
@@ -657,7 +657,7 @@ static int UpdateAircraftSpeed(Aircraft *v, uint speed_limit = SPEED_LIMIT_NONE,
 	/* updates statusbar only if speed have changed to save CPU time */
 	if (spd != v->cur_speed) {
 		v->cur_speed = spd;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 
 	/* Adjust distance moved by plane speed setting */
@@ -1977,7 +1977,7 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 	if (too_far) {
 		if (!HasBit(v->flags, VAF_DEST_TOO_FAR)) {
 			SetBit(v->flags, VAF_DEST_TOO_FAR);
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 			AI::NewEvent(v->owner, new ScriptEventAircraftDestTooFar(v->index));
 			if (v->owner == _local_company) {
 				/* Post a news message. */
@@ -1991,7 +1991,7 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 	if (HasBit(v->flags, VAF_DEST_TOO_FAR)) {
 		/* Not too far anymore, clear flag and message. */
 		ClrBit(v->flags, VAF_DEST_TOO_FAR);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		DeleteConsistNews(v->GetConsist()->index, STR_NEWS_AIRCRAFT_DEST_TOO_FAR);
 	}
 }

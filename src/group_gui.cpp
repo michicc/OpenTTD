@@ -791,7 +791,7 @@ public:
 
 				const Vehicle *v = this->vehicles[id_v];
 				if (!VehicleClicked(v) && vindex == v->index) {
-					ShowVehicleViewWindow(v);
+					ShowConsistViewWindow(v->GetConsist());
 				}
 				break;
 			}

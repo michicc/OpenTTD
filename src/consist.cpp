@@ -69,6 +69,7 @@ void Consist::PreDestructor()
 	extern void StopGlobalFollowVehicle(const Consist *cs);
 	StopGlobalFollowVehicle(this);
 
+	DeleteWindowById(WC_VEHICLE_VIEW, this->index);
 	DeleteWindowById(WC_VEHICLE_ORDERS, this->index);
 	DeleteWindowById(WC_VEHICLE_REFIT, this->index);
 	DeleteWindowById(WC_VEHICLE_DETAILS, this->index);
@@ -224,7 +225,7 @@ void ConsistEnterDepot(Consist *cs)
 			break;
 		default: NOT_REACHED();
 	}
-	SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+	SetWindowDirty(WC_VEHICLE_VIEW, cs->index);
 
 	if (v->type != VEH_TRAIN) {
 		/* Trains update the vehicle list when the first unit enters the depot and calls VehicleEnterDepot() when the last unit enters.
@@ -243,7 +244,7 @@ void ConsistEnterDepot(Consist *cs)
 	v->MarkDirty();
 
 	if (v->current_order.IsType(OT_GOTO_DEPOT)) {
-		SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+		SetWindowDirty(WC_VEHICLE_VIEW, cs->index);
 
 		const Order *real_order = v->GetOrder(cs->cur_real_order_index);
 

@@ -124,7 +124,7 @@ void CcCloneVehicle(const CommandCost &result, TileIndex tile, uint32 p1, uint32
 
 	const Vehicle *v = Vehicle::Get(_new_vehicle_id);
 
-	ShowVehicleViewWindow(v);
+	ShowConsistViewWindow(v->GetConsist());
 }
 
 static void TrainDepotMoveVehicle(const Vehicle *wagon, VehicleID sel, const Vehicle *head)
@@ -571,7 +571,7 @@ struct DepotWindow : Window {
 			}
 
 			case MODE_SHOW_VEHICLE: // show info window
-				ShowVehicleViewWindow(v);
+				ShowConsistViewWindow(v->GetConsist());
 				break;
 
 			case MODE_START_STOP: // click start/stop flag
@@ -1004,11 +1004,11 @@ struct DepotWindow : Window {
 							this->vehicle_over = INVALID_VEHICLE;
 							TrainDepotMoveVehicle(gdvp.wagon, sel, gdvp.head);
 						} else if (gdvp.head != NULL && gdvp.head->IsFrontEngine()) {
-							ShowVehicleViewWindow(gdvp.head);
+							ShowConsistViewWindow(gdvp.head->GetConsist());
 						}
 					}
 				} else if (this->GetVehicleFromDepotWndPt(pt.x - nwi->pos_x, pt.y - nwi->pos_y, &v, NULL) == MODE_DRAG_VEHICLE && v != NULL && sel == v->index) {
-					ShowVehicleViewWindow(v);
+					ShowConsistViewWindow(v->GetConsist());
 				}
 				break;
 			}

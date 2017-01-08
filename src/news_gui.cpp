@@ -438,8 +438,7 @@ struct NewsWindow : Window {
 
 			case WID_N_CAPTION:
 				if (this->ni->reftype1 == NR_CONSIST) {
-					const Vehicle *v = Consist::Get(this->ni->ref1)->Front();
-					ShowVehicleViewWindow(v);
+					ShowConsistViewWindow(Consist::Get(this->ni->ref1));
 				}
 				break;
 

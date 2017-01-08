@@ -1862,7 +1862,7 @@ void RemoveOrderFromAllVehicles(OrderType type, DestinationID destination)
 		if ((v->type == VEH_AIRCRAFT && order->IsType(OT_GOTO_DEPOT) ? OT_GOTO_STATION : order->GetType()) == type &&
 				v->current_order.GetDestination() == destination) {
 			order->MakeDummy();
-			SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, v->GetConsist()->index);
 		}
 
 		/* Clear the order from the order-list */

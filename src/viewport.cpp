@@ -2191,7 +2191,7 @@ bool HandleViewportClicked(const ViewPort *vp, int x, int y)
 			if (_ctrl_pressed && v->owner == _local_company) {
 				StartStopVehicle(v, true);
 			} else {
-				ShowVehicleViewWindow(v);
+				ShowConsistViewWindow(v->GetConsist());
 			}
 		}
 		return true;

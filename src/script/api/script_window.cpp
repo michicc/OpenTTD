@@ -23,6 +23,7 @@ static uint32 TranslateVehicleWindowNumber(ScriptWindow::WindowClass window, uin
 	if (number == ScriptWindow::NUMBER_ALL) return number;
 
 	switch (window) {
+		case ScriptWindow::WC_VEHICLE_VIEW:
 		case ScriptWindow::WC_VEHICLE_ORDERS:
 		case ScriptWindow::WC_VEHICLE_REFIT:
 		case ScriptWindow::WC_VEHICLE_DETAILS:
