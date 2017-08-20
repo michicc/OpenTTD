@@ -22,6 +22,7 @@
 #include "../../train.h"
 #include "../../vehicle_func.h"
 #include "../../aircraft.h"
+#include "../../consist_base.h"
 #include "table/strings.h"
 
 #include "../../safeguards.h"
@@ -343,14 +344,16 @@
 {
 	if (!IsValidVehicle(vehicle_id)) return -1;
 
-	return ::Vehicle::Get(vehicle_id)->GetDisplayProfitThisYear();
+	::Consist *cs = ::Vehicle::Get(vehicle_id)->GetConsist();
+	return cs != NULL ? cs->GetDisplayProfitThisYear() : 0;
 }
 
 /* static */ Money ScriptVehicle::GetProfitLastYear(VehicleID vehicle_id)
 {
 	if (!IsValidVehicle(vehicle_id)) return -1;
 
-	return ::Vehicle::Get(vehicle_id)->GetDisplayProfitLastYear();
+	::Consist *cs = ::Vehicle::Get(vehicle_id)->GetConsist();
+	return cs != NULL ? cs->GetDisplayProfitLastYear() : 0;
 }
 
 /* static */ Money ScriptVehicle::GetCurrentValue(VehicleID vehicle_id)

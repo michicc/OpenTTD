@@ -787,7 +787,6 @@ void Vehicle::PreDestructor()
 
 	if (this->IsEngineCountable()) {
 		GroupStatistics::CountEngine(this, -1);
-		if (this->IsPrimaryVehicle()) GroupStatistics::CountVehicle(this, -1);
 		GroupStatistics::UpdateAutoreplace(this->owner);
 
 		if (this->owner == _local_company) InvalidateAutoreplaceWindow(this->engine_type, this->group_id);
@@ -1222,7 +1221,6 @@ void AgeVehicle(Vehicle *v)
 {
 	if (v->age < MAX_DAY) {
 		v->age++;
-		if (v->IsPrimaryVehicle() && v->age == VEHICLE_PROFIT_MIN_AGE + 1) GroupStatistics::VehicleReachedProfitAge(v);
 	}
 
 	if (!v->IsPrimaryVehicle() && (v->type != VEH_TRAIN || !Train::From(v)->IsEngine())) return;
@@ -2509,35 +2507,6 @@ void Vehicle::RemoveFromShared()
 
 	this->next_shared     = NULL;
 	this->previous_shared = NULL;
-}
-
-void VehiclesYearlyLoop()
-{
-	Vehicle *v;
-	FOR_ALL_VEHICLES(v) {
-		if (v->IsPrimaryVehicle()) {
-			Consist *cs = v->GetConsist();
-			/* show warning if vehicle is not generating enough income last 2 years (corresponds to a red icon in the vehicle list) */
-			Money profit = v->GetDisplayProfitThisYear();
-			if (v->age >= 730 && profit < 0) {
-				if (_settings_client.gui.vehicle_income_warn && v->owner == _local_company) {
-					SetDParam(0, cs->index); // Special string param handling in news GUI code.
-					SetDParam(1, profit);
-					AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, cs->index);
-				}
-				AI::NewEvent(v->owner, new ScriptEventVehicleUnprofitable(v->index));
-			}
-
-			v->profit_last_year = v->profit_this_year;
-			v->profit_this_year = 0;
-			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
-		}
-	}
-	GroupStatistics::UpdateProfits();
-	SetWindowClassesDirty(WC_TRAINS_LIST);
-	SetWindowClassesDirty(WC_SHIPS_LIST);
-	SetWindowClassesDirty(WC_ROADVEH_LIST);
-	SetWindowClassesDirty(WC_AIRCRAFT_LIST);
 }
 
 

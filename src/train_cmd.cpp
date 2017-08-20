@@ -1166,6 +1166,7 @@ static void NormaliseTrainHead(Train *head)
 		Consist *c = new Consist(VEH_TRAIN);
 		c->SetFront(head);
 		head->unitnumber = GetFreeUnitNumber(VEH_TRAIN);
+		GroupStatistics::CountConsist(c, 1);
 	}
 
 	/* Update the refit button and window */
@@ -1291,10 +1292,6 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 
 	/* do it? */
 	if (flags & DC_EXEC) {
-		/* Remove old heads from the statistics */
-		if (original_src_head_front_engine) GroupStatistics::CountVehicle(original_src_head, -1);
-		if (original_dst_head_front_engine) GroupStatistics::CountVehicle(original_dst_head, -1);
-
 		/* First normalise the sub types of the chains. */
 		NormaliseSubtypes(src_head);
 		NormaliseSubtypes(dst_head);
@@ -1346,10 +1343,6 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 			SetTrainGroupID(src, DEFAULT_GROUP);
 			SetWindowDirty(WC_COMPANY, _current_company);
 		}
-
-		/* Add new heads to statistics */
-		if (src_head != NULL && src_head->IsFrontEngine()) GroupStatistics::CountVehicle(src_head, 1);
-		if (dst_head != NULL && dst_head->IsFrontEngine()) GroupStatistics::CountVehicle(dst_head, 1);
 
 		/* Handle 'new engine' part of cases #1b, #2b, #3b, #4b and #5 in NormaliseTrainHead. */
 		NormaliseTrainHead(src_head);
@@ -1442,7 +1435,6 @@ CommandCost CmdSellRailWagon(DoCommandFlag flags, Vehicle *t, uint16 data, uint3
 
 			/* Copy other important data from the front engine */
 			new_head->CopyVehicleConfigAndStatistics(first);
-			GroupStatistics::CountVehicle(new_head, 1); // after copying over the profit
 		} else if (v->IsPrimaryVehicle()) {
 			if (data & (MAKE_ORDER_BACKUP_FLAG >> 20)) OrderBackup::Backup(v->GetConsist(), user);
 			delete v->GetConsist();
@@ -4022,19 +4014,6 @@ void Train::OnNewDay()
 		if (this->current_order.IsType(OT_GOTO_STATION)) {
 			TileIndex tile = Station::Get(this->current_order.GetDestination())->train_station.tile;
 			if (tile != INVALID_TILE) this->dest_tile = tile;
-		}
-
-		if (this->running_ticks != 0) {
-			/* running costs */
-			CommandCost cost(EXPENSES_TRAIN_RUN, this->GetRunningCost() * this->running_ticks / (DAYS_IN_YEAR  * DAY_TICKS));
-
-			this->profit_this_year -= cost.GetCost();
-			this->running_ticks = 0;
-
-			SubtractMoneyFromCompanyFract(this->owner, cost);
-
-			SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
-			SetWindowClassesDirty(WC_TRAINS_LIST);
 		}
 	}
 }

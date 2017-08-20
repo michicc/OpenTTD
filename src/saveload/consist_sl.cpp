@@ -31,6 +31,9 @@ const struct SaveLoad *GetConsistDescription()
 		     SLE_VAR(Consist, consist_flags,             SLE_UINT16),
 		     SLE_REF(Consist, front,                     REF_CONSIST),
 		     SLE_VAR(Consist, owner,                     SLE_UINT8),
+			 SLE_VAR(Consist, running_ticks,             SLE_UINT8),
+			 SLE_VAR(Consist, profit_this_year,          SLE_INT64),
+			 SLE_VAR(Consist, profit_last_year,          SLE_INT64),
 		     SLE_END()
 	};
 

@@ -161,8 +161,10 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		GroupStatistics::CountEngine(v, 1);
 		GroupStatistics::UpdateAutoreplace(_current_company);
 
-		if (v->IsPrimaryVehicle()) GroupStatistics::CountVehicle(v, 1);
-		if (unit_num != 0) OrderBackup::Restore(v->GetConsist(), p2);
+		if (unit_num != 0) {
+			GroupStatistics::CountConsist(v->GetConsist(), 1);
+			OrderBackup::Restore(v->GetConsist(), p2);
+		}
 	}
 
 	return value;

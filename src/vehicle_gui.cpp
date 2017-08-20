@@ -199,16 +199,16 @@ void DepotSortList(VehicleList *list)
 }
 
 /** draw the vehicle profit button in the vehicle list window. */
-static void DrawVehicleProfitButton(const Vehicle *v, int x, int y)
+static void DrawConsistProfitButton(const Consist *cs, int x, int y)
 {
 	SpriteID spr;
 
 	/* draw profit-based coloured icons */
-	if (v->age <= VEHICLE_PROFIT_MIN_AGE) {
+	if (cs->age <= VEHICLE_PROFIT_MIN_AGE) {
 		spr = SPR_PROFIT_NA;
-	} else if (v->GetDisplayProfitLastYear() < 0) {
+	} else if (cs->GetDisplayProfitLastYear() < 0) {
 		spr = SPR_PROFIT_NEGATIVE;
-	} else if (v->GetDisplayProfitLastYear() < VEHICLE_PROFIT_THRESHOLD) {
+	} else if (cs->GetDisplayProfitLastYear() < VEHICLE_PROFIT_THRESHOLD) {
 		spr = SPR_PROFIT_SOME;
 	} else {
 		spr = SPR_PROFIT_LOT;
@@ -1123,14 +1123,14 @@ static int CDECL VehicleAgeSorter(const Vehicle * const *a, const Vehicle * cons
 /** Sort vehicles by this year profit */
 static int CDECL VehicleProfitThisYearSorter(const Vehicle * const *a, const Vehicle * const *b)
 {
-	int r = ClampToI32((*a)->GetDisplayProfitThisYear() - (*b)->GetDisplayProfitThisYear());
+	int r = ClampToI32((*a)->GetConsist()->GetDisplayProfitThisYear() - (*b)->GetConsist()->GetDisplayProfitThisYear());
 	return (r != 0) ? r : VehicleNumberSorter(a, b);
 }
 
 /** Sort vehicles by last year profit */
 static int CDECL VehicleProfitLastYearSorter(const Vehicle * const *a, const Vehicle * const *b)
 {
-	int r = ClampToI32((*a)->GetDisplayProfitLastYear() - (*b)->GetDisplayProfitLastYear());
+	int r = ClampToI32((*a)->GetConsist()->GetDisplayProfitLastYear() - (*b)->GetConsist()->GetDisplayProfitLastYear());
 	return (r != 0) ? r : VehicleNumberSorter(a, b);
 }
 
@@ -1381,8 +1381,8 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 		const Consist *cs = v->GetConsist();
 		StringID str;
 
-		SetDParam(0, v->GetDisplayProfitThisYear());
-		SetDParam(1, v->GetDisplayProfitLastYear());
+		SetDParam(0, cs->GetDisplayProfitThisYear());
+		SetDParam(1, cs->GetDisplayProfitLastYear());
 
 		DrawVehicleImage(v, image_left, image_right, y + FONT_HEIGHT_SMALL - 1, selected_vehicle, EIT_IN_LIST, 0);
 		DrawString(text_left, text_right, y + line_height - FONT_HEIGHT_SMALL - WD_FRAMERECT_BOTTOM - 1, STR_VEHICLE_LIST_PROFIT_THIS_YEAR_LAST_YEAR);
@@ -1408,7 +1408,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 		SetDParam(0, v->unitnumber);
 		DrawString(left, right, y + 2, str);
 
-		DrawVehicleProfitButton(v, vehicle_button_x, y + FONT_HEIGHT_NORMAL + 3);
+		DrawConsistProfitButton(cs, vehicle_button_x, y + FONT_HEIGHT_NORMAL + 3);
 
 		y += line_height;
 	}
@@ -2074,8 +2074,8 @@ struct VehicleDetailsWindow : Window {
 				y += FONT_HEIGHT_NORMAL;
 
 				/* Draw profit */
-				SetDParam(0, v->GetDisplayProfitThisYear());
-				SetDParam(1, v->GetDisplayProfitLastYear());
+				SetDParam(0, cs->GetDisplayProfitThisYear());
+				SetDParam(1, cs->GetDisplayProfitLastYear());
 				DrawString(r.left + WD_FRAMERECT_LEFT, r.right - WD_FRAMERECT_RIGHT, y, STR_VEHICLE_INFO_PROFIT_THIS_YEAR_LAST_YEAR);
 				y += FONT_HEIGHT_NORMAL;
 

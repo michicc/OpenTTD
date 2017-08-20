@@ -29,6 +29,7 @@
 #include "viewport_func.h"
 #include "timetable.h"
 #include "ai/ai.hpp"
+#include "date_func.h"
 
 #include "table/strings.h"
 
@@ -62,6 +63,8 @@ Consist::Consist(VehicleType type)
 void Consist::PreDestructor()
 {
 	if (CleaningPool()) return;
+
+	GroupStatistics::CountConsist(this, -1);
 
 	OrderBackup::ClearConsist(this);
 	DeleteOrderWarnings(this);
@@ -119,7 +122,7 @@ bool Consist::Tick()
 
 	/* Update counters. */
 	this->current_order_time++;
-	if (!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0) v->running_ticks++;
+	if (!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0) this->running_ticks++;
 
 	/* Call movement function. */
 	for (int i = 0; i < (this->type == VEH_TRAIN || this->type == VEH_AIRCRAFT ? 2 : 1); i++) {
@@ -153,6 +156,80 @@ bool Consist::Tick()
 	}
 
 	return true;
+}
+
+/**
+ * The new day handler for consists.
+ */
+void Consist::OnNewDay()
+{
+	if (this->age < MAX_DAY) {
+		this->age++;
+		if (this->age == VEHICLE_PROFIT_MIN_AGE + 1) GroupStatistics::ConsistReachedProfitAge(this);
+	}
+
+	if (this->running_ticks == 0) return;
+
+	CommandCost cost;
+	WindowClass vehList = WC_INVALID;
+	switch (this->type) {
+		case VEH_TRAIN:
+			cost = CommandCost(EXPENSES_TRAIN_RUN);
+			vehList = WC_TRAINS_LIST;
+			break;
+
+		case VEH_ROAD:
+			cost = CommandCost(EXPENSES_ROADVEH_RUN);
+			vehList = WC_ROADVEH_LIST;
+			break;
+
+		case VEH_SHIP:
+			cost = CommandCost(EXPENSES_SHIP_RUN);
+			vehList = WC_SHIPS_LIST;
+			break;
+
+		case VEH_AIRCRAFT:
+			cost = CommandCost(EXPENSES_AIRCRAFT_RUN);
+			vehList = WC_AIRCRAFT_LIST;
+			break;
+
+		default: NOT_REACHED();
+	}
+
+	cost.AddCost(this->Front()->GetRunningCost() * this->running_ticks / (DAYS_IN_YEAR * DAY_TICKS));
+	this->profit_this_year -= cost.GetCost();
+	this->running_ticks = 0;
+
+	SubtractMoneyFromCompanyFract(this->owner, cost);
+
+	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowClassesDirty(vehList);
+}
+
+void ConsistsYearlyLoop()
+{
+	Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		/* show warning if vehicle is not generating enough income last 2 years (corresponds to a red icon in the vehicle list) */
+		Money profit = cs->GetDisplayProfitThisYear();
+		if (cs->age >= 730 && profit < 0) {
+			if (_settings_client.gui.vehicle_income_warn && cs->owner == _local_company) {
+				SetDParam(0, cs->index); // Special string param handling in news GUI code.
+				SetDParam(1, profit);
+				AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, cs->index);
+			}
+			AI::NewEvent(cs->owner, new ScriptEventVehicleUnprofitable(cs->Front()->index));
+		}
+
+		cs->profit_last_year = cs->profit_this_year;
+		cs->profit_this_year = 0;
+		SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
+	}
+	GroupStatistics::UpdateProfits();
+	SetWindowClassesDirty(WC_TRAINS_LIST);
+	SetWindowClassesDirty(WC_SHIPS_LIST);
+	SetWindowClassesDirty(WC_ROADVEH_LIST);
+	SetWindowClassesDirty(WC_AIRCRAFT_LIST);
 }
 
 
@@ -270,7 +347,7 @@ void ConsistEnterDepot(Consist *cs)
 					AddConsistAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, cs->index);
 				}
 			} else if (cost.GetCost() != 0) {
-				v->profit_this_year -= cost.GetCost() << 8;
+				cs->profit_this_year -= cost.GetCost() << 8;
 				if (v->owner == _local_company) {
 					ShowCostOrIncomeAnimation(v->x_pos, v->y_pos, v->z_pos, cost.GetCost());
 				}
@@ -301,10 +378,30 @@ void ConsistEnterDepot(Consist *cs)
 }
 
 /**
+ * Increases the day counter for all consists and calls 1-day handlers.
+ * Each tick, it processes consists with "index % DAY_TICKS == _date_fract",
+ * so each day, all consists are processed in DAY_TICKS steps.
+ */
+static void RunConsistDayProc()
+{
+	if (_game_mode != GM_NORMAL) return;
+
+	/* Run the day_proc for every DAY_TICKS vehicle starting at _date_fract. */
+	for (size_t i = _date_fract; i < Consist::GetPoolSize(); i += DAY_TICKS) {
+		Consist *cs = Consist::Get(i);
+		if (cs == NULL) continue;
+
+		cs->OnNewDay();
+	}
+}
+
+/**
  * Call all consist tick (and other date-related) handlers.
  */
 void CallConsistTicks()
 {
+	RunConsistDayProc();
+
 	_consists_to_autoreplace.Clear();
 
 	Consist *cs;

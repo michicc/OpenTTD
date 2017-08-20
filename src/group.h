@@ -17,6 +17,7 @@
 #include "company_type.h"
 #include "vehicle_type.h"
 #include "engine_type.h"
+#include "consist_type.h"
 
 typedef Pool<Group, GroupID, 16, 64000> GroupPool;
 extern GroupPool _group_pool; ///< Pool of groups.
@@ -52,10 +53,11 @@ struct GroupStatistics {
 	static GroupStatistics &Get(CompanyID company, GroupID id_g, VehicleType type);
 	static GroupStatistics &Get(const Vehicle *v);
 	static GroupStatistics &GetAllGroup(const Vehicle *v);
+	static GroupStatistics &GetAllGroup(const Consist *cs);
 
-	static void CountVehicle(const Vehicle *v, int delta);
+	static void CountConsist(const Consist *cs, int delta);
 	static void CountEngine(const Vehicle *v, int delta);
-	static void VehicleReachedProfitAge(const Vehicle *v);
+	static void ConsistReachedProfitAge(const Consist *cs);
 
 	static void UpdateProfits();
 	static void UpdateAfterLoad();

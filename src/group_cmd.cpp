@@ -21,6 +21,7 @@
 #include "company_func.h"
 #include "core/pool_func.hpp"
 #include "order_backup.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -88,13 +89,23 @@ void GroupStatistics::Clear()
 }
 
 /**
- * Returns the GroupStatistic for the ALL_GROUPO of a vehicle type.
+ * Returns the GroupStatistic for the ALL_GROUP of a vehicle type.
  * @param v Vehicle.
  * @return GroupStatistics for the ALL_GROUP of the vehicle type.
  */
 /* static */ GroupStatistics &GroupStatistics::GetAllGroup(const Vehicle *v)
 {
 	return GroupStatistics::Get(v->owner, ALL_GROUP, v->type);
+}
+
+/**
+ * Returns the GroupStatistic for the ALL_GROUP of a vehicle type.
+ * @param cs Consist.
+ * @return GroupStatistics for the ALL_GROUP of the vehicle type.
+ */
+/* static */ GroupStatistics &GroupStatistics::GetAllGroup(const Consist *cs)
+{
+	return GroupStatistics::Get(cs->owner, ALL_GROUP, cs->type);
 }
 
 /**
@@ -122,7 +133,11 @@ void GroupStatistics::Clear()
 		if (!v->IsEngineCountable()) continue;
 
 		GroupStatistics::CountEngine(v, 1);
-		if (v->IsPrimaryVehicle()) GroupStatistics::CountVehicle(v, 1);
+	}
+
+	const Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		GroupStatistics::CountConsist(cs, 1);
 	}
 
 	FOR_ALL_COMPANIES(c) {
@@ -131,25 +146,25 @@ void GroupStatistics::Clear()
 }
 
 /**
- * Update num_vehicle when adding or removing a vehicle.
- * @param v Vehicle to count.
+ * Update num_vehicle when adding or removing a consist.
+ * @param cs Consist to count.
  * @param delta +1 to add, -1 to remove.
  */
-/* static */ void GroupStatistics::CountVehicle(const Vehicle *v, int delta)
+/* static */ void GroupStatistics::CountConsist(const Consist *cs, int delta)
 {
 	assert(delta == 1 || delta == -1);
 
-	GroupStatistics &stats_all = GroupStatistics::GetAllGroup(v);
-	GroupStatistics &stats = GroupStatistics::Get(v);
+	GroupStatistics &stats_all = GroupStatistics::GetAllGroup(cs);
+	GroupStatistics &stats = GroupStatistics::Get(cs->Front());
 
 	stats_all.num_vehicle += delta;
 	stats.num_vehicle += delta;
 
-	if (v->age > VEHICLE_PROFIT_MIN_AGE) {
+	if (cs->age > VEHICLE_PROFIT_MIN_AGE) {
 		stats_all.num_profit_vehicle += delta;
-		stats_all.profit_last_year += v->GetDisplayProfitLastYear() * delta;
+		stats_all.profit_last_year += cs->GetDisplayProfitLastYear() * delta;
 		stats.num_profit_vehicle += delta;
-		stats.profit_last_year += v->GetDisplayProfitLastYear() * delta;
+		stats.profit_last_year += cs->GetDisplayProfitLastYear() * delta;
 	}
 }
 
@@ -166,17 +181,17 @@ void GroupStatistics::Clear()
 }
 
 /**
- * Add a vehicle to the profit sum of its group.
+ * Add a consist to the profit sum of its group.
  */
-/* static */ void GroupStatistics::VehicleReachedProfitAge(const Vehicle *v)
+/* static */ void GroupStatistics::ConsistReachedProfitAge(const Consist *cs)
 {
-	GroupStatistics &stats_all = GroupStatistics::GetAllGroup(v);
-	GroupStatistics &stats = GroupStatistics::Get(v);
+	GroupStatistics &stats_all = GroupStatistics::GetAllGroup(cs);
+	GroupStatistics &stats = GroupStatistics::Get(cs->Front());
 
 	stats_all.num_profit_vehicle++;
-	stats_all.profit_last_year += v->GetDisplayProfitLastYear();
+	stats_all.profit_last_year += cs->GetDisplayProfitLastYear();
 	stats.num_profit_vehicle++;
-	stats.profit_last_year += v->GetDisplayProfitLastYear();
+	stats.profit_last_year += cs->GetDisplayProfitLastYear();
 }
 
 /**
@@ -199,9 +214,9 @@ void GroupStatistics::Clear()
 		g->statistics.ClearProfits();
 	}
 
-	const Vehicle *v;
-	FOR_ALL_VEHICLES(v) {
-		if (v->IsPrimaryVehicle() && v->age > VEHICLE_PROFIT_MIN_AGE) GroupStatistics::VehicleReachedProfitAge(v);
+	const Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		if (cs->age > VEHICLE_PROFIT_MIN_AGE) GroupStatistics::ConsistReachedProfitAge(cs);
 	}
 }
 
@@ -428,7 +443,7 @@ CommandCost CmdAlterGroup(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
  */
 static void AddVehicleToGroup(Vehicle *v, GroupID new_g)
 {
-	GroupStatistics::CountVehicle(v, -1);
+	GroupStatistics::CountConsist(v->GetConsist(), -1);
 
 	switch (v->type) {
 		default: NOT_REACHED();
@@ -444,7 +459,7 @@ static void AddVehicleToGroup(Vehicle *v, GroupID new_g)
 			break;
 	}
 
-	GroupStatistics::CountVehicle(v, 1);
+	GroupStatistics::CountConsist(v->GetConsist(), 1);
 }
 
 /**
@@ -631,7 +646,7 @@ void RemoveVehicleFromGroup(const Vehicle *v)
 {
 	if (!v->IsPrimaryVehicle()) return;
 
-	if (!IsDefaultGroupID(v->group_id)) GroupStatistics::CountVehicle(v, -1);
+	if (!IsDefaultGroupID(v->group_id)) GroupStatistics::CountConsist(v->GetConsist(), -1);
 }
 
 

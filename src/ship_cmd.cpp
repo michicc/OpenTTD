@@ -234,19 +234,6 @@ void Ship::OnNewDay()
 	CheckIfShipNeedsService(this);
 
 	CheckOrders(this);
-
-	if (this->running_ticks == 0) return;
-
-	CommandCost cost(EXPENSES_SHIP_RUN, this->GetRunningCost() * this->running_ticks / (DAYS_IN_YEAR * DAY_TICKS));
-
-	this->profit_this_year -= cost.GetCost();
-	this->running_ticks = 0;
-
-	SubtractMoneyFromCompanyFract(this->owner, cost);
-
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
-	/* we need this for the profit */
-	SetWindowClassesDirty(WC_SHIPS_LIST);
 }
 
 Trackdir Ship::GetVehicleTrackdir() const

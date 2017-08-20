@@ -171,7 +171,7 @@ extern void StationMonthlyLoop();
 extern void SubsidyMonthlyLoop();
 
 extern void CompaniesYearlyLoop();
-extern void VehiclesYearlyLoop();
+extern void ConsistsYearlyLoop();
 extern void TownsYearlyLoop();
 
 extern void ShowEndGameChart();
@@ -192,7 +192,7 @@ static const Month _autosave_months[] = {
 static void OnNewYear()
 {
 	CompaniesYearlyLoop();
-	VehiclesYearlyLoop();
+	ConsistsYearlyLoop();
 	TownsYearlyLoop();
 	InvalidateWindowClassesData(WC_BUILD_STATION);
 #ifdef ENABLE_NETWORK

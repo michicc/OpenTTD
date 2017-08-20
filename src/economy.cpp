@@ -160,21 +160,19 @@ int UpdateCompanyRatingAndValue(Company *c, bool update)
 
 	/* Count vehicles */
 	{
-		Vehicle *v;
 		Money min_profit = 0;
 		bool min_profit_first = true;
 		uint num = 0;
 
-		FOR_ALL_VEHICLES(v) {
-			if (v->owner != owner) continue;
-			if (IsCompanyBuildableVehicleType(v->type) && v->IsPrimaryVehicle()) {
-				if (v->profit_last_year > 0) num++; // For the vehicle score only count profitable vehicles
-				if (v->age > 730) {
-					/* Find the vehicle with the lowest amount of profit */
-					if (min_profit_first || min_profit > v->profit_last_year) {
-						min_profit = v->profit_last_year;
-						min_profit_first = false;
-					}
+		Consist *cs;
+		FOR_ALL_CONSISTS(cs) {
+			if (cs->owner = !owner) continue;
+			if (cs->profit_last_year > 0) num++; // For the vehicle score only count profitable vehicles
+			if (cs->age > 730) {
+				/* Find the vehicle with the lowest amount of profit */
+				if (min_profit_first || min_profit > cs->profit_last_year) {
+					min_profit = cs->profit_last_year;
+					min_profit_first = false;
 				}
 			}
 		}
@@ -407,8 +405,14 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 					if (v->Previous() == NULL) delete v;
 				} else {
 					if (v->IsEngineCountable()) GroupStatistics::CountEngine(v, -1);
-					if (v->IsPrimaryVehicle()) GroupStatistics::CountVehicle(v, -1);
 				}
+			}
+		}
+
+		Consist *cs;
+		FOR_ALL_CONSISTS(cs) {
+			if (cs->owner == old_owner && new_owner != INVALID_OWNER) {
+				GroupStatistics::CountConsist(cs, -1);
 			}
 		}
 	}
@@ -461,7 +465,6 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 					GroupStatistics::CountEngine(v, 1);
 				}
 				if (v->IsPrimaryVehicle()) {
-					GroupStatistics::CountVehicle(v, 1);
 					v->unitnumber = unitidgen[v->type].NextID();
 				}
 
@@ -489,6 +492,7 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 				}
 
 				cs->owner = new_owner;
+				GroupStatistics::CountConsist(cs, 1);
 			}
 		}
 
@@ -1193,7 +1197,7 @@ CargoPayment::~CargoPayment()
 	Backup<CompanyByte> cur_company(_current_company, this->front->owner, FILE_LINE);
 
 	SubtractMoneyFromCompany(CommandCost(this->front->GetExpenseType(true), -this->route_profit));
-	this->front->profit_this_year += (this->visual_profit + this->visual_transfer) << 8;
+	this->front->GetConsist()->profit_this_year += (this->visual_profit + this->visual_transfer) << 8;
 
 	if (this->route_profit != 0 && IsLocalCompany() && !PlayVehicleSound(this->front, VSE_LOAD_UNLOAD)) {
 		SndPlayVehicleFx(SND_14_CASHTILL, this->front);
@@ -1518,7 +1522,7 @@ static void HandleStationRefit(Vehicle *v, CargoArray &consist_capleft, Station 
 		 * misrouting it. */
 		IterateVehicleParts(v_start, ReturnCargoAction(st, INVALID_STATION));
 		CommandCost cost = DoCommand(v_start->tile, v_start->index, new_cid | 1U << 6 | 0xFF << 8 | 1U << 16, DC_EXEC, GetCmdRefitVeh(v_start)); // Auto-refit and only this vehicle including artic parts.
-		if (cost.Succeeded()) v->First()->profit_this_year -= cost.GetCost() << 8;
+		if (cost.Succeeded()) v->First()->GetConsist()->profit_this_year -= cost.GetCost() << 8;
 	}
 
 	/* Add new capacity to consist capacity and reserve cargo */

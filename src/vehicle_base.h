@@ -234,8 +234,6 @@ public:
 	 */
 	TileIndex dest_tile;
 
-	Money profit_this_year;             ///< Profit this year << 8, low 8 bits are fract
-	Money profit_last_year;             ///< Profit last year << 8, low 8 bits are fract
 	Money value;                        ///< Value of the vehicle
 
 	CargoPayment *cargo_payment;        ///< The cargo payment we're currently in
@@ -310,7 +308,6 @@ public:
 
 	byte day_counter;                   ///< Increased by one for each day
 	byte tick_counter;                  ///< Increased by one for each tick
-	byte running_ticks;                 ///< Number of ticks this vehicle was not stopped this day
 
 	uint16 vehicle_flags;               ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
 
@@ -560,18 +557,6 @@ public:
 	 */
 	Money GetDisplayRunningCost() const { return (this->GetRunningCost() >> 8); }
 
-	/**
-	 * Gets the profit vehicle had this year. It can be sent into SetDParam for string processing.
-	 * @return the vehicle's profit this year
-	 */
-	Money GetDisplayProfitThisYear() const { return (this->profit_this_year >> 8); }
-
-	/**
-	 * Gets the profit vehicle had last year. It can be sent into SetDParam for string processing.
-	 * @return the vehicle's profit last year
-	 */
-	Money GetDisplayProfitLastYear() const { return (this->profit_last_year >> 8); }
-
 	void SetNext(Vehicle *next);
 
 	/**
@@ -724,9 +709,6 @@ public:
 
 		this->current_order = src->current_order;
 		this->dest_tile  = src->dest_tile;
-
-		this->profit_this_year = src->profit_this_year;
-		this->profit_last_year = src->profit_last_year;
 	}
 
 

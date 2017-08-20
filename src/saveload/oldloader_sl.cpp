@@ -1140,6 +1140,8 @@ static bool LoadOldVehicleUnion(LoadgameState *ls, int num)
 static uint16 _cargo_count;
 static uint8  _cur_implicit_order_index;
 static uint16 _service_interval;
+static Money _profit_this_year;
+static Money _profit_last_year;
 
 static const OldChunks vehicle_chunk[] = {
 	OCL_SVAR(  OC_UINT8, Vehicle, subtype ),
@@ -1213,8 +1215,8 @@ static const OldChunks vehicle_chunk[] = {
 	OCL_SVAR( OC_UINT16, Vehicle, reliability ),
 	OCL_SVAR( OC_UINT16, Vehicle, reliability_spd_dec ),
 
-	OCL_SVAR( OC_FILE_I32 | OC_VAR_I64, Vehicle, profit_this_year ),
-	OCL_SVAR( OC_FILE_I32 | OC_VAR_I64, Vehicle, profit_last_year ),
+	OCL_VAR ( OC_FILE_I32 | OC_VAR_I64, 1, &_profit_this_year),
+	OCL_VAR ( OC_FILE_I32 | OC_VAR_I64, 1, &_profit_last_year),
 
 	OCL_VAR ( OC_UINT16,   1, &_old_next_ptr ),
 
@@ -1364,6 +1366,8 @@ bool LoadOldVehicle(LoadgameState *ls, int num)
 			c->owner = v->owner;
 			c->service_interval = _service_interval;
 			c->cur_implicit_order_index = _cur_implicit_order_index;
+			c->profit_this_year = _profit_this_year;
+			c->profit_last_year = _profit_last_year;
 		}
 
 		if (_old_order_ptr != 0 && _old_order_ptr != 0xFFFFFFFF) {

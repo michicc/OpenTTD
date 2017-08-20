@@ -41,11 +41,17 @@ public:
 	VehicleTypeByte type;  ///< Type of the consist.
 	OwnerByte       owner; ///< Which company owns the consist?
 
+	Date age;                           ///< Age in days.
+	byte running_ticks;                 ///< Number of ticks this consist was not stopped this day.
+	Money profit_this_year;             ///< Profit this year << 8, low 8 bits are fract.
+	Money profit_last_year;             ///< Profit last year << 8, low 8 bits are fract.
+
 	Consist(VehicleType type = VEH_INVALID);
 	/** We want to 'destruct' the right class. */
 	virtual ~Consist();
 
 	bool Tick();
+	void OnNewDay();
 
 	/**
 	 * Gets the front vehicle of the associated vehicle chain.
@@ -76,6 +82,18 @@ public:
 	inline void SetServiceIntervalIsCustom(bool on) { SB(this->consist_flags, CF_SERVINT_IS_CUSTOM, 1, on); }
 
 	inline void SetServiceIntervalIsPercent(bool on) { SB(this->consist_flags, CF_SERVINT_IS_PERCENT, 1, on); }
+
+	/**
+	 * Gets the profit vehicle had this year. It can be sent into SetDParam for string processing.
+	 * @return the vehicle's profit this year
+	 */
+	Money GetDisplayProfitThisYear() const { return (this->profit_this_year >> 8); }
+
+	/**
+	 * Gets the profit vehicle had last year. It can be sent into SetDParam for string processing.
+	 * @return the vehicle's profit last year
+	 */
+	Money GetDisplayProfitLastYear() const { return (this->profit_last_year >> 8); }
 
 private:
 	/**

@@ -581,6 +581,9 @@ static Date           _veh_timetable_start;
 static uint16         _veh_service_interval;
 static VehicleOrderID _veh_cur_real_order_index;
 static VehicleOrderID _veh_cur_implicit_order_index;
+static byte           _veh_running_ticks;
+static Money          _veh_profit_this_year;
+static Money          _veh_profit_last_year;
 
 /**
  * Make it possible to make the saveload tables "friends" of other classes.
@@ -643,7 +646,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 
 		     SLE_VAR(Vehicle, day_counter,           SLE_UINT8),
 		     SLE_VAR(Vehicle, tick_counter,          SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, running_ticks,         SLE_UINT8,                   88, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_running_ticks,    SLE_UINT8,                   88, 195),
 
 		SLEG_CONDVAR(         _veh_cur_implicit_order_index,  SLE_UINT8,           0, 195),
 		SLEG_CONDVAR(         _veh_cur_real_order_index,  SLE_UINT8,             158, 195),
@@ -697,10 +700,10 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, vehicle_flags,         SLE_FILE_U8 | SLE_VAR_U16,   40, 179),
 		 SLE_CONDVAR(Vehicle, vehicle_flags,         SLE_UINT16,                 180, SL_MAX_VERSION),
 
-		 SLE_CONDVAR(Vehicle, profit_this_year,      SLE_FILE_I32 | SLE_VAR_I64,   0,  64),
-		 SLE_CONDVAR(Vehicle, profit_this_year,      SLE_INT64,                   65, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, profit_last_year,      SLE_FILE_I32 | SLE_VAR_I64,   0,  64),
-		 SLE_CONDVAR(Vehicle, profit_last_year,      SLE_INT64,                   65, SL_MAX_VERSION),
+		SLEG_CONDVAR(    _veh_profit_this_year,      SLE_FILE_I32 | SLE_VAR_I64,   0,  64),
+		SLEG_CONDVAR(    _veh_profit_this_year,      SLE_INT64,                   65, 195),
+		SLEG_CONDVAR(    _veh_profit_last_year,      SLE_FILE_I32 | SLE_VAR_I64,   0,  64),
+		SLEG_CONDVAR(    _veh_profit_last_year,      SLE_INT64,                   65, 195),
 		SLEG_CONDVAR(         _cargo_feeder_share,   SLE_FILE_I32 | SLE_VAR_I64,  51,  64),
 		SLEG_CONDVAR(         _cargo_feeder_share,   SLE_INT64,                   65,  67),
 		SLEG_CONDVAR(         _cargo_loaded_at_xy,   SLE_UINT32,                  51,  67),
@@ -923,6 +926,7 @@ void Load_VEHS()
 		_veh_lateness_counter = 0;
 		_veh_timetable_start = 0;
 		_veh_cur_real_order_index = 0;
+		_veh_running_ticks = 0;
 		SlObject(v, GetVehicleDescription(vtype));
 
 		if (_cargo_count != 0 && IsCompanyBuildableVehicleType(v) && CargoPacket::CanAllocateItem()) {
@@ -982,6 +986,9 @@ void Load_VEHS()
 				c->service_interval         = _veh_service_interval;
 				c->cur_real_order_index     = _veh_cur_real_order_index;
 				c->cur_implicit_order_index = _veh_cur_implicit_order_index;
+				c->running_ticks            = _veh_running_ticks;
+				c->profit_this_year         = _veh_profit_this_year;
+				c->profit_last_year         = _veh_profit_last_year;
 			}
 		}
 	}

@@ -1844,11 +1844,10 @@ bool AfterLoadGame()
 
 	if (IsSavegameVersionBefore(88)) {
 		/* Profits are now with 8 bit fract */
-		Vehicle *v;
-		FOR_ALL_VEHICLES(v) {
-			v->profit_this_year <<= 8;
-			v->profit_last_year <<= 8;
-			v->running_ticks = 0;
+		Consist *cs;
+		FOR_ALL_CONSISTS(cs) {
+			cs->profit_this_year <<= 8;
+			cs->profit_last_year <<= 8;
 		}
 	}
 
