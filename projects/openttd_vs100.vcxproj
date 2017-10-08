@@ -314,6 +314,7 @@
     <ClCompile Include="..\src\cargotype.cpp" />
     <ClCompile Include="..\src\cheat.cpp" />
     <ClCompile Include="..\src\command.cpp" />
+    <ClCompile Include="..\src\consist.cpp" />
     <ClCompile Include="..\src\console.cpp" />
     <ClCompile Include="..\src\console_cmds.cpp" />
     <ClCompile Include="..\src\cpu.cpp" />
@@ -432,6 +433,8 @@
     <ClInclude Include="..\src\company_gui.h" />
     <ClInclude Include="..\src\company_manager_face.h" />
     <ClInclude Include="..\src\company_type.h" />
+    <ClInclude Include="..\src\consist_base.h" />
+    <ClInclude Include="..\src\consist_type.h" />
     <ClInclude Include="..\src\console_func.h" />
     <ClInclude Include="..\src\console_gui.h" />
     <ClInclude Include="..\src\console_internal.h" />

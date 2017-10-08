@@ -35,6 +35,7 @@
 #include "order_backup.h"
 #include "zoom_func.h"
 #include "newgrf_debug.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 #include "table/train_cmd.h"
@@ -973,7 +974,7 @@ static CommandCost CheckNewTrain(Train *original_dst, Train *dst, Train *origina
 
 	/* Get a free unit number and check whether it's within the bounds.
 	 * There will always be a maximum of one new train. */
-	if (GetFreeUnitNumber(VEH_TRAIN) <= _settings_game.vehicle.max_trains) return CommandCost();
+	if (GetFreeUnitNumber(VEH_TRAIN) <= _settings_game.vehicle.max_trains && Consist::CanAllocateItem()) return CommandCost();
 
 	return_cmd_error(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME);
 }
@@ -1150,14 +1151,23 @@ static void NormaliseTrainHead(Train *head)
 	UpdateTrainGroupID(head);
 
 	/* Not a front engine, i.e. a free wagon chain. No need to do more. */
-	if (!head->IsFrontEngine()) return;
+	if (!head->IsFrontEngine()) {
+		head->SetConsist(NULL);
+		return;
+	}
 
 	/* Update the refit button and window */
 	InvalidateWindowData(WC_VEHICLE_REFIT, head->index, VIWD_CONSIST_CHANGED);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, head->index, WID_VV_REFIT);
 
 	/* If we don't have a unit number yet, set one. */
-	if (head->unitnumber != 0) return;
+	if (head->unitnumber != 0) {
+		/* Make sure all vehicles have the same consist pointer. */
+		head->SetConsist(head->GetConsist());
+		return;
+	}
+	Consist *c = new Consist(VEH_TRAIN);
+	c->SetFront(head);
 	head->unitnumber = GetFreeUnitNumber(VEH_TRAIN);
 }
 
@@ -1237,6 +1247,9 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 
 	/* Check if all vehicles in the destination train are stopped inside a depot. */
 	if (dst_head != NULL && !dst_head->IsStoppedInDepot()) return_cmd_error(STR_ERROR_TRAINS_CAN_ONLY_BE_ALTERED_INSIDE_A_DEPOT);
+
+	/* When moving an engine that will become its own chain, check if we can allocate a new consist. */
+	if (src->IsEngine() && src != src_head && dst == NULL && !Consist::CanAllocateItem()) return_cmd_error(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME);
 
 	/* First make a backup of the order of the trains. That way we can do
 	 * whatever we want with the order and later on easily revert. */
@@ -1320,6 +1333,10 @@ CommandCost CmdMoveRailVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 				src_head->orders.list = src->orders.list;
 				if (src_head->orders.list != NULL) src_head->AddToShared(src);
 				src_head->CopyVehicleConfigAndStatistics(src);
+				src->GetConsist()->SetFront(src_head);
+			} else {
+				delete src->GetConsist();
+				src->SetConsist(NULL);
 			}
 			/* Remove stuff not valid anymore for non-front engines. */
 			DeleteVehicleOrders(src);
@@ -1422,12 +1439,17 @@ CommandCost CmdSellRailWagon(DoCommandFlag flags, Vehicle *t, uint16 data, uint3
 			new_head->orders.list = first->orders.list;
 			new_head->AddToShared(first);
 			DeleteVehicleOrders(first);
+			Consist *cs = first->GetConsist();
+			sell_head->SetConsist(NULL);
+			cs->SetFront(new_head);
 
 			/* Copy other important data from the front engine */
 			new_head->CopyVehicleConfigAndStatistics(first);
 			GroupStatistics::CountVehicle(new_head, 1); // after copying over the profit
-		} else if (v->IsPrimaryVehicle() && data & (MAKE_ORDER_BACKUP_FLAG >> 20)) {
-			OrderBackup::Backup(v, user);
+		} else if (v->IsPrimaryVehicle()) {
+			if (data & (MAKE_ORDER_BACKUP_FLAG >> 20)) OrderBackup::Backup(v, user);
+			delete v->GetConsist();
+			v->SetConsist(NULL);
 		}
 
 		/* We need to update the information about the train. */

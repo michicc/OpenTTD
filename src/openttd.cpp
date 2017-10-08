@@ -63,6 +63,7 @@
 #include "subsidy_func.h"
 #include "gfx_layout.h"
 #include "viewport_sprite_sorter.h"
+#include "consist_base.h"
 
 #include "linkgraph/linkgraphschedule.h"
 
@@ -1329,6 +1330,14 @@ static void CheckCaches()
 			memcpy(buff, &st->goods[c].cargo, sizeof(StationCargoList));
 			st->goods[c].cargo.InvalidateCache();
 			assert(memcmp(&st->goods[c].cargo, buff, sizeof(StationCargoList)) == 0);
+		}
+	}
+
+	/* Check for back-links from vehicles to consists. */
+	Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		for (Vehicle *v = cs->Front(); v != NULL; v = v->Next()) {
+			assert(v->GetConsist() == cs);
 		}
 	}
 }

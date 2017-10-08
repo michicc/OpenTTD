@@ -28,6 +28,7 @@
 #include "../engine_func.h"
 #include "../company_base.h"
 #include "../disaster_vehicle.h"
+#include "../consist_base.h"
 #include "saveload_internal.h"
 #include "oldloader.h"
 
@@ -1341,6 +1342,20 @@ bool LoadOldVehicle(LoadgameState *ls, int num)
 				DEBUG(oldloader, 0, "Loading failed - vehicle-array is invalid");
 				return false;
 			}
+		}
+
+		bool is_primary = v->IsPrimaryVehicle();
+		if (v->type == VEH_ROAD || v->type == VEH_TRAIN) is_primary = v->subtype == 0;
+
+		if (is_primary) {
+			/* We have a primary vehicle, create a consist for it. */
+
+			/* Consist pool is the same size as the vehicle pool which means
+			* there should always be space in the consist pool. */
+			assert(Consist::CanAllocateItem());
+			Consist *c = new Consist(v->type);
+
+			c->front = v;
 		}
 
 		if (_old_order_ptr != 0 && _old_order_ptr != 0xFFFFFFFF) {

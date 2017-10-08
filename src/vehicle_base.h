@@ -23,6 +23,7 @@
 #include "transport_type.h"
 #include "group_type.h"
 #include "base_consist.h"
+#include "consist_type.h"
 #include "network/network.h"
 #include <list>
 #include <map>
@@ -220,6 +221,8 @@ private:
 
 	Vehicle *next_shared;               ///< pointer to the next vehicle that shares the order
 	Vehicle *previous_shared;           ///< NOSAVE: pointer to the previous vehicle in the shared order chain
+
+	Consist *consist;                   ///< NOSAVE: pointer to the consist of this vehicle.
 
 public:
 	friend const SaveLoad *GetVehicleDescription(VehicleType vt); ///< So we can use private/protected variables in the saveload code
@@ -615,6 +618,14 @@ public:
 		while (v->Next() != NULL) v = v->Next();
 		return v;
 	}
+
+	/**
+	 * Get the consist this vehicle is a part of.
+	 * @return Pointer to the consist or NULL if not part of a consist.
+	 */
+	inline Consist *GetConsist() const { return this->consist; }
+
+	void SetConsist(Consist *consist);
 
 	/**
 	 * Get the vehicle at offset \a n of this vehicle chain.

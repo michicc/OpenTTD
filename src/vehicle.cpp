@@ -52,6 +52,7 @@
 #include "gamelog.h"
 #include "linkgraph/linkgraph.h"
 #include "linkgraph/refresh.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -840,6 +841,11 @@ void Vehicle::PreDestructor()
 	StopGlobalFollowVehicle(this);
 
 	ReleaseDisastersTargetingVehicle(this->index);
+
+	if (this->IsPrimaryVehicle()) {
+		delete this->GetConsist();
+		this->SetConsist(NULL);
+	}
 }
 
 Vehicle::~Vehicle()
@@ -2626,6 +2632,17 @@ void Vehicle::SetNext(Vehicle *next)
 		for (Vehicle *v = this->next; v != NULL; v = v->Next()) {
 			v->first = this->first;
 		}
+	}
+}
+
+/**
+ * Set the consist this and all following vehicles are a part of.
+ * @param consist The consist.
+ */
+void Vehicle::SetConsist(Consist *consist)
+{
+	for (Vehicle *v = this; v != NULL; v = v->Next()) {
+		v->consist = consist;
 	}
 }
 

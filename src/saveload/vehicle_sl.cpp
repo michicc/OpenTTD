@@ -20,6 +20,7 @@
 #include "../company_base.h"
 #include "../company_func.h"
 #include "../disaster_vehicle.h"
+#include "../consist_base.h"
 
 #include "saveload.h"
 
@@ -258,6 +259,12 @@ void AfterLoadVehicles(bool part_of_load)
 		if (part_of_load) v->fill_percent_te_id = INVALID_TE_ID;
 		v->first = NULL;
 		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = INVALID_ENGINE;
+	}
+
+	Consist *cs;
+	FOR_ALL_CONSISTS(cs) {
+		/* Reinstate consist pointers. */
+		cs->Front()->SetConsist(cs);
 	}
 
 	/* AfterLoadVehicles may also be called in case of NewGRF reload, in this
@@ -925,6 +932,27 @@ void Load_VEHS()
 
 		/* Advanced vehicle lists got added */
 		if (IsSavegameVersionBefore(60)) v->group_id = DEFAULT_GROUP;
+
+		if (IsSavegameVersionBefore(196)) {
+			/* The way to detect the primary vehicle of a chain changed during several
+			 * savegame versions. Waiting for that stuff to be corrected in AfterLoadGame
+			 * is too late, so we have to do a miniature replica here. */
+			bool is_primary = v->IsPrimaryVehicle();
+			if ((v->type == VEH_TRAIN && IsSavegameVersionBefore(17, 1)) || (v->type == VEH_ROAD && IsSavegameVersionBefore(157))) {
+				is_primary = v->subtype == 0;
+			}
+
+			if (is_primary) {
+				/* We have a primary vehicle, create a consist for it. */
+
+				/* Consist pool is the same size as the vehicle pool which means
+				 * there should always be space in the consist pool. */
+				assert(Consist::CanAllocateItem());
+				Consist *c = new Consist(v->type);
+
+				c->front = v;
+			}
+		}
 	}
 }
 

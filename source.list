@@ -10,6 +10,7 @@ cargopacket.cpp
 cargotype.cpp
 cheat.cpp
 command.cpp
+consist.cpp
 console.cpp
 console_cmds.cpp
 cpu.cpp
@@ -159,6 +160,8 @@ company_func.h
 company_gui.h
 company_manager_face.h
 company_type.h
+consist_base.h
+consist_type.h
 console_func.h
 console_gui.h
 console_internal.h

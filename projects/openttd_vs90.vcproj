@@ -476,6 +476,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\..\src\consist.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\..\src\console.cpp"
 				>
 			</File>
@@ -949,6 +953,14 @@
 			</File>
 			<File
 				RelativePath=".\..\src\company_type.h"
+				>
+			</File>
+			<File
+				RelativePath=".\..\src\consist_base.h"
+				>
+			</File>
+			<File
+				RelativePath=".\..\src\consist_type.h"
 				>
 			</File>
 			<File
