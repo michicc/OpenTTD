@@ -129,9 +129,9 @@ public:
 		DEBUG(misc, LANDINFOD_LEVEL, "m3     = %#x", _m[tile].m3);
 		DEBUG(misc, LANDINFOD_LEVEL, "m4     = %#x", _m[tile].m4);
 		DEBUG(misc, LANDINFOD_LEVEL, "m5     = %#x", _m[tile].m5);
-		DEBUG(misc, LANDINFOD_LEVEL, "m6     = %#x", _me[tile].m6);
-		DEBUG(misc, LANDINFOD_LEVEL, "m7     = %#x", _me[tile].m7);
-		DEBUG(misc, LANDINFOD_LEVEL, "m8     = %#x", _me[tile].m8);
+		DEBUG(misc, LANDINFOD_LEVEL, "m6     = %#x", _m[tile].m6);
+		DEBUG(misc, LANDINFOD_LEVEL, "m7     = %#x", _m[tile].m7);
+		DEBUG(misc, LANDINFOD_LEVEL, "m8     = %#x", _m[tile].m8);
 #undef LANDINFOD_LEVEL
 	}
 

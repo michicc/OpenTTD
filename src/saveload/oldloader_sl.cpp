@@ -1467,7 +1467,7 @@ static bool LoadOldMapPart1(LoadgameState *ls, int num)
 {
 	if (_savegame_type == SGT_TTO) {
 		MemSetT(_m, 0, OLD_MAP_SIZE);
-		MemSetT(_me, 0, OLD_MAP_SIZE);
+		MemSetT(_m, 0, OLD_MAP_SIZE);
 	}
 
 	for (uint i = 0; i < OLD_MAP_SIZE; i++) {
@@ -1484,10 +1484,10 @@ static bool LoadOldMapPart1(LoadgameState *ls, int num)
 		}
 		for (uint i = 0; i < OLD_MAP_SIZE / 4; i++) {
 			byte b = ReadByte(ls);
-			_me[i * 4 + 0].m6 = GB(b, 0, 2);
-			_me[i * 4 + 1].m6 = GB(b, 2, 2);
-			_me[i * 4 + 2].m6 = GB(b, 4, 2);
-			_me[i * 4 + 3].m6 = GB(b, 6, 2);
+			_m[i * 4 + 0].m6 = GB(b, 0, 2);
+			_m[i * 4 + 1].m6 = GB(b, 2, 2);
+			_m[i * 4 + 2].m6 = GB(b, 4, 2);
+			_m[i * 4 + 3].m6 = GB(b, 6, 2);
 		}
 	}
 
