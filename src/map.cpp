@@ -30,7 +30,6 @@ uint _map_size;      ///< The number of tiles on the map
 uint _map_tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
 Tile *_m = NULL;          ///< Tiles of the map
-TileExtended *_me = NULL; ///< Extended Tiles of the map
 
 
 /**
@@ -59,10 +58,8 @@ void AllocateMap(uint size_x, uint size_y)
 	_map_tile_mask = _map_size - 1;
 
 	free(_m);
-	free(_me);
 
 	_m = CallocT<Tile>(_map_size);
-	_me = CallocT<TileExtended>(_map_size);
 }
 
 

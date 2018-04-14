@@ -27,8 +27,8 @@ static inline void MakeVoid(TileIndex t)
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
 	_m[t].m5 = 0;
-	_me[t].m6 = 0;
-	_me[t].m7 = 0;
+	_m[t].m6 = 0;
+	_m[t].m7 = 0;
 }
 
 #endif /* VOID_MAP_H */

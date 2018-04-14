@@ -24,18 +24,9 @@ struct Tile {
 	byte   m3;          ///< General purpose
 	byte   m4;          ///< General purpose
 	byte   m5;          ///< General purpose
-};
-
-assert_compile(sizeof(Tile) == 8);
-
-/**
- * Data that is stored per tile. Also used Tile for this.
- * Look at docs/landscape.html for the exact meaning of the members.
- */
-struct TileExtended {
-	byte m6;   ///< General purpose
-	byte m7;   ///< Primarily used for newgrf support
-	uint16 m8; ///< General purpose
+	byte   m6;          ///< General purpose
+	byte   m7;          ///< Primarily used for newgrf support
+	uint16 m8;          ///< General purpose
 };
 
 /**
