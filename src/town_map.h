@@ -83,7 +83,7 @@ static inline void SetHouseType(TileIndex t, HouseID house_id)
  */
 static inline bool LiftHasDestination(TileIndex t)
 {
-	return HasBit(_me[t].m7, 0);
+	return HasBit(_m[t].m7, 0);
 }
 
 /**
@@ -94,8 +94,8 @@ static inline bool LiftHasDestination(TileIndex t)
  */
 static inline void SetLiftDestination(TileIndex t, byte dest)
 {
-	SetBit(_me[t].m7, 0);
-	SB(_me[t].m7, 1, 3, dest);
+	SetBit(_m[t].m7, 0);
+	SB(_m[t].m7, 1, 3, dest);
 }
 
 /**
@@ -105,7 +105,7 @@ static inline void SetLiftDestination(TileIndex t, byte dest)
  */
 static inline byte GetLiftDestination(TileIndex t)
 {
-	return GB(_me[t].m7, 1, 3);
+	return GB(_m[t].m7, 1, 3);
 }
 
 /**
@@ -116,7 +116,7 @@ static inline byte GetLiftDestination(TileIndex t)
  */
 static inline void HaltLift(TileIndex t)
 {
-	SB(_me[t].m7, 0, 4, 0);
+	SB(_m[t].m7, 0, 4, 0);
 }
 
 /**
@@ -126,7 +126,7 @@ static inline void HaltLift(TileIndex t)
  */
 static inline byte GetLiftPosition(TileIndex t)
 {
-	return GB(_me[t].m6, 2, 6);
+	return GB(_m[t].m6, 2, 6);
 }
 
 /**
@@ -136,7 +136,7 @@ static inline byte GetLiftPosition(TileIndex t)
  */
 static inline void SetLiftPosition(TileIndex t, byte pos)
 {
-	SB(_me[t].m6, 2, 6, pos);
+	SB(_m[t].m6, 2, 6, pos);
 }
 
 /**
@@ -315,7 +315,7 @@ static inline byte GetHouseTriggers(TileIndex t)
 static inline byte GetHouseProcessingTime(TileIndex t)
 {
 	assert(IsTileType(t, MP_HOUSE));
-	return GB(_me[t].m6, 2, 6);
+	return GB(_m[t].m6, 2, 6);
 }
 
 /**
@@ -327,7 +327,7 @@ static inline byte GetHouseProcessingTime(TileIndex t)
 static inline void SetHouseProcessingTime(TileIndex t, byte time)
 {
 	assert(IsTileType(t, MP_HOUSE));
-	SB(_me[t].m6, 2, 6, time);
+	SB(_m[t].m6, 2, 6, time);
 }
 
 /**
@@ -338,7 +338,7 @@ static inline void SetHouseProcessingTime(TileIndex t, byte time)
 static inline void DecHouseProcessingTime(TileIndex t)
 {
 	assert(IsTileType(t, MP_HOUSE));
-	_me[t].m6 -= 1 << 2;
+	_m[t].m6 -= 1 << 2;
 }
 
 /**
