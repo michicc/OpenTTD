@@ -1498,7 +1498,7 @@ static const Roadside _town_road_types_2[][2] = {
 };
 
 
-static void TileLoop_Road(TileIndex tile)
+static bool TileLoop_Road(TileIndex tile, Tile *&road_tile)
 {
 	switch (_settings_game.game_creation.landscape) {
 		case LT_ARCTIC:
@@ -1516,7 +1516,7 @@ static void TileLoop_Road(TileIndex tile)
 			break;
 	}
 
-	if (IsRoadDepot(tile)) return;
+	if (IsRoadDepot(tile)) return true;
 
 	const Town *t = ClosestTownFromTile(tile, UINT_MAX);
 	if (!HasRoadWorks(tile)) {
@@ -1539,7 +1539,7 @@ static void TileLoop_Road(TileIndex tile)
 						0,
 						EV_BULLDOZER);
 					MarkTileDirtyByTile(tile);
-					return;
+					return true;
 				}
 			}
 		}
@@ -1550,7 +1550,7 @@ static void TileLoop_Road(TileIndex tile)
 			Roadside cur_rs = GetRoadside(tile);
 
 			/* We have our desired type, do nothing */
-			if (cur_rs == new_rs[0]) return;
+			if (cur_rs == new_rs[0]) return true;
 
 			/* We have the pre-type of the desired type, switch to the desired type */
 			if (cur_rs == new_rs[1]) {
@@ -1580,6 +1580,7 @@ static void TileLoop_Road(TileIndex tile)
 
 		MarkTileDirtyByTile(tile);
 	}
+	return true;
 }
 
 static bool ClickTile_Road(TileIndex tile)

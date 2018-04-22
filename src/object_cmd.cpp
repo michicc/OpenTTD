@@ -576,7 +576,7 @@ static void GetTileDesc_Object(TileIndex tile, TileDesc *td)
 	}
 }
 
-static void TileLoop_Object(TileIndex tile)
+static bool TileLoop_Object(TileIndex tile, Tile *&tptr)
 {
 	const ObjectSpec *spec = ObjectSpec::GetByTile(tile);
 	if (spec->flags & OBJECT_FLAG_ANIMATION) {
@@ -585,9 +585,9 @@ static void TileLoop_Object(TileIndex tile)
 		if (o->location.tile == tile) TriggerObjectAnimation(o, OAT_256_TICKS, spec);
 	}
 
-	if (IsTileOnWater(tile)) TileLoop_Water(tile);
+	if (IsTileOnWater(tile)) TileLoop_Water(tile, tptr);
 
-	if (!IsObjectType(tile, OBJECT_HQ)) return;
+	if (!IsObjectType(tile, OBJECT_HQ)) return true;
 
 	/* HQ accepts passenger and mail; but we have to divide the values
 	 * between 4 tiles it occupies! */
@@ -614,6 +614,7 @@ static void TileLoop_Object(TileIndex tile)
 		if (EconomyIsInRecession()) amt = (amt + 1) >> 1;
 		MoveGoodsToStation(CT_MAIL, amt, ST_HEADQUARTERS, GetTileOwner(tile), stations.GetStations());
 	}
+	return true;
 }
 
 
