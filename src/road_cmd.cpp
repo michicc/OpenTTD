@@ -1595,7 +1595,7 @@ static const TrackBits _road_trackbits[16] = {
 	TRACK_BIT_ALL,                                   // ROAD_ALL
 };
 
-static TrackStatus GetTileTrackStatus_Road(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Road(TileIndex tile, Tile *road_tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TrackdirBits trackdirbits = TRACKDIR_BIT_NONE;
 	TrackdirBits red_signals = TRACKDIR_BIT_NONE; // crossing barred
