@@ -71,10 +71,10 @@ enum TreeGround {
  * @return The treetype of the given tile with trees
  * @pre Tile t must be of type MP_TREES
  */
-static inline TreeType GetTreeType(TileIndex t)
+static inline TreeType GetTreeType(const Tile *t)
 {
 	assert(IsTileType(t, MP_TREES));
-	return (TreeType)_m[t].m3;
+	return (TreeType)t->m3;
 }
 
 /**
@@ -146,10 +146,10 @@ static inline void SetTreeGroundDensity(TileIndex t, TreeGround g, uint d)
  * @return The number of trees (1-4)
  * @pre Tile must be of type MP_TREES
  */
-static inline uint GetTreeCount(TileIndex t)
+static inline uint GetTreeCount(const Tile *t)
 {
 	assert(IsTileType(t, MP_TREES));
-	return GB(_m[t].m5, 6, 2) + 1;
+	return GB(t->m5, 6, 2) + 1;
 }
 
 /**
@@ -163,10 +163,10 @@ static inline uint GetTreeCount(TileIndex t)
  * @param c The value to add (or reduce) on the tree-count value
  * @pre Tile must be of type MP_TREES
  */
-static inline void AddTreeCount(TileIndex t, int c)
+static inline void AddTreeCount(Tile *t, int c)
 {
 	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	_m[t].m5 += c << 6;
+	t->m5 += c << 6;
 }
 
 /**
@@ -178,10 +178,10 @@ static inline void AddTreeCount(TileIndex t, int c)
  * @return The tree growth status
  * @pre Tile must be of type MP_TREES
  */
-static inline uint GetTreeGrowth(TileIndex t)
+static inline uint GetTreeGrowth(const Tile *t)
 {
 	assert(IsTileType(t, MP_TREES));
-	return GB(_m[t].m5, 0, 3);
+	return GB(t->m5, 0, 3);
 }
 
 /**
@@ -193,10 +193,10 @@ static inline uint GetTreeGrowth(TileIndex t)
  * @param a The value to add on the tree growth status
  * @pre Tile must be of type MP_TREES
  */
-static inline void AddTreeGrowth(TileIndex t, int a)
+static inline void AddTreeGrowth(Tile *t, int a)
 {
 	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	_m[t].m5 += a;
+	t->m5 += a;
 }
 
 /**
@@ -209,10 +209,10 @@ static inline void AddTreeGrowth(TileIndex t, int a)
  * @param g The new value
  * @pre Tile must be of type MP_TREES
  */
-static inline void SetTreeGrowth(TileIndex t, uint g)
+static inline void SetTreeGrowth(Tile *t, uint g)
 {
 	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	SB(_m[t].m5, 0, 3, g);
+	SB(t->m5, 0, 3, g);
 }
 
 /**
@@ -223,10 +223,10 @@ static inline void SetTreeGrowth(TileIndex t, uint g)
  * @param t The tile to get the counter value from
  * @pre Tile must be of type MP_TREES
  */
-static inline uint GetTreeCounter(TileIndex t)
+static inline uint GetTreeCounter(const Tile *t)
 {
 	assert(IsTileType(t, MP_TREES));
-	return GB(_m[t].m2, 0, 4);
+	return GB(t->m2, 0, 4);
 }
 
 /**
@@ -238,10 +238,10 @@ static inline uint GetTreeCounter(TileIndex t)
  * @param a The value to add on the tick counter
  * @pre Tile must be of type MP_TREES
  */
-static inline void AddTreeCounter(TileIndex t, int a)
+static inline void AddTreeCounter(Tile *t, int a)
 {
 	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	_m[t].m2 += a;
+	t->m2 += a;
 }
 
 /**
@@ -253,10 +253,10 @@ static inline void AddTreeCounter(TileIndex t, int a)
  * @param c The new tick counter value
  * @pre Tile must be of type MP_TREES
  */
-static inline void SetTreeCounter(TileIndex t, uint c)
+static inline void SetTreeCounter(Tile *t, uint c)
 {
 	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	SB(_m[t].m2, 0, 4, c);
+	SB(t->m2, 0, 4, c);
 }
 
 /**
