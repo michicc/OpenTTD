@@ -46,19 +46,6 @@ static const uint TREE_COUNT_RAINFOREST   = TREE_CACTUS     - TREE_RAINFOREST;  
 static const uint TREE_COUNT_SUB_TROPICAL = TREE_TOYLAND    - TREE_SUB_TROPICAL; ///< number of tree types for the 'sub-tropic part' of a sub-tropic map.
 static const uint TREE_COUNT_TOYLAND      = 9;                                   ///< number of tree types on a toyland map.
 
-/**
- * Enumeration for ground types of tiles with trees.
- *
- * This enumeration defines the ground types for tiles with trees on it.
- */
-enum TreeGround {
-	TREE_GROUND_GRASS       = 0, ///< normal grass
-	TREE_GROUND_ROUGH       = 1, ///< some rough tile
-	TREE_GROUND_SNOW_DESERT = 2, ///< a desert or snow tile, depend on landscape
-	TREE_GROUND_SHORE       = 3, ///< shore
-	TREE_GROUND_ROUGH_SNOW  = 4, ///< A snow tile that is rough underneath.
-};
-
 
 /**
  * Returns the treetype of a tile.
@@ -79,65 +66,7 @@ static inline TreeType GetTreeType(const Tile *t)
 }
 
 /**
- * Returns the groundtype for tree tiles.
- *
- * This function returns the groundtype of a tile with trees.
- *
- * @param t The tile to get the groundtype from
- * @return The groundtype of the tile
- * @pre Tile must be of type MP_TREES
- */
-static inline TreeGround GetTreeGround(TileIndex t)
-{
-	assert(IsTileType(t, MP_TREES));
-	return (TreeGround)GB(_m[t].m2, 6, 3);
-}
-
-/**
- * Returns the 'density' of a tile with trees.
- *
- * This function returns the density of a tile which got trees. Note
- * that this value doesn't count the number of trees on a tile, use
- * #GetTreeCount instead. This function instead returns some kind of
- * groundtype of the tile. As the map-array is finite in size and
- * the informations about the trees must be saved somehow other
- * informations about a tile must be saved somewhere encoded in the
- * tile. So this function returns the density of a tile for sub arctic
- * and sub tropical games. This means for sub arctic the type of snowline
- * (0 to 3 for all 4 types of snowtiles) and for sub tropical the value
- * 3 for a desert (and 0 for non-desert). The function name is not read as
- * "get the tree density of a tile" but "get the density of a tile which got trees".
- *
- * @param t The tile to get the 'density'
- * @pre Tile must be of type MP_TREES
- * @see GetTreeCount
- */
-static inline uint GetTreeDensity(TileIndex t)
-{
-	assert(IsTileType(t, MP_TREES));
-	return GB(_m[t].m2, 4, 2);
-}
-
-/**
- * Set the density and ground type of a tile with trees.
- *
- * This functions saves the ground type and the density which belongs to it
- * for a given tile.
- *
- * @param t The tile to set the density and ground type
- * @param g The ground type to save
- * @param d The density to save with
- * @pre Tile must be of type MP_TREES
- */
-static inline void SetTreeGroundDensity(TileIndex t, TreeGround g, uint d)
-{
-	assert(IsTileType(t, MP_TREES)); // XXX incomplete
-	SB(_m[t].m2, 4, 2, d);
-	SB(_m[t].m2, 6, 3, g);
 	SetWaterClass(t, g == TREE_GROUND_SHORE ? WATER_CLASS_SEA : WATER_CLASS_INVALID);
-}
-
-/**
  * Returns the number of trees on a tile.
  *
  * This function returns the number of trees of a tile (1-4).
@@ -270,19 +199,16 @@ static inline void SetTreeCounter(Tile *t, uint c)
  * @param type The type of the tree
  * @param count the number of trees
  * @param growth the growth status
- * @param ground the ground type
- * @param density the density (not the number of trees)
  */
-static inline void MakeTree(TileIndex t, TreeType type, uint count, uint growth, TreeGround ground, uint density)
+static inline Tile *MakeTree(TileIndex tile, TreeType type, uint count, uint growth)
 {
-	SetTileType(t, MP_TREES);
+	Tile *t = _m.NewTile(tile, MP_TREES);
+
 	SetTileOwner(t, OWNER_NONE);
-	_m[t].m2 = ground << 6 | density << 4 | 0;
-	_m[t].m3 = type;
-	_m[t].m4 = 0 << 5 | 0 << 2;
-	_m[t].m5 = count << 6 | growth;
-	SB(_m[t].m6, 2, 4, 0);
-	_m[t].m7 = 0;
+	t->m3 = type;
+	t->m5 = count << 6 | growth;
+
+	return t;
 }
 
 #endif /* TREE_MAP_H */

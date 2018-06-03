@@ -190,7 +190,7 @@ static bool CMSAWater(TileIndex tile)
  */
 static bool CMSATree(TileIndex tile)
 {
-	return IsTileType(tile, MP_TREES);
+	return HasTileByType(tile, MP_TREES);
 }
 
 #define M(x) ((x) - STR_SV_STNAME)

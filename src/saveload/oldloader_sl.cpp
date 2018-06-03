@@ -50,7 +50,7 @@ void FixOldMapArray()
 	 * (without assigned station struct) */
 	MemSetT(&_m[0], 0);
 	SetTileType((TileIndex)0, MP_WATER);
-	SetTileOwner(0, OWNER_WATER);
+	SetTileOwner((TileIndex)0, OWNER_WATER);
 }
 
 static void FixTTDMapArray()
