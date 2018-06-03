@@ -927,11 +927,12 @@ static TrackStatus GetTileTrackStatus_Industry(TileIndex tile, TransportType mod
 	return 0;
 }
 
-static void ChangeTileOwner_Industry(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Industry(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
 	/* If the founder merges, the industry was created by the merged company */
 	Industry *i = Industry::GetByTile(tile);
 	if (i->founder == old_owner) i->founder = (new_owner == INVALID_OWNER) ? OWNER_NONE : new_owner;
+	return true;
 }
 
 /**

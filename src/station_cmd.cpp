@@ -3950,7 +3950,7 @@ void DeleteOilRig(TileIndex tile)
 	if (!st->IsInUse()) delete st;
 }
 
-static void ChangeTileOwner_Station(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
 	if (IsRoadStopTile(tile)) {
 		for (RoadType rt = ROADTYPE_ROAD; rt < ROADTYPE_END; rt++) {
@@ -3966,7 +3966,7 @@ static void ChangeTileOwner_Station(TileIndex tile, Owner old_owner, Owner new_o
 		}
 	}
 
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return true;
 
 	if (new_owner != INVALID_OWNER) {
 		/* Update company infrastructure counts. Only do it here
@@ -4027,6 +4027,7 @@ static void ChangeTileOwner_Station(TileIndex tile, Owner old_owner, Owner new_o
 			if ((IsTileType(tile, MP_WATER) || IsBuoyTile(tile)) && IsTileOwner(tile, old_owner)) SetTileOwner(tile, OWNER_NONE);
 		}
 	}
+	return true;
 }
 
 /**

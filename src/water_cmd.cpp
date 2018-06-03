@@ -1262,9 +1262,9 @@ static bool ClickTile_Water(TileIndex tile, Tile *tptr)
 	return false;
 }
 
-static void ChangeTileOwner_Water(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Water(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return true;
 
 	bool is_lock_middle = IsLock(tile) && GetLockPart(tile) == LOCK_PART_MIDDLE;
 
@@ -1284,7 +1284,7 @@ static void ChangeTileOwner_Water(TileIndex tile, Owner old_owner, Owner new_own
 		}
 
 		SetTileOwner(tile, new_owner);
-		return;
+		return true;
 	}
 
 	/* Remove depot */
@@ -1296,6 +1296,7 @@ static void ChangeTileOwner_Water(TileIndex tile, Owner old_owner, Owner new_own
 		if (GetWaterClass(tile) == WATER_CLASS_CANAL && !is_lock_middle) Company::Get(old_owner)->infrastructure.water--;
 		SetTileOwner(tile, OWNER_NONE);
 	}
+	return true;
 }
 
 static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *v, TileIndex tile, int x, int y)

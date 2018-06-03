@@ -114,7 +114,7 @@ typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex tile, Tile *tptr);
 typedef void AnimateTileProc(TileIndex tile, Tile *tptr);
 typedef bool TileLoopProc(TileIndex tile, Tile *&tptr);
-typedef void ChangeTileOwnerProc(TileIndex tile, Owner old_owner, Owner new_owner);
+typedef bool ChangeTileOwnerProc(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner);
 
 /** @see VehicleEnterTileStatus to see what the return values mean */
 typedef VehicleEnterTileStatus VehicleEnterTileProc(Vehicle *v, TileIndex tile, int x, int y);

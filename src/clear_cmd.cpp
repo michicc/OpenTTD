@@ -372,9 +372,9 @@ static void GetTileDesc_Clear(TileIndex tile, Tile *tptr, TileDesc *td)
 	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 }
 
-static void ChangeTileOwner_Clear(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Clear(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
-	return;
+	return true;
 }
 
 static CommandCost TerraformTile_Clear(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
