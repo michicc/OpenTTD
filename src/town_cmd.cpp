@@ -3504,7 +3504,7 @@ void TownsYearlyLoop()
 	}
 }
 
-static CommandCost TerraformTile_Town(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Town(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	if (AutoslopeEnabled()) {
 		HouseID house = GetHouseType(tile);
@@ -3529,7 +3529,7 @@ static CommandCost TerraformTile_Town(TileIndex tile, DoCommandFlag flags, int z
 		}
 	}
 
-	return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 /** Tile callback functions for a town */

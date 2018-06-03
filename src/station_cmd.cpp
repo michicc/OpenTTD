@@ -4112,7 +4112,7 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 	return CMD_ERROR;
 }
 
-static CommandCost TerraformTile_Station(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	if (_settings_game.construction.build_on_slopes && AutoslopeEnabled()) {
 		/* TODO: If you implement newgrf callback 149 'land slope check', you have to decide what to do with it here.
@@ -4145,7 +4145,7 @@ static CommandCost TerraformTile_Station(TileIndex tile, DoCommandFlag flags, in
 			}
 		}
 	}
-	return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 /**

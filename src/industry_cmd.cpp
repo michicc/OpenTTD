@@ -2858,7 +2858,7 @@ bool IndustrySpec::UsesSmoothEconomy() const
 		!(HasBit(this->callback_mask, CBM_IND_MONTHLYPROD_CHANGE) || HasBit(this->callback_mask, CBM_IND_PRODUCTION_CHANGE) || HasBit(this->callback_mask, CBM_IND_PROD_CHANGE_BUILD)); // production change callbacks
 }
 
-static CommandCost TerraformTile_Industry(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Industry(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	if (AutoslopeEnabled()) {
 		/* We imitate here TTDP's behaviour:
@@ -2884,7 +2884,7 @@ static CommandCost TerraformTile_Industry(TileIndex tile, DoCommandFlag flags, i
 			}
 		}
 	}
-	return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 extern const TileTypeProcs _tile_type_industry_procs = {
