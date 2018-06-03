@@ -73,7 +73,6 @@ struct TileDesc {
  * @param ti Information about the tile to draw
  */
 typedef void DrawTileProc(TileInfo *ti);
-typedef int GetSlopeZProc(TileIndex tile, uint x, uint y);
 typedef CommandCost ClearTileProc(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted);
 
 /**
@@ -145,7 +144,6 @@ typedef CommandCost TerraformTileProc(TileIndex tile, Tile *tptr, DoCommandFlag 
  */
 struct TileTypeProcs {
 	DrawTileProc *draw_tile_proc;                  ///< Called to render the tile and its contents to the screen
-	GetSlopeZProc *get_slope_z_proc;
 	ClearTileProc *clear_tile_proc;
 	AddAcceptedCargoProc *add_accepted_cargo_proc; ///< Adds accepted cargo of the tile to cargo array supplied as parameter
 	GetTileDescProc *get_tile_desc_proc;           ///< Get a description of a tile (for the 'land area information' tool)
