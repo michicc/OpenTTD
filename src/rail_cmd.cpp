@@ -2750,7 +2750,7 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, TransportType mode, 
 	return CombineTrackStatus(TrackBitsToTrackdirBits(trackbits), red_signals);
 }
 
-static bool ClickTile_Track(TileIndex tile)
+static bool ClickTile_Track(TileIndex tile, Tile *rail_tile)
 {
 	if (!IsRailDepot(tile)) return false;
 
