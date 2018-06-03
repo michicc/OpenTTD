@@ -103,7 +103,7 @@ typedef void GetTileDescProc(TileIndex tile, Tile *tptr, TileDesc *td);
  * @param sub_mode used to differentiate between different kinds within the mode
  * @return the track status information
  */
-typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side);
+typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, Tile *tptr, TransportType mode, uint sub_mode, DiagDirection side);
 
 /**
  * Tile callback function signature for obtaining the produced cargo of a tile.
