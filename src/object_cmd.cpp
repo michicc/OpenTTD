@@ -354,17 +354,13 @@ CommandCost CmdBuildObject(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 }
 
 
-static Foundation GetFoundation_Object(TileIndex tile, Slope tileh);
-
-static void DrawTile_Object(TileInfo *ti)
+static void DrawTile_Object(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	ObjectType type = GetObjectType(ti->tile);
 	const ObjectSpec *spec = ObjectSpec::Get(type);
 
 	/* Fall back for when the object doesn't exist anymore. */
 	if (!spec->enabled) type = OBJECT_TRANSMITTER;
-
-	if ((spec->flags & OBJECT_FLAG_HAS_NO_FOUNDATION) == 0) DrawFoundation(ti, GetFoundation_Object(ti->tile, ti->tileh));
 
 	if (type < NEW_OBJECT_OFFSET) {
 		const DrawTileSprites *dts = NULL;
@@ -382,10 +378,10 @@ static void DrawTile_Object(TileInfo *ti)
 			/* If an object has no foundation, but tries to draw a (flat) ground
 			 * type... we have to be nice and convert that for them. */
 			switch (dts->ground.sprite) {
-				case SPR_FLAT_BARE_LAND:          DrawClearLandTile(ti, 0); break;
-				case SPR_FLAT_1_THIRD_GRASS_TILE: DrawClearLandTile(ti, 1); break;
-				case SPR_FLAT_2_THIRD_GRASS_TILE: DrawClearLandTile(ti, 2); break;
-				case SPR_FLAT_GRASS_TILE:         DrawClearLandTile(ti, 3); break;
+				case SPR_FLAT_BARE_LAND:          DrawClearLandTile(ti, 0, draw_halftile, halftile_corner); break;
+				case SPR_FLAT_1_THIRD_GRASS_TILE: DrawClearLandTile(ti, 1, draw_halftile, halftile_corner); break;
+				case SPR_FLAT_2_THIRD_GRASS_TILE: DrawClearLandTile(ti, 2, draw_halftile, halftile_corner); break;
+				case SPR_FLAT_GRASS_TILE:         DrawClearLandTile(ti, 3, draw_halftile, halftile_corner); break;
 				default: DrawGroundSprite(dts->ground.sprite, palette);     break;
 			}
 		} else {
@@ -411,9 +407,11 @@ static void DrawTile_Object(TileInfo *ti)
 	DrawBridgeMiddle(ti);
 }
 
-static Foundation GetFoundation_Object(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Object(TileIndex tile, Tile *tptr, Slope tileh)
 {
-	return IsObjectType(tile, OBJECT_OWNED_LAND) ? FOUNDATION_NONE : FlatteningFoundation(tileh);
+	ObjectType type = GetObjectType(tile);
+	const ObjectSpec *spec = ObjectSpec::Get(type);
+	return (spec->flags & OBJECT_FLAG_HAS_NO_FOUNDATION) != 0 ? FOUNDATION_NONE : FlatteningFoundation(tileh);
 }
 
 /**

@@ -208,8 +208,10 @@ static inline DiagDirection RandomDiagDir()
  * House Tile drawing handler.
  * Part of the tile loop process
  * @param ti TileInfo of the tile to draw
+ * @param draw_halftile Are we drawing the upper part of a half-tile?
+ * @param halftile_corner The corner where the upper half-tile is or CORNER_INVALID if no half-tile.
  */
-static void DrawTile_Town(TileInfo *ti)
+static void DrawTile_Town(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	HouseID house_id = GetHouseType(ti->tile);
 
@@ -227,8 +229,6 @@ static void DrawTile_Town(TileInfo *ti)
 
 	/* Retrieve pointer to the draw town tile struct */
 	const DrawBuildingsTileStruct *dcts = &_town_draw_tile_data[house_id << 4 | TileHash2Bit(ti->x, ti->y) << 2 | GetHouseBuildingStage(ti->tile)];
-
-	if (ti->tileh != SLOPE_FLAT) DrawFoundation(ti, FOUNDATION_LEVELED);
 
 	DrawGroundSprite(dcts->ground.sprite, dcts->ground.pal);
 
@@ -259,7 +259,7 @@ static void DrawTile_Town(TileInfo *ti)
 }
 
 /** Tile callback routine */
-static Foundation GetFoundation_Town(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Town(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	HouseID hid = GetHouseType(tile);
 
