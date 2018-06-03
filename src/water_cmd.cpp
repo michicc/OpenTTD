@@ -875,15 +875,6 @@ void DrawShipDepotSprite(int x, int y, Axis axis, DepotPart part)
 	DrawOrigTileSeqInGUI(x, y, &dts, COMPANY_SPRITE_COLOUR(_local_company));
 }
 
-
-static int GetSlopePixelZ_Water(TileIndex tile, uint x, uint y)
-{
-	int z;
-	Slope tileh = GetTilePixelSlope(tile, &z);
-
-	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-}
-
 static Foundation GetFoundation_Water(TileIndex tile, Slope tileh)
 {
 	return FOUNDATION_NONE;
@@ -1323,7 +1314,6 @@ static CommandCost TerraformTile_Water(TileIndex tile, Tile *tptr, DoCommandFlag
 
 extern const TileTypeProcs _tile_type_water_procs = {
 	DrawTile_Water,           // draw_tile_proc
-	GetSlopePixelZ_Water,     // get_slope_z_proc
 	ClearTile_Water,          // clear_tile_proc
 	NULL,                     // add_accepted_cargo_proc
 	GetTileDesc_Water,        // get_tile_desc_proc

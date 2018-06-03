@@ -25,17 +25,6 @@ static void DrawTile_Void(TileInfo *ti)
 	DrawGroundSprite(SPR_FLAT_BARE_LAND + SlopeToSpriteOffset(ti->tileh), PALETTE_ALL_BLACK);
 }
 
-
-static int GetSlopePixelZ_Void(TileIndex tile, uint x, uint y)
-{
-	/* This function may be called on tiles outside the map, don't asssume
-	 * that 'tile' is a valid tile index. See GetSlopePixelZOutsideMap. */
-	int z;
-	Slope tileh = GetTilePixelSlopeOutsideMap(x >> 4, y >> 4, &z);
-
-	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-}
-
 static Foundation GetFoundation_Void(TileIndex tile, Slope tileh)
 {
 	return FOUNDATION_NONE;
@@ -76,7 +65,6 @@ static CommandCost TerraformTile_Void(TileIndex tile, Tile *tptr, DoCommandFlag 
 
 extern const TileTypeProcs _tile_type_void_procs = {
 	DrawTile_Void,            // draw_tile_proc
-	GetSlopePixelZ_Void,      // get_slope_z_proc
 	ClearTile_Void,           // clear_tile_proc
 	NULL,                     // add_accepted_cargo_proc
 	GetTileDesc_Void,         // get_tile_desc_proc
