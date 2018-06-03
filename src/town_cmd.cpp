@@ -652,7 +652,7 @@ static void AddAcceptedCargo_Town(TileIndex tile, CargoArray &acceptance, CargoT
 	}
 }
 
-static void GetTileDesc_Town(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Town(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	const HouseID house = GetHouseType(tile);
 	const HouseSpec *hs = HouseSpec::Get(house);
@@ -683,6 +683,7 @@ static void GetTileDesc_Town(TileIndex tile, TileDesc *td)
 	}
 
 	td->owner[0] = OWNER_TOWN;
+	td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 }
 
 static TrackStatus GetTileTrackStatus_Town(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)

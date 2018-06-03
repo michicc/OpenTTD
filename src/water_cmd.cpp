@@ -889,7 +889,7 @@ static Foundation GetFoundation_Water(TileIndex tile, Slope tileh)
 	return FOUNDATION_NONE;
 }
 
-static void GetTileDesc_Water(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Water(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	switch (GetWaterTileType(tile)) {
 		case WATER_TILE_CLEAR:
@@ -910,6 +910,7 @@ static void GetTileDesc_Water(TileIndex tile, TileDesc *td)
 	}
 
 	td->owner[0] = GetTileOwner(tile);
+	if (td->owner[0] != OWNER_NONE && td->owner[0] != OWNER_WATER) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 }
 
 /**
