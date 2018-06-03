@@ -1251,14 +1251,7 @@ static void DrawRoadBits(TileInfo *ti)
 	SpriteID image = 0;
 	PaletteID pal = PAL_NONE;
 
-	if (ti->tileh != SLOPE_FLAT) {
-		DrawFoundation(ti, GetRoadFoundation(ti->tileh, road | tram));
-
-		/* DrawFoundation() modifies ti.
-		 * Default sloped sprites.. */
-		if (ti->tileh != SLOPE_FLAT) image = _road_sloped_sprites[ti->tileh - 1] + SPR_ROAD_SLOPE_START;
-	}
-
+	if (ti->tileh != SLOPE_FLAT) image = _road_sloped_sprites[ti->tileh - 1] + SPR_ROAD_SLOPE_START;
 	if (image == 0) image = _road_tile_sprites_1[road != ROAD_NONE ? road : tram];
 
 	Roadside roadside = GetRoadside(ti->tile);
@@ -1327,7 +1320,7 @@ static void DrawRoadBits(TileInfo *ti)
 }
 
 /** Tile callback function for rendering a road tile to the screen */
-static void DrawTile_Road(TileInfo *ti)
+static void DrawTile_Road(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	switch (GetRoadTileType(ti->tile)) {
 		case ROAD_TILE_NORMAL:
@@ -1335,8 +1328,6 @@ static void DrawTile_Road(TileInfo *ti)
 			break;
 
 		case ROAD_TILE_CROSSING: {
-			if (ti->tileh != SLOPE_FLAT) DrawFoundation(ti, FOUNDATION_LEVELED);
-
 			PaletteID pal = PAL_NONE;
 			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
 
@@ -1400,8 +1391,6 @@ static void DrawTile_Road(TileInfo *ti)
 
 		default:
 		case ROAD_TILE_DEPOT: {
-			if (ti->tileh != SLOPE_FLAT) DrawFoundation(ti, FOUNDATION_LEVELED);
-
 			PaletteID palette = COMPANY_SPRITE_COLOUR(GetTileOwner(ti->tile));
 
 			const DrawTileSprites *dts;
@@ -1456,7 +1445,7 @@ void UpdateNearestTownForRoadTiles(bool invalidate)
 	}
 }
 
-static Foundation GetFoundation_Road(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Road(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	if (IsNormalRoad(tile)) {
 		return GetRoadFoundation(tileh, GetAllRoadBits(tile));

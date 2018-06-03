@@ -179,7 +179,7 @@ uint ApplyFoundationToSlope(Foundation f, Slope *s)
 {
 	if (!IsFoundation(f)) return 0;
 
-	if (IsLeveledFoundation(f)) {
+	if (IsLeveledFoundation(f) || f == FOUNDATION_SPECIAL) {
 		uint dz = 1 + (IsSteepSlope(*s) ? 1 : 0);
 		*s = SLOPE_FLAT;
 		return dz;
@@ -450,7 +450,15 @@ void GetSlopePixelZOnEdge(Slope tileh, DiagDirection edge, int *z1, int *z2)
 Slope GetFoundationSlope(TileIndex tile, int *z)
 {
 	Slope tileh = GetTileSlope(tile, z);
-	Foundation f = _tile_type_procs[GetTileType(tile)]->get_foundation_proc(tile, tileh);
+	/* Get the foundations of the tile. */
+	Foundation f = FOUNDATION_NONE;
+	Tile *tptr = _m.ToTile(tile);
+	do {
+		f = CombineFoundations(f, _tile_type_procs[GetTileType(tptr)]->get_foundation_proc(tile, tptr, tileh));
+	} while (HasAssociatedTile(tptr++));
+
+	assert(f != FOUNDATION_INVALID);
+
 	uint z_inc = ApplyFoundationToSlope(f, &tileh);
 	if (z != NULL) *z += z_inc;
 	return tileh;
@@ -503,8 +511,8 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 	assert(f != FOUNDATION_STEEP_BOTH);
 
 	uint sprite_block = 0;
-	int z;
-	Slope slope = GetFoundationPixelSlope(ti->tile, &z);
+	Slope slope = ti->tileh;
+	int z = ti->z + ApplyPixelFoundationToSlope(f, &slope);
 
 	/* Select the needed block of foundations sprites
 	 * Block 0: Walls at NW and NE edge
@@ -592,6 +600,52 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 			OffsetGroundSprite(31, 9);
 		}
 		ti->z += ApplyPixelFoundationToSlope(f, &ti->tileh);
+	}
+}
+
+/**
+ * Draw a tile and its appropriate foundations.
+ * @param ti The tile to draw.
+ */
+void DrawTile(TileInfo *ti)
+{
+	Tile *tptr = ti->tptr;
+
+	/* Get the foundations of the tile. */
+	Foundation f = FOUNDATION_NONE;
+	do {
+		TileType tt = ti->tptr != NULL ? GetTileType(ti->tptr) : MP_VOID;
+		f = CombineFoundations(f, _tile_type_procs[tt]->get_foundation_proc(ti->tile, ti->tptr, ti->tileh));
+	} while (ti->tptr != NULL && HasAssociatedTile(ti->tptr++));
+
+	assert(f != FOUNDATION_INVALID);
+
+	Corner halftile_corner = CORNER_INVALID;
+	if (IsNonContinuousFoundation(f)) {
+		/* Save halftile corner. */
+		halftile_corner = (f == FOUNDATION_STEEP_BOTH ? GetHighestSlopeCorner(ti->tileh) : GetHalftileFoundationCorner(f));
+		/* Draw lower part first. */
+		f = (f == FOUNDATION_STEEP_BOTH ? FOUNDATION_STEEP_LOWER : FOUNDATION_NONE);
+	}
+
+	/* Draw foundation and landscape of lower part */
+	if (f != FOUNDATION_SPECIAL) DrawFoundation(ti, f); // modifies ti
+
+	ti->tptr = tptr;
+	do {
+		TileType tt = ti->tptr != NULL ? GetTileType(ti->tptr) : MP_VOID;
+		_tile_type_procs[tt]->draw_tile_proc(ti, false, halftile_corner);
+	} while (ti->tptr != NULL && HasAssociatedTile(ti->tptr++));
+
+	/* Draw upper halftile part if present. */
+	if (IsValidCorner(halftile_corner)) {
+		DrawFoundation(ti, HalftileFoundation(halftile_corner));
+
+		ti->tptr = tptr;
+		do {
+			TileType tt = ti->tptr != NULL ? GetTileType(ti->tptr) : MP_VOID;
+			_tile_type_procs[tt]->draw_tile_proc(ti, true, halftile_corner);
+		} while (ti->tptr != NULL && HasAssociatedTile(ti->tptr++));
 	}
 }
 

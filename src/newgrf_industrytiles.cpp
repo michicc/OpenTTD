@@ -180,17 +180,6 @@ uint16 GetIndustryTileCallback(CallbackID callback, uint32 param1, uint32 param2
 
 bool DrawNewIndustryTile(TileInfo *ti, Industry *i, IndustryGfx gfx, const IndustryTileSpec *inds)
 {
-	if (ti->tileh != SLOPE_FLAT) {
-		bool draw_old_one = true;
-		if (HasBit(inds->callback_mask, CBM_INDT_DRAW_FOUNDATIONS)) {
-			/* Called to determine the type (if any) of foundation to draw for industry tile */
-			uint32 callback_res = GetIndustryTileCallback(CBID_INDTILE_DRAW_FOUNDATIONS, 0, 0, gfx, i, ti->tile);
-			if (callback_res != CALLBACK_FAILED) draw_old_one = ConvertBooleanCallback(inds->grf_prop.grffile, CBID_INDTILE_DRAW_FOUNDATIONS, callback_res);
-		}
-
-		if (draw_old_one) DrawFoundation(ti, FOUNDATION_LEVELED);
-	}
-
 	IndustryTileResolverObject object(gfx, ti->tile, i);
 
 	const SpriteGroup *group = object.Resolve();
