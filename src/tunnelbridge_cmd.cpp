@@ -1668,7 +1668,7 @@ static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex tile, TransportType
 	return CombineTrackStatus(TrackBitsToTrackdirBits(DiagDirToDiagTrackBits(dir)), TRACKDIR_BIT_NONE);
 }
 
-static void ChangeTileOwner_TunnelBridge(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_TunnelBridge(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
 	TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
 	/* Set number of pieces to zero if it's the southern tile as we
@@ -1689,7 +1689,7 @@ static void ChangeTileOwner_TunnelBridge(TileIndex tile, Owner old_owner, Owner 
 		}
 	}
 
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return true;
 
 	/* Update company infrastructure counts for rail and water as well.
 	 * No need to dirty windows here, we'll redraw the whole screen anyway. */
@@ -1716,6 +1716,7 @@ static void ChangeTileOwner_TunnelBridge(TileIndex tile, Owner old_owner, Owner 
 			SetTileOwner(tile, OWNER_NONE);
 		}
 	}
+	return true;
 }
 
 /**

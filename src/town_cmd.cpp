@@ -687,9 +687,10 @@ static TrackStatus GetTileTrackStatus_Town(TileIndex tile, TransportType mode, u
 	return 0;
 }
 
-static void ChangeTileOwner_Town(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Town(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
 	/* not used */
+	return true;
 }
 
 /** Update the total cargo acceptance of the whole town.
