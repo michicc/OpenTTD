@@ -731,6 +731,7 @@ void Station::AfterStationTileSetChange(bool adding, StationType type)
 		case STATION_RAIL:
 			SetWindowWidgetDirty(WC_STATION_VIEW, this->index, WID_SV_TRAINS);
 			break;
+
 		case STATION_AIRPORT:
 			break;
 		case STATION_TRUCK:
@@ -752,7 +753,7 @@ void Station::AfterStationTileSetChange(bool adding, StationType type)
 
 }
 
-CommandCost ClearTile_Station(TileIndex tile, DoCommandFlag flags);
+CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted);
 
 /**
  * Checks if the given tile is buildable, flat and has a certain height.
@@ -870,7 +871,7 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
 		if (station != NULL && IsTileType(tile_cur, MP_STATION)) {
 			if (!IsRailStation(tile_cur)) {
-				return ClearTile_Station(tile_cur, DC_AUTO); // get error message
+				return ClearTile_Station(tile_cur, _m.ToTile(tile_cur), DC_AUTO, NULL); // get error message
 			} else {
 				StationID st = GetStationIndex(tile_cur);
 				if (*station == INVALID_STATION) {
@@ -946,11 +947,11 @@ static CommandCost CheckFlatLandRoadStop(TileArea tile_area, DoCommandFlag flags
 		 * Or it points to a station if we're only allowed to build on exactly that station. */
 		if (station != NULL && IsTileType(cur_tile, MP_STATION)) {
 			if (!IsRoadStop(cur_tile)) {
-				return ClearTile_Station(cur_tile, DC_AUTO); // Get error message.
+				return ClearTile_Station(cur_tile, _m.ToTile(cur_tile), DC_AUTO, NULL); // Get error message.
 			} else {
 				if (is_truck_stop != IsTruckStop(cur_tile) ||
 						is_drive_through != IsDriveThroughStopTile(cur_tile)) {
-					return ClearTile_Station(cur_tile, DC_AUTO); // Get error message.
+					return ClearTile_Station(cur_tile, _m.ToTile(cur_tile), DC_AUTO, NULL); // Get error message.
 				}
 				/* Drive-through station in the wrong direction. */
 				if (is_drive_through && IsDriveThroughStopTile(cur_tile) && DiagDirToAxis(GetRoadStopDir(cur_tile)) != axis){
@@ -4065,10 +4066,12 @@ static bool CanRemoveRoadWithStop(TileIndex tile, DoCommandFlag flags)
 /**
  * Clear a single tile of a station.
  * @param tile The tile to clear.
+ * @param tptr Pointer to the actual tile.
  * @param flags The DoCommand flags related to the "command".
+ * @param[out] Returns whether the actual tile was deleted from memory.
  * @return The cost, or error of clearing.
  */
-CommandCost ClearTile_Station(TileIndex tile, DoCommandFlag flags)
+CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	if (flags & DC_AUTO) {
 		switch (GetStationType(tile)) {
