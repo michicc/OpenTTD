@@ -14,6 +14,8 @@
 
 #include "core/geometry_type.hpp"
 #include "tile_cmd.h"
+#include "slope_func.h"
+#include "gfx_type.h"
 
 static const uint SNOW_LINE_MONTHS = 12; ///< Number of months in the snow line table.
 static const uint SNOW_LINE_DAYS   = 32; ///< Number of days in each month in the snow line table.
@@ -136,6 +138,19 @@ static inline uint ApplyPixelFoundationToSlope(Foundation f, Slope *s)
 void DrawFoundation(TileInfo *ti, Foundation f);
 bool HasFoundationNW(TileIndex tile, Slope slope_here, uint z_here);
 bool HasFoundationNE(TileIndex tile, Slope slope_here, uint z_here);
+
+/**
+ * Return the subsprite for drawing a half-tile in the specified corner.
+ * @param corner The raised half-tile corner.
+ * @param offset Set to true if the base sprite is offset by -TILE_HEIGHT, for example track sprites.
+ * @return The subsprite.
+ */
+inline const SubSprite *GetHalftileSubSprite(Corner corner, bool offset = false)
+{
+	extern const SubSprite _halftile_sub_sprite[8];
+	assert(IsValidCorner(corner));
+	return &_halftile_sub_sprite[corner + (offset ? 4 : 0)];
+}
 
 void MakeClearGrass(TileIndex t);
 void DoClearSquare(TileIndex tile);
