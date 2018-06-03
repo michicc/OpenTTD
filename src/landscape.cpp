@@ -581,12 +581,12 @@ void MakeClearGrass(TileIndex t)
 
 void DoClearSquare(TileIndex tile)
 {
-	/* If the tile can have animation and we clear it, delete it from the animated tile list. */
-	if (_tile_type_procs[GetTileType(tile)]->animate_tile_proc != NULL) DeleteAnimatedTile(tile);
-
 	/* Remove all associated tiles. */
 	Tile *tptr = _m.ToTile(tile);
+	/* If the tile can have animation, delete it from the animated tile list. */
+	if (_tile_type_procs[GetTileType(tptr)]->animate_tile_proc != NULL) DeleteAnimatedTile(tile);
 	while (HasAssociatedTile(tptr)) {
+		if (_tile_type_procs[GetTileType(tptr + 1)]->animate_tile_proc != NULL) DeleteAnimatedTile(tile);
 		_m.RemoveTile(tile, tptr + 1);
 	}
 	MakeClearGrass(tile);
