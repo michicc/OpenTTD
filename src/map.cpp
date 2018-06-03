@@ -167,7 +167,7 @@ size_t Map::GetTileCount() const
 Map::Iterator& Map::Iterator::operator ++()
 {
 	tile++;
-	if (tile == _m.tiles[y_pos].End()) {
+	if (tile == _m.tiles[y_pos].End() && y_pos < _m.size_y - 1) {
 		tile = _m.tiles[++y_pos].Begin();
 	}
 	return *this;
