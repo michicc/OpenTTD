@@ -192,7 +192,7 @@ void UpdateObjectColours(const Company *c)
 }
 
 extern CommandCost CheckBuildableTile(TileIndex tile, uint invalid_dirs, int &allowed_z, bool allow_steep, bool check_bridge);
-static CommandCost ClearTile_Object(TileIndex tile, DoCommandFlag flags);
+static CommandCost ClearTile_Object(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted);
 
 /**
  * Build an object object
@@ -322,7 +322,7 @@ CommandCost CmdBuildObject(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 			if (c->location_of_HQ != INVALID_TILE) {
 				/* We need to persuade a bit harder to remove the old HQ. */
 				_current_company = OWNER_WATER;
-				cost.AddCost(ClearTile_Object(c->location_of_HQ, flags));
+				cost.AddCost(ClearTile_Object(c->location_of_HQ, _m.ToTile(c->location_of_HQ), flags, NULL));
 				_current_company = c->index;
 			}
 
@@ -462,7 +462,7 @@ ClearedObjectArea *FindClearedObject(TileIndex tile)
 	return NULL;
 }
 
-static CommandCost ClearTile_Object(TileIndex tile, DoCommandFlag flags)
+static CommandCost ClearTile_Object(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool *tile_deleted)
 {
 	/* Get to the northern most tile. */
 	Object *o = Object::GetByTile(tile);

@@ -353,6 +353,8 @@ static inline bool HasTileWaterGround(TileIndex t)
  */
 static inline void MakeShore(TileIndex t)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
+
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, OWNER_WATER);
 	SetWaterClass(t, WATER_CLASS_SEA);
@@ -373,6 +375,8 @@ static inline void MakeShore(TileIndex t)
  */
 static inline void MakeWater(TileIndex t, Owner o, WaterClass wc, uint8 random_bits)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
+
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, wc);
@@ -426,6 +430,8 @@ static inline void MakeCanal(TileIndex t, Owner o, uint8 random_bits)
  */
 static inline void MakeShipDepot(TileIndex t, Owner o, DepotID did, DepotPart part, Axis a, WaterClass original_water_class)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
+
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
@@ -448,6 +454,8 @@ static inline void MakeShipDepot(TileIndex t, Owner o, DepotID did, DepotPart pa
  */
 static inline void MakeLockTile(TileIndex t, Owner o, LockPart part, DiagDirection dir, WaterClass original_water_class)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
+
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
