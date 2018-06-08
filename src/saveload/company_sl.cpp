@@ -108,22 +108,23 @@ void AfterLoadCompanyStats()
 	}
 
 	for (TileIndex tile = 0; tile < MapSize(); tile++) {
-		switch (GetTileType(tile)) {
-			case MP_RAILWAY:
-				c = Company::GetIfValid(GetTileOwner(tile));
-				if (c != NULL) {
-					uint pieces = 1;
-					if (IsPlainRail(tile)) {
-						TrackBits bits = GetTrackBits(tile);
-						pieces = CountBits(bits);
-						if (TracksOverlap(bits)) pieces *= pieces;
-					}
-					c->infrastructure.rail[GetRailType(tile)] += pieces;
-
-					if (HasSignals(tile)) c->infrastructure.signal += CountBits(GetPresentSignals(tile));
+		if (HasTileByType(tile, MP_RAILWAY)) {
+			const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+			c = Company::GetIfValid(GetTileOwner(rail_tile));
+			if (c != NULL) {
+				uint pieces = 1;
+				if (IsPlainRail(rail_tile)) {
+					TrackBits bits = GetTrackBits(tile);
+					pieces = CountBits(bits);
+					if (TracksOverlap(bits)) pieces *= pieces;
 				}
-				break;
+				c->infrastructure.rail[GetRailType(tile)] += pieces;
 
+				if (HasSignals(tile)) c->infrastructure.signal += CountBits(GetPresentSignals(tile));
+			}
+		}
+
+		switch (GetTileType(tile)) {
 			case MP_ROAD: {
 				if (IsLevelCrossing(tile)) {
 					c = Company::GetIfValid(GetTileOwner(tile));

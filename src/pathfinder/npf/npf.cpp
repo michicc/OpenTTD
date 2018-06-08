@@ -284,7 +284,7 @@ static void NPFMarkTile(TileIndex tile)
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY:
 			/* DEBUG: mark visited tiles by mowing the grass under them ;-) */
-			if (!IsRailDepot(tile)) {
+			if (!IsRailDepot(_m.ToTile(tile))) {
 				SetRailGroundType(tile, RAIL_GROUND_BARREN);
 				MarkTileDirtyByTile(tile);
 			}
@@ -932,8 +932,10 @@ static void NPFFollowTrack(AyStar *aystar, OpenListNode *current)
 		DEBUG(npf, 5, "Expanded into trackdir: %d, remaining trackdirs: 0x%X", dst_trackdir, trackdirbits);
 
 		/* Tile with signals? */
-		if (IsTileType(dst_tile, MP_RAILWAY) && GetRailTileType(dst_tile) == RAIL_TILE_SIGNALS) {
-			if (HasSignalOnTrackdir(dst_tile, ReverseTrackdir(dst_trackdir)) && !HasSignalOnTrackdir(dst_tile, dst_trackdir) && IsOnewaySignal(dst_tile, TrackdirToTrack(dst_trackdir))) {
+		if (HasTileByType(dst_tile, MP_RAILWAY)) {
+			Tile *rail_tile = GetTileByType(dst_tile, MP_RAILWAY);
+			if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && HasSignalOnTrackdir(dst_tile, ReverseTrackdir(dst_trackdir)) &&
+					!HasSignalOnTrackdir(dst_tile, dst_trackdir) && IsOnewaySignal(dst_tile, TrackdirToTrack(dst_trackdir))) {
 				/* If there's a one-way signal not pointing towards us, stop going in this direction. */
 				break;
 			}
