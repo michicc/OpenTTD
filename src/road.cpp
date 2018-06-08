@@ -31,8 +31,9 @@
  */
 static bool IsPossibleCrossing(const TileIndex tile, Axis ax)
 {
-	return (IsTileType(tile, MP_RAILWAY) &&
-		GetRailTileType(tile) == RAIL_TILE_NORMAL &&
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	return (rail_tile != NULL &&
+		GetRailTileType(rail_tile) == RAIL_TILE_NORMAL &&
 		GetTrackBits(tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
 		GetFoundationSlope(tile) == SLOPE_FLAT);
 }
