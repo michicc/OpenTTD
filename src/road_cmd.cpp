@@ -526,8 +526,6 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 	bool need_to_clear = false;
 
 	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-
 		if (IsSteepSlope(tileh)) {
 			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
@@ -537,25 +535,27 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
 
-		if (GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) goto do_clear;
-
-		if (RailNoLevelCrossings(GetRailType(rail_tile))) {
-			return_cmd_error(STR_ERROR_CROSSING_DISALLOWED);
-		}
-
 		Axis roaddir;
-		switch (GetTrackBits(rail_tile)) {
-			case TRACK_BIT_X:
-				if (pieces & ROAD_X) goto do_clear;
-				roaddir = AXIS_Y;
-				break;
+		FOR_ALL_RAIL_TILES(rail_tile, tile) {
+			if (GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) goto do_clear;
 
-			case TRACK_BIT_Y:
-				if (pieces & ROAD_Y) goto do_clear;
-				roaddir = AXIS_X;
-				break;
+			if (RailNoLevelCrossings(GetRailType(rail_tile))) {
+				return_cmd_error(STR_ERROR_CROSSING_DISALLOWED);
+			}
 
-			default: goto do_clear;
+			switch (GetTrackBits(rail_tile)) {
+				case TRACK_BIT_X:
+					if (pieces & ROAD_X) goto do_clear;
+					roaddir = AXIS_Y;
+					break;
+
+				case TRACK_BIT_Y:
+					if (pieces & ROAD_Y) goto do_clear;
+					roaddir = AXIS_X;
+					break;
+
+				default: goto do_clear;
+			}
 		}
 
 		CommandCost ret = EnsureNoVehicleOnGround(tile);
@@ -564,6 +564,8 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 		if (flags & DC_EXEC) {
 			Track railtrack = AxisToTrack(OtherAxis(roaddir));
 			YapfNotifyTrackLayoutChange(tile, railtrack);
+			/* If there is more than one associated rail tile, the previous checks never succeed. */
+			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 			bool reserved = HasBit(GetRailReservationTrackBits(rail_tile), railtrack);
 			RailType rail_type = GetRailType(rail_tile);
 			Owner rail_o = GetTileOwner(rail_tile);
