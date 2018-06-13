@@ -251,7 +251,7 @@ static PBSTileInfo FollowReservation(Owner o, RailTypes rts, TileIndex tile, Tra
 		/* Depot tile? Can't continue. */
 		if (IsRailDepotTile(tile)) break;
 		/* Non-pbs signal? Reservation can't continue. */
-		if (IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, TrackdirToTrack(trackdir)))) break;
+		if (HasBlockSignalOnTrackdir(tile, trackdir)) break;
 	}
 
 	return PBSTileInfo(tile, trackdir, false);
@@ -390,10 +390,8 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 {
 	if (IsRailDepotTile(tile)) return true;
 
-	if (IsTileType(tile, MP_RAILWAY)) {
-		/* For non-pbs signals, stop on the signal tile. */
-		if (HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, TrackdirToTrack(trackdir)))) return true;
-	}
+	/* For non-pbs signals, stop on the signal tile. */
+	if (HasBlockSignalOnTrackdir(tile, trackdir)) return true;
 
 	/* Check next tile. For performance reasons, we check for 90 degree turns ourself. */
 	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
@@ -414,8 +412,9 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 		/* PBS signal on next trackdir? Safe position. */
 		if (HasPbsSignalOnTrackdir(ft.m_new_tile, td)) return true;
 		/* One-way PBS signal against us? Safe if end-of-line is allowed. */
-		if (IsTileType(ft.m_new_tile, MP_RAILWAY) && HasSignalOnTrackdir(ft.m_new_tile, ReverseTrackdir(td)) &&
-				GetSignalType(ft.m_new_tile, TrackdirToTrack(td)) == SIGTYPE_PBS_ONEWAY) {
+		Tile *rail_tile = GetTileByType(ft.m_new_tile, MP_RAILWAY);
+		if (rail_tile != NULL && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td)) &&
+				GetSignalType(rail_tile, TrackdirToTrack(td)) == SIGTYPE_PBS_ONEWAY) {
 			return include_line_end;
 		}
 	}
@@ -442,7 +441,7 @@ bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bo
 
 	/* Not reserved and depot or not a pbs signal -> free. */
 	if (IsRailDepotTile(tile)) return true;
-	if (IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, track))) return true;
+	if (HasBlockSignalOnTrackdir(tile, trackdir)) return true;
 
 	/* Check the next tile, if it's a PBS signal, it has to be free as well. */
 	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
