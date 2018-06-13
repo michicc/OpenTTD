@@ -310,29 +310,29 @@ static SigFlags ExploreSegment(Owner owner)
 					if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, NULL, &TrainOnTileEnum)) flags |= SF_TRAIN;
 				}
 
-				if (HasSignals(tile)) { // there is exactly one track - not zero, because there is exit from this tile
+				if (HasSignals(rail_tile)) { // there is exactly one track - not zero, because there is exit from this tile
 					Track track = TrackBitsToTrack(tracks_masked); // mask TRACK_BIT_X and Y too
-					if (HasSignalOnTrack(tile, track)) { // now check whole track, not trackdir
-						SignalType sig = GetSignalType(tile, track);
+					if (HasSignalOnTrack(rail_tile, track)) { // now check whole track, not trackdir
+						SignalType sig = GetSignalType(rail_tile, track);
 						Trackdir trackdir = (Trackdir)FindFirstBit((tracks * 0x101) & _enterdir_to_trackdirbits[enterdir]);
 						Trackdir reversedir = ReverseTrackdir(trackdir);
 						/* add (tile, reversetrackdir) to 'to-be-updated' set when there is
 						 * ANY conventional signal in REVERSE direction
 						 * (if it is a presignal EXIT and it changes, it will be added to 'to-be-done' set later) */
-						if (HasSignalOnTrackdir(tile, reversedir)) {
+						if (HasSignalOnTrackdir(rail_tile, reversedir)) {
 							if (IsPbsSignal(sig)) {
 								flags |= SF_PBS;
 							} else if (!_tbuset.Add(tile, reversedir)) {
 								return flags | SF_FULL;
 							}
 						}
-						if (HasSignalOnTrackdir(tile, trackdir) && !IsOnewaySignal(tile, track)) flags |= SF_PBS;
+						if (HasSignalOnTrackdir(rail_tile, trackdir) && !IsOnewaySignal(rail_tile, track)) flags |= SF_PBS;
 
 						/* if it is a presignal EXIT in OUR direction and we haven't found 2 green exits yes, do special check */
-						if (!(flags & SF_GREEN2) && IsPresignalExit(tile, track) && HasSignalOnTrackdir(tile, trackdir)) { // found presignal exit
+						if (!(flags & SF_GREEN2) && IsPresignalExit(rail_tile, track) && HasSignalOnTrackdir(rail_tile, trackdir)) { // found presignal exit
 							if (flags & SF_EXIT) flags |= SF_EXIT2; // found two (or more) exits
 							flags |= SF_EXIT; // found at least one exit - allow for compiler optimizations
-							if (GetSignalStateByTrackdir(tile, trackdir) == SIGNAL_STATE_GREEN) { // found green presignal exit
+							if (GetSignalStateByTrackdir(rail_tile, trackdir) == SIGNAL_STATE_GREEN) { // found green presignal exit
 								if (flags & SF_GREEN) flags |= SF_GREEN2;
 								flags |= SF_GREEN;
 							}
@@ -414,9 +414,10 @@ static void UpdateSignalsAroundSegment(SigFlags flags)
 	Trackdir trackdir;
 
 	while (_tbuset.Get(&tile, &trackdir)) {
-		assert(HasSignalOnTrackdir(tile, trackdir));
+		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		assert(rail_tile != NULL && HasSignalOnTrackdir(rail_tile, trackdir));
 
-		SignalType sig = GetSignalType(tile, TrackdirToTrack(trackdir));
+		SignalType sig = GetSignalType(rail_tile, TrackdirToTrack(trackdir));
 		SignalState newstate = SIGNAL_STATE_GREEN;
 
 		/* determine whether the new state is red */
@@ -425,28 +426,28 @@ static void UpdateSignalsAroundSegment(SigFlags flags)
 			newstate = SIGNAL_STATE_RED;
 		} else {
 			/* is it a bidir combo? - then do not count its other signal direction as exit */
-			if (sig == SIGTYPE_COMBO && HasSignalOnTrackdir(tile, ReverseTrackdir(trackdir))) {
+			if (sig == SIGTYPE_COMBO && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(trackdir))) {
 				/* at least one more exit */
 				if ((flags & SF_EXIT2) &&
 						/* no green exit */
 						(!(flags & SF_GREEN) ||
 						/* only one green exit, and it is this one - so all other exits are red */
-						(!(flags & SF_GREEN2) && GetSignalStateByTrackdir(tile, ReverseTrackdir(trackdir)) == SIGNAL_STATE_GREEN))) {
+						(!(flags & SF_GREEN2) && GetSignalStateByTrackdir(rail_tile, ReverseTrackdir(trackdir)) == SIGNAL_STATE_GREEN))) {
 					newstate = SIGNAL_STATE_RED;
 				}
 			} else { // entry, at least one exit, no green exit
-				if (IsPresignalEntry(tile, TrackdirToTrack(trackdir)) && (flags & SF_EXIT) && !(flags & SF_GREEN)) newstate = SIGNAL_STATE_RED;
+				if (IsPresignalEntry(rail_tile, TrackdirToTrack(trackdir)) && (flags & SF_EXIT) && !(flags & SF_GREEN)) newstate = SIGNAL_STATE_RED;
 			}
 		}
 
 		/* only when the state changes */
-		if (newstate != GetSignalStateByTrackdir(tile, trackdir)) {
-			if (IsPresignalExit(tile, TrackdirToTrack(trackdir))) {
+		if (newstate != GetSignalStateByTrackdir(rail_tile, trackdir)) {
+			if (IsPresignalExit(rail_tile, TrackdirToTrack(trackdir))) {
 				/* for pre-signal exits, add block to the global set */
 				DiagDirection exitdir = TrackdirToExitdir(ReverseTrackdir(trackdir));
 				_globset.Add(tile, exitdir); // do not check for full global set, first update all signals
 			}
-			SetSignalStateByTrackdir(tile, trackdir, newstate);
+			SetSignalStateByTrackdir(rail_tile, trackdir, newstate);
 			MarkTileDirtyByTile(tile);
 		}
 	}

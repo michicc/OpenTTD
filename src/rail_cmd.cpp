@@ -266,7 +266,7 @@ static CommandCost CheckTrackCombination(TileIndex tile, TrackBits to_build, uin
 	}
 
 	/* Let's see if we may build this */
-	if ((flags & DC_NO_RAIL_OVERLAP) || HasSignals(tile)) {
+	if ((flags & DC_NO_RAIL_OVERLAP) || HasSignals(_m.ToTile(tile))) {
 		/* If we are not allowed to overlap (flag is on for ai companies or we have
 		 * signals on the tile), check that */
 		if (future != TRACK_BIT_HORZ && future != TRACK_BIT_VERT) {
@@ -678,7 +678,7 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 			cost.AddCost(RailClearCost(GetRailType(tile)));
 
 			/* Charge extra to remove signals on the track, if they are there */
-			if (HasSignalOnTrack(tile, track)) {
+			if (HasSignalOnTrack(rail_tile, track)) {
 				cost.AddCost(DoCommand(tile, track, 0, flags, CMD_REMOVE_SIGNALS));
 			}
 
@@ -1053,6 +1053,8 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 	if (sigtype > SIGTYPE_LAST) return CMD_ERROR;
 	if (cycle_start > cycle_stop || cycle_stop > SIGTYPE_LAST) return CMD_ERROR;
 
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+
 	/* You can only build signals on plain rail tiles, and the selected track must exist */
 	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(tile) ||
 			!HasTrack(tile, track)) {
@@ -1068,23 +1070,23 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 	if (TracksOverlap(GetTrackBits(tile))) return_cmd_error(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK);
 
 	/* In case we don't want to change an existing signal, return without error. */
-	if (HasBit(p1, 17) && HasSignalOnTrack(tile, track)) return CommandCost();
+	if (HasBit(p1, 17) && HasSignalOnTrack(rail_tile, track)) return CommandCost();
 
 	/* you can not convert a signal if no signal is on track */
-	if (convert_signal && !HasSignalOnTrack(tile, track)) return_cmd_error(STR_ERROR_THERE_ARE_NO_SIGNALS);
+	if (convert_signal && !HasSignalOnTrack(rail_tile, track)) return_cmd_error(STR_ERROR_THERE_ARE_NO_SIGNALS);
 
 	CommandCost cost;
-	if (!HasSignalOnTrack(tile, track)) {
+	if (!HasSignalOnTrack(rail_tile, track)) {
 		/* build new signals */
 		cost = CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_SIGNALS]);
 	} else {
-		if (p2 != 0 && sigvar != GetSignalVariant(tile, track)) {
+		if (p2 != 0 && sigvar != GetSignalVariant(rail_tile, track)) {
 			/* convert signals <-> semaphores */
 			cost = CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_SIGNALS] + _price[PR_CLEAR_SIGNALS]);
 
 		} else if (convert_signal) {
 			/* convert button pressed */
-			if (ctrl_pressed || GetSignalVariant(tile, track) != sigvar) {
+			if (ctrl_pressed || GetSignalVariant(rail_tile, track) != sigvar) {
 				/* convert electric <-> semaphore */
 				cost = CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_SIGNALS] + _price[PR_CLEAR_SIGNALS]);
 			} else {
@@ -1108,75 +1110,75 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 			if (v != NULL) FreeTrainTrackReservation(v);
 		}
 
-		if (!HasSignals(tile)) {
+		if (!HasSignals(rail_tile)) {
 			/* there are no signals at all on this tile yet */
-			SetHasSignals(tile, true);
-			SetSignalStates(tile, 0xF); // all signals are on
-			SetPresentSignals(tile, 0); // no signals built by default
-			SetSignalType(tile, track, sigtype);
-			SetSignalVariant(tile, track, sigvar);
+			SetHasSignals(rail_tile, true);
+			SetSignalStates(rail_tile, 0xF); // all signals are on
+			SetPresentSignals(rail_tile, 0); // no signals built by default
+			SetSignalType(rail_tile, track, sigtype);
+			SetSignalVariant(rail_tile, track, sigvar);
 		}
 
 		/* Subtract old signal infrastructure count. */
-		Company::Get(GetTileOwner(tile))->infrastructure.signal -= CountBits(GetPresentSignals(tile));
+		Company::Get(GetTileOwner(rail_tile))->infrastructure.signal -= CountBits(GetPresentSignals(rail_tile));
 
 		if (p2 == 0) {
-			if (!HasSignalOnTrack(tile, track)) {
+			if (!HasSignalOnTrack(rail_tile, track)) {
 				/* build new signals */
-				SetPresentSignals(tile, GetPresentSignals(tile) | (IsPbsSignal(sigtype) ? KillFirstBit(SignalOnTrack(track)) : SignalOnTrack(track)));
-				SetSignalType(tile, track, sigtype);
-				SetSignalVariant(tile, track, sigvar);
-				while (num_dir_cycle-- > 0) CycleSignalSide(tile, track);
+				SetPresentSignals(rail_tile, GetPresentSignals(rail_tile) | (IsPbsSignal(sigtype) ? KillFirstBit(SignalOnTrack(track)) : SignalOnTrack(track)));
+				SetSignalType(rail_tile, track, sigtype);
+				SetSignalVariant(rail_tile, track, sigvar);
+				while (num_dir_cycle-- > 0) CycleSignalSide(rail_tile, track);
 			} else {
 				if (convert_signal) {
 					/* convert signal button pressed */
 					if (ctrl_pressed) {
 						/* toggle the present signal variant: SIG_ELECTRIC <-> SIG_SEMAPHORE */
-						SetSignalVariant(tile, track, (GetSignalVariant(tile, track) == SIG_ELECTRIC) ? SIG_SEMAPHORE : SIG_ELECTRIC);
+						SetSignalVariant(rail_tile, track, (GetSignalVariant(rail_tile, track) == SIG_ELECTRIC) ? SIG_SEMAPHORE : SIG_ELECTRIC);
 						/* Query current signal type so the check for PBS signals below works. */
-						sigtype = GetSignalType(tile, track);
+						sigtype = GetSignalType(rail_tile, track);
 					} else {
 						/* convert the present signal to the chosen type and variant */
-						SetSignalType(tile, track, sigtype);
-						SetSignalVariant(tile, track, sigvar);
-						if (IsPbsSignal(sigtype) && (GetPresentSignals(tile) & SignalOnTrack(track)) == SignalOnTrack(track)) {
-							SetPresentSignals(tile, (GetPresentSignals(tile) & ~SignalOnTrack(track)) | KillFirstBit(SignalOnTrack(track)));
+						SetSignalType(rail_tile, track, sigtype);
+						SetSignalVariant(rail_tile, track, sigvar);
+						if (IsPbsSignal(sigtype) && (GetPresentSignals(rail_tile) & SignalOnTrack(track)) == SignalOnTrack(track)) {
+							SetPresentSignals(rail_tile, (GetPresentSignals(rail_tile) & ~SignalOnTrack(track)) | KillFirstBit(SignalOnTrack(track)));
 						}
 					}
 
 				} else if (ctrl_pressed) {
 					/* cycle between cycle_start and cycle_end */
-					sigtype = (SignalType)(GetSignalType(tile, track) + 1);
+					sigtype = (SignalType)(GetSignalType(rail_tile, track) + 1);
 
 					if (sigtype < cycle_start || sigtype > cycle_stop) sigtype = cycle_start;
 
-					SetSignalType(tile, track, sigtype);
-					if (IsPbsSignal(sigtype) && (GetPresentSignals(tile) & SignalOnTrack(track)) == SignalOnTrack(track)) {
-						SetPresentSignals(tile, (GetPresentSignals(tile) & ~SignalOnTrack(track)) | KillFirstBit(SignalOnTrack(track)));
+					SetSignalType(rail_tile, track, sigtype);
+					if (IsPbsSignal(sigtype) && (GetPresentSignals(rail_tile) & SignalOnTrack(track)) == SignalOnTrack(track)) {
+						SetPresentSignals(rail_tile, (GetPresentSignals(rail_tile) & ~SignalOnTrack(track)) | KillFirstBit(SignalOnTrack(track)));
 					}
 				} else {
 					/* cycle the signal side: both -> left -> right -> both -> ... */
-					CycleSignalSide(tile, track);
+					CycleSignalSide(rail_tile, track);
 					/* Query current signal type so the check for PBS signals below works. */
-					sigtype = GetSignalType(tile, track);
+					sigtype = GetSignalType(rail_tile, track);
 				}
 			}
 		} else {
 			/* If CmdBuildManySignals is called with copying signals, just copy the
 			 * direction of the first signal given as parameter by CmdBuildManySignals */
-			SetPresentSignals(tile, (GetPresentSignals(tile) & ~SignalOnTrack(track)) | (p2 & SignalOnTrack(track)));
-			SetSignalVariant(tile, track, sigvar);
-			SetSignalType(tile, track, sigtype);
+			SetPresentSignals(rail_tile, (GetPresentSignals(rail_tile) & ~SignalOnTrack(track)) | (p2 & SignalOnTrack(track)));
+			SetSignalVariant(rail_tile, track, sigvar);
+			SetSignalType(rail_tile, track, sigtype);
 		}
 
 		/* Add new signal infrastructure count. */
-		Company::Get(GetTileOwner(tile))->infrastructure.signal += CountBits(GetPresentSignals(tile));
-		DirtyCompanyInfrastructureWindows(GetTileOwner(tile));
+		Company::Get(GetTileOwner(rail_tile))->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
+		DirtyCompanyInfrastructureWindows(GetTileOwner(rail_tile));
 
 		if (IsPbsSignal(sigtype)) {
 			/* PBS signals should show red unless they are on reserved tiles without a train. */
-			uint mask = GetPresentSignals(tile) & SignalOnTrack(track);
-			SetSignalStates(tile, (GetSignalStates(tile) & ~mask) | ((HasBit(GetRailReservationTrackBits(tile), track) && EnsureNoVehicleOnGround(tile).Succeeded() ? UINT_MAX : 0) & mask));
+			uint mask = GetPresentSignals(rail_tile) & SignalOnTrack(track);
+			SetSignalStates(rail_tile, (GetSignalStates(rail_tile) & ~mask) | ((HasBit(GetRailReservationTrackBits(tile), track) && EnsureNoVehicleOnGround(tile).Succeeded() ? UINT_MAX : 0) & mask));
 		}
 		MarkTileDirtyByTile(tile);
 		AddTrackToSignalBuffer(tile, track, _current_company);
@@ -1216,7 +1218,7 @@ static bool CheckSignalAutoFill(TileIndex &tile, Trackdir &trackdir, int &signal
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY:
 			if (IsRailDepot(_m.ToTile(tile))) return false;
-			if (!remove && HasSignalOnTrack(tile, TrackdirToTrack(trackdir))) return false;
+			if (!remove && HasSignalOnTrack(_m.ToTile(tile), TrackdirToTrack(trackdir))) return false;
 			signal_ctr++;
 			if (IsDiagonalTrackdir(trackdir)) {
 				signal_ctr++;
@@ -1304,14 +1306,14 @@ static CommandCost CmdSignalTrackHelper(TileIndex tile, DoCommandFlag flags, uin
 
 	byte signals;
 	/* copy the signal-style of the first rail-piece if existing */
-	if (HasSignalOnTrack(tile, track)) {
-		signals = GetPresentSignals(tile) & SignalOnTrack(track);
+	if (HasSignalOnTrack(rail_tile, track)) {
+		signals = GetPresentSignals(rail_tile) & SignalOnTrack(track);
 		assert(signals != 0);
 
 		/* copy signal/semaphores style (independent of CTRL) */
-		semaphores = GetSignalVariant(tile, track) != SIG_ELECTRIC;
+		semaphores = GetSignalVariant(rail_tile, track) != SIG_ELECTRIC;
 
-		sigtype = GetSignalType(tile, track);
+		sigtype = GetSignalType(rail_tile, track);
 		/* Don't but copy entry or exit-signal type */
 		if (sigtype == SIGTYPE_ENTRY || sigtype == SIGTYPE_EXIT) sigtype = SIGTYPE_NORMAL;
 	} else { // no signals exist, drag a two-way signal stretch
@@ -1456,11 +1458,12 @@ CommandCost CmdBuildSignalTrack(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 CommandCost CmdRemoveSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	Track track = Extract<Track, 0, 3>(p1);
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 
 	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(tile) || !HasTrack(tile, track)) {
 		return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	}
-	if (!HasSignalOnTrack(tile, track)) {
+	if (!HasSignalOnTrack(rail_tile, track)) {
 		return_cmd_error(STR_ERROR_THERE_ARE_NO_SIGNALS);
 	}
 
@@ -1475,12 +1478,12 @@ CommandCost CmdRemoveSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1
 		Train *v = NULL;
 		if (HasReservedTracks(tile, TrackToTrackBits(track))) {
 			v = GetTrainForReservation(tile, track);
-		} else if (IsPbsSignal(GetSignalType(tile, track))) {
+		} else if (IsPbsSignal(GetSignalType(rail_tile, track))) {
 			/* PBS signal, might be the end of a path reservation. */
 			Trackdir td = TrackToTrackdir(track);
 			for (int i = 0; v == NULL && i < 2; i++, td = ReverseTrackdir(td)) {
 				/* Only test the active signal side. */
-				if (!HasSignalOnTrackdir(tile, ReverseTrackdir(td))) continue;
+				if (!HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td))) continue;
 				TileIndex next = TileAddByDiagDir(tile, TrackdirToExitdir(td));
 				TrackBits tracks = TrackdirBitsToTrackBits(TrackdirReachesTrackdirs(td));
 				if (HasReservedTracks(next, tracks)) {
@@ -1488,19 +1491,19 @@ CommandCost CmdRemoveSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1
 				}
 			}
 		}
-		Company::Get(GetTileOwner(tile))->infrastructure.signal -= CountBits(GetPresentSignals(tile));
-		SetPresentSignals(tile, GetPresentSignals(tile) & ~SignalOnTrack(track));
-		Company::Get(GetTileOwner(tile))->infrastructure.signal += CountBits(GetPresentSignals(tile));
-		DirtyCompanyInfrastructureWindows(GetTileOwner(tile));
+		Company::Get(GetTileOwner(rail_tile))->infrastructure.signal -= CountBits(GetPresentSignals(rail_tile));
+		SetPresentSignals(rail_tile, GetPresentSignals(rail_tile) & ~SignalOnTrack(track));
+		Company::Get(GetTileOwner(rail_tile))->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
+		DirtyCompanyInfrastructureWindows(GetTileOwner(rail_tile));
 
 		/* removed last signal from tile? */
-		if (GetPresentSignals(tile) == 0) {
-			SetSignalStates(tile, 0);
-			SetHasSignals(tile, false);
-			SetSignalVariant(tile, INVALID_TRACK, SIG_ELECTRIC); // remove any possible semaphores
+		if (GetPresentSignals(rail_tile) == 0) {
+			SetSignalStates(rail_tile, 0);
+			SetHasSignals(rail_tile, false);
+			SetSignalVariant(rail_tile, INVALID_TRACK, SIG_ELECTRIC); // remove any possible semaphores
 		}
 
-		AddTrackToSignalBuffer(tile, track, GetTileOwner(tile));
+		AddTrackToSignalBuffer(tile, track, GetTileOwner(rail_tile));
 		YapfNotifyTrackLayoutChange(tile, track);
 		if (v != NULL) TryPathReserve(v, false);
 
@@ -1872,7 +1875,7 @@ static uint GetSaveSlopeZ(uint x, uint y, Track track)
 	return GetSlopePixelZ(x, y);
 }
 
-static void DrawSingleSignal(TileIndex tile, const RailtypeInfo *rti, Track track, SignalState condition, SignalOffsets image, uint pos)
+static void DrawSingleSignal(TileIndex tile, const Tile *rail_tile, const RailtypeInfo *rti, Track track, SignalState condition, SignalOffsets image, uint pos)
 {
 	bool side;
 	switch (_settings_game.construction.train_signal_side) {
@@ -1897,8 +1900,8 @@ static void DrawSingleSignal(TileIndex tile, const RailtypeInfo *rti, Track trac
 	uint x = TileX(tile) * TILE_SIZE + SignalPositions[side][pos].x;
 	uint y = TileY(tile) * TILE_SIZE + SignalPositions[side][pos].y;
 
-	SignalType type       = GetSignalType(tile, track);
-	SignalVariant variant = GetSignalVariant(tile, track);
+	SignalType type       = GetSignalType(rail_tile, track);
+	SignalVariant variant = GetSignalVariant(rail_tile, track);
 
 	SpriteID sprite = GetCustomSignalSprite(rti, tile, type, variant, condition);
 	if (sprite != 0) {
@@ -2333,9 +2336,9 @@ static void DrawTrackBits(TileInfo *ti, TrackBits track, bool draw_halftile, Cor
 	}
 }
 
-static void DrawSignals(TileIndex tile, TrackBits rails, const RailtypeInfo *rti)
+static void DrawSignals(TileIndex tile, const Tile *rail_tile, TrackBits rails, const RailtypeInfo *rti)
 {
-#define MAYBE_DRAW_SIGNAL(x, y, z, t) if (IsSignalPresent(tile, x)) DrawSingleSignal(tile, rti, t, GetSingleSignalState(tile, x), y, z)
+#define MAYBE_DRAW_SIGNAL(x, y, z, t) if (IsSignalPresent(rail_tile, x)) DrawSingleSignal(tile, rail_tile, rti, t, GetSingleSignalState(rail_tile, x), y, z)
 
 	if (!(rails & TRACK_BIT_Y)) {
 		if (!(rails & TRACK_BIT_X)) {
@@ -2384,7 +2387,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 			if (HasRailCatenaryDrawn(GetRailType(ti->tile))) DrawRailCatenary(ti, draw_halftile, halftile_corner);
 
-			if (HasSignals(ti->tile)) DrawSignals(ti->tile, rails, rti);
+			if (HasSignals(ti->tptr)) DrawSignals(ti->tile, ti->tptr, rails, rti);
 		}
 	} else {
 		/* draw depot */
@@ -2674,8 +2677,8 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 
 		case RAIL_TILE_SIGNALS: {
 			trackbits = GetTrackBits(tile);
-			byte a = GetPresentSignals(tile);
-			uint b = GetSignalStates(tile);
+			byte a = GetPresentSignals(rail_tile);
+			uint b = GetSignalStates(rail_tile);
 
 			b &= a;
 
@@ -2684,8 +2687,8 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 			 * the signal type. For signals that are only active from
 			 * one side, we set the missing signals explicitly to
 			 * `green'. Otherwise, they implicitly become `red'. */
-			if (!IsOnewaySignal(tile, TRACK_UPPER) || (a & SignalOnTrack(TRACK_UPPER)) == 0) b |= ~a & SignalOnTrack(TRACK_UPPER);
-			if (!IsOnewaySignal(tile, TRACK_LOWER) || (a & SignalOnTrack(TRACK_LOWER)) == 0) b |= ~a & SignalOnTrack(TRACK_LOWER);
+			if (!IsOnewaySignal(rail_tile, TRACK_UPPER) || (a & SignalOnTrack(TRACK_UPPER)) == 0) b |= ~a & SignalOnTrack(TRACK_UPPER);
+			if (!IsOnewaySignal(rail_tile, TRACK_LOWER) || (a & SignalOnTrack(TRACK_LOWER)) == 0) b |= ~a & SignalOnTrack(TRACK_LOWER);
 
 			if ((b & 0x8) == 0) red_signals |= (TRACKDIR_BIT_LEFT_N | TRACKDIR_BIT_X_NE | TRACKDIR_BIT_Y_SE | TRACKDIR_BIT_UPPER_E);
 			if ((b & 0x4) == 0) red_signals |= (TRACKDIR_BIT_LEFT_S | TRACKDIR_BIT_X_SW | TRACKDIR_BIT_Y_NW | TRACKDIR_BIT_UPPER_W);
@@ -2782,11 +2785,11 @@ static void GetTileDesc_Track(TileIndex tile, Tile *tptr, TileDesc *td)
 
 			SignalType primary_signal;
 			SignalType secondary_signal;
-			if (HasSignalOnTrack(tile, TRACK_UPPER)) {
-				primary_signal = GetSignalType(tile, TRACK_UPPER);
-				secondary_signal = HasSignalOnTrack(tile, TRACK_LOWER) ? GetSignalType(tile, TRACK_LOWER) : primary_signal;
+			if (HasSignalOnTrack(tptr, TRACK_UPPER)) {
+				primary_signal = GetSignalType(tptr, TRACK_UPPER);
+				secondary_signal = HasSignalOnTrack(tptr, TRACK_LOWER) ? GetSignalType(tptr, TRACK_LOWER) : primary_signal;
 			} else {
-				secondary_signal = primary_signal = GetSignalType(tile, TRACK_LOWER);
+				secondary_signal = primary_signal = GetSignalType(tptr, TRACK_LOWER);
 			}
 
 			td->str = signal_type[secondary_signal][primary_signal];
@@ -2826,8 +2829,8 @@ static bool ChangeTileOwner_Track(TileIndex tile, Tile *tptr, Owner old_owner, O
 		Company::Get(old_owner)->infrastructure.rail[rt] -= num_pieces;
 		Company::Get(new_owner)->infrastructure.rail[rt] += num_pieces;
 
-		if (HasSignals(tile)) {
-			uint num_sigs = CountBits(GetPresentSignals(tile));
+		if (HasSignals(tptr)) {
+			uint num_sigs = CountBits(GetPresentSignals(tptr));
 			Company::Get(old_owner)->infrastructure.signal -= num_sigs;
 			Company::Get(new_owner)->infrastructure.signal += num_sigs;
 		}

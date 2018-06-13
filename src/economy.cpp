@@ -500,11 +500,11 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 			tile = 0;
 
 			do {
-				if (IsTileType(tile, MP_RAILWAY) && IsTileOwner(tile, new_owner) && HasSignals(tile)) {
+				if (IsTileType(tile, MP_RAILWAY) && IsTileOwner(tile, new_owner) && HasSignals(_m.ToTile(tile))) {
 					TrackBits tracks = GetTrackBits(tile);
 					do { // there may be two tracks with signals for TRACK_BIT_HORZ and TRACK_BIT_VERT
 						Track track = RemoveFirstTrack(&tracks);
-						if (HasSignalOnTrack(tile, track)) AddTrackToSignalBuffer(tile, track, new_owner);
+						if (HasSignalOnTrack(_m.ToTile(tile), track)) AddTrackToSignalBuffer(tile, track, new_owner);
 					} while (tracks != TRACK_BIT_NONE);
 				} else if (IsLevelCrossingTile(tile) && IsTileOwner(tile, new_owner)) {
 					UpdateLevelCrossing(tile);
