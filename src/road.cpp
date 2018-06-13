@@ -29,11 +29,9 @@
  * @param ax the axis of the road over the rail
  * @return true if it is a valid tile
  */
-static bool IsPossibleCrossing(const TileIndex tile, Axis ax)
+static bool IsPossibleCrossing(TileIndex tile, const Tile *rail_tile, Axis ax)
 {
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-	return (rail_tile != NULL &&
-		GetRailTileType(rail_tile) == RAIL_TILE_NORMAL &&
+	return (GetRailTileType(rail_tile) == RAIL_TILE_NORMAL &&
 		GetTrackBits(rail_tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
 		GetFoundationSlope(tile) == SLOPE_FLAT);
 }
@@ -55,6 +53,12 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 
 		/* If the roadbit is in the current plan */
 		if (org_rb & target_rb) {
+			if (HasTileByType(neighbor_tile, MP_RAILWAY)) {
+				/* If the neighbor tile is inconnective remove the planed road connection to it */
+				if (!IsPossibleCrossing(neighbor_tile, GetTileByType(neighbor_tile, MP_RAILWAY), DiagDirToAxis(dir))) org_rb ^= target_rb;
+				continue;
+			}
+
 			bool connective = false;
 			const RoadBits mirrored_rb = MirrorRoadBits(target_rb);
 
@@ -78,10 +82,6 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 							/* Accept only connective tiles */
 							connective = (neighbor_rb & mirrored_rb) != ROAD_NONE;
 						}
-						break;
-
-					case MP_RAILWAY:
-						connective = IsPossibleCrossing(neighbor_tile, DiagDirToAxis(dir));
 						break;
 
 					case MP_WATER:

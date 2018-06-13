@@ -52,7 +52,9 @@ void AfterLoadLabelMaps()
 		}
 
 		for (TileIndex t = 0; t < MapSize(); t++) {
-			Tile *tptr = _m.ToTile(t);
+			Tile *tptr = GetTileByType(t, MP_RAILWAY);
+			if (tptr == NULL) tptr = _m.ToTile(t);
+
 			switch (GetTileType(tptr)) {
 				case MP_RAILWAY:
 					SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);

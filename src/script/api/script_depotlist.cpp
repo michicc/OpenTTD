@@ -43,6 +43,7 @@ ScriptDepotList::ScriptDepotList(ScriptTile::TransportType transport_type)
 	/* Handle 'standard' depots. */
 	const Depot *depot;
 	FOR_ALL_DEPOTS(depot) {
-		if ((::GetTileOwner(depot->xy) == ScriptObject::GetCompany() || ScriptObject::GetCompany() == OWNER_DEITY) && ::IsTileType(depot->xy, tile_type)) this->AddItem(depot->xy);
+		Tile *tile = ::GetTileByType(depot->xy, tile_type);
+		if (tile != NULL && (::GetTileOwner(tile) == ScriptObject::GetCompany() || ScriptObject::GetCompany() == OWNER_DEITY)) this->AddItem(depot->xy);
 	}
 }
