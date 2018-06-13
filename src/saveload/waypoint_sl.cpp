@@ -111,6 +111,7 @@ void MoveWaypointsToBaseStations()
 		new_wp->string_id = STR_SV_STNAME_WAYPOINT;
 
 		TileIndex t = wp->xy;
+		/* MP_RAILWAY wasn't split from the base tile in the affected savegame versions yet. */
 		if (IsTileType(t, MP_RAILWAY) && GetRailTileType(_m.ToTile(t)) == 2 /* RAIL_TILE_WAYPOINT */ && _m[t].m2 == wp->index) {
 			/* The tile might've been reserved! */
 			bool reserved = !IsSavegameVersionBefore(SLV_100) && HasBit(_m[t].m5, 4);

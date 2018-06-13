@@ -104,12 +104,15 @@ static inline DepotID GetDepotIndex(TileIndex t)
  */
 static inline VehicleType GetDepotVehicleType(TileIndex t)
 {
-	switch (GetTileType(t)) {
-		default: NOT_REACHED();
-		case MP_RAILWAY: return VEH_TRAIN;
-		case MP_ROAD:    return VEH_ROAD;
-		case MP_WATER:   return VEH_SHIP;
-		case MP_STATION: return VEH_AIRCRAFT;
+	if (HasTileByType(t, MP_RAILWAY)) {
+		return VEH_TRAIN;
+	} else {
+		switch (GetTileType(t)) {
+			default: NOT_REACHED();
+			case MP_ROAD:    return VEH_ROAD;
+			case MP_WATER:   return VEH_SHIP;
+			case MP_STATION: return VEH_AIRCRAFT;
+		}
 	}
 }
 

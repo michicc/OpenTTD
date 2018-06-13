@@ -1910,9 +1910,10 @@ static void SetDefaultRailGui()
 		uint count[RAILTYPE_END];
 		memset(count, 0, sizeof(count));
 		for (TileIndex t = 0; t < MapSize(); t++) {
-			if (IsTileType(t, MP_RAILWAY) || IsLevelCrossingTile(t) || HasStationTileRail(t) ||
+			const Tile *rail_tile = GetTileByType(t, MP_RAILWAY);
+			if (rail_tile != NULL || IsLevelCrossingTile(t) || HasStationTileRail(t) ||
 					(IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL)) {
-				count[GetRailType(t)]++;
+				count[GetRailType(rail_tile != NULL ? rail_tile : _m.ToTile(t))]++;
 			}
 		}
 

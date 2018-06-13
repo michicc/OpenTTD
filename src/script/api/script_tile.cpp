@@ -25,6 +25,7 @@
 /* static */ bool ScriptTile::IsBuildable(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
+	if (::HasTileByType(tile, MP_RAILWAY)) return false;
 
 	switch (::GetTileType(tile)) {
 		default: return false;
