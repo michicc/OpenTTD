@@ -239,7 +239,7 @@ protected:
 	{
 		CPerfStart perf(*m_pPerf);
 		if (IsRailTT() && IsPlainRailTile(m_new_tile)) {
-			m_new_td_bits = (TrackdirBits)(GetTrackBits(m_new_tile) * 0x101);
+			m_new_td_bits = (TrackdirBits)(GetTrackBits(GetTileByType(m_new_tile, MP_RAILWAY)) * 0x101);
 		} else {
 			m_new_td_bits = TrackStatusToTrackdirBits(GetTileTrackStatus(m_new_tile, TT(), IsRoadTT() ? RoadVehicle::From(m_veh)->compatible_roadtypes : 0));
 
@@ -460,7 +460,7 @@ public:
 		}
 		/* Check for speed limit imposed by railtype */
 		if (IsRailTT()) {
-			uint16 rail_speed = GetRailTypeInfo(GetRailType(m_old_tile))->max_speed;
+			uint16 rail_speed = GetRailTypeInfo(GetTileRailType(m_old_tile))->max_speed;
 			if (rail_speed > 0) max_speed = min(max_speed, rail_speed);
 		}
 

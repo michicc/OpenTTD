@@ -379,7 +379,7 @@ static inline TrackBits GetRailStationTrackBits(TileIndex t)
 static inline bool IsCompatibleTrainStationTile(TileIndex test_tile, TileIndex station_tile)
 {
 	assert(IsRailStationTile(station_tile));
-	return IsRailStationTile(test_tile) && IsCompatibleRail(GetRailType(test_tile), GetRailType(station_tile)) &&
+	return IsRailStationTile(test_tile) && IsCompatibleRail(GetRailType(_m.ToTile(test_tile)), GetRailType(_m.ToTile(station_tile))) &&
 			GetRailStationAxis(test_tile) == GetRailStationAxis(station_tile) &&
 			GetStationIndex(test_tile) == GetStationIndex(station_tile) &&
 			!IsStationTileBlocked(test_tile);
@@ -557,7 +557,7 @@ static inline void MakeStation(TileIndex t, Owner o, StationID sid, StationType 
 static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
 {
 	MakeStation(t, o, sid, STATION_RAIL, section + a);
-	SetRailType(t, rt);
+	SetRailType(_m.ToTile(t), rt);
 	SetRailStationReservation(t, false);
 }
 
@@ -573,7 +573,7 @@ static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, 
 static inline void MakeRailWaypoint(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
 {
 	MakeStation(t, o, sid, STATION_WAYPOINT, section + a);
-	SetRailType(t, rt);
+	SetRailType(_m.ToTile(t), rt);
 	SetRailStationReservation(t, false);
 }
 
