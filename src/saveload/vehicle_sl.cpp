@@ -565,7 +565,7 @@ void FixupTrainLengths()
 					if (d <= 0) {
 						/* Next vehicle should have left the depot already, show it and pull forward. */
 						next->vehstatus &= ~VS_HIDDEN;
-						next->track = TrackToTrackBits(GetRailDepotTrack(next->tile));
+						next->track = TrackToTrackBits(GetRailDepotTrack(GetRailDepotTile(next->tile)));
 						for (int i = 0; i >= d; i--) TrainController(next, NULL);
 					}
 				}
