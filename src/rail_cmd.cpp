@@ -1657,7 +1657,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 					case RAIL_TILE_DEPOT:
 						if (flags & DC_EXEC) {
 							/* notify YAPF about the track layout change */
-							YapfNotifyTrackLayoutChange(tile, GetRailDepotTrack(tile));
+							YapfNotifyTrackLayoutChange(tile, GetRailDepotTrack(tptr));
 
 							/* Update build vehicle window related to this depot */
 							InvalidateWindowData(WC_VEHICLE_DEPOT, tile);
@@ -1766,10 +1766,10 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 	return (cost.GetCost() == 0) ? error : cost;
 }
 
-static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
+static CommandCost RemoveTrainDepot(TileIndex tile, Tile *rail_tile, DoCommandFlag flags)
 {
 	if (_current_company != OWNER_WATER) {
-		CommandCost ret = CheckTileOwnership(tile);
+		CommandCost ret = CheckTileOwnership(tile, rail_tile);
 		if (ret.Failed()) return ret;
 	}
 
@@ -1778,11 +1778,11 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 
 	if (flags & DC_EXEC) {
 		/* read variables before the depot is removed */
-		DiagDirection dir = GetRailDepotDirection(tile);
-		Owner owner = GetTileOwner(tile);
+		DiagDirection dir = GetRailDepotDirection(rail_tile);
+		Owner owner = GetTileOwner(rail_tile);
 		Train *v = NULL;
 
-		if (HasDepotReservation(tile)) {
+		if (HasDepotReservation(rail_tile)) {
 			v = GetTrainForReservation(tile, DiagDirToDiagTrack(dir));
 			if (v != NULL) FreeTrainTrackReservation(v);
 		}
@@ -1846,7 +1846,7 @@ static CommandCost ClearTile_Track(TileIndex tile, Tile *rail_tile, DoCommandFla
 		}
 
 		case RAIL_TILE_DEPOT:
-			return RemoveTrainDepot(tile, flags);
+			return RemoveTrainDepot(tile, rail_tile, flags);
 
 		default:
 			return CMD_ERROR;
@@ -2391,9 +2391,9 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 		if (IsInvisibilitySet(TO_BUILDINGS)) {
 			/* Draw rail instead of depot */
-			dts = &_depot_invisible_gfx_table[GetRailDepotDirection(ti->tile)];
+			dts = &_depot_invisible_gfx_table[GetRailDepotDirection(ti->tptr)];
 		} else {
-			dts = &_depot_gfx_table[GetRailDepotDirection(ti->tile)];
+			dts = &_depot_gfx_table[GetRailDepotDirection(ti->tptr)];
 		}
 
 		SpriteID image;
@@ -2419,7 +2419,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 		if (rti->UsesOverlay()) {
 			SpriteID ground = GetCustomRailSprite(rti, ti->tile, RTSG_GROUND);
 
-			switch (GetRailDepotDirection(ti->tile)) {
+			switch (GetRailDepotDirection(ti->tptr)) {
 				case DIAGDIR_NE:
 					if (!IsInvisibilitySet(TO_BUILDINGS)) break;
 					FALLTHROUGH;
@@ -2436,10 +2436,10 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 					break;
 			}
 
-			if (_settings_client.gui.show_track_reservation && HasDepotReservation(ti->tile)) {
+			if (_settings_client.gui.show_track_reservation && HasDepotReservation(ti->tptr)) {
 				SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
 
-				switch (GetRailDepotDirection(ti->tile)) {
+				switch (GetRailDepotDirection(ti->tptr)) {
 					case DIAGDIR_NE:
 						if (!IsInvisibilitySet(TO_BUILDINGS)) break;
 						FALLTHROUGH;
@@ -2458,8 +2458,8 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 			}
 		} else {
 			/* PBS debugging, draw reserved tracks darker */
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasDepotReservation(ti->tile)) {
-				switch (GetRailDepotDirection(ti->tile)) {
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasDepotReservation(ti->tptr)) {
+				switch (GetRailDepotDirection(ti->tptr)) {
 					case DIAGDIR_NE:
 						if (!IsInvisibilitySet(TO_BUILDINGS)) break;
 						FALLTHROUGH;
@@ -2693,7 +2693,7 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 		}
 
 		case RAIL_TILE_DEPOT: {
-			DiagDirection dir = GetRailDepotDirection(tile);
+			DiagDirection dir = GetRailDepotDirection(rail_tile);
 
 			if (side != INVALID_DIAGDIR && side != dir) break;
 
@@ -2854,7 +2854,7 @@ static const int8 _deltacoord_leaveoffset[8] = {
  */
 int TicksToLeaveDepot(const Train *v)
 {
-	DiagDirection dir = GetRailDepotDirection(v->tile);
+	DiagDirection dir = GetRailDepotDirection(GetRailDepotTile(v->tile));
 	int length = v->CalcNextVehicleOffset();
 
 	switch (dir) {
@@ -2880,7 +2880,7 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, Til
 	Train *v = Train::From(u);
 
 	/* depot direction */
-	DiagDirection dir = GetRailDepotDirection(tile);
+	DiagDirection dir = GetRailDepotDirection(rail_tile);
 
 	/* Calculate the point where the following wagon should be activated. */
 	int length = v->CalcNextVehicleOffset();
@@ -3021,7 +3021,7 @@ static CommandCost TerraformTile_Track(TileIndex tile, Tile *tptr, DoCommandFlag
 		/* allow terraforming */
 		return CommandCost(EXPENSES_CONSTRUCTION, was_water ? _price[PR_CLEAR_WATER] : (Money)0);
 	} else if (_settings_game.construction.build_on_slopes && AutoslopeEnabled() &&
-			AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, GetRailDepotDirection(tile))) {
+			AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, GetRailDepotDirection(tptr))) {
 		return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
 	}
 	return CommandCost(INVALID_STRING_ID); // Dummy error

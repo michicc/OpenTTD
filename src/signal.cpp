@@ -285,11 +285,11 @@ static SigFlags ExploreSegment(Owner owner)
 				if (IsRailDepot(rail_tile)) {
 					if (enterdir == INVALID_DIAGDIR) { // from 'inside' - train just entered or left the depot
 						if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, NULL, &TrainOnTileEnum)) flags |= SF_TRAIN;
-						exitdir = GetRailDepotDirection(tile);
+						exitdir = GetRailDepotDirection(rail_tile);
 						tile += TileOffsByDiagDir(exitdir);
 						enterdir = ReverseDiagDir(exitdir);
 						break;
-					} else if (enterdir == GetRailDepotDirection(tile)) { // entered a depot
+					} else if (enterdir == GetRailDepotDirection(rail_tile)) { // entered a depot
 						if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, NULL, &TrainOnTileEnum)) flags |= SF_TRAIN;
 						continue;
 					} else {
@@ -502,7 +502,7 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 			case MP_RAILWAY:
 				if (IsRailDepot(_m.ToTile(tile))) {
 					/* 'optimization assert' do not try to update signals in other cases */
-					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(tile));
+					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(_m.ToTile(tile)));
 					_tbdset.Add(tile, INVALID_DIAGDIR); // start from depot inside
 					break;
 				}
