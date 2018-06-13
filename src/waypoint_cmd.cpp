@@ -123,7 +123,7 @@ static CommandCost IsValidTileForWaypoint(TileIndex tile, Axis axis, StationID *
 
 	if (GetAxisForNewWaypoint(tile) != axis) return_cmd_error(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK);
 
-	Owner owner = GetTileOwner(tile);
+	Owner owner = GetTileOwner(HasTileByType(tile, MP_RAILWAY) ? GetTileByType(tile, MP_RAILWAY) : _m.ToTile(tile));
 	CommandCost ret = CheckOwnership(owner);
 	if (ret.Succeeded()) ret = EnsureNoVehicleOnGround(tile);
 	if (ret.Failed()) return ret;
@@ -231,7 +231,7 @@ CommandCost CmdBuildRailWaypoint(TileIndex start_tile, DoCommandFlag flags, uint
 			/* Move existing (recently deleted) waypoint to the new location */
 			wp->xy = start_tile;
 		}
-		wp->owner = GetTileOwner(start_tile);
+		wp->owner = GetTileOwner(HasTileByType(start_tile, MP_RAILWAY) ? GetTileByType(start_tile, MP_RAILWAY) : _m.ToTile(start_tile));
 
 		wp->rect.BeforeAddRect(start_tile, width, height, StationRect::ADD_TRY);
 
@@ -261,10 +261,13 @@ CommandCost CmdBuildRailWaypoint(TileIndex start_tile, DoCommandFlag flags, uint
 			TileIndex tile = start_tile + i * offset;
 			byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(tile) : 0;
 			if (!HasStationTileRail(tile)) c->infrastructure.station++;
-			bool reserved = IsTileType(tile, MP_RAILWAY) ?
-					HasBit(GetRailReservationTrackBits(_m.ToTile(tile)), AxisToTrack(axis)) :
+			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+			bool reserved = rail_tile != NULL ?
+					HasBit(GetRailReservationTrackBits(rail_tile), AxisToTrack(axis)) :
 					HasStationReservation(tile);
-			MakeRailWaypoint(tile, wp->owner, wp->index, axis, layout_ptr[i], GetRailType(_m.ToTile(tile)));
+			RailType rt = GetRailType(rail_tile != NULL ? rail_tile : _m.ToTile(tile));
+			if (rail_tile != NULL) _m.RemoveTile(tile, rail_tile);
+			MakeRailWaypoint(tile, wp->owner, wp->index, axis, layout_ptr[i], rt);
 			SetCustomStationSpecIndex(tile, map_spec_index);
 			SetRailStationReservation(tile, reserved);
 			MarkTileDirtyByTile(tile);
