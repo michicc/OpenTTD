@@ -423,7 +423,9 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 
 			if (HasTileByType(tile, MP_TREES)) goto not_valid_below;
 			if (HasTileByType(tile, MP_RAILWAY)) {
-				if (!IsPlainRail(GetTileByType(tile, MP_RAILWAY))) goto not_valid_below;
+				FOR_ALL_RAIL_TILES(rail_tile, tile) {
+					if (!IsPlainRail(rail_tile)) goto not_valid_below;
+				}
 				goto do_exec;
 			}
 

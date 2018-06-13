@@ -623,7 +623,7 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 	Train *v = NULL;
 
 	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		Tile *rail_tile = GetRailTileFromTrack(tile, track);
 
 		/* There are no rails present at depots. */
 		if (!IsPlainRailTile(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
@@ -741,13 +741,10 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
  */
 bool FloodHalftile(TileIndex t)
 {
-	Tile *rail_tile = GetTileByType(t, MP_RAILWAY);
-	assert(IsPlainRailTile(rail_tile));
-
 	bool flooded = false;
 
 	Slope tileh = GetTileSlope(t);
-	TrackBits rail_bits = GetTrackBits(rail_tile);
+	TrackBits rail_bits = GetAllTrackBits(t);
 
 	if (IsSlopeWithOneCornerRaised(tileh)) {
 		TrackBits lower_track = CornerToTrackBits(OppositeCorner(GetHighestSlopeCorner(tileh)));
@@ -1034,11 +1031,11 @@ CommandCost CmdBuildSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1,
 	if (sigtype > SIGTYPE_LAST) return CMD_ERROR;
 	if (cycle_start > cycle_stop || cycle_stop > SIGTYPE_LAST) return CMD_ERROR;
 
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	if (!ValParamTrackOrientation(track)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+	Tile *rail_tile = GetRailTileFromTrack(tile, track);
 
 	/* You can only build signals on plain rail tiles, and the selected track must exist */
-	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(rail_tile) ||
-			!HasTrack(rail_tile, track)) {
+	if (!IsPlainRailTile(rail_tile) || !HasTrack(rail_tile, track)) {
 		return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	}
 	/* Protect against invalid signal copying */
@@ -1197,7 +1194,7 @@ static bool CheckSignalAutoFill(TileIndex &tile, Trackdir &trackdir, int &signal
 	if (trackdirbits != TRACKDIR_BIT_NONE) return false;
 
 	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		Tile *rail_tile = GetRailTileFromTrack(tile, TrackdirToTrack(trackdir));
 
 		if (IsRailDepot(rail_tile)) return false;
 		if (!remove && HasSignalOnTrack(rail_tile, TrackdirToTrack(trackdir))) return false;
@@ -1268,7 +1265,7 @@ static CommandCost CmdSignalTrackHelper(TileIndex tile, DoCommandFlag flags, uin
 	TileIndex end_tile = p1;
 	if (signal_density == 0 || signal_density > 20) return CMD_ERROR;
 
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = GetRailTileFromTrack(tile, track);
 	if (!IsPlainRailTile(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 
 	/* for vertical/horizontal tracks, double the given signals density
@@ -1442,9 +1439,10 @@ CommandCost CmdBuildSignalTrack(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 CommandCost CmdRemoveSingleSignal(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 p2, const char *text)
 {
 	Track track = Extract<Track, 0, 3>(p1);
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	if (!ValParamTrackOrientation(track)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 
-	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(rail_tile) || !HasTrack(rail_tile, track)) {
+	Tile *rail_tile = GetRailTileFromTrack(tile, track);
+	if (!IsPlainRailTile(rail_tile) || !HasTrack(rail_tile, track)) {
 		return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	}
 	if (!HasSignalOnTrack(rail_tile, track)) {
@@ -2428,6 +2426,20 @@ static Foundation GetFoundation_Track(TileIndex tile, Tile *rail_tile, Slope til
 	return IsPlainRail(rail_tile) ? GetRailFoundation(tileh, GetTrackBits(rail_tile)) : FlatteningFoundation(tileh);
 }
 
+/** Get all tracks of one owner on a tile. */
+static TrackBits GetOwnTrackBits(TileIndex tile, Owner o)
+{
+	TrackBits bits = TRACK_BIT_NONE;
+	FOR_ALL_RAIL_TILES(rail_tile, tile) {
+		if (IsTileOwner(rail_tile, o)) {
+			/* Ignore direction of depots for fence calculation. */
+			if (IsRailDepot(rail_tile)) bits |= TRACK_BIT_CROSS;
+			if (IsPlainRail(rail_tile)) bits |= GetTrackBits(rail_tile);
+		}
+	}
+	return bits;
+}
+
 static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 {
 	RailFenceType old_fences = GetRailFenceType(rail_tile);
@@ -2446,9 +2458,9 @@ static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 	RailFenceType new_fences = RAIL_FENCE_NONE;
 	if (IsPlainRail(rail_tile) && (!IsTileType(tile, MP_CLEAR) || GetClearDensity(tile) == 3)) { // wait until bottom is green
 		/* determine direction of fence */
-		TrackBits rail = GetTrackBits(rail_tile);
-
 		Owner owner = GetTileOwner(rail_tile);
+		TrackBits rail = GetOwnTrackBits(tile, owner);
+
 		byte fences = 0;
 
 		for (DiagDirection d = DIAGDIR_BEGIN; d < DIAGDIR_END; d++) {
@@ -2458,7 +2470,10 @@ static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 			if ((rail & dir_to_trackbits[d]) != TRACK_BIT_NONE) continue;
 
 			TileIndex tile2 = tile + TileOffsByDiagDir(d);
-			const Tile *ptr2 = HasTileByType(tile2, MP_RAILWAY) ? GetTileByType(tile2, MP_RAILWAY) : _m.ToTile(tile2);
+			/* Try to find a rail tile reachable from our tile. If no such
+			 * tile exists, try for any rail tile. */
+			const Tile *ptr2 = GetRailTileFromDiagDir(tile2, d);
+			if (ptr2 == NULL) ptr2 = HasTileByType(tile2, MP_RAILWAY) ? GetTileByType(tile2, MP_RAILWAY) : _m.ToTile(tile2);
 
 			/* Show fences if it's a house, industry, object, road, tunnelbridge or not owned by us. */
 			if (!IsValidTile(tile2) || IsTileType(tile2, MP_HOUSE) || IsTileType(tile2, MP_INDUSTRY) ||
