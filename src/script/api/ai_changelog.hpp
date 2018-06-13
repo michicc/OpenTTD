@@ -19,6 +19,9 @@
  *
  * This version is not yet released. The following changes are not set in stone yet.
  *
+ * Other changes:
+ * \li AIRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
+ *
  * \b 1.9.0
  *
  * API additions:

@@ -101,11 +101,14 @@
 	return ::HasPowerOnRail((::RailType)engine_rail_type, (::RailType)track_rail_type);
 }
 
-/* static */ ScriptRail::RailType ScriptRail::GetRailType(TileIndex tile)
+/* static */ ScriptRail::RailType ScriptRail::GetRailType(TileIndex tile, TileIndex front)
 {
 	if (!ScriptTile::HasTransportType(tile, ScriptTile::TRANSPORT_RAIL)) return RAILTYPE_INVALID;
+	if (!::IsValidTile(front)) return RAILTYPE_INVALID;
 
-	return (RailType)::GetTileRailType(tile);
+	DiagDirection dir = ::DiagdirBetweenTiles(front, tile);
+	if (!::IsValidDiagDirection(dir)) return RAILTYPE_INVALID;
+	return (RailType)::GetTileRailType(tile, dir);
 }
 
 /* static */ bool ScriptRail::ConvertRailType(TileIndex start_tile, TileIndex end_tile, ScriptRail::RailType convert_to)
@@ -405,7 +408,7 @@ static const ScriptRailSignalData _possible_trackdirs[5][NUM_TRACK_DIRECTIONS] =
 /* static */ ScriptRail::SignalType ScriptRail::GetSignalType(TileIndex tile, TileIndex front)
 {
 	if (ScriptMap::DistanceManhattan(tile, front) != 1) return SIGNALTYPE_NONE;
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = ::GetRailTileFromDiagDir(tile, ::DiagdirBetweenTiles(tile, front));
 	if (rail_tile == NULL || !::HasSignals(rail_tile)) return SIGNALTYPE_NONE;
 
 	int data_index = 2 + (::TileX(front) - ::TileX(tile)) + 2 * (::TileY(front) - ::TileY(tile));

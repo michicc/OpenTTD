@@ -588,8 +588,10 @@ static CommandCost CmdBuildRailWagon(TileIndex tile, DoCommandFlag flags, const 
 {
 	const RailVehicleInfo *rvi = &e->u.rail;
 
+	Tile *depot = GetRailDepotTile(tile);
+
 	/* Check that the wagon can drive on the track in question */
-	if (!IsCompatibleRail(rvi->railtype, GetTileRailType(tile))) return CMD_ERROR;
+	if (!IsCompatibleRail(rvi->railtype, GetRailType(depot))) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
 		Train *v = new Train();
@@ -599,7 +601,7 @@ static CommandCost CmdBuildRailWagon(TileIndex tile, DoCommandFlag flags, const 
 		v->engine_type = e->index;
 		v->gcache.first_engine = INVALID_ENGINE; // needs to be set before first callback
 
-		DiagDirection dir = GetRailDepotDirection(GetRailDepotTile(tile));
+		DiagDirection dir = GetRailDepotDirection(depot);
 
 		v->direction = DiagDirToDir(dir);
 		v->tile = tile;
@@ -2844,11 +2846,14 @@ static void TrainEnterStation(Train *v, StationID station)
 }
 
 /* Check if the vehicle is compatible with the specified tile */
-static inline bool CheckCompatibleRail(const Train *v, TileIndex tile)
+static inline bool CheckCompatibleRail(const Train *v, TileIndex tile, DiagDirection diagdir)
 {
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-	return IsTileOwner(rail_tile != NULL ? rail_tile : _m.ToTile(tile), v->owner) &&
-			(!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetTileRailType(tile)));
+	Tile *rail_tile = GetRailTileFromDiagDir(tile, diagdir);
+	if (rail_tile != NULL) {
+		return IsTileOwner(rail_tile, v->owner) && (!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetRailType(rail_tile)));
+	} else {
+		return IsTileOwner(tile, v->owner) && (!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetTileRailType(tile, diagdir)));
+	}
 }
 
 /** Data structure for storing engine speed changes of an acceleration type. */
@@ -3152,7 +3157,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 
 				/* Check if the new tile constrains tracks that are compatible
 				 * with the current train, if not, bail out. */
-				if (!CheckCompatibleRail(v, gp.new_tile)) goto invalid_rail;
+				if (!CheckCompatibleRail(v, gp.new_tile, enterdir)) goto invalid_rail;
 
 				TrackBits chosen_track;
 				if (prev == NULL) {
@@ -3282,11 +3287,6 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 					if (v->Next() == NULL) ClearPathReservation(v, v->tile, v->GetVehicleTrackdir());
 
 					v->tile = gp.new_tile;
-
-					if (GetTileRailType(gp.new_tile) != GetTileRailType(gp.old_tile)) {
-						v->First()->ConsistChanged(CCF_TRACK);
-					}
-
 					v->track = chosen_track;
 					assert(v->track);
 				}
@@ -3303,6 +3303,10 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 					}
 					direction_changed = true;
 					v->direction = chosen_dir;
+				}
+
+				if (!HasBit(r, VETS_ENTERED_WORMHOLE) && GetTileRailType(gp.new_tile, enterdir) != GetTileRailType(gp.old_tile, ReverseDiagDir(enterdir))) {
+					v->First()->ConsistChanged(CCF_TRACK);
 				}
 
 				if (v->IsFrontEngine()) {
@@ -3670,7 +3674,7 @@ static TileIndex TrainApproachingCrossingTile(const Train *v)
 
 	/* not a crossing || wrong axis || unusable rail (wrong type or owner) */
 	if (!IsLevelCrossingTile(tile) || DiagDirToAxis(dir) == GetCrossingRoadAxis(tile) ||
-			!CheckCompatibleRail(v, tile)) {
+			!CheckCompatibleRail(v, tile, dir)) {
 		return INVALID_TILE;
 	}
 
@@ -3722,7 +3726,7 @@ static bool TrainCheckIfLineEnds(Train *v, bool reverse)
 	}
 
 	/* no suitable trackbits at all || unusable rail (wrong type or owner) */
-	if (bits == TRACK_BIT_NONE || !CheckCompatibleRail(v, tile)) {
+	if (bits == TRACK_BIT_NONE || !CheckCompatibleRail(v, tile, dir)) {
 		return TrainApproachingLineEnd(v, false, reverse);
 	}
 
@@ -4017,8 +4021,6 @@ void Train::OnNewDay()
  */
 Trackdir Train::GetVehicleTrackdir() const
 {
-	if (this->vehstatus & VS_CRASHED) return INVALID_TRACKDIR;
-
 	if (this->track == TRACK_BIT_DEPOT) {
 		/* We'll assume the train is facing outwards */
 		return DiagDirToDiagTrackdir(GetRailDepotDirection(GetRailDepotTile(this->tile))); // Train in depot
@@ -4028,6 +4030,8 @@ Trackdir Train::GetVehicleTrackdir() const
 		/* train in tunnel or on bridge, so just use his direction and assume a diagonal track */
 		return DiagDirToDiagTrackdir(DirToDiagDir(this->direction));
 	}
+
+	if (this->vehstatus & VS_CRASHED) return TrackToTrackdir(FindFirstTrack(this->track));
 
 	return TrackDirectionToTrackdir(FindFirstTrack(this->track), this->direction);
 }

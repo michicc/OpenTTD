@@ -33,6 +33,7 @@
  *
  * Other changes:
  * \li GSBridge::GetName takes one extra parameter to refer the vehicle type
+ * \li GSRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
  *
  * \b 1.8.0
  *
