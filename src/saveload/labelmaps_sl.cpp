@@ -52,26 +52,27 @@ void AfterLoadLabelMaps()
 		}
 
 		for (TileIndex t = 0; t < MapSize(); t++) {
-			switch (GetTileType(t)) {
+			Tile *tptr = _m.ToTile(t);
+			switch (GetTileType(tptr)) {
 				case MP_RAILWAY:
-					SetRailType(t, railtype_conversion_map[GetRailType(t)]);
+					SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
 					break;
 
 				case MP_ROAD:
 					if (IsLevelCrossing(t)) {
-						SetRailType(t, railtype_conversion_map[GetRailType(t)]);
+						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
 					}
 					break;
 
 				case MP_STATION:
 					if (HasStationRail(t)) {
-						SetRailType(t, railtype_conversion_map[GetRailType(t)]);
+						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
 					}
 					break;
 
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) {
-						SetRailType(t, railtype_conversion_map[GetRailType(t)]);
+						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
 					}
 					break;
 

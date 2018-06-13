@@ -114,11 +114,11 @@ void AfterLoadCompanyStats()
 			if (c != NULL) {
 				uint pieces = 1;
 				if (IsPlainRail(rail_tile)) {
-					TrackBits bits = GetTrackBits(tile);
+					TrackBits bits = GetTrackBits(rail_tile);
 					pieces = CountBits(bits);
 					if (TracksOverlap(bits)) pieces *= pieces;
 				}
-				c->infrastructure.rail[GetRailType(tile)] += pieces;
+				c->infrastructure.rail[GetRailType(rail_tile)] += pieces;
 
 				if (HasSignals(rail_tile)) c->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
 			}

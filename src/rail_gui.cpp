@@ -111,7 +111,7 @@ static void PlaceExtraDepotRail(TileIndex tile, DiagDirection dir, Track track)
 {
 	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 	if (rail_tile == NULL || GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) return;
-	if ((GetTrackBits(tile) & DiagdirReachesTracks(dir)) == 0) return;
+	if ((GetTrackBits(rail_tile) & DiagdirReachesTracks(dir)) == 0) return;
 
 	DoCommandP(tile, _cur_railtype, track, CMD_BUILD_SINGLE_RAIL);
 }
