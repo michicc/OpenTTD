@@ -47,5 +47,5 @@ Depot::~Depot()
 
 	/* Delete the depot list */
 	VehicleType vt = GetDepotVehicleType(this->xy);
-	DeleteWindowById(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VL_DEPOT_LIST, vt, GetTileOwner(this->xy), this->index).Pack());
+	DeleteWindowById(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VL_DEPOT_LIST, vt, GetDepotOwner(this->xy), this->index).Pack());
 }
