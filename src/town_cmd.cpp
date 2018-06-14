@@ -80,13 +80,14 @@ Town::~Town()
 
 	/* Check no tile is related to us. */
 	for (TileIndex tile = 0; tile < MapSize(); ++tile) {
+		if (HasTileByType(tile, MP_ROAD)) {
+			assert(!HasTownOwnedRoad(tile) || GetTownIndex(_m.ToTile(tile)) != this->index);
+			continue;
+		}
+
 		switch (GetTileType(tile)) {
 			case MP_HOUSE:
-				assert(GetTownIndex(tile) != this->index);
-				break;
-
-			case MP_ROAD:
-				assert(!HasTownOwnedRoad(tile) || GetTownIndex(tile) != this->index);
+				assert(GetTownIndex(_m.ToTile(tile)) != this->index);
 				break;
 
 			case MP_TUNNELBRIDGE:
@@ -724,10 +725,11 @@ static void UpdateTownCargoes(Town *t, TileIndex start, bool update_total = true
 	 * directions as the coverage area of a single station is bigger than just one square. */
 	TileArea area = AcceptanceMatrix::GetAreaForTile(start, 1);
 	TILE_AREA_LOOP(tile, area) {
-		if (!IsTileType(tile, MP_HOUSE) || GetTownIndex(tile) != t->index) continue;
+		Tile *house_tile = _m.ToTile(tile);
+		if (!IsTileType(house_tile, MP_HOUSE) || GetTownIndex(house_tile) != t->index) continue;
 
-		AddAcceptedCargo_Town(tile, _m.ToTile(tile), accepted, &dummy);
-		AddProducedCargo_Town(tile, _m.ToTile(tile), produced);
+		AddAcceptedCargo_Town(tile, house_tile, accepted, &dummy);
+		AddProducedCargo_Town(tile, house_tile, produced);
 	}
 
 	/* Create bitmap of produced and accepted cargoes. */
@@ -1438,7 +1440,7 @@ static bool GrowTownAtRoad(Town *t, TileIndex tile)
 				/* If we are in the SE, and this road-piece has no town owner yet, it just found an
 				 * owner :) (happy happy happy road now) */
 				SetRoadOwner(tile, ROADTYPE_ROAD, OWNER_TOWN);
-				SetTownIndex(tile, t->index);
+				SetTownIndex(_m.ToTile(tile), t->index);
 			}
 		}
 
@@ -2734,7 +2736,7 @@ CommandCost CmdDeleteTown(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 		bool try_clear = false;
 		switch (GetTileType(tile)) {
 			case MP_ROAD:
-				try_clear = HasTownOwnedRoad(tile) && GetTownIndex(tile) == t->index;
+				try_clear = HasTownOwnedRoad(tile) && GetTownIndex(_m.ToTile(tile)) == t->index;
 				break;
 
 			case MP_TUNNELBRIDGE:
@@ -2742,7 +2744,7 @@ CommandCost CmdDeleteTown(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 				break;
 
 			case MP_HOUSE:
-				try_clear = GetTownIndex(tile) == t->index;
+				try_clear = GetTownIndex(_m.ToTile(tile)) == t->index;
 				break;
 
 			case MP_INDUSTRY:
@@ -3327,29 +3329,30 @@ Town *CalcClosestTownFromTile(TileIndex tile, uint threshold)
  */
 Town *ClosestTownFromTile(TileIndex tile, uint threshold)
 {
-	switch (GetTileType(tile)) {
-		case MP_ROAD:
-			if (IsRoadDepot(tile)) return CalcClosestTownFromTile(tile, threshold);
+	if (HasTileByType(tile, MP_ROAD)) {
+		if (IsRoadDepotTile(tile)) return CalcClosestTownFromTile(tile, threshold);
 
-			if (!HasTownOwnedRoad(tile)) {
-				TownID tid = GetTownIndex(tile);
+		if (!HasTownOwnedRoad(tile)) {
+			TownID tid = GetTownIndex(GetTileByType(tile, MP_ROAD));
 
-				if (tid == INVALID_TOWN) {
-					/* in the case we are generating "many random towns", this value may be INVALID_TOWN */
-					if (_generating_world) return CalcClosestTownFromTile(tile, threshold);
-					assert(Town::GetNumItems() == 0);
-					return NULL;
-				}
-
-				assert(Town::IsValidID(tid));
-				Town *town = Town::Get(tid);
-
-				if (DistanceManhattan(tile, town->xy) >= threshold) town = NULL;
-
-				return town;
+			if (tid == INVALID_TOWN) {
+				/* in the case we are generating "many random towns", this value may be INVALID_TOWN */
+				if (_generating_world) return CalcClosestTownFromTile(tile, threshold);
+				assert(Town::GetNumItems() == 0);
+				return NULL;
 			}
-			FALLTHROUGH;
 
+			assert(Town::IsValidID(tid));
+			Town *town = Town::Get(tid);
+
+			if (DistanceManhattan(tile, town->xy) >= threshold) town = NULL;
+
+			return town;
+		}
+		return Town::GetByTile(tile);
+	}
+
+	switch (GetTileType(tile)) {
 		case MP_HOUSE:
 			return Town::GetByTile(tile);
 

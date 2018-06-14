@@ -131,7 +131,8 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 
 	static inline Town *GetByTile(TileIndex tile)
 	{
-		return Town::Get(GetTownIndex(tile));
+		/* Use the town index from the first road tile if present. */
+		return Town::Get(GetTownIndex(HasTileByType(tile, MP_ROAD) ? GetTileByType(tile, MP_ROAD) : _m.ToTile(tile)));
 	}
 
 	static Town *GetRandom();

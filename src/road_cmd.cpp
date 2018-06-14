@@ -271,6 +271,7 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 		return cost;
 	}
 
+	Tile *road_tile = GetTileByType(tile, MP_ROAD);
 	if (IsNormalRoad(tile)) {
 		 Slope tileh = GetTileSlope(tile);
 
@@ -350,7 +351,7 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 					if (rt == ROADTYPE_ROAD && IsRoadOwner(tile, ROADTYPE_ROAD, OWNER_TOWN)) {
 						/* Update nearest-town index */
 						const Town *town = CalcClosestTownFromTile(tile);
-						SetTownIndex(tile, town == NULL ? INVALID_TOWN : town->index);
+						SetTownIndex(road_tile, town == NULL ? INVALID_TOWN : town->index);
 					}
 					SetRoadBits(tile, ROAD_NONE, rt);
 					SetRoadTypes(tile, rts);
@@ -543,10 +544,11 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 
 			if (IsTileType(tile, MP_ROAD)) {
 				/* Already a level crossing, just add the new road type. */
+				Tile *road_tile = _m.ToTile(tile);
 				SetRoadTypes(tile, GetRoadTypes(tile) | RoadTypeToRoadTypes(rt));
 				SetRoadBits(tile, GetRoadBits(tile, rt) | pieces, rt);
 				SetRoadOwner(tile, rt, company);
-				if (rt == ROADTYPE_ROAD) SetTownIndex(tile, p2);
+				if (rt == ROADTYPE_ROAD) SetTownIndex(road_tile, p2);
 			} else {
 				MakeRoadNormal(tile, pieces, RoadTypeToRoadTypes(rt) | ROADTYPES_ROAD, p2, company, company);
 				Tile *crossing = GetTileByType(tile, MP_RAILWAY);
@@ -719,10 +721,11 @@ do_clear:;
 	if (flags & DC_EXEC) {
 		switch (GetTileType(tile)) {
 			case MP_ROAD: {
+				Tile *road_tile = _m.ToTile(tile);
 				if (existing == ROAD_NONE ) {
 					SetRoadTypes(tile, GetRoadTypes(tile) | RoadTypeToRoadTypes(rt));
 					SetRoadOwner(tile, rt, company);
-					if (rt == ROADTYPE_ROAD) SetTownIndex(tile, p2);
+					if (rt == ROADTYPE_ROAD) SetTownIndex(road_tile, p2);
 				}
 				SetRoadBits(tile, existing | pieces, rt);
 				break;
@@ -1338,7 +1341,7 @@ void UpdateNearestTownForRoadTiles(bool invalidate)
 				const Town *town = CalcClosestTownFromTile(t);
 				if (town != NULL) tid = town->index;
 			}
-			SetTownIndex(t, tid);
+			SetTownIndex(_m.ToTile(t), tid);
 		}
 	}
 }
