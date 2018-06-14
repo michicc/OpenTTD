@@ -1659,9 +1659,8 @@ static Vehicle *TrainApproachingCrossingEnum(Vehicle *v, void *data)
  */
 static bool TrainApproachingCrossing(TileIndex tile)
 {
-	assert(IsLevelCrossingTile(tile));
-
-	DiagDirection dir = AxisToDiagDir(GetCrossingRailAxis(tile));
+	Track track = FindFirstTrack(GetTrackBits(GetLevelCrossingTile(tile)));
+	DiagDirection dir = track == TRACK_X ? DIAGDIR_NE : DIAGDIR_SE;
 	TileIndex tile_from = tile + TileOffsByDiagDir(dir);
 
 	if (HasVehicleOnPos(tile_from, &tile, &TrainApproachingCrossingEnum)) return true;
@@ -1681,16 +1680,16 @@ static bool TrainApproachingCrossing(TileIndex tile)
  */
 void UpdateLevelCrossing(TileIndex tile, bool sound)
 {
-	assert(IsLevelCrossingTile(tile));
+	Tile *rail_tile = GetLevelCrossingTile(tile);
 
 	/* reserved || train on crossing || train approaching crossing */
-	bool new_state = HasCrossingReservation(tile) || HasVehicleOnPos(tile, NULL, &TrainOnTileEnum) || TrainApproachingCrossing(tile);
+	bool new_state = GetRailReservationTrackBits(rail_tile) != TRACK_BIT_NONE || HasVehicleOnPos(tile, NULL, &TrainOnTileEnum) || TrainApproachingCrossing(tile);
 
-	if (new_state != IsCrossingBarred(tile)) {
+	if (new_state != IsCrossingBarred(rail_tile)) {
 		if (new_state && sound) {
 			if (_settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, tile);
 		}
-		SetCrossingBarred(tile, new_state);
+		SetCrossingBarred(rail_tile, new_state);
 		MarkTileDirtyByTile(tile);
 	}
 }
@@ -1703,8 +1702,9 @@ void UpdateLevelCrossing(TileIndex tile, bool sound)
  */
 static inline void MaybeBarCrossingWithSound(TileIndex tile)
 {
-	if (!IsCrossingBarred(tile)) {
-		BarCrossing(tile);
+	Tile *crossing = GetLevelCrossingTile(tile);
+	if (!IsCrossingBarred(crossing)) {
+		BarCrossing(crossing);
 		if (_settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, tile);
 		MarkTileDirtyByTile(tile);
 	}
@@ -2347,7 +2347,7 @@ static PBSTileInfo ExtendTrainReservation(const Train *v, TrackBits *new_tracks,
 		}
 
 		/* Station, depot or waypoint are a possible target. */
-		bool target_seen = ft.m_is_station || (HasTileByType(ft.m_new_tile, MP_RAILWAY) && !IsPlainRail(GetTileByType(ft.m_new_tile, MP_RAILWAY)));
+		bool target_seen = ft.m_is_station || (HasTileByType(ft.m_new_tile, MP_RAILWAY) && !IsNormalRail(GetTileByType(ft.m_new_tile, MP_RAILWAY)));
 		if (target_seen || KillFirstBit(ft.m_new_td_bits) != TRACKDIR_BIT_NONE) {
 			/* Choice found or possible target encountered.
 			 * On finding a possible target, we need to stop and let the pathfinder handle the
@@ -3314,7 +3314,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 
 					/* If we are approaching a crossing that is reserved, play the sound now. */
 					TileIndex crossing = TrainApproachingCrossingTile(v);
-					if (crossing != INVALID_TILE && HasCrossingReservation(crossing) && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing);
+					if (crossing != INVALID_TILE && GetReservedTrackbits(crossing) != TRACK_BIT_NONE && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing);
 
 					/* Always try to extend the reservation when entering a tile. */
 					CheckNextTrainTile(v);
@@ -3673,7 +3673,7 @@ static TileIndex TrainApproachingCrossingTile(const Train *v)
 	TileIndex tile = v->tile + TileOffsByDiagDir(dir);
 
 	/* not a crossing || wrong axis || unusable rail (wrong type or owner) */
-	if (!IsLevelCrossingTile(tile) || DiagDirToAxis(dir) == GetCrossingRoadAxis(tile) ||
+	if (!IsLevelCrossingTile(tile) || GetRailTileFromDiagDir(tile, dir) == NULL ||
 			!CheckCompatibleRail(v, tile, dir)) {
 		return INVALID_TILE;
 	}

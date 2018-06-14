@@ -64,13 +64,6 @@ protected:
 		if (IsDiagonalTrackdir(trackdir)) {
 			cost += YAPF_TILE_LENGTH;
 			switch (GetTileType(tile)) {
-				case MP_ROAD:
-					/* Increase the cost for level crossings */
-					if (IsLevelCrossing(tile)) {
-						cost += Yapf().PfGetSettings().road_crossing_penalty;
-					}
-					break;
-
 				case MP_STATION: {
 					const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(tile));
 					if (IsDriveThroughStopTile(tile)) {
@@ -97,6 +90,12 @@ protected:
 			/* non-diagonal trackdir */
 			cost = YAPF_TILE_CORNER_LENGTH + Yapf().PfGetSettings().road_curve_penalty;
 		}
+
+		/* Increase the cost for level crossings */
+		if (IsLevelCrossingTile(tile)) {
+			cost += Yapf().PfGetSettings().road_crossing_penalty;
+		}
+
 		return cost;
 	}
 

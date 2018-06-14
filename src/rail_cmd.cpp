@@ -34,6 +34,7 @@
 #include "company_gui.h"
 #include "object_map.h"
 #include "clear_map.h"
+#include "road_internal.h"
 
 #include "table/strings.h"
 #include "table/railtypes.h"
@@ -263,6 +264,9 @@ static CommandCost CheckTrackCombination(TileIndex tile, TrackBits to_build, uin
 		/* Nothing new is being built */
 		return_cmd_error(STR_ERROR_ALREADY_BUILT);
 	}
+
+	/* Can't add more tracks to a level crossing. */
+	if (IsLevelCrossingTile(tile)) return_cmd_error(STR_ERROR_MUST_REMOVE_ROAD_FIRST);
 
 	/* Let's see if we may build this */
 	if ((flags & DC_NO_RAIL_OVERLAP)) {
@@ -560,7 +564,7 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 			}
 		}
 	} else {
-		if (IsTileType(tile, MP_ROAD)) {
+		if (HasTileByType(tile, MP_ROAD)) {
 			/* Level crossings may only be built on these slopes */
 			if (!HasBit(VALID_LEVEL_CROSSING_SLOPES, tileh)) return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 
@@ -597,7 +601,10 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 					cost.AddCost((num_new_road_pieces + num_new_tram_pieces) * _price[PR_BUILD_ROAD]);
 
 					if (flags & DC_EXEC) {
-						MakeRoadCrossing(tile, road_owner, tram_owner, _current_company, (track == TRACK_X ? AXIS_Y : AXIS_X), railtype, roadtypes, GetTownIndex(tile));
+						SetRoadTypes(tile, roadtypes);
+						SetRoadBits(tile, road, ROADTYPE_ROAD);
+						SetRoadside(tile, ROADSIDE_BARREN);
+						MakeLevelCrossing(tile, _current_company, TrackToTrackBits(track), railtype);
 						UpdateLevelCrossing(tile, false);
 						Company::Get(_current_company)->infrastructure.rail[railtype] += LEVELCROSSING_TRACKBIT_FACTOR;
 						DirtyCompanyInfrastructureWindows(_current_company);
@@ -616,10 +623,6 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 					cost.AddCost(RailBuildCost(railtype));
 					return cost;
 				}
-			}
-
-			if (IsLevelCrossing(tile) && GetCrossingRailBits(tile) == trackbit) {
-				return_cmd_error(STR_ERROR_ALREADY_BUILT);
 			}
 		}
 
@@ -683,15 +686,22 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 		Tile *rail_tile = GetRailTileFromTrack(tile, track);
 
 		/* There are no rails present at depots. */
-		if (!IsPlainRailTile(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+		if (!IsNormalRailTile(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 
 		if (_current_company != OWNER_WATER) {
 			CommandCost ret = CheckTileOwnership(tile, rail_tile);
 			if (ret.Failed()) return ret;
 		}
 
-		CommandCost ret = EnsureNoTrainOnTrack(tile, track);
-		if (ret.Failed()) return ret;
+		if (IsLevelCrossing(rail_tile)) {
+			if (!(flags & DC_BANKRUPT)) {
+				CommandCost ret = EnsureNoVehicleOnGround(tile);
+				if (ret.Failed()) return ret;
+			}
+		} else {
+			CommandCost ret = EnsureNoTrainOnTrack(tile, track);
+			if (ret.Failed()) return ret;
+		}
 
 		TrackBits present = GetTrackBits(rail_tile);
 		if ((present & trackbit) == 0) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
@@ -714,17 +724,19 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 			/* Subtract old infrastructure count. */
 			uint pieces = CountBits(present);
 			if (TracksOverlap(present)) pieces *= pieces;
+			if (IsLevelCrossing(rail_tile)) pieces *= LEVELCROSSING_TRACKBIT_FACTOR;
 			Company::Get(owner)->infrastructure.rail[GetRailType(rail_tile)] -= pieces;
 			/* Add new infrastructure count. */
 			present ^= trackbit;
 			pieces = CountBits(present);
 			if (TracksOverlap(present)) pieces *= pieces;
+			if (IsLevelCrossing(rail_tile)) pieces *= LEVELCROSSING_TRACKBIT_FACTOR;
 			Company::Get(owner)->infrastructure.rail[GetRailType(rail_tile)] += pieces;
 			DirtyCompanyInfrastructureWindows(owner);
 
 			if (present == 0) {
 				_m.RemoveTile(tile, rail_tile);
-				if (!IsTileType(tile, MP_WATER) || !IsSlopeWithOneCornerRaised(GetTileSlope(tile, NULL))) {
+				if (!IsTileType(tile, MP_ROAD) && (!IsTileType(tile, MP_WATER) || !IsSlopeWithOneCornerRaised(GetTileSlope(tile, NULL)))) {
 					MakeClearGrass(tile);
 				}
 				if (!HasTileByType(tile, MP_RAILWAY)) DeleteNewGRFInspectWindow(GSF_RAILTYPES, tile);
@@ -734,33 +746,7 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 			}
 		}
 	} else {
-		if (!IsTileType(tile, MP_ROAD)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
-
-		if (!IsLevelCrossing(tile) || GetCrossingRailBits(tile) != trackbit) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
-
-		if (_current_company != OWNER_WATER) {
-			CommandCost ret = CheckTileOwnership(tile);
-			if (ret.Failed()) return ret;
-		}
-
-		if (!(flags & DC_BANKRUPT)) {
-			CommandCost ret = EnsureNoVehicleOnGround(tile);
-			if (ret.Failed()) return ret;
-		}
-
-		cost.AddCost(RailClearCost(GetRailType(_m.ToTile(tile))));
-
-		if (flags & DC_EXEC) {
-			if (HasReservedTracks(tile, trackbit)) {
-				v = GetTrainForReservation(tile, track);
-				if (v != NULL) FreeTrainTrackReservation(v);
-			}
-			owner = GetTileOwner(tile);
-			Company::Get(owner)->infrastructure.rail[GetRailType(tile)] -= LEVELCROSSING_TRACKBIT_FACTOR;
-			DirtyCompanyInfrastructureWindows(owner);
-			MakeRoadNormal(tile, GetCrossingRoadBits(tile), GetRoadTypes(tile), GetTownIndex(tile), GetRoadOwner(tile, ROADTYPE_ROAD), GetRoadOwner(tile, ROADTYPE_TRAM));
-			DeleteNewGRFInspectWindow(GSF_RAILTYPES, tile);
-		}
+		return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	}
 
 	if (flags & DC_EXEC) {
@@ -1265,11 +1251,6 @@ static bool CheckSignalAutoFill(TileIndex &tile, Trackdir &trackdir, int &signal
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_ROAD:
-			if (!IsLevelCrossing(tile)) return false;
-			signal_ctr += 2;
-			return true;
-
 		case MP_TUNNELBRIDGE: {
 			TileIndex orig_tile = tile; // backup old value
 
@@ -1690,13 +1671,6 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 				case MP_STATION:
 					if (!HasStationRail(tile)) continue;
 					break;
-				case MP_ROAD:
-					if (!IsLevelCrossing(tile)) continue;
-					if (RailNoLevelCrossings(totype)) {
-						error.MakeError(STR_ERROR_CROSSING_DISALLOWED);
-						continue;
-					}
-					break;
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(tile) != TRANSPORT_RAIL) continue;
 					break;
@@ -1706,6 +1680,12 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 		}
 
 		do {
+			/* Check for disallowed level crossings. */
+			if (IsLevelCrossingTile(tptr) && RailNoLevelCrossings(totype)) {
+				error.MakeError(STR_ERROR_CROSSING_DISALLOWED);
+				continue;
+			}
+
 			/* Original railtype we are converting from */
 			RailType type = GetRailType(tptr);
 
@@ -1779,7 +1759,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 							cost.AddCost(RailConvertCost(type, totype));
 							break;
 
-						default: // RAIL_TILE_NORMAL, RAIL_TILE_SIGNALS
+						default: // RAIL_TILE_NORMAL, RAIL_TILE_SIGNALS, RAIL_TILE_CROSSING
 							if (flags & DC_EXEC) {
 								/* notify YAPF about the track layout change */
 								TrackBits tracks = GetTrackBits(tptr);
@@ -1853,11 +1833,8 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 					break;
 				}
 
-				default: // MP_STATION, MP_ROAD
-					if (flags & DC_EXEC) {
-						Track track = ((tt == MP_STATION) ? GetRailStationTrack(tile) : GetCrossingRailTrack(tile));
-						YapfNotifyTrackLayoutChange(tile, track);
-					}
+				default: // MP_STATION
+					if (flags & DC_EXEC) YapfNotifyTrackLayoutChange(tile, GetRailStationTrack(tile));
 
 					cost.AddCost(RailConvertCost(type, totype));
 					break;
@@ -1928,7 +1905,7 @@ static CommandCost ClearTile_Track(TileIndex tile, Tile *rail_tile, DoCommandFla
 			return_cmd_error(STR_ERROR_AREA_IS_OWNED_BY_ANOTHER);
 		}
 
-		if (IsPlainRail(rail_tile)) {
+		if (IsNormalRail(rail_tile)) {
 			return_cmd_error(STR_ERROR_MUST_REMOVE_RAILROAD_TRACK);
 		} else {
 			return_cmd_error(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
@@ -1936,6 +1913,7 @@ static CommandCost ClearTile_Track(TileIndex tile, Tile *rail_tile, DoCommandFla
 	}
 
 	switch (GetRailTileType(rail_tile)) {
+		case RAIL_TILE_CROSSING:
 		case RAIL_TILE_SIGNALS:
 		case RAIL_TILE_NORMAL: {
 			Slope tileh = GetTileSlope(tile);
@@ -2422,6 +2400,59 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 			if (HasSignals(ti->tptr)) DrawSignals(ti->tile, ti->tptr, rails, rti);
 		}
+	} else if (IsLevelCrossing(ti->tptr)) {
+		const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tptr));
+
+		Axis axis = GetTrackBits(ti->tptr) == TRACK_BIT_X ? AXIS_X : AXIS_Y;
+
+		if (rti->UsesOverlay()) {
+			SpriteID rail = GetCustomRailSprite(rti, ti->tile, RTSG_CROSSING) + axis;
+			DrawGroundSprite(rail, PAL_NONE);
+			DrawRailTileSeq(ti, &_crossing_layout, TO_CATENARY, rail, 0, PAL_NONE);
+
+			/* PBS debugging, draw reserved tracks darker */
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation) {
+				TrackBits pbs = GetRailReservationTrackBits(ti->tptr);
+				SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
+				if (pbs & TRACK_BIT_X) DrawGroundSprite(overlay + RTO_X, PALETTE_CRASH);
+				if (pbs & TRACK_BIT_Y) DrawGroundSprite(overlay + RTO_Y, PALETTE_CRASH);
+			}
+		} else {
+			PaletteID pal = PAL_NONE;
+			SpriteID image = rti->base_sprites.crossing;
+
+			if (axis == AXIS_Y) image++;
+			if (IsCrossingBarred(ti->tptr)) image += 2;
+
+			Roadside roadside = GetRoadside(ti->tile);
+
+			if (DrawRoadAsSnowDesert(ti->tile, roadside)) {
+				image += 8;
+			} else {
+				switch (roadside) {
+						case ROADSIDE_BARREN: pal = PALETTE_TO_BARE_LAND; break;
+						case ROADSIDE_GRASS:  break;
+						default:              image += 4; break; // Paved
+				}
+			}
+
+			DrawGroundSprite(image, pal);
+
+			/* PBS debugging, draw reserved tracks darker */
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation) {
+				TrackBits pbs = GetRailReservationTrackBits(ti->tptr);
+				if (pbs & TRACK_BIT_X) DrawGroundSprite(rti->base_sprites.single_x, PALETTE_CRASH);
+				if (pbs & TRACK_BIT_Y) DrawGroundSprite(rti->base_sprites.single_y, PALETTE_CRASH);
+			}
+		}
+
+		/* Draw tram tracks if present, as the crossing graphics hide them. */
+		if (HasTileRoadType(ti->tile, ROADTYPE_TRAM)) {
+			DrawGroundSprite(SPR_TRAMWAY_OVERLAY + axis, GetRoadside(ti->tile) == ROADSIDE_BARREN ? PALETTE_TO_BARE_LAND : PAL_NONE);
+			DrawRoadCatenary(ti, GetRoadBits(ti->tile, ROADTYPE_TRAM));
+		}
+
+		if (HasRailCatenaryDrawn(GetRailType(ti->tptr))) DrawRailCatenary(ti, draw_halftile, halftile_corner);
 	} else {
 		/* draw depot */
 		const DrawTileSprites *dts;
@@ -2559,7 +2590,7 @@ static TrackBits GetOwnTrackBits(TileIndex tile, Owner o)
 		if (IsTileOwner(rail_tile, o)) {
 			/* Ignore direction of depots for fence calculation. */
 			if (IsRailDepot(rail_tile)) bits |= TRACK_BIT_CROSS;
-			if (IsPlainRail(rail_tile)) bits |= GetTrackBits(rail_tile);
+			if (IsNormalRail(rail_tile)) bits |= GetTrackBits(rail_tile);
 		}
 	}
 	return bits;
@@ -2634,6 +2665,12 @@ static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 
 static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
+	if (mode == TRANSPORT_ROAD && IsLevelCrossing(rail_tile)) {
+		/* Only return the "red light" part, road bits is done by the road tile handler. */
+		Axis axis = GetTrackBits(rail_tile) == TRACK_BIT_X ? AXIS_Y : AXIS_X;
+		if (side != INVALID_DIAGDIR && axis != DiagDirToAxis(side)) return 0;
+		return IsCrossingBarred(rail_tile) ? CombineTrackStatus(TRACKDIR_BIT_NONE, TrackBitsToTrackdirBits(AxisToTrackBits(axis))) : 0;
+	}
 	if (mode != TRANSPORT_RAIL) return 0;
 
 	TrackBits trackbits = TRACK_BIT_NONE;
@@ -2642,6 +2679,7 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 	switch (GetRailTileType(rail_tile)) {
 		default: NOT_REACHED();
 		case RAIL_TILE_NORMAL:
+		case RAIL_TILE_CROSSING:
 			trackbits = GetTrackBits(rail_tile);
 			break;
 
@@ -2766,6 +2804,11 @@ static void GetTileDesc_Track(TileIndex tile, Tile *tptr, TileDesc *td)
 			break;
 		}
 
+		case RAIL_TILE_CROSSING:
+			td->str = STR_LAI_ROAD_DESCRIPTION_ROAD_RAIL_LEVEL_CROSSING;
+			td->owner_type[0] = STR_LAND_AREA_INFORMATION_RAIL_OWNER;
+			break;
+
 		case RAIL_TILE_DEPOT:
 			td->str = STR_LAI_RAIL_DESCRIPTION_TRAIN_DEPOT;
 			if (_settings_game.vehicle.train_acceleration_model != AM_ORIGINAL) {
@@ -2795,6 +2838,7 @@ static bool ChangeTileOwner_Track(TileIndex tile, Tile *tptr, Owner old_owner, O
 			num_pieces = CountBits(bits);
 			if (TracksOverlap(bits)) num_pieces *= num_pieces;
 		}
+		if (IsLevelCrossing(tptr)) num_pieces *= LEVELCROSSING_TRACKBIT_FACTOR;
 		RailType rt = GetRailType(tptr);
 		Company::Get(old_owner)->infrastructure.rail[rt] -= num_pieces;
 		Company::Get(new_owner)->infrastructure.rail[rt] += num_pieces;
@@ -2998,9 +3042,12 @@ static CommandCost TerraformTile_Track(TileIndex tile, Tile *tptr, DoCommandFlag
 
 		/* allow terraforming */
 		return CommandCost(EXPENSES_CONSTRUCTION, was_water ? _price[PR_CLEAR_WATER] : (Money)0);
-	} else if (_settings_game.construction.build_on_slopes && AutoslopeEnabled() &&
-			AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, GetRailDepotDirection(tptr))) {
-		return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
+	} else if (_settings_game.construction.build_on_slopes && AutoslopeEnabled()) {
+		if (IsLevelCrossing(tptr)) {
+			if (!IsSteepSlope(tileh_new) && (GetTileMaxZ(tile) == z_new + GetSlopeMaxZ(tileh_new)) && HasBit(VALID_LEVEL_CROSSING_SLOPES, tileh_new)) return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
+		} else if (AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, GetRailDepotDirection(tptr))) {
+			return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
+		}
 	}
 	return CommandCost(INVALID_STRING_ID); // Dummy error
 }

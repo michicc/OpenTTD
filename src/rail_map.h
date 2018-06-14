@@ -28,6 +28,7 @@
 enum RailTileType {
 	RAIL_TILE_NORMAL   = 0, ///< Normal rail tile without signals
 	RAIL_TILE_SIGNALS  = 1, ///< Normal rail tile with signals
+	RAIL_TILE_CROSSING = 2, ///< Level crossing
 	RAIL_TILE_DEPOT    = 3, ///< Depot (one entrance)
 };
 
@@ -77,6 +78,35 @@ static inline bool IsPlainRailTile(TileIndex t)
 	return IsPlainRailTile(GetTileByType(t, MP_RAILWAY));
 }
 
+/**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t The tile to check.
+ * @return True if and only if this is not a rail depot.
+ */
+static inline bool IsNormalRail(const Tile *t)
+{
+	return GetRailTileType(t) <= RAIL_TILE_CROSSING;
+}
+
+/**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t The tile to check.
+ * @return True if and only if this is a rail tile and not a rail depot.
+ */
+static inline bool IsNormalRailTile(const Tile *t)
+{
+	return t != NULL && IsTileType(t, MP_RAILWAY) && IsNormalRail(t);
+}
+
+/**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t The tile to check.
+ * @return True if and only if this is a rail tile and not a rail depot.
+ */
+static inline bool IsNormalRailTile(TileIndex t)
+{
+	return IsNormalRailTile(GetTileByType(t, MP_RAILWAY));
+}
 
 /**
  * Checks if a rail tile has signals.
@@ -133,6 +163,47 @@ static inline bool IsRailDepotTile(TileIndex t)
 }
 
 /**
+ * Is this tile a level crossing?
+ * @param t The tile to get the information from.
+ * @return True if and only if the tile is a level crossing.
+ */
+static inline bool IsLevelCrossing(const Tile *t)
+{
+	return GetRailTileType(t) == RAIL_TILE_CROSSING;
+}
+
+/**
+ * Is this tile a rail tile and a level crossing?
+ * @param t The tile to get the information from.
+ * @return True if and only if the tile is a level crossing.
+ */
+static inline bool IsLevelCrossingTile(const Tile *t)
+{
+	return t != NULL && IsTileType(t, MP_RAILWAY) && IsLevelCrossing(t);
+}
+
+/**
+ * Is this tile a rail tile and a level crossing?
+ * @param t The tile to get the information from.
+ * @return True if and only if the tile is a level crossing.
+ */
+static inline bool IsLevelCrossingTile(TileIndex t)
+{
+	return IsLevelCrossingTile(GetTileByType(t, MP_RAILWAY));
+}
+
+/**
+ * Change tile type between normal rail and level crossing.
+ * @param t Tile to change.
+ * @param crossing Whether the tile should be a crossing or not.
+ */
+static inline void SetLevelCrossing(Tile *t, bool crossing)
+{
+	assert(GetRailTileType(t) == RAIL_TILE_CROSSING || GetRailTileType(t) == RAIL_TILE_NORMAL);
+	SB(t->m5, 6, 2, crossing ? RAIL_TILE_CROSSING : RAIL_TILE_NORMAL);
+}
+
+/**
  * Gets the rail type of the given tile
  * @param t the tile to get the rail type from
  * @return the rail type of the tile
@@ -170,7 +241,7 @@ static inline void SetRailType(Tile *t, RailType r)
  */
 static inline TrackBits GetTrackBits(const Tile *tile)
 {
-	assert(IsPlainRailTile(tile));
+	assert(IsNormalRailTile(tile));
 	return (TrackBits)GB(tile->m5, 0, 6);
 }
 
@@ -181,7 +252,7 @@ static inline TrackBits GetTrackBits(const Tile *tile)
  */
 static inline void SetTrackBits(Tile *t, TrackBits b)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	SB(t->m5, 0, 6, b);
 }
 
@@ -303,6 +374,17 @@ static inline Tile *GetRailDepotTile(TileIndex tile)
 }
 
 /**
+ * Get the actual tile of a level crossing.
+ * @param tile The tile index.
+ * @return Pointer to the crossing tile.
+ */
+static inline Tile *GetLevelCrossingTile(TileIndex tile)
+{
+	assert(IsLevelCrossingTile(tile));
+	return GetTileByType(tile, MP_RAILWAY);
+}
+
+/**
  * Returns the reserved track bits of the tile
  * @pre IsPlainRailTile(t)
  * @param t the tile to query
@@ -310,7 +392,7 @@ static inline Tile *GetRailDepotTile(TileIndex tile)
  */
 static inline TrackBits GetRailReservationTrackBits(const Tile *t)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	byte track_b = GB(t->m2, 8, 3);
 	Track track = (Track)(track_b - 1);    // map array saves Track+1
 	if (track_b == 0) return TRACK_BIT_NONE;
@@ -325,7 +407,7 @@ static inline TrackBits GetRailReservationTrackBits(const Tile *t)
  */
 static inline void SetTrackReservation(Tile *t, TrackBits b)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	assert(b != INVALID_TRACK_BIT);
 	assert(!TracksOverlap(b));
 	Track track = RemoveFirstTrack(&b);
@@ -413,6 +495,49 @@ static inline TrackBits GetReservedRailTracks(const Tile *t)
 	return IsRailDepot(t) ? GetDepotReservationTrackBits(t) : GetRailReservationTrackBits(t);
 }
 
+/**
+ * Is the level crossing barred?
+ * @pre IsLevelCrossing(t)
+ * @param t The tile
+ * @return True if the crossing is barred.
+ */
+static inline bool IsCrossingBarred(const Tile *t)
+{
+	assert(IsLevelCrossing(t));
+	return HasBit(t->m2, 12);
+}
+
+/**
+ * Bar or unbar a level crossing.
+ * @pre IsLevelCrossing(t)
+ * @param t The tile
+ * @param barred True to bar the crossing, false to unbar.
+ */
+static inline void SetCrossingBarred(Tile *t, bool barred)
+{
+	assert(IsLevelCrossing(t));
+	SB(t->m2, 12, 1, barred ? 1 : 0);
+}
+
+/**
+ * Unbar a level crossing.
+ * @pre IsLevelCrossing(t)
+ * @param t The tile
+ */
+static inline void UnbarCrossing(Tile *t)
+{
+	SetCrossingBarred(t, false);
+}
+
+/**
+ * Bar a level crossing.
+ * @pre IsLevelCrossing(t)
+ * @param t The tile
+ */
+static inline void BarCrossing(Tile *t)
+{
+	SetCrossingBarred(t, true);
+}
 
 static inline bool IsPbsSignal(SignalType s)
 {
@@ -690,6 +815,19 @@ static inline void MakeRailDepot(TileIndex t, Owner o, DepotID did, DiagDirectio
 	rail_tile->m3 = 0;
 	rail_tile->m5 = RAIL_TILE_DEPOT << 6 | d;
 	rail_tile->m8 = r;
+}
+
+/** Insert a new level crossing tile into the map array. */
+static inline Tile *MakeLevelCrossing(TileIndex t, Owner o, TrackBits b, RailType r)
+{
+	assert(b == TRACK_BIT_X || b == TRACK_BIT_Y);
+
+	Tile *rail_tile = _m.NewTile(t, MP_RAILWAY);
+	SetTileOwner(rail_tile, o);
+	rail_tile->m3 = 0;
+	rail_tile->m5 = RAIL_TILE_CROSSING << 6 | b;
+	rail_tile->m8 = r;
+	return rail_tile;
 }
 
 #endif /* RAIL_MAP_H */
