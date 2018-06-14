@@ -510,7 +510,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			}
 
 			/* Gather the next tile/trackdir/tile_type/rail_type. */
-			TILE next(tf_local.m_new_tile, (Trackdir)FindFirstBit2x64(tf_local.m_new_td_bits), tf_local.m_new_rail_tile);
+			TILE next(tf_local.m_new_tile, (Trackdir)FindFirstBit2x64(tf_local.m_new_td_bits), tf_local.m_new_tile_ptr);
 
 			if (TrackFollower::DoTrackMasking() && next.rail_tile != NULL) {
 				if (HasSignalOnTrackdir(next.rail_tile, next.td) && IsPbsSignal(GetSignalType(next.rail_tile, TrackdirToTrack(next.td)))) {
