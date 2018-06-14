@@ -604,7 +604,7 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 					if (flags & DC_EXEC) {
 						SetRoadTypes(road_tile, roadtypes);
 						SetRoadBits(road_tile, road, ROADTYPE_ROAD);
-						SetRoadside(road_tile, ROADSIDE_BARREN);
+						SetRoadside(road_tile, ROADSIDE_NONE);
 						MakeLevelCrossing(tile, _current_company, TrackToTrackBits(track), railtype);
 						UpdateLevelCrossing(tile, false);
 						Company::Get(_current_company)->infrastructure.rail[railtype] += LEVELCROSSING_TRACKBIT_FACTOR;
@@ -2431,7 +2431,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 				image += 8;
 			} else {
 				switch (roadside) {
-						case ROADSIDE_BARREN: pal = PALETTE_TO_BARE_LAND; break;
+						case ROADSIDE_NONE:   pal = PALETTE_TO_BARE_LAND; break;
 						case ROADSIDE_GRASS:  break;
 						default:              image += 4; break; // Paved
 				}
@@ -2449,7 +2449,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 		/* Draw tram tracks if present, as the crossing graphics hide them. */
 		if (GetRoadTileByType(ti->tile, ROADTYPE_TRAM) != NULL) {
-			DrawGroundSprite(SPR_TRAMWAY_OVERLAY + axis, GetRoadside(GetTileByType(ti->tile, MP_ROAD)) == ROADSIDE_BARREN ? PALETTE_TO_BARE_LAND : PAL_NONE);
+			DrawGroundSprite(SPR_TRAMWAY_OVERLAY + axis, GetRoadside(GetTileByType(ti->tile, MP_ROAD)) == ROADSIDE_NONE ? PALETTE_TO_BARE_LAND : PAL_NONE);
 			DrawRoadCatenary(ti, GetRoadBits(ti->tile, ROADTYPE_TRAM));
 		}
 

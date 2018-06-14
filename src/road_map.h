@@ -410,7 +410,7 @@ static inline void ToggleSnow(TileIndex t)
 
 /** The possible road side decorations. */
 enum Roadside {
-	ROADSIDE_BARREN           = 0, ///< Road on barren land
+	ROADSIDE_NONE             = 0, ///< No road side
 	ROADSIDE_GRASS            = 1, ///< Road on grass
 	ROADSIDE_PAVED            = 2, ///< Road with paved sidewalks
 	ROADSIDE_STREET_LIGHTS    = 3, ///< Road with street lights on paved sidewalks
@@ -485,7 +485,7 @@ static inline void StartRoadWorks(Tile *t)
 	assert(!HasRoadWorks(t));
 	/* Remove any trees or lamps in case or roadwork */
 	switch (GetRoadside(t)) {
-		case ROADSIDE_BARREN:
+		case ROADSIDE_NONE:
 		case ROADSIDE_GRASS:  SetRoadside(t, ROADSIDE_GRASS_ROAD_WORKS); break;
 		default:              SetRoadside(t, ROADSIDE_PAVED_ROAD_WORKS); break;
 	}

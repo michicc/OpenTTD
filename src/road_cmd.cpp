@@ -1162,7 +1162,7 @@ bool DrawRoadAsSnowDesert(TileIndex tile, Roadside roadside)
 {
 	return (IsOnSnow(tile) &&
 			!(_settings_game.game_creation.landscape == LT_TROPIC && HasGrfMiscBit(GMB_DESERT_PAVED_ROADS) &&
-				roadside != ROADSIDE_BARREN && roadside != ROADSIDE_GRASS && roadside != ROADSIDE_GRASS_ROAD_WORKS));
+				roadside != ROADSIDE_NONE && roadside != ROADSIDE_GRASS && roadside != ROADSIDE_GRASS_ROAD_WORKS));
 }
 
 /**
@@ -1235,7 +1235,7 @@ static void DrawRoadBits(TileInfo *ti)
 		image += 19;
 	} else {
 		switch (roadside) {
-			case ROADSIDE_BARREN:           pal = PALETTE_TO_BARE_LAND; break;
+			case ROADSIDE_NONE:             pal = PALETTE_TO_BARE_LAND; break;
 			case ROADSIDE_GRASS:            break;
 			case ROADSIDE_GRASS_ROAD_WORKS: break;
 			default:                        image -= 19; break; // Paved
@@ -1454,11 +1454,11 @@ static bool TileLoop_Road(TileIndex tile, Tile *&road_tile)
 			if (cur_rs == pre) {
 				cur_rs = desired;
 			/* We have barren land, install the pre-type */
-			} else if (cur_rs == ROADSIDE_BARREN) {
+			} else if (cur_rs == ROADSIDE_NONE) {
 				cur_rs = pre;
 			/* We're totally off limits, remove any installation and make barren land */
 			} else {
-				cur_rs = ROADSIDE_BARREN;
+				cur_rs = ROADSIDE_NONE;
 			}
 			SetRoadside(road_tile, cur_rs);
 			MarkTileDirtyByTile(tile);
