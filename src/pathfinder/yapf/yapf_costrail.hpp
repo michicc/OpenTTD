@@ -122,7 +122,7 @@ public:
 	{
 		const Tile *p1 = GetRailTileFromDiagDir(tile1, ReverseDiagDir(exitdir));
 		const Tile *p2 = GetRailTileFromDiagDir(tile2, exitdir);
-		if (IsPlainRailTile(p1) && IsPlainRailTile(p2)) {
+		if (IsNormalRailTile(p1) && IsNormalRailTile(p2)) {
 			bool t1 = KillFirstBit(GetTrackBits(p1) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
 			bool t2 = KillFirstBit(GetTrackBits(p2) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
 			if (t1 && t2) return Yapf().PfGetSettings().rail_doubleslip_penalty;
@@ -131,27 +131,14 @@ public:
 	}
 
 	/** Return one tile cost (base cost + level crossing penalty). */
-	inline int OneTileCost(TileIndex &tile, Trackdir trackdir)
+	inline int OneTileCost(const Tile *tile, Trackdir trackdir)
 	{
-		int cost = 0;
 		/* set base cost */
-		if (IsDiagonalTrackdir(trackdir)) {
-			cost += YAPF_TILE_LENGTH;
-			switch (GetTileType(tile)) {
-				case MP_ROAD:
-					/* Increase the cost for level crossings */
-					if (IsLevelCrossing(tile)) {
-						cost += Yapf().PfGetSettings().rail_crossing_penalty;
-					}
-					break;
+		int cost = IsDiagonalTrackdir(trackdir) ? YAPF_TILE_LENGTH : YAPF_TILE_CORNER_LENGTH;
 
-				default:
-					break;
-			}
-		} else {
-			/* non-diagonal trackdir */
-			cost = YAPF_TILE_CORNER_LENGTH;
-		}
+		/* Increase the cost for level crossings */
+		if (IsLevelCrossingTile(tile)) cost += Yapf().PfGetSettings().rail_crossing_penalty;
+
 		return cost;
 	}
 
@@ -389,7 +376,7 @@ public:
 no_entry_cost: // jump here at the beginning if the node has no parent (it is the first node)
 
 			/* All other tile costs will be calculated here. */
-			segment_cost += Yapf().OneTileCost(cur.tile, cur.td);
+			segment_cost += Yapf().OneTileCost(cur.rail_tile, cur.td);
 
 			/* If we skipped some tunnel/bridge/station tiles, add their base cost */
 			segment_cost += YAPF_TILE_LENGTH * tf->m_tiles_skipped;

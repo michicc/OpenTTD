@@ -117,6 +117,7 @@ void AfterLoadCompanyStats()
 					pieces = CountBits(bits);
 					if (TracksOverlap(bits)) pieces *= pieces;
 				}
+				if (IsLevelCrossing(rail_tile)) pieces *= LEVELCROSSING_TRACKBIT_FACTOR;
 				c->infrastructure.rail[GetRailType(rail_tile)] += pieces;
 
 				if (HasSignals(rail_tile)) c->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
@@ -125,16 +126,11 @@ void AfterLoadCompanyStats()
 
 		switch (GetTileType(tile)) {
 			case MP_ROAD: {
-				if (IsLevelCrossing(tile)) {
-					c = Company::GetIfValid(GetTileOwner(tile));
-					if (c != NULL) c->infrastructure.rail[GetRailType(tile)] += LEVELCROSSING_TRACKBIT_FACTOR;
-				}
-
 				/* Iterate all present road types as each can have a different owner. */
 				RoadType rt;
 				FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
 					c = Company::GetIfValid(IsRoadDepot(tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rt));
-					/* A level crossings and depots have two road bits. */
+					/* Depots always have two road bits. */
 					if (c != NULL) c->infrastructure.road[rt] += IsNormalRoad(tile) ? CountBits(GetRoadBits(tile, rt)) : 2;
 				}
 				break;
