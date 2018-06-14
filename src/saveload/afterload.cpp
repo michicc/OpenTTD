@@ -284,7 +284,7 @@ static void DecomposeTile(TileIndex tile)
 
 		case MP_ROAD: {
 			Tile *old_tile = _m.ToTile(tile);
-			if (GetRoadTileType(tile) == 1 /* ROAD_TILE_CROSSING */) {
+			if (GetRoadTileType(old_tile) == 1 /* ROAD_TILE_CROSSING */) {
 				/* Level crossing, extract info. */
 				Axis road_axis = (Axis)GB(_m[tile].m5, 0, 1);
 				TrackBits tracks = road_axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X;
@@ -295,9 +295,9 @@ static void DecomposeTile(TileIndex tile)
 				if (reserved) SetTrackReservation(rail_tile, tracks);
 
 				/* Change road tile to normal road. */
-				RoadTypes rts = GetRoadTypes(tile);
+				RoadTypes rts = GetRoadTypes(old_tile);
 				TownID town = GetTownIndex(old_tile);
-				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rts, town, (Owner)GB(_m[tile].m7, 0, 5), HasBit(rts, ROADTYPE_TRAM) ? GetRoadOwner(tile, ROADTYPE_TRAM) : OWNER_NONE);
+				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rts, town, (Owner)GB(_m[tile].m7, 0, 5), HasBit(rts, ROADTYPE_TRAM) ? GetRoadOwner(old_tile, ROADTYPE_TRAM) : OWNER_NONE);
 			}
 
 			break;
@@ -525,7 +525,7 @@ static void CDECL HandleSavegameLoadCrash(int signum)
  */
 static void FixOwnerOfRailTrack(TileIndex t)
 {
-	assert(!Company::IsValidID(GetTileOwner(t)) && ((IsTileType(t, MP_ROAD) && GetRoadTileType(t) == 1 /* ROAD_TILE_CROSSING */) || IsPlainRailTile(t)));
+	assert(!Company::IsValidID(GetTileOwner(t)) && ((IsTileType(t, MP_ROAD) && GetRoadTileType(_m.ToTile(t)) == 1 /* ROAD_TILE_CROSSING */) || IsPlainRailTile(t)));
 
 	/* remove leftover rail piece from crossing (from very old savegames) */
 	Train *v = NULL, *w;
@@ -553,11 +553,11 @@ static void FixOwnerOfRailTrack(TileIndex t)
 		}
 	}
 
-	if (IsTileType(t, MP_ROAD) && GetRoadTileType(t) == 1 /* ROAD_TILE_CROSSING */) {
+	if (IsTileType(t, MP_ROAD) && GetRoadTileType(_m.ToTile(t)) == 1 /* ROAD_TILE_CROSSING */) {
 		Tile *road = _m.ToTile(t);
 		/* else change the crossing to normal road (road vehicles won't care) */
-		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(t), GetTownIndex(road),
-			GetRoadOwner(t, ROADTYPE_ROAD), GetRoadOwner(t, ROADTYPE_TRAM));
+		MakeRoadNormal(t, HasBit(_m[t].m5, 0) ? ROAD_Y : ROAD_X, GetRoadTypes(road), GetTownIndex(road),
+			GetRoadOwner(road, ROADTYPE_ROAD), GetRoadOwner(road, ROADTYPE_TRAM));
 		return;
 	}
 
@@ -1129,7 +1129,7 @@ bool AfterLoadGame()
 			switch (GetTileType(t)) {
 				case MP_ROAD:
 					SB(_m[t].m5, 6, 2, GB(_m[t].m5, 4, 2));
-					switch (GetRoadTileType(t)) {
+					switch (GetRoadTileType(_m.ToTile(t))) {
 						default: SlErrorCorrupt("Invalid road tile type");
 						case ROAD_TILE_NORMAL:
 							SB(_m[t].m4, 0, 4, GB(_m[t].m5, 0, 4));
@@ -1170,7 +1170,7 @@ bool AfterLoadGame()
 				case MP_ROAD:
 					if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_m[t].m7, 5, 3));
 					SB(_m[t].m7, 5, 1, GB(_m[t].m3, 7, 1)); // snow/desert
-					switch (GetRoadTileType(t)) {
+					switch (GetRoadTileType(_m.ToTile(t))) {
 						default: SlErrorCorrupt("Invalid road tile type");
 						case ROAD_TILE_NORMAL:
 							SB(_m[t].m7, 0, 4, GB(_m[t].m3, 0, 4));  // road works
@@ -1191,7 +1191,7 @@ bool AfterLoadGame()
 						case ROAD_TILE_DEPOT:
 							break;
 					}
-					if (!IsRoadDepot(t) && !HasTownOwnedRoad(t)) {
+					if (!IsRoadDepot(_m.ToTile(t)) && !HasTownOwnedRoad(t)) {
 						const Town *town = CalcClosestTownFromTile(t);
 						if (town != NULL) SetTownIndex(_m.ToTile(t), town->index);
 					}
@@ -1363,7 +1363,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_ROAD:
-					if (GetRoadTileType(t) == 1) { // Level crossing
+					if (GetRoadTileType(tptr) == 1) { // Level crossing
 						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
@@ -1943,7 +1943,7 @@ bool AfterLoadGame()
 					Owner o = GetRoadOwner(t, rt);
 					if (o < MAX_COMPANIES && !Company::IsValidID(o)) SetRoadOwner(t, rt, OWNER_NONE);
 				}
-				if (GetRoadTileType(t) == 1) { // Level crossing
+				if (GetRoadTileType(_m.ToTile(t)) == 1) { // Level crossing
 					if (!Company::IsValidID(GetTileOwner(t))) FixOwnerOfRailTrack(t);
 				}
 			} else if (IsPlainRailTile(t)) {
@@ -2050,7 +2050,7 @@ bool AfterLoadGame()
 				}
 
 				case MP_ROAD: // Clear PBS reservation on crossing
-					if (GetRoadTileType(t) == 1) ClrBit(_m[t].m5, 4);
+					if (GetRoadTileType(_m.ToTile(t)) == 1) ClrBit(_m[t].m5, 4);
 					break;
 
 				case MP_STATION: // Clear PBS reservation on station

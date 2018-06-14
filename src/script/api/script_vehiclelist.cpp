@@ -58,18 +58,17 @@ ScriptVehicleList_Depot::ScriptVehicleList_Depot(TileIndex tile)
 		if (!IsRailDepotTile(rail_tile)) return;
 		type = VEH_TRAIN;
 		dest = GetDepotIndex(rail_tile);
+	} else if (HasTileByType(tile, MP_ROAD)) {
+		Tile *road_tile = GetTileByType(tile, MP_ROAD);
+		if (!IsRoadDepotTile(road_tile)) return;
+		type = VEH_ROAD;
+		dest = GetDepotIndex(road_tile);
 	} else {
 		switch (GetTileType(tile)) {
 			case MP_STATION: // Aircraft
 				if (!IsAirport(tile)) return;
 				type = VEH_AIRCRAFT;
 				dest = GetStationIndex(tile);
-				break;
-
-			case MP_ROAD:
-				if (!IsRoadDepot(tile)) return;
-				type = VEH_ROAD;
-				dest = GetDepotIndex(tile);
 				break;
 
 			case MP_WATER:

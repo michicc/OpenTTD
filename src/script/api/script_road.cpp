@@ -27,7 +27,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_ROAD) && ::GetRoadTileType(tile) != ROAD_TILE_DEPOT) ||
+	return (::HasTileByType(tile, MP_ROAD) && !::IsRoadDepotTile(tile)) ||
 			IsDriveThroughRoadStationTile(tile);
 }
 
@@ -36,8 +36,8 @@
 	if (!::IsValidTile(tile)) return false;
 	if (!IsRoadTypeAvailable(GetCurrentRoadType())) return false;
 
-	return ::IsTileType(tile, MP_ROAD) && ::GetRoadTileType(tile) == ROAD_TILE_DEPOT &&
-			(::RoadTypeToRoadTypes((::RoadType)GetCurrentRoadType()) & ::GetRoadTypes(tile)) != 0;
+	return ::IsRoadDepotTile(tile) &&
+			(::RoadTypeToRoadTypes((::RoadType)GetCurrentRoadType()) & ::GetRoadTypes(GetRoadDepotTile(tile))) != 0;
 }
 
 /* static */ bool ScriptRoad::IsRoadStationTile(TileIndex tile)
@@ -95,7 +95,7 @@
 	uint dir_1 = (::TileX(t1) == ::TileX(t2)) ? (::TileY(t1) < ::TileY(t2) ? 2 : 0) : (::TileX(t1) < ::TileX(t2) ? 1 : 3);
 	uint dir_2 = 2 ^ dir_1;
 
-	DisallowedRoadDirections drd2 = IsNormalRoadTile(t2) ? GetDisallowedRoadDirections(t2) : DRD_NONE;
+	DisallowedRoadDirections drd2 = ::IsNormalRoadTile(t2) && ::GetRoadTileByType(t2, ::ROADTYPE_ROAD) != NULL ? ::GetDisallowedRoadDirections(::GetRoadTileByType(t2, ::ROADTYPE_ROAD)) : DRD_NONE;
 
 	return HasBit(r1, dir_1) && HasBit(r2, dir_2) && drd2 != DRD_BOTH && drd2 != (dir_1 > dir_2 ? DRD_SOUTHBOUND : DRD_NORTHBOUND);
 }
@@ -400,12 +400,10 @@ static bool NormaliseTileOffset(int32 *tile)
 static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, DiagDirection neighbour)
 {
 	TileIndex neighbour_tile = ::TileAddByDiagDir(start_tile, neighbour);
-	if ((rts & ::GetRoadTypes(neighbour_tile)) == 0) return false;
+	if ((rts & ::GetAllRoadTypes(neighbour_tile)) == 0) return false;
 
+	if (::HasTileByType(neighbour_tile, MP_ROAD)) return !::IsRoadDepotTile(neighbour_tile);
 	switch (::GetTileType(neighbour_tile)) {
-		case MP_ROAD:
-			return (::GetRoadTileType(neighbour_tile) != ROAD_TILE_DEPOT);
-
 		case MP_STATION:
 			if (::IsDriveThroughStopTile(neighbour_tile)) {
 				return (::DiagDirToAxis(neighbour) == ::DiagDirToAxis(::GetRoadStopDir(neighbour_tile)));
@@ -437,7 +435,7 @@ static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, Dia
 {
 	if (!IsRoadDepotTile(depot)) return INVALID_TILE;
 
-	return depot + ::TileOffsByDiagDir(::GetRoadDepotDirection(depot));
+	return depot + ::TileOffsByDiagDir(::GetRoadDepotDirection(GetRoadDepotTile(depot)));
 }
 
 /* static */ TileIndex ScriptRoad::GetRoadStationFrontTile(TileIndex station)
@@ -567,8 +565,7 @@ static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, Dia
 {
 	EnforcePrecondition(false, ScriptObject::GetCompany() != OWNER_DEITY);
 	EnforcePrecondition(false, ::IsValidTile(tile));
-	EnforcePrecondition(false, IsTileType(tile, MP_ROAD))
-	EnforcePrecondition(false, GetRoadTileType(tile) == ROAD_TILE_DEPOT);
+	EnforcePrecondition(false, ::IsRoadDepotTile(tile));
 
 	return ScriptObject::DoCommand(tile, 0, 0, CMD_LANDSCAPE_CLEAR);
 }

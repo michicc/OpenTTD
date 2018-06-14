@@ -134,7 +134,7 @@ public:
 			}
 
 			/* stop if we have just entered the depot */
-			if (IsRoadDepotTile(tile) && trackdir == DiagDirToDiagTrackdir(ReverseDiagDir(GetRoadDepotDirection(tile)))) {
+			if (IsRoadDepotTile(tile) && trackdir == DiagDirToDiagTrackdir(ReverseDiagDir(GetRoadDepotDirection(GetRoadDepotTile(tile))))) {
 				/* next time we will reverse and leave the depot */
 				break;
 			}

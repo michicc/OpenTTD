@@ -32,7 +32,7 @@ static OrderType GetOrderTypeByTile(TileIndex t)
 {
 	if (!::IsValidTile(t)) return OT_END;
 
-	if (::IsRailDepotTile(t)) return OT_GOTO_DEPOT;
+	if (::IsRailDepotTile(t) || ::IsRoadDepotTile(t)) return OT_GOTO_DEPOT;
 
 	switch (::GetTileType(t)) {
 		default: break;
@@ -42,7 +42,6 @@ static OrderType GetOrderTypeByTile(TileIndex t)
 			return OT_GOTO_STATION;
 
 		case MP_WATER:   if (::IsShipDepot(t)) return OT_GOTO_DEPOT; break;
-		case MP_ROAD:    if (::GetRoadTileType(t) == ROAD_TILE_DEPOT) return OT_GOTO_DEPOT; break;
 	}
 
 	return OT_END;

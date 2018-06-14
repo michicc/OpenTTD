@@ -124,18 +124,17 @@ void AfterLoadCompanyStats()
 			}
 		}
 
-		switch (GetTileType(tile)) {
-			case MP_ROAD: {
-				/* Iterate all present road types as each can have a different owner. */
-				RoadType rt;
-				FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
-					c = Company::GetIfValid(IsRoadDepot(tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rt));
-					/* Depots always have two road bits. */
-					if (c != NULL) c->infrastructure.road[rt] += IsNormalRoad(tile) ? CountBits(GetRoadBits(tile, rt)) : 2;
-				}
-				break;
+		FOR_ALL_ROAD_TILES(road_tile, tile) {
+			/* Iterate all present road types as each can have a different owner. */
+			RoadType rt;
+			FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(road_tile)) {
+				c = Company::GetIfValid(IsRoadDepot(road_tile) ? GetTileOwner(road_tile) : GetRoadOwner(road_tile, rt));
+				/* Depots always have two road bits. */
+				if (c != NULL) c->infrastructure.road[rt] += IsNormalRoad(road_tile) ? CountBits(GetRoadBits(road_tile, rt)) : 2;
 			}
+		}
 
+		switch (GetTileType(tile)) {
 			case MP_STATION:
 				c = Company::GetIfValid(GetTileOwner(tile));
 				if (c != NULL && GetStationType(tile) != STATION_AIRPORT && !IsBuoy(tile)) c->infrastructure.station++;

@@ -104,8 +104,9 @@ struct CFollowTrackT
 	{
 		assert(IsTram()); // this function shouldn't be called in other cases
 
-		if (IsNormalRoadTile(tile)) {
-			RoadBits rb = GetRoadBits(tile, ROADTYPE_TRAM);
+		Tile *road = GetRoadTileByType(tile, ROADTYPE_TRAM);
+		if (IsNormalRoadTile(road)) {
+			RoadBits rb = GetRoadBits(road, ROADTYPE_TRAM);
 			switch (rb) {
 				case ROAD_NW: return DIAGDIR_NW;
 				case ROAD_SW: return DIAGDIR_SW;
@@ -250,6 +251,15 @@ protected:
 			} while (m_new_td_bits == TRACKDIR_BIT_NONE && (m_new_tile_ptr = GetNextTileByType(m_new_tile_ptr, MP_RAILWAY)) != NULL);
 		} else {
 			m_new_td_bits = TrackStatusToTrackdirBits(GetTileTrackStatus(m_new_tile, TT(), IsRoadTT() ? RoadVehicle::From(m_veh)->compatible_roadtypes : 0));
+			if (IsRoadTT()) {
+				/* Find the first associated road tile with a compatible road type. */
+				FOR_ALL_ROAD_TILES(road, m_new_tile) {
+					if (RoadVehicle::From(m_veh)->compatible_roadtypes & GetRoadTypes(road)) {
+						m_new_tile_ptr = road;
+						break;
+					}
+				}
+			}
 
 			if (IsTram() && m_new_td_bits == TRACKDIR_BIT_NONE) {
 				/* GetTileTrackStatus() returns 0 for single tram bits.
@@ -294,8 +304,8 @@ protected:
 		}
 
 		/* road depots can be also left in one direction only */
-		if (IsRoadTT() && IsDepotTypeTile(m_old_tile, TT())) {
-			DiagDirection exitdir = GetRoadDepotDirection(m_old_tile);
+		if (IsRoadTT() && IsRoadDepotTile(m_old_tile)) {
+			DiagDirection exitdir = GetRoadDepotDirection(GetRoadDepotTile(m_old_tile));
 			if (exitdir != m_exitdir) {
 				m_err = EC_NO_WAY;
 				return false;
@@ -326,14 +336,14 @@ protected:
 		}
 
 		/* road and rail depots can also be entered from one direction only */
-		if (IsRoadTT() && IsDepotTypeTile(m_new_tile, TT())) {
-			DiagDirection exitdir = GetRoadDepotDirection(m_new_tile);
+		if (IsRoadTT() && IsRoadDepotTile(m_new_tile_ptr)) {
+			DiagDirection exitdir = GetRoadDepotDirection(m_new_tile_ptr);
 			if (ReverseDiagDir(exitdir) != m_exitdir) {
 				m_err = EC_NO_WAY;
 				return false;
 			}
 			/* don't try to enter other company's depots */
-			if (GetTileOwner(m_new_tile) != m_veh_owner) {
+			if (GetTileOwner(m_new_tile_ptr) != m_veh_owner) {
 				m_err = EC_OWNER;
 				return false;
 			}
@@ -401,11 +411,12 @@ protected:
 	{
 		/* rail and road depots cause reversing */
 		if (!IsWaterTT() && IsDepotTypeTile(m_old_tile, TT())) {
-			DiagDirection exitdir = IsRailTT() ? GetRailDepotDirection(GetRailDepotTile(m_old_tile)) : GetRoadDepotDirection(m_old_tile);
+			DiagDirection exitdir = IsRailTT() ? GetRailDepotDirection(GetRailDepotTile(m_old_tile)) : GetRoadDepotDirection(GetRoadDepotTile(m_old_tile));
 			if (exitdir != m_exitdir) {
 				/* reverse */
 				m_new_tile = m_old_tile;
 				if (IsRailTT()) m_new_tile_ptr = GetRailDepotTile(m_new_tile);
+				if (IsRoadTT()) m_new_tile_ptr = GetRoadDepotTile(m_new_tile);
 				m_new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(m_old_td));
 				m_exitdir = exitdir;
 				m_tiles_skipped = 0;
