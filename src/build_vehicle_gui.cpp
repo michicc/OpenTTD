@@ -1007,7 +1007,7 @@ struct BuildVehicleWindow : Window {
 				this->filter.railtype = (tile == INVALID_TILE) ? RAILTYPE_END : GetTileRailType(tile, GetRailDepotTrack(GetRailDepotTile(tile)));
 				break;
 			case VEH_ROAD:
-				this->filter.roadtypes = (tile == INVALID_TILE) ? ROADTYPES_ALL : GetRoadTypes(tile);
+				this->filter.roadtypes = (tile == INVALID_TILE) ? ROADTYPES_ALL : GetRoadTypes(GetRoadDepotTile(tile));
 			case VEH_SHIP:
 			case VEH_AIRCRAFT:
 				break;

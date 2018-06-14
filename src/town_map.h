@@ -23,7 +23,7 @@
  */
 static inline TownID GetTownIndex(const Tile *t)
 {
-	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) /*&& !IsRoadDepot(t)*/));
+	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) && !IsRoadDepot(t)));
 	return t->m2;
 }
 
@@ -35,7 +35,7 @@ static inline TownID GetTownIndex(const Tile *t)
  */
 static inline void SetTownIndex(Tile *t, TownID index)
 {
-	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) /*&& !IsRoadDepot(t)*/));
+	assert(IsTileType(t, MP_HOUSE) || (IsTileType(t, MP_ROAD) && !IsRoadDepot(t)));
 	t->m2 = index;
 }
 
