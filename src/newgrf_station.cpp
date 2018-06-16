@@ -1014,10 +1014,11 @@ void TriggerStationRandomisation(Station *st, TileIndex tile, StationRandomTrigg
 					reseed >>= 16;
 
 					/* Set individual tile random bits */
-					uint8 random_bits = GetStationTileRandomBits(GetTileByType(tile, MP_STATION));
+					Tile *st_tile = GetTileByType(tile, MP_STATION);
+					uint8 random_bits = GetStationTileRandomBits(st_tile);
 					random_bits &= ~reseed;
 					random_bits |= Random() & reseed;
-					SetStationTileRandomBits(tile, random_bits);
+					SetStationTileRandomBits(st_tile, random_bits);
 
 					MarkTileDirtyByTile(tile);
 				}
