@@ -55,6 +55,9 @@ static inline Owner GetDepotOwner(TileIndex tile)
 	if (IsRailDepotTile(tile)) {
 		return GetTileOwner(GetRailDepotTile(tile));
 	}
+	if (IsRoadDepotTile(tile)) {
+		return GetTileOwner(GetRoadDepotTile(tile));
+	}
 	return GetTileOwner(tile);
 }
 
@@ -89,9 +92,11 @@ static inline DepotID GetDepotIndex(TileIndex t)
 {
 	if (IsRailDepotTile(t)) {
 		return GetDepotIndex(GetRailDepotTile(t));
+	} else if (IsRoadDepotTile(t)) {
+		return GetDepotIndex(GetRoadDepotTile(t));
 	} else {
 		/* Hangars don't have a Depot class, thus store no DepotID. */
-		assert(IsRoadDepotTile(t) || IsShipDepotTile(t));
+		assert(IsShipDepotTile(t));
 		return GetDepotIndex(_m.ToTile(t));
 	}
 }
@@ -106,10 +111,11 @@ static inline VehicleType GetDepotVehicleType(TileIndex t)
 {
 	if (HasTileByType(t, MP_RAILWAY)) {
 		return VEH_TRAIN;
+	} else if (HasTileByType(t, MP_ROAD)) {
+		return VEH_ROAD;
 	} else {
 		switch (GetTileType(t)) {
 			default: NOT_REACHED();
-			case MP_ROAD:    return VEH_ROAD;
 			case MP_WATER:   return VEH_SHIP;
 			case MP_STATION: return VEH_AIRCRAFT;
 		}

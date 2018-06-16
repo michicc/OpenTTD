@@ -1342,10 +1342,11 @@ static bool CanFollowRoad(TileIndex tile, DiagDirection dir)
 	RoadBits target_rb = GetTownRoadBits(target_tile);
 	if (_settings_game.economy.allow_town_roads || _generating_world) {
 		/* Check whether a road connection exists or can be build. */
-		switch (GetTileType(target_tile)) {
-			case MP_ROAD:
-				return target_rb != ROAD_NONE;
+		if (HasTileByType(target_tile, MP_ROAD)) {
+			return target_rb != ROAD_NONE;
+		}
 
+		switch (GetTileType(target_tile)) {
 			case MP_STATION:
 				return IsDriveThroughStopTile(target_tile);
 
@@ -1681,7 +1682,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile)
 	}
 
 	/* Can only build on clear flat areas, possibly with trees. */
-	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile) || HasTileByType(tile, MP_RAILWAY)) {
+	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile) || HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -1891,7 +1892,8 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
 			IsTileType(tile, MP_CLEAR) &&
 			IsTileFlat(tile) &&
 			IsTileAlignedToGrid(tile, sp->layout) &&
-			!HasTileByType(tile, MP_RAILWAY)) {
+			!HasTileByType(tile, MP_RAILWAY) &&
+			!HasTileByType(tile, MP_ROAD)) {
 		sp->tile = tile;
 		sp->max_dist = dist;
 	}
@@ -1907,7 +1909,7 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
  */
 static bool FindNearestEmptyLand(TileIndex tile, void *user_data)
 {
-	return IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY);
+	return IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD);
 }
 
 /**
@@ -2879,7 +2881,7 @@ static bool SearchTileForStatue(TileIndex tile, void *user_data)
 	if (IsBridgeAbove(tile)) return false;
 
 	/* A clear-able open space is always preferred. */
-	if (IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && TryClearTile(tile)) {
+	if (IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && !HasTileByType(tile, MP_ROAD) && TryClearTile(tile)) {
 		statue_data->best_position = tile;
 		return true;
 	}

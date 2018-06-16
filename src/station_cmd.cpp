@@ -4046,7 +4046,6 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		if (IsDriveThroughStopTile(tile)) {
 			/* Remove the drive-through road stop */
 			DoCommand(tile, 1 | 1 << 8, (GetStationType(tile) == STATION_TRUCK) ? ROADSTOP_TRUCK : ROADSTOP_BUS, DC_EXEC | DC_BANKRUPT, CMD_REMOVE_ROAD_STOP);
-			assert(IsTileType(tile, MP_ROAD));
 			/* Change owner of tile and all roadtypes */
 			ChangeTileOwner(tile, old_owner, new_owner);
 		} else {

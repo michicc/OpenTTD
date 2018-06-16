@@ -76,6 +76,7 @@ static void DisasterClearSquare(TileIndex tile)
 		}
 		return;
 	}
+	if (HasTileByType(tile, MP_ROAD)) return;
 
 	switch (GetTileType(tile)) {
 		case MP_HOUSE: {

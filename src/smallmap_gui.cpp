@@ -559,11 +559,12 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 			if (HasTileByType(tile, MP_RAILWAY)) {
 				/* Use owner of first associated tile for map colour. */
 				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
-			} else {
+			} else if (HasTileByType(tile, MP_ROAD)) {
 				/* FIXME: For MP_ROAD there are multiple owners.
 				 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
-				 * even if there are no ROADTYPE_ROAD bits on the tile.
-				 */
+				 * even if there are no ROADTYPE_ROAD bits on the tile. */
+				o = GetTileOwner(GetTileByType(tile, MP_ROAD));
+			} else {
 				o = GetTileOwner(tile);
 			}
 			break;
@@ -750,6 +751,7 @@ inline uint32 SmallMapWindow::GetTileColours(const TileArea &ta) const
 
 		if (HasTileByType(ti, MP_TREES)) ttype = MP_TREES;
 		if (HasTileByType(ti, MP_RAILWAY)) ttype = MP_RAILWAY;
+		if (HasTileByType(ti, MP_ROAD)) ttype = MP_ROAD;
 
 		switch (ttype) {
 			case MP_TUNNELBRIDGE: {
