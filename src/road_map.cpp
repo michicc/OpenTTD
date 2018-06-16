@@ -38,7 +38,7 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge
 	if (road_tile != NULL) {
 		switch (GetRoadTileType(road_tile)) {
 			default:
-			case ROAD_TILE_NORMAL:   return GetRoadBits(road_tile, rt);
+			case ROAD_TILE_NORMAL:   return GetRoadBits(road_tile);
 			case ROAD_TILE_DEPOT:    return DiagDirToRoadBits(GetRoadDepotDirection(road_tile));
 		}
 	}

@@ -360,12 +360,6 @@ uint32 GetTerrainType(TileIndex tile, TileContext context)
 					has_snow = IsSnowTile(tile) && GetClearDensity(tile) >= 2;
 					break;
 
-				case MP_ROAD:
-					/* During map generation the snowstate may not be valid yet, as the tileloop may not have run yet. */
-					if (_generating_world) goto genworld; // we do not care about foundations here
-					has_snow = IsOnSnow(tile);
-					break;
-
 				case MP_TUNNELBRIDGE:
 					if (context == TCX_ON_BRIDGE) {
 						has_snow = (GetBridgeHeight(tile) > GetSnowLine());
@@ -436,6 +430,7 @@ uint32 GetNearbyTileInformation(TileIndex tile, bool grf_version8)
 	/* Only consider trees not on shore as a tree tile. */
 	if (tile_type != MP_WATER && HasTileByType(tile, MP_TREES)) tile_type = MP_TREES;
 	if (HasTileByType(tile, MP_RAILWAY)) tile_type = MP_RAILWAY;
+	if (HasTileByType(tile, MP_ROAD)) tile_type = MP_ROAD;
 
 	int z;
 	Slope tileh = GetTilePixelSlope(tile, &z);
