@@ -94,7 +94,7 @@
 /* static */ int32 ScriptAirport::GetNumHangars(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return -1;
-	if (!::IsTileType(tile, MP_STATION)) return -1;
+	if (!::HasTileByType(tile, MP_STATION)) return -1;
 
 	const Station *st = ::Station::GetByTile(tile);
 	if (st->owner != ScriptObject::GetCompany() && ScriptObject::GetCompany() != OWNER_DEITY) return -1;
@@ -106,7 +106,7 @@
 /* static */ TileIndex ScriptAirport::GetHangarOfAirport(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return INVALID_TILE;
-	if (!::IsTileType(tile, MP_STATION)) return INVALID_TILE;
+	if (!::HasTileByType(tile, MP_STATION)) return INVALID_TILE;
 	if (GetNumHangars(tile) < 1) return INVALID_TILE;
 
 	const Station *st = ::Station::GetByTile(tile);

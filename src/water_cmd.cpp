@@ -1095,7 +1095,7 @@ static void DoDryUp(TileIndex tile)
 					case TRACK_BIT_LOWER: new_fences = RAIL_FENCE_HORIZ2; break;
 					case TRACK_BIT_LEFT:  new_fences = RAIL_FENCE_VERT1;  break;
 					case TRACK_BIT_RIGHT: new_fences = RAIL_FENCE_VERT2;  break;
-					default: NOT_REACHED();
+					default: new_fences = RAIL_FENCE_NONE; break;
 			}
 			SetRailFenceType(rail_tile, new_fences);
 		}

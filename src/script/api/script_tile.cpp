@@ -82,7 +82,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_STATION);
+	return ::HasTileByType(tile, MP_STATION);
 }
 
 /* static */ bool ScriptTile::IsSteepSlope(Slope slope)

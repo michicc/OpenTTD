@@ -3835,7 +3835,7 @@ void FindStationsAroundTiles(const TileArea &location, StationList *stations)
 	for (uint cy = min_y; cy < max_y; cy++) {
 		for (uint cx = min_x; cx < max_x; cx++) {
 			TileIndex cur_tile = TileXY(cx, cy);
-			if (!IsTileType(cur_tile, MP_STATION)) continue;
+			if (!HasTileByType(cur_tile, MP_STATION)) continue;
 
 			Station *st = Station::GetByTile(cur_tile);
 			/* st can be NULL in case of waypoints */
@@ -4001,7 +4001,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		}
 	}
 
-	if (!IsTileOwner(tile, old_owner)) return true;
+	if (!IsTileOwner(tptr, old_owner)) return true;
 
 	if (new_owner != INVALID_OWNER) {
 		/* Update company infrastructure counts. Only do it here

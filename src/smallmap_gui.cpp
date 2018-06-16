@@ -556,7 +556,9 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 		case MP_INDUSTRY: return MKCOLOUR_XXXX(PC_DARK_GREY);
 		case MP_HOUSE:    return MKCOLOUR_XXXX(PC_DARK_RED);
 		default:
-			if (HasTileByType(tile, MP_RAILWAY)) {
+			if (HasTileByType(tile, MP_STATION)) {
+				o = GetTileOwner(GetTileByType(tile, MP_STATION));
+			} else if (HasTileByType(tile, MP_RAILWAY)) {
 				/* Use owner of first associated tile for map colour. */
 				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
 			} else if (HasTileByType(tile, MP_ROAD)) {
@@ -752,6 +754,7 @@ inline uint32 SmallMapWindow::GetTileColours(const TileArea &ta) const
 		if (HasTileByType(ti, MP_TREES)) ttype = MP_TREES;
 		if (HasTileByType(ti, MP_RAILWAY)) ttype = MP_RAILWAY;
 		if (HasTileByType(ti, MP_ROAD)) ttype = MP_ROAD;
+		if (HasTileByType(ti, MP_STATION)) ttype = MP_STATION;
 
 		switch (ttype) {
 			case MP_TUNNELBRIDGE: {
