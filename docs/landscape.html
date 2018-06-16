@@ -524,8 +524,8 @@
    <td valign=top nowrap>&nbsp;</td>
    <td>
     <ul>
+     <li>m1 bits 4..0: <a href="#OwnershipInfo">owner</a> of the road tile</li>
      <li>m2: Index into the array of towns (owning town for town roads; closest town otherwise, INVALID_TOWN if there is no town or we are creating a town)</li>
-     <li>m7 bit 5 set = on snow or desert</li>
      <li>m7 bits 7..6: present road types
       <table>
        <tr>
@@ -576,7 +576,6 @@
        </li>
        <li>m5 bit 6 clear: road
         <ul>
-         <li>m1 bits 4..0: <a href="#OwnershipInfo">owner</a> of the road type 0 (normal road)</li>
          <li>m7 bits 3..0: counter for the roadworks</li>
          <li>m5 bits 3..0: road layout road type 0 (normal road): bit set = road piece present:
           <table>
@@ -598,7 +597,6 @@
            </tr>
           </table>
          </li>
-         <li>m3 bits 0..3: road layout road type 1 (tram)</li>
          <li>m5 bits 5..4: bits to disallow vehicles to go a specific direction
           <table>
            <tr>
@@ -617,7 +615,6 @@
      </li>
      <li>m5 bit 7 set, bit 6 clear: road depot
       <ul>
-       <li>m1 bits 4..0: <a href="#OwnershipInfo">owner</a> of the depot</li>
        <li>m2: Depot index</li>
        <li>m5 bits 1..0: exit towards:
         <table>

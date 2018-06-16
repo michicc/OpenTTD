@@ -128,9 +128,9 @@ void AfterLoadCompanyStats()
 			/* Iterate all present road types as each can have a different owner. */
 			RoadType rt;
 			FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(road_tile)) {
-				c = Company::GetIfValid(IsRoadDepot(road_tile) ? GetTileOwner(road_tile) : GetRoadOwner(road_tile, rt));
+				c = Company::GetIfValid(GetTileOwner(road_tile));
 				/* Depots always have two road bits. */
-				if (c != NULL) c->infrastructure.road[rt] += IsNormalRoad(road_tile) ? CountBits(GetRoadBits(road_tile, rt)) : 2;
+				if (c != NULL) c->infrastructure.road[rt] += IsNormalRoad(road_tile) ? CountBits(GetRoadBits(road_tile)) : 2;
 			}
 		}
 

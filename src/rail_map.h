@@ -828,11 +828,11 @@ static inline void MakeRailDepot(TileIndex t, Owner o, DepotID did, DiagDirectio
 }
 
 /** Insert a new level crossing tile into the map array. */
-static inline Tile *MakeLevelCrossing(TileIndex t, Owner o, TrackBits b, RailType r)
+static inline Tile *MakeLevelCrossing(TileIndex t, Owner o, TrackBits b, RailType r, Tile *after = NULL)
 {
 	assert(b == TRACK_BIT_X || b == TRACK_BIT_Y);
 
-	Tile *rail_tile = _m.NewTile(t, MP_RAILWAY);
+	Tile *rail_tile = _m.NewTile(t, MP_RAILWAY, false, after);
 	SetTileOwner(rail_tile, o);
 	rail_tile->m3 = 0;
 	rail_tile->m5 = RAIL_TILE_CROSSING << 6 | b;
