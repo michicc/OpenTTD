@@ -35,7 +35,7 @@ TrackBits GetReservedTrackbits(TileIndex t)
 
 	switch (GetTileType(t)) {
 		case MP_STATION:
-			if (HasStationRail(t)) return GetStationReservationTrackBits(t);
+			if (HasStationTileRail(t)) return GetStationReservationTrackBits(t);
 			break;
 
 		case MP_TUNNELBRIDGE:
@@ -111,9 +111,9 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 
 	switch (GetTileType(tile)) {
 		case MP_STATION:
-			if (HasStationRail(tile) && !HasStationReservation(tile)) {
+			if (HasStationTileRail(tile) && !HasStationReservation(tile)) {
 				SetRailStationReservation(tile, true);
-				if (trigger_stations && IsRailStation(tile)) TriggerStationRandomisation(NULL, tile, SRT_PATH_RESERVATION);
+				if (trigger_stations && IsRailStationTile(tile)) TriggerStationRandomisation(NULL, tile, SRT_PATH_RESERVATION);
 				MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
 				return true;
 			}
@@ -165,7 +165,7 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 
 	switch (GetTileType(tile)) {
 		case MP_STATION:
-			if (HasStationRail(tile)) {
+			if (HasStationTileRail(tile)) {
 				SetRailStationReservation(tile, false);
 				MarkTileDirtyByTile(tile);
 			}

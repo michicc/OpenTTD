@@ -59,7 +59,7 @@ void AfterLoadLabelMaps()
 			Tile *tptr = _m.ToTile(t);
 			switch (GetTileType(tptr)) {
 				case MP_STATION:
-					if (HasStationRail(t)) {
+					if (HasStationRail(tptr)) {
 						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
 					}
 					break;

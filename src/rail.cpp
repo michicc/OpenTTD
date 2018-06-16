@@ -157,7 +157,7 @@ static RailType GetTileRailTypeCommon(TileIndex tile)
 {
 	switch (GetTileType(tile)) {
 		case MP_STATION:
-			if (HasStationRail(tile)) return GetRailType(tile);
+			if (HasStationTileRail(tile)) return GetRailType(tile);
 			break;
 
 		case MP_TUNNELBRIDGE:

@@ -112,9 +112,9 @@ static inline void SetStationGfx(TileIndex t, StationGfx gfx)
  * @pre IsTileType(t, MP_STATION)
  * @return true if and only if the tile is a rail station
  */
-static inline bool IsRailStation(TileIndex t)
+static inline bool IsRailStation(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_RAIL;
+	return GetStationType(t) == STATION_RAIL;
 }
 
 /**
@@ -124,7 +124,8 @@ static inline bool IsRailStation(TileIndex t)
  */
 static inline bool IsRailStationTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsRailStation(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsRailStation(s);
 }
 
 /**
@@ -133,9 +134,9 @@ static inline bool IsRailStationTile(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return true if and only if the tile is a rail waypoint
  */
-static inline bool IsRailWaypoint(TileIndex t)
+static inline bool IsRailWaypoint(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_WAYPOINT;
+	return GetStationType(t) == STATION_WAYPOINT;
 }
 
 /**
@@ -145,7 +146,8 @@ static inline bool IsRailWaypoint(TileIndex t)
  */
 static inline bool IsRailWaypointTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsRailWaypoint(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsRailWaypoint(s);
 }
 
 /**
@@ -155,7 +157,7 @@ static inline bool IsRailWaypointTile(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return true if and only if the tile has rail
  */
-static inline bool HasStationRail(TileIndex t)
+static inline bool HasStationRail(const Tile *t)
 {
 	return IsRailStation(t) || IsRailWaypoint(t);
 }
@@ -168,7 +170,8 @@ static inline bool HasStationRail(TileIndex t)
  */
 static inline bool HasStationTileRail(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && HasStationRail(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && HasStationRail(s);
 }
 
 /**
@@ -375,7 +378,7 @@ static inline bool IsHangarTile(TileIndex t)
  */
 static inline Axis GetRailStationAxis(TileIndex t)
 {
-	assert(HasStationRail(t));
+	assert(HasStationTileRail(t));
 	return HasBit(GetStationGfx(t), 0) ? AXIS_Y : AXIS_X;
 }
 
@@ -433,7 +436,7 @@ static inline bool IsCompatibleTrainStationTile(TileIndex test_tile, TileIndex s
  */
 static inline bool HasStationReservation(TileIndex t)
 {
-	assert(HasStationRail(t));
+	assert(HasStationTileRail(t));
 	return HasBit(_m[t].m6, 2);
 }
 
@@ -445,7 +448,7 @@ static inline bool HasStationReservation(TileIndex t)
  */
 static inline void SetRailStationReservation(TileIndex t, bool b)
 {
-	assert(HasStationRail(t));
+	assert(HasStationTileRail(t));
 	SB(_m[t].m6, 2, 1, b ? 1 : 0);
 }
 
@@ -507,10 +510,10 @@ static inline TileIndexDiffC GetDockOffset(const Tile *t)
  * @pre HasStationTileRail(t)
  * @return True if this station is part of a newgrf station.
  */
-static inline bool IsCustomStationSpecIndex(TileIndex t)
+static inline bool IsCustomStationSpecIndex(const Tile *t)
 {
-	assert(HasStationTileRail(t));
-	return _m[t].m4 != 0;
+	assert(HasStationRail(t));
+	return t->m4 != 0;
 }
 
 /**
@@ -531,10 +534,10 @@ static inline void SetCustomStationSpecIndex(TileIndex t, byte specindex)
  * @pre HasStationTileRail(t)
  * @return The custom station spec of this tile.
  */
-static inline uint GetCustomStationSpecIndex(TileIndex t)
+static inline uint GetCustomStationSpecIndex(const Tile *t)
 {
-	assert(HasStationTileRail(t));
-	return _m[t].m4;
+	assert(HasStationRail(t));
+	return t->m4;
 }
 
 /**
@@ -555,10 +558,10 @@ static inline void SetStationTileRandomBits(TileIndex t, byte random_bits)
  * @pre IsTileType(t, MP_STATION)
  * @return The random bits for this station tile.
  */
-static inline byte GetStationTileRandomBits(TileIndex t)
+static inline byte GetStationTileRandomBits(const Tile *t)
 {
 	assert(IsTileType(t, MP_STATION));
-	return GB(_m[t].m3, 4, 4);
+	return GB(t->m3, 4, 4);
 }
 
 /**
