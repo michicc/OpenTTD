@@ -39,14 +39,14 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_STATION) && ::IsHangar(tile);
+	return ::IsHangarTile(tile);
 }
 
 /* static */ bool ScriptAirport::IsAirportTile(TileIndex tile)
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_STATION) && ::IsAirport(tile);
+	return ::IsAirportTile(tile);
 }
 
 /* static */ int32 ScriptAirport::GetAirportWidth(AirportType type)

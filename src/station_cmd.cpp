@@ -71,7 +71,7 @@
  * @pre IsTileType(t, MP_STATION)
  * @return true if and only if the tile is a hangar.
  */
-bool IsHangar(TileIndex t)
+bool IsHangar(const Tile *t)
 {
 	assert(IsTileType(t, MP_STATION));
 
@@ -82,7 +82,7 @@ bool IsHangar(TileIndex t)
 	const AirportSpec *as = st->airport.GetSpec();
 
 	for (uint i = 0; i < as->nof_depots; i++) {
-		if (st->airport.GetHangarTile(i) == t) return true;
+		if (GetTileByType(st->airport.GetHangarTile(i), MP_STATION) == t) return true;
 	}
 
 	return false;
@@ -2326,7 +2326,7 @@ CommandCost CmdBuildAirport(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 
 		/* Only call the animation trigger after all tiles have been built */
 		for (AirportTileTableIterator iter(as->table[layout], tile); iter != INVALID_TILE; ++iter) {
-			AirportTileAnimationTrigger(st, iter, AAT_BUILT);
+			AirportTileAnimationTrigger(st, iter, GetTileByType(iter, MP_STATION), AAT_BUILT);
 		}
 
 		UpdateAirplanesOnNewStation(st);
@@ -2740,12 +2740,12 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		total_offset = 0;
 	}
 
-	StationGfx gfx = GetStationGfx(ti->tile);
-	if (IsAirport(ti->tile)) {
-		gfx = GetAirportGfx(ti->tile);
+	StationGfx gfx = GetStationGfx(ti->tptr);
+	if (IsAirport(ti->tptr)) {
+		gfx = GetAirportGfx(ti->tptr);
 		if (gfx >= NEW_AIRPORTTILE_OFFSET) {
 			const AirportTileSpec *ats = AirportTileSpec::Get(gfx);
-			if (ats->grf_prop.spritegroup[0] != NULL && DrawNewAirportTile(ti, Station::GetByTile(ti->tile), gfx, ats)) {
+			if (ats->grf_prop.spritegroup[0] != NULL && DrawNewAirportTile(ti, Station::GetByTile(ti->tptr), gfx, ats)) {
 				return;
 			}
 			/* No sprite group (or no valid one) found, meaning no graphics associated.
@@ -2981,13 +2981,13 @@ static Foundation GetFoundation_Station(TileIndex tile, Tile *tptr, Slope tileh)
 		}
 	}
 
-	if (tileh != SLOPE_FLAT && IsAirport(tile)) {
-		StationGfx gfx = GetAirportGfx(tile);
+	if (tileh != SLOPE_FLAT && IsAirport(tptr)) {
+		StationGfx gfx = GetAirportGfx(tptr);
 		if (gfx >= NEW_AIRPORTTILE_OFFSET) {
 			const AirportTileSpec *ats = AirportTileSpec::Get(gfx);
 			if (ats->grf_prop.spritegroup != NULL && HasBit(ats->callback_mask, CBM_AIRT_DRAW_FOUNDATIONS)) {
 				/* Called to determine the type (if any) of foundation to draw */
-				uint32 callback_res = GetAirportTileCallback(CBID_AIRPTILE_DRAW_FOUNDATIONS, 0, 0, ats, Station::GetByTile(tile), tile);
+				uint32 callback_res = GetAirportTileCallback(CBID_AIRPTILE_DRAW_FOUNDATIONS, 0, 0, ats, Station::GetByTile(tptr), tile);
 				if (callback_res != CALLBACK_FAILED && !ConvertBooleanCallback(ats->grf_prop.grffile, CBID_AIRPTILE_DRAW_FOUNDATIONS, callback_res)) return FOUNDATION_NONE;
 			}
 		}
@@ -3042,12 +3042,12 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 		td->railtype = rti->strings.name;
 	}
 
-	if (IsAirport(tile)) {
-		const AirportSpec *as = Station::GetByTile(tile)->airport.GetSpec();
+	if (IsAirport(tptr)) {
+		const AirportSpec *as = Station::GetByTile(tptr)->airport.GetSpec();
 		td->airport_class = AirportClass::Get(as->cls_id)->name;
 		td->airport_name = as->name;
 
-		const AirportTileSpec *ats = AirportTileSpec::GetByTile(tile);
+		const AirportTileSpec *ats = AirportTileSpec::GetByTile(tptr);
 		td->airport_tile_name = ats->name;
 
 		if (as->grf_prop.grffile != NULL) {
@@ -3064,7 +3064,7 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 		default: NOT_REACHED();
 		case STATION_RAIL:     str = STR_LAI_STATION_DESCRIPTION_RAILROAD_STATION; break;
 		case STATION_AIRPORT:
-			str = (IsHangar(tile) ? STR_LAI_STATION_DESCRIPTION_AIRCRAFT_HANGAR : STR_LAI_STATION_DESCRIPTION_AIRPORT);
+			str = (IsHangar(tptr) ? STR_LAI_STATION_DESCRIPTION_AIRCRAFT_HANGAR : STR_LAI_STATION_DESCRIPTION_AIRPORT);
 			break;
 		case STATION_TRUCK:    str = STR_LAI_STATION_DESCRIPTION_TRUCK_LOADING_AREA; break;
 		case STATION_BUS:      str = STR_LAI_STATION_DESCRIPTION_BUS_STATION; break;
@@ -3126,7 +3126,7 @@ static bool TileLoop_Station(TileIndex tile, Tile *&tptr)
 	 * hardcoded.....not good */
 	switch (GetStationType(tptr)) {
 		case STATION_AIRPORT:
-			AirportTileAnimationTrigger(Station::GetByTile(tile), tile, AAT_TILELOOP);
+			AirportTileAnimationTrigger(Station::GetByTile(tile), tile, tptr, AAT_TILELOOP);
 			break;
 
 		case STATION_DOCK:
@@ -3150,19 +3150,19 @@ static void AnimateTile_Station(TileIndex tile, Tile *tptr)
 		return;
 	}
 
-	if (IsAirport(tile)) {
-		AnimateAirportTile(tile);
+	if (IsAirport(tptr)) {
+		AnimateAirportTile(tile, tptr);
 	}
 }
 
 
 static bool ClickTile_Station(TileIndex tile, Tile *tptr)
 {
-	const BaseStation *bst = BaseStation::GetByTile(tile);
+	const BaseStation *bst = BaseStation::GetByTile(tptr);
 
 	if (bst->facilities & FACIL_WAYPOINT) {
 		ShowWaypointWindow(Waypoint::From(bst));
-	} else if (IsHangar(tile)) {
+	} else if (IsHangar(tptr)) {
 		const Station *st = Station::From(bst);
 		ShowDepotWindow(st->airport.GetHangarTile(st->airport.GetHangarNum(tile)), VEH_AIRCRAFT);
 	} else {
@@ -4040,7 +4040,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		}
 
 		/* Update station tile count. */
-		if (!IsBuoy(tptr) && !IsAirport(tile)) {
+		if (!IsBuoy(tptr) && !IsAirport(tptr)) {
 			old_company->infrastructure.station--;
 			new_company->infrastructure.station++;
 		}
