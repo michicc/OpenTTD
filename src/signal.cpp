@@ -354,8 +354,8 @@ static SigFlags ExploreSegment(Owner owner)
 			}
 
 			case MP_STATION:
-				if (!HasStationRail(tile)) continue;
-				if (GetTileOwner(tile) != owner) continue;
+				if (!HasStationRail(rail_tile)) continue;
+				if (GetTileOwner(rail_tile) != owner) continue;
 				if (DiagDirToAxis(enterdir) != GetRailStationAxis(tile)) continue; // different axis
 				if (IsStationTileBlocked(tile)) continue; // 'eye-candy' station tile
 

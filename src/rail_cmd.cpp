@@ -1687,17 +1687,17 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 		if (tptr == NULL) {
 			/* No rail tile, check other tile types and modify tile pointer. */
-			tt = GetTileType(tile);
+			tptr = _m.ToTile(tile);
+			tt = GetTileType(tptr);
 			switch (tt) {
 				case MP_STATION:
-					if (!HasStationRail(tile)) continue;
+					if (!HasStationRail(tptr)) continue;
 					break;
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(tile) != TRANSPORT_RAIL) continue;
 					break;
 				default: continue;
 			}
-			tptr = _m.ToTile(tile);
 		}
 
 		do {

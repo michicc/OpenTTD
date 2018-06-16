@@ -30,7 +30,6 @@ protected:
 		Tile        *rail_tile;
 		TileIndex   tile;
 		Trackdir    td;
-		TileType    tile_type;
 		RailType    rail_type;
 
 		TILE()
@@ -38,7 +37,6 @@ protected:
 			tile = INVALID_TILE;
 			rail_tile = NULL;
 			td = INVALID_TRACKDIR;
-			tile_type = MP_VOID;
 			rail_type = INVALID_RAILTYPE;
 		}
 
@@ -46,7 +44,6 @@ protected:
 		{
 			this->tile = tile;
 			this->td = td;
-			this->tile_type = GetTileType(tile);
 			this->rail_tile = rail != NULL ? rail : GetRailTileFromTrack(tile, TrackdirToTrack(td));
 			this->rail_type = this->rail_tile != NULL ? GetRailType(this->rail_tile) : GetTileRailType(tile, TrackdirToTrack(td));
 		}
@@ -56,7 +53,6 @@ protected:
 			tile = src.tile;
 			rail_tile = src.rail_tile;
 			td = src.td;
-			tile_type = src.tile_type;
 			rail_type = src.rail_type;
 		}
 	};
@@ -402,7 +398,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 				/* We will end in this pass (depot is possible target) */
 				end_segment_reason |= ESRB_DEPOT;
 
-			} else if (cur.tile_type == MP_STATION && IsRailWaypoint(cur.tile)) {
+			} else if (IsRailWaypointTile(cur.tile)) {
 				if (v->current_order.IsType(OT_GOTO_WAYPOINT) &&
 						GetStationIndex(cur.tile) == v->current_order.GetDestination() &&
 						!Waypoint::Get(v->current_order.GetDestination())->IsSingleTile()) {

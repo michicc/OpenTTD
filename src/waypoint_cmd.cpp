@@ -111,7 +111,7 @@ static CommandCost IsValidTileForWaypoint(TileIndex tile, Axis axis, StationID *
 	 * Or it points to a waypoint if we're only allowed to build on exactly that waypoint. */
 	Tile *st_tile = GetTileByType(tile, MP_STATION);
 	if (waypoint != NULL && st_tile != NULL) {
-		if (!IsRailWaypoint(tile)) {
+		if (!IsRailWaypoint(st_tile)) {
 			return ClearTile_Station(tile, st_tile, DC_AUTO, NULL); // get error message
 		} else {
 			StationID wp = GetStationIndex(st_tile);
@@ -121,6 +121,8 @@ static CommandCost IsValidTileForWaypoint(TileIndex tile, Axis axis, StationID *
 				return_cmd_error(STR_ERROR_WAYPOINT_ADJOINS_MORE_THAN_ONE_EXISTING);
 			}
 		}
+		CommandCost ret = CheckOwnership(GetTileOwner(st_tile));
+		if (ret.Failed()) return ret;
 	}
 
 	if (GetAxisForNewWaypoint(tile) != axis) return_cmd_error(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK);
@@ -264,7 +266,7 @@ CommandCost CmdBuildRailWaypoint(TileIndex start_tile, DoCommandFlag flags, uint
 		Company *c = Company::Get(wp->owner);
 		for (int i = 0; i < count; i++) {
 			TileIndex tile = start_tile + i * offset;
-			byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(tile) : 0;
+			byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION)) : 0;
 			if (!HasStationTileRail(tile)) c->infrastructure.station++;
 
 			/* At most one rail tile is possible. */
