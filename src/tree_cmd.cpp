@@ -69,6 +69,7 @@ static bool CanPlantTreesOnTile(TileIndex tile, bool allow_desert)
 	if (HasTileByType(tile, MP_TREES)) return false;
 	if (HasTileByType(tile, MP_RAILWAY)) return false;
 	if (HasTileByType(tile, MP_ROAD)) return false;
+	if (HasTileByType(tile, MP_STATION)) return false;
 
 	switch (GetTileType(tile)) {
 		case MP_WATER:
@@ -357,7 +358,7 @@ CommandCost CmdPlantTree(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 			continue;
 		}
 
-		if (HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD)) {
+		if (HasTileByType(tile, MP_RAILWAY) || HasTileByType(tile, MP_ROAD) || HasTileByType(tile, MP_STATION)) {
 			msg = STR_ERROR_SITE_UNSUITABLE;
 			continue;
 		}

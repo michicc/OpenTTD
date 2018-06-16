@@ -382,9 +382,6 @@ static void DrawRailCatenaryRailway(const TileInfo *ti, bool draw_halftile, Corn
 			PPPallowed[i] = 0;
 		}
 
-		/* Station and road crossings are always "flat", so adjust the tileh accordingly */
-		if (IsTileType(neighbour, MP_STATION)) tileh[TS_NEIGHBOUR] = SLOPE_FLAT;
-
 		/* Half tile slopes coincide only with horizontal/vertical track.
 		 * Faking a flat slope results in the correct sprites on positions. */
 		if (IsHalftileSlope(tileh[TS_NEIGHBOUR])) tileh[TS_NEIGHBOUR] = SLOPE_FLAT;

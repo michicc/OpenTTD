@@ -58,6 +58,9 @@ static inline Owner GetDepotOwner(TileIndex tile)
 	if (IsRoadDepotTile(tile)) {
 		return GetTileOwner(GetRoadDepotTile(tile));
 	}
+	if (IsHangarTile(tile)) {
+		return GetTileOwner(GetTileByType(tile, MP_STATION));
+	}
 	return GetTileOwner(tile);
 }
 
@@ -113,12 +116,12 @@ static inline VehicleType GetDepotVehicleType(TileIndex t)
 		return VEH_TRAIN;
 	} else if (HasTileByType(t, MP_ROAD)) {
 		return VEH_ROAD;
+	} else if (HasTileByType(t, MP_STATION)) {
+		return VEH_AIRCRAFT;
+	} else if (HasTileByType(t, MP_WATER)) {
+		return VEH_SHIP;
 	} else {
-		switch (GetTileType(t)) {
-			default: NOT_REACHED();
-			case MP_WATER:   return VEH_SHIP;
-			case MP_STATION: return VEH_AIRCRAFT;
-		}
+		NOT_REACHED();
 	}
 }
 
