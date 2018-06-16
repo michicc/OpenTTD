@@ -1043,7 +1043,7 @@ void DoFloodTile(TileIndex target)
 				flooded = FloodHalftile(target);
 				if (flooded) MarkTileDirtyByTile(target);
 			}
-		} else if (IsTileType(target, MP_CLEAR)) {
+		} else if (IsTileType(target, MP_CLEAR) && !HasTileByType(target, MP_ROAD)) {
 			if (!IsSlopeWithOneCornerRaised(tileh) && HasTileByType(target, MP_TREES)) {
 				/* Slope with trees, convert to shore. */
 				MakeShore(target);
