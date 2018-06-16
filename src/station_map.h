@@ -63,13 +63,23 @@ static inline RoadStopType GetRoadStopType(TileIndex t)
 /**
  * Get the station graphics of this tile
  * @param t the tile to query
+ * @return the station graphics
+ */
+static inline StationGfx GetStationGfx(const Tile *t)
+{
+	return (StationGfx)t->m5;
+}
+
+/**
+ * Get the station graphics of this tile
+ * @param t the tile to query
  * @pre IsTileType(t, MP_STATION)
  * @return the station graphics
  */
 static inline StationGfx GetStationGfx(TileIndex t)
 {
-	assert(IsTileType(t, MP_STATION));
-	return _m[t].m5;
+	assert(HasTileByType(t, MP_STATION));
+	return GetStationGfx(GetTileByType(t, MP_STATION));
 }
 
 /**
@@ -272,9 +282,9 @@ static inline DiagDirection GetRoadStopDir(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if the tile is an oilrig tile
  */
-static inline bool IsOilRig(TileIndex t)
+static inline bool IsOilRig(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_OILRIG;
+	return GetStationType(t) == STATION_OILRIG;
 }
 
 /**
@@ -283,9 +293,9 @@ static inline bool IsOilRig(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if the tile is a dock
  */
-static inline bool IsDock(TileIndex t)
+static inline bool IsDock(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_DOCK;
+	return GetStationType(t) == STATION_DOCK;
 }
 
 /**
@@ -295,7 +305,8 @@ static inline bool IsDock(TileIndex t)
  */
 static inline bool IsDockTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && GetStationType(_m.ToTile(t)) == STATION_DOCK;
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsDock(s);
 }
 
 /**
@@ -304,9 +315,9 @@ static inline bool IsDockTile(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if the tile is a buoy
  */
-static inline bool IsBuoy(TileIndex t)
+static inline bool IsBuoy(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_BUOY;
+	return GetStationType(t) == STATION_BUOY;
 }
 
 /**
@@ -316,7 +327,8 @@ static inline bool IsBuoy(TileIndex t)
  */
 static inline bool IsBuoyTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsBuoy(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsBuoy(s);
 }
 
 /**
@@ -427,7 +439,7 @@ static inline TrackBits GetStationReservationTrackBits(TileIndex t)
  * @pre \a t is the land part of the dock
  * @return The direction of the dock on tile \a t.
  */
-static inline DiagDirection GetDockDirection(TileIndex t)
+static inline DiagDirection GetDockDirection(const Tile *t)
 {
 	StationGfx gfx = GetStationGfx(t);
 	assert(IsDock(t) && gfx < GFX_DOCK_BASE_WATER_PART);
@@ -441,7 +453,7 @@ static inline DiagDirection GetDockDirection(TileIndex t)
  * @pre IsBuoy(t) || IsOilRig(t) || IsDock(t)
  * @return The offset from this tile that should be used as destination for ships.
  */
-static inline TileIndexDiffC GetDockOffset(TileIndex t)
+static inline TileIndexDiffC GetDockOffset(const Tile *t)
 {
 	static const TileIndexDiffC buoy_offset = {0, 0};
 	static const TileIndexDiffC oilrig_offset = {2, 0};
