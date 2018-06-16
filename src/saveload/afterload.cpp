@@ -344,6 +344,43 @@ static void DecomposeTile(TileIndex tile)
 			break;
 		}
 
+		case MP_STATION: {
+			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile))) break;
+
+			Tile *new_tile = _m.NewTile(tile, MP_STATION, true);
+
+			/* Copy old tile to the new tile. */
+			MemCpyT(new_tile, new_tile - 1);
+
+			/* Make a new ground tile. */
+			switch (GetWaterClass(tile)) {
+				case WATER_CLASS_SEA:
+					MakeSea(tile);
+					break;
+
+				case WATER_CLASS_CANAL:
+					MakeCanal(tile, GetTileOwner(new_tile), Random());
+					break;
+
+				case WATER_CLASS_RIVER:
+					MakeRiver(tile, Random());
+					break;
+
+				default: {
+					/* Shore or land. */
+					int z;
+					if (GetTileSlope(tile, &z) != SLOPE_FLAT && z == 0) {
+						MakeShore(tile);
+					} else {
+						MakeClear(tile, CLEAR_GRASS, 3);
+					}
+					break;
+				}
+			}
+			SetAssociatedTileFlag(new_tile - 1, true);
+			break;
+		}
+
 		default:
 			break;
 	}

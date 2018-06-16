@@ -16,7 +16,7 @@
 #include "command_type.h"
 #include "station_type.h"
 
-CommandCost RemoveBuoy(TileIndex tile, DoCommandFlag flags);
+CommandCost RemoveBuoy(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted);
 
 Axis GetAxisForNewWaypoint(TileIndex tile);
 void ShowWaypointWindow(const Waypoint *wp);

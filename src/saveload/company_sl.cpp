@@ -157,13 +157,6 @@ void AfterLoadCompanyStats()
 					break;
 				}
 
-				case STATION_DOCK:
-				case STATION_BUOY:
-					if (GetWaterClass(tile) == WATER_CLASS_CANAL) {
-						if (c != NULL) c->infrastructure.water++;
-					}
-					break;
-
 				default:
 					break;
 			}
