@@ -65,8 +65,10 @@ void RoadStop::MakeDriveThrough()
 {
 	assert(this->east == NULL && this->west == NULL);
 
-	RoadStopType rst = GetRoadStopType(this->xy);
-	DiagDirection dir = GetRoadStopDir(this->xy);
+	const Tile *st_tile = GetTileByType(this->xy, MP_STATION);
+
+	RoadStopType rst = GetRoadStopType(st_tile);
+	DiagDirection dir = GetRoadStopDir(st_tile);
 	/* Use absolute so we always go towards the northern tile */
 	TileIndexDiff offset = abs(TileOffsByDiagDir(dir));
 
@@ -133,8 +135,10 @@ void RoadStop::ClearDriveThrough()
 {
 	assert(this->east != NULL && this->west != NULL);
 
-	RoadStopType rst = GetRoadStopType(this->xy);
-	DiagDirection dir = GetRoadStopDir(this->xy);
+	const Tile *st_tile = GetTileByType(this->xy, MP_STATION);
+
+	RoadStopType rst = GetRoadStopType(st_tile);
+	DiagDirection dir = GetRoadStopDir(st_tile);
 	/* Use absolute so we always go towards the northern tile */
 	TileIndexDiff offset = abs(TileOffsByDiagDir(dir));
 
@@ -311,7 +315,7 @@ void RoadStop::Entry::Enter(const RoadVehicle *rv)
 	return next_st != NULL &&
 			GetStationIndex(next_st) == GetStationIndex(cur) &&
 			GetStationType(next_st) == GetStationType(cur) &&
-			GetRoadStopDir(next) == GetRoadStopDir(rs) &&
+			GetRoadStopDir(next_st) == GetRoadStopDir(cur) &&
 			IsDriveThroughStopTile(next);
 }
 
@@ -357,7 +361,7 @@ void RoadStop::Entry::Rebuild(const RoadStop *rs, int side)
 {
 	assert(HasBit(rs->status, RSSFB_BASE_ENTRY));
 
-	DiagDirection dir = GetRoadStopDir(rs->xy);
+	DiagDirection dir = GetRoadStopDir(GetTileByType(rs->xy, MP_STATION));
 	if (side == -1) side = (rs->east == this);
 
 	RoadStopEntryRebuilderHelper rserh;
@@ -386,7 +390,7 @@ void RoadStop::Entry::CheckIntegrity(const RoadStop *rs) const
 	if (!HasBit(rs->status, RSSFB_BASE_ENTRY)) return;
 
 	/* The tile 'before' the road stop must not be part of this 'line' */
-	assert(!IsDriveThroughRoadStopContinuation(rs->xy, rs->xy - abs(TileOffsByDiagDir(GetRoadStopDir(rs->xy)))));
+	assert(!IsDriveThroughRoadStopContinuation(rs->xy, rs->xy - abs(TileOffsByDiagDir(GetRoadStopDir(GetTileByType(rs->xy, MP_STATION))))));
 
 	Entry temp;
 	temp.Rebuild(rs, rs->east == this);

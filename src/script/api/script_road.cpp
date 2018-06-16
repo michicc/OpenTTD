@@ -402,17 +402,15 @@ static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, Dia
 	TileIndex neighbour_tile = ::TileAddByDiagDir(start_tile, neighbour);
 	if ((rts & ::GetAllRoadTypes(neighbour_tile)) == 0) return false;
 
-	if (::HasTileByType(neighbour_tile, MP_ROAD)) return !::IsRoadDepotTile(neighbour_tile);
-	switch (::GetTileType(neighbour_tile)) {
-		case MP_STATION:
-			if (::IsDriveThroughStopTile(neighbour_tile)) {
-				return (::DiagDirToAxis(neighbour) == ::DiagDirToAxis(::GetRoadStopDir(neighbour_tile)));
-			}
-			return false;
-
-		default:
-			return false;
+	if (::HasTileByType(neighbour_tile, MP_STATION)) {
+		if (::IsDriveThroughStopTile(neighbour_tile)) {
+			return (::DiagDirToAxis(neighbour) == ::DiagDirToAxis(::GetRoadStopDir(::GetTileByType(neighbour_tile, MP_STATION))));
+		}
+		return false;
 	}
+	if (::HasTileByType(neighbour_tile, MP_ROAD)) return !::IsRoadDepotTile(neighbour_tile);
+
+	return false;
 }
 
 /* static */ int32 ScriptRoad::GetNeighbourRoadCount(TileIndex tile)
@@ -442,14 +440,14 @@ static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, Dia
 {
 	if (!IsRoadStationTile(station)) return INVALID_TILE;
 
-	return station + ::TileOffsByDiagDir(::GetRoadStopDir(station));
+	return station + ::TileOffsByDiagDir(::GetRoadStopDir(::GetTileByType(station, MP_STATION)));
 }
 
 /* static */ TileIndex ScriptRoad::GetDriveThroughBackTile(TileIndex station)
 {
 	if (!IsDriveThroughRoadStationTile(station)) return INVALID_TILE;
 
-	return station + ::TileOffsByDiagDir(::ReverseDiagDir(::GetRoadStopDir(station)));
+	return station + ::TileOffsByDiagDir(::ReverseDiagDir(::GetRoadStopDir(::GetTileByType(station, MP_STATION))));
 }
 
 /* static */ bool ScriptRoad::_BuildRoadInternal(TileIndex start, TileIndex end, bool one_way, bool full)
@@ -574,10 +572,11 @@ static bool NeighbourHasReachableRoad(::RoadTypes rts, TileIndex start_tile, Dia
 {
 	EnforcePrecondition(false, ScriptObject::GetCompany() != OWNER_DEITY);
 	EnforcePrecondition(false, ::IsValidTile(tile));
-	EnforcePrecondition(false, IsTileType(tile, MP_STATION));
-	EnforcePrecondition(false, IsRoadStop(tile));
+	const Tile *st = GetTileByType(tile, MP_STATION);
+	EnforcePrecondition(false, st != NULL);
+	EnforcePrecondition(false, IsRoadStop(st));
 
-	return ScriptObject::DoCommand(tile, 1 | 1 << 8, GetRoadStopType(tile), CMD_REMOVE_ROAD_STOP);
+	return ScriptObject::DoCommand(tile, 1 | 1 << 8, GetRoadStopType(st), CMD_REMOVE_ROAD_STOP);
 }
 
 /* static */ Money ScriptRoad::GetBuildCost(RoadType roadtype, BuildType build_type)
