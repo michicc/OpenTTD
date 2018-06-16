@@ -129,9 +129,10 @@ ScriptTileList_StationType::ScriptTileList_StationType(StationID station_id, Scr
 
 	TileArea ta(::TileXY(rect->left, rect->top), rect->right - rect->left + 1, rect->bottom - rect->top + 1);
 	TILE_AREA_LOOP(cur_tile, ta) {
-		if (!::IsTileType(cur_tile, MP_STATION)) continue;
+		const Tile *st = ::GetTileByType(cur_tile, MP_STATION);
+		if (st == NULL) continue;
 		if (::GetStationIndex(cur_tile) != station_id) continue;
-		if (!HasBit(station_type_value, ::GetStationType(cur_tile))) continue;
+		if (!HasBit(station_type_value, ::GetStationType(st))) continue;
 		this->AddTile(cur_tile);
 	}
 }

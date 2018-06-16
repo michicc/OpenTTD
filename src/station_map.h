@@ -42,10 +42,10 @@ static const int GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET =  4; ///< The offset for the
  * @pre IsTileType(t, MP_STATION)
  * @return the station type
  */
-static inline StationType GetStationType(TileIndex t)
+static inline StationType GetStationType(const Tile *t)
 {
 	assert(IsTileType(t, MP_STATION));
-	return (StationType)GB(_m[t].m6, 3, 3);
+	return (StationType)GB(t->m6, 3, 3);
 }
 
 /**
@@ -56,8 +56,8 @@ static inline StationType GetStationType(TileIndex t)
  */
 static inline RoadStopType GetRoadStopType(TileIndex t)
 {
-	assert(GetStationType(t) == STATION_TRUCK || GetStationType(t) == STATION_BUS);
-	return GetStationType(t) == STATION_TRUCK ? ROADSTOP_TRUCK : ROADSTOP_BUS;
+	assert(GetStationType(_m.ToTile(t)) == STATION_TRUCK || GetStationType(_m.ToTile(t)) == STATION_BUS);
+	return GetStationType(_m.ToTile(t)) == STATION_TRUCK ? ROADSTOP_TRUCK : ROADSTOP_BUS;
 }
 
 /**
@@ -92,7 +92,7 @@ static inline void SetStationGfx(TileIndex t, StationGfx gfx)
  */
 static inline bool IsRailStation(TileIndex t)
 {
-	return GetStationType(t) == STATION_RAIL;
+	return GetStationType(_m.ToTile(t)) == STATION_RAIL;
 }
 
 /**
@@ -113,7 +113,7 @@ static inline bool IsRailStationTile(TileIndex t)
  */
 static inline bool IsRailWaypoint(TileIndex t)
 {
-	return GetStationType(t) == STATION_WAYPOINT;
+	return GetStationType(_m.ToTile(t)) == STATION_WAYPOINT;
 }
 
 /**
@@ -157,7 +157,7 @@ static inline bool HasStationTileRail(TileIndex t)
  */
 static inline bool IsAirport(TileIndex t)
 {
-	return GetStationType(t) == STATION_AIRPORT;
+	return GetStationType(_m.ToTile(t)) == STATION_AIRPORT;
 }
 
 /**
@@ -180,7 +180,7 @@ bool IsHangar(TileIndex t);
  */
 static inline bool IsTruckStop(TileIndex t)
 {
-	return GetStationType(t) == STATION_TRUCK;
+	return GetStationType(_m.ToTile(t)) == STATION_TRUCK;
 }
 
 /**
@@ -191,7 +191,7 @@ static inline bool IsTruckStop(TileIndex t)
  */
 static inline bool IsBusStop(TileIndex t)
 {
-	return GetStationType(t) == STATION_BUS;
+	return GetStationType(_m.ToTile(t)) == STATION_BUS;
 }
 
 /**
@@ -274,7 +274,7 @@ static inline DiagDirection GetRoadStopDir(TileIndex t)
  */
 static inline bool IsOilRig(TileIndex t)
 {
-	return GetStationType(t) == STATION_OILRIG;
+	return GetStationType(_m.ToTile(t)) == STATION_OILRIG;
 }
 
 /**
@@ -285,7 +285,7 @@ static inline bool IsOilRig(TileIndex t)
  */
 static inline bool IsDock(TileIndex t)
 {
-	return GetStationType(t) == STATION_DOCK;
+	return GetStationType(_m.ToTile(t)) == STATION_DOCK;
 }
 
 /**
@@ -295,7 +295,7 @@ static inline bool IsDock(TileIndex t)
  */
 static inline bool IsDockTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && GetStationType(t) == STATION_DOCK;
+	return IsTileType(t, MP_STATION) && GetStationType(_m.ToTile(t)) == STATION_DOCK;
 }
 
 /**
@@ -306,7 +306,7 @@ static inline bool IsDockTile(TileIndex t)
  */
 static inline bool IsBuoy(TileIndex t)
 {
-	return GetStationType(t) == STATION_BUOY;
+	return GetStationType(_m.ToTile(t)) == STATION_BUOY;
 }
 
 /**

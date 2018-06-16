@@ -1027,7 +1027,7 @@ bool AfterLoadGame()
 				if (!Station::IsExpected(bst)) break;
 				Station *st = Station::From(bst);
 
-				switch (GetStationType(t)) {
+				switch (GetStationType(_m.ToTile(t))) {
 					case STATION_TRUCK:
 					case STATION_BUS:
 						if (IsSavegameVersionBefore(6)) {
@@ -1870,7 +1870,7 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			switch (GetTileType(t)) {
 				case MP_STATION:
-					switch (GetStationType(t)) {
+					switch (GetStationType(_m.ToTile(t))) {
 						case STATION_OILRIG:
 						case STATION_DOCK:
 						case STATION_BUOY:
