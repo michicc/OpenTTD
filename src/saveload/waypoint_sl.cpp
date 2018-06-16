@@ -116,8 +116,18 @@ void MoveWaypointsToBaseStations()
 			/* The tile might've been reserved! */
 			bool reserved = !IsSavegameVersionBefore(SLV_100) && HasBit(_m[t].m5, 4);
 
-			/* The tile really has our waypoint, so reassign the map array */
-			MakeRailWaypoint(t, GetTileOwner(t), new_wp->index, (Axis)GB(_m[t].m5, 0, 1), 0, GetRailType(_m.ToTile(t)));
+			/* The tile really has our waypoint, so reassign the map array and
+			 * manually create an old-style MP_STATION tile. */
+			SetTileType(t, MP_STATION);
+			SetWaterClass(t, WATER_CLASS_INVALID);
+			_m[t].m2 = new_wp->index;
+			/* m3 already has the rail type. */
+			_m[t].m4 = 0;
+			_m[t].m5 = GB(_m[t].m5, 0, 1);
+			SB(_m[t].m6, 2, 1, 0);
+			SB(_m[t].m6, 3, 3, STATION_WAYPOINT);
+			_m[t].m7 = 0;
+
 			new_wp->facilities |= FACIL_TRAIN;
 			new_wp->owner = GetTileOwner(t);
 
