@@ -462,7 +462,7 @@ static inline uint32 GetSmallMapIndustriesPixels(TileIndex tile, TileType t)
 static inline uint32 GetSmallMapRoutesPixels(TileIndex tile, TileType t)
 {
 	if (t == MP_STATION) {
-		switch (GetStationType(tile)) {
+		switch (GetStationType(GetTileByType(tile, MP_STATION))) {
 			case STATION_RAIL:    return MKCOLOUR_XXXX(PC_VERY_DARK_BROWN);
 			case STATION_AIRPORT: return MKCOLOUR_XXXX(PC_RED);
 			case STATION_TRUCK:   return MKCOLOUR_XXXX(PC_ORANGE);

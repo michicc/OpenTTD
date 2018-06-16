@@ -552,12 +552,13 @@ static int32 NPFFindStationOrTile(const AyStar *as, const OpenListNode *current)
 
 	if (fstd->station_index == INVALID_STATION && tile == fstd->dest_coords) return AYSTAR_FOUND_END_NODE;
 
-	if (IsTileType(tile, MP_STATION) && GetStationIndex(tile) == fstd->station_index) {
+	const Tile *station = GetTileByType(tile, MP_STATION);
+	if (station != NULL && GetStationIndex(tile) == fstd->station_index) {
 		if (fstd->v->type == VEH_TRAIN) return AYSTAR_FOUND_END_NODE;
 
 		assert(fstd->v->type == VEH_ROAD);
 		/* Only if it is a valid station *and* we can stop there */
-		if (GetStationType(tile) == fstd->station_type && (fstd->not_articulated || IsDriveThroughStopTile(tile))) return AYSTAR_FOUND_END_NODE;
+		if (GetStationType(station) == fstd->station_type && (fstd->not_articulated || IsDriveThroughStopTile(tile))) return AYSTAR_FOUND_END_NODE;
 	}
 	return AYSTAR_DONE;
 }

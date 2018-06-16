@@ -767,19 +767,19 @@ bool IsNewGRFInspectable(GrfSpecFeature feature, uint index)
  */
 GrfSpecFeature GetGrfSpecFeature(TileIndex tile)
 {
+	if (HasTileByType(tile, MP_STATION)) {
+		switch (GetStationType(GetTileByType(tile, MP_STATION))) {
+			case STATION_RAIL:    return GSF_STATIONS;
+			case STATION_AIRPORT: return GSF_AIRPORTTILES;
+			default:              return GSF_INVALID;
+		}
+	}
 	if (HasTileByType(tile, MP_RAILWAY)) return GSF_RAILTYPES;
 	switch (GetTileType(tile)) {
 		default:              return GSF_INVALID;
 		case MP_HOUSE:        return GSF_HOUSES;
 		case MP_INDUSTRY:     return GSF_INDUSTRYTILES;
 		case MP_OBJECT:       return GSF_OBJECTS;
-
-		case MP_STATION:
-			switch (GetStationType(tile)) {
-				case STATION_RAIL:    return GSF_STATIONS;
-				case STATION_AIRPORT: return GSF_AIRPORTTILES;
-				default:              return GSF_INVALID;
-			}
 	}
 }
 
