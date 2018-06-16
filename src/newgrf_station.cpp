@@ -334,14 +334,14 @@ TownScopeResolver *StationResolverObject::GetTown()
 			return _svc.v49;
 
 		case 0x4A: // Animation frame of tile
-			return GetAnimationFrame(this->tile);
+			return GetAnimationFrame(GetTileByType(this->tile, MP_STATION));
 
 		/* Variables which use the parameter */
 		/* Variables 0x60 to 0x65 and 0x69 are handled separately below */
 		case 0x66: { // Animation frame of nearby tile
 			TileIndex tile = this->tile;
 			if (parameter != 0) tile = GetNearbyTile(parameter, tile);
-			return this->st->TileBelongsToRailStation(tile) ? GetAnimationFrame(tile) : UINT_MAX;
+			return this->st->TileBelongsToRailStation(tile) ? GetAnimationFrame(GetTileByType(tile, MP_STATION)) : UINT_MAX;
 		}
 
 		case 0x67: { // Land info of nearby tile
@@ -911,7 +911,7 @@ void AnimateStationTile(TileIndex tile)
 	const StationSpec *ss = GetStationSpec(tile);
 	if (ss == NULL) return;
 
-	StationAnimationBase::AnimateTile(ss, BaseStation::GetByTile(tile), tile, HasBit(ss->flags, SSF_CB141_RANDOM_BITS));
+	StationAnimationBase::AnimateTile(ss, BaseStation::GetByTile(tile), tile, GetTileByType(tile, MP_STATION), HasBit(ss->flags, SSF_CB141_RANDOM_BITS));
 }
 
 void TriggerStationAnimation(BaseStation *st, TileIndex tile, StationAnimationTrigger trigger, CargoID cargo_type)
@@ -942,7 +942,7 @@ void TriggerStationAnimation(BaseStation *st, TileIndex tile, StationAnimationTr
 				} else {
 					cargo = ss->grf_prop.grffile->cargo_map[cargo_type];
 				}
-				StationAnimationBase::ChangeAnimationFrame(CBID_STATION_ANIM_START_STOP, ss, st, tile, (random_bits << 16) | Random(), (uint8)trigger | (cargo << 8));
+				StationAnimationBase::ChangeAnimationFrame(CBID_STATION_ANIM_START_STOP, ss, st, tile, GetTileByType(tile, MP_STATION), (random_bits << 16) | Random(), (uint8)trigger | (cargo << 8));
 			}
 		}
 	}
