@@ -37,7 +37,7 @@ static OrderType GetOrderTypeByTile(TileIndex t)
 	if (::HasTileByType(t, MP_STATION)) {
 		const Tile *st = ::GetTileByType(t, MP_STATION);
 		if (IsBuoy(st) || IsRailWaypoint(t)) return OT_GOTO_WAYPOINT;
-		if (IsHangar(t)) return OT_GOTO_DEPOT;
+		if (IsHangar(st)) return OT_GOTO_DEPOT;
 		return OT_GOTO_STATION;
 	}
 
@@ -269,7 +269,7 @@ static int ScriptOrderPositionToRealOrderPosition(VehicleID vehicle_id, ScriptOr
 				return st->truck_stops->xy;
 			} else if (st->airport.tile != INVALID_TILE) {
 				TILE_AREA_LOOP(tile, st->airport) {
-					if (st->TileBelongsToAirport(tile) && !::IsHangar(tile)) return tile;
+					if (st->TileBelongsToAirport(tile) && !::IsHangarTile(tile)) return tile;
 				}
 			}
 			return INVALID_TILE;

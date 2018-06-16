@@ -71,7 +71,7 @@ struct AirportTileSpec {
 	GRFFileProps grf_prop;                ///< properties related the the grf file
 
 	static const AirportTileSpec *Get(StationGfx gfx);
-	static const AirportTileSpec *GetByTile(TileIndex tile);
+	static const AirportTileSpec *GetByTile(const Tile *tile);
 
 	static void ResetAirportTiles();
 
@@ -83,8 +83,8 @@ private:
 
 StationGfx GetTranslatedAirportTileID(StationGfx gfx);
 uint16 GetAirportTileCallback(CallbackID callback, uint32 param1, uint32 param2, const AirportTileSpec *ats, Station *st, TileIndex tile, int extra_data = 0);
-void AnimateAirportTile(TileIndex tile);
-void AirportTileAnimationTrigger(Station *st, TileIndex tile, AirpAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
+void AnimateAirportTile(TileIndex tile, const Tile *tptr);
+void AirportTileAnimationTrigger(Station *st, TileIndex tile, const Tile *tptr, AirpAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
 void AirportAnimationTrigger(Station *st, AirpAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
 bool DrawNewAirportTile(TileInfo *ti, Station *st, StationGfx gfx, const AirportTileSpec *airts);
 

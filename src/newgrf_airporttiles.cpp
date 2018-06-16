@@ -48,7 +48,7 @@ AirportTileOverrideManager _airporttile_mngr(NEW_AIRPORTTILE_OFFSET, NUM_AIRPORT
  * @param tile The airport tile.
  * @return A pointer to the corresponding AirportTileSpec.
  */
-/* static */ const AirportTileSpec *AirportTileSpec::GetByTile(TileIndex tile)
+/* static */ const AirportTileSpec *AirportTileSpec::GetByTile(const Tile *tile)
 {
 	return AirportTileSpec::Get(GetAirportGfx(tile));
 }
@@ -111,7 +111,8 @@ StationGfx GetTranslatedAirportTileID(StationGfx gfx)
 static uint32 GetNearbyAirportTileInformation(byte parameter, TileIndex tile, StationID index, bool grf_version8)
 {
 	if (parameter != 0) tile = GetNearbyTile(parameter, tile); // only perform if it is required
-	bool is_same_airport = (IsTileType(tile, MP_STATION) && IsAirport(tile) && GetStationIndex(tile) == index);
+	const Tile *st = GetTileByType(tile, MP_STATION);
+	bool is_same_airport = (st != NULL && IsAirport(st) && GetStationIndex(st) == index);
 
 	return GetNearbyTileInformation(tile, grf_version8) | (is_same_airport ? 1 : 0) << 8;
 }
@@ -131,7 +132,7 @@ static uint32 GetAirportTileIDAtOffset(TileIndex tile, const Station *st, uint32
 		return 0xFFFF;
 	}
 
-	StationGfx gfx = GetAirportGfx(tile);
+	StationGfx gfx = GetAirportGfx(GetTileByType(tile, MP_STATION));
 	const AirportTileSpec *ats = AirportTileSpec::Get(gfx);
 
 	if (gfx < NEW_AIRPORTTILE_OFFSET) { // Does it belongs to an old type?
@@ -268,17 +269,17 @@ struct AirportTileAnimationBase : public AnimationBase<AirportTileAnimationBase,
 	static const AirportTileCallbackMask cbm_animation_next_frame = CBM_AIRT_ANIM_NEXT_FRAME;
 };
 
-void AnimateAirportTile(TileIndex tile)
+void AnimateAirportTile(TileIndex tile, const Tile *tptr)
 {
-	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tile);
+	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tptr);
 	if (ats == NULL) return;
 
-	AirportTileAnimationBase::AnimateTile(ats, Station::GetByTile(tile), tile, HasBit(ats->animation_special_flags, 0));
+	AirportTileAnimationBase::AnimateTile(ats, Station::GetByTile(tptr), tile, HasBit(ats->animation_special_flags, 0));
 }
 
-void AirportTileAnimationTrigger(Station *st, TileIndex tile, AirpAnimationTrigger trigger, CargoID cargo_type)
+void AirportTileAnimationTrigger(Station *st, TileIndex tile, const Tile *tptr, AirpAnimationTrigger trigger, CargoID cargo_type)
 {
-	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tile);
+	const AirportTileSpec *ats = AirportTileSpec::GetByTile(tptr);
 	if (!HasBit(ats->animation.triggers, trigger)) return;
 
 	AirportTileAnimationBase::ChangeAnimationFrame(CBID_AIRPTILE_ANIM_START_STOP, ats, st, tile, Random(), (uint8)trigger | (cargo_type << 8));
@@ -289,7 +290,7 @@ void AirportAnimationTrigger(Station *st, AirpAnimationTrigger trigger, CargoID 
 	if (st->airport.tile == INVALID_TILE) return;
 
 	TILE_AREA_LOOP(tile, st->airport) {
-		if (st->TileBelongsToAirport(tile)) AirportTileAnimationTrigger(st, tile, trigger, cargo_type);
+		if (st->TileBelongsToAirport(tile)) AirportTileAnimationTrigger(st, tile, GetTileByType(tile, MP_STATION), trigger, cargo_type);
 	}
 }
 

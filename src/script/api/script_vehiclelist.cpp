@@ -55,7 +55,7 @@ ScriptVehicleList_Depot::ScriptVehicleList_Depot(TileIndex tile)
 
 	if (HasTileByType(tile, MP_STATION)) { // Aircraft
 		Tile *st_tile = GetTileByType(tile, MP_STATION);
-		if (!IsAirport(tile)) return;
+		if (!IsAirport(st_tile)) return;
 		type = VEH_AIRCRAFT;
 		dest = GetStationIndex(st_tile);
 	} else if (HasTileByType(tile, MP_RAILWAY)) {

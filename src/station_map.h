@@ -177,9 +177,9 @@ static inline bool HasStationTileRail(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return true if and only if the tile is an airport
  */
-static inline bool IsAirport(TileIndex t)
+static inline bool IsAirport(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_AIRPORT;
+	return GetStationType(t) == STATION_AIRPORT;
 }
 
 /**
@@ -189,10 +189,11 @@ static inline bool IsAirport(TileIndex t)
  */
 static inline bool IsAirportTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsAirport(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsAirport(s);
 }
 
-bool IsHangar(TileIndex t);
+bool IsHangar(const Tile *t);
 
 /**
  * Is the station at \a t a truck stop?
@@ -264,7 +265,7 @@ static inline bool IsDriveThroughStopTile(TileIndex t)
  * @pre IsAirport(t)
  * @return the station graphics
  */
-static inline StationGfx GetAirportGfx(TileIndex t)
+static inline StationGfx GetAirportGfx(const Tile *t)
 {
 	assert(IsAirport(t));
 	extern StationGfx GetTranslatedAirportTileID(StationGfx gfx);
@@ -350,7 +351,8 @@ static inline bool IsBuoyTile(TileIndex t)
  */
 static inline bool IsHangarTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsHangar(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsHangar(s);
 }
 
 /**
