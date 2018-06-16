@@ -35,7 +35,7 @@
 
 /* static */ StationID ScriptStation::GetStationID(TileIndex tile)
 {
-	if (!::IsValidTile(tile) || !::IsTileType(tile, MP_STATION)) return INVALID_STATION;
+	if (!::IsValidTile(tile) || !::HasTileByType(tile, MP_STATION)) return INVALID_STATION;
 	return ::GetStationIndex(tile);
 }
 

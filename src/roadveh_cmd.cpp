@@ -1402,14 +1402,16 @@ again:
 			if (v->overtaking == 0) v->cur_speed = u->cur_speed;
 
 			/* In case an RV is stopped in a road stop, why not try to load? */
-			if (v->cur_speed == 0 && IsInsideMM(v->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) &&
-					v->current_order.ShouldStopAtStation(v, GetStationIndex(v->tile)) &&
-					v->owner == GetTileOwner(v->tile) && !v->current_order.IsType(OT_LEAVESTATION) &&
+			if (v->cur_speed == 0 && IsInsideMM(v->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END)) {
+				const Tile *st_tile = GetTileByType(v->tile, MP_STATION);
+				if (v->current_order.ShouldStopAtStation(v, GetStationIndex(st_tile)) &&
+					v->owner == GetTileOwner(st_tile) && !v->current_order.IsType(OT_LEAVESTATION) &&
 					GetRoadStopType(v->tile) == (v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK)) {
-				Station *st = Station::GetByTile(v->tile);
-				v->last_station_visited = st->index;
-				RoadVehArrivesAt(v, st);
-				v->BeginLoading();
+					Station *st = Station::GetByTile(st_tile);
+					v->last_station_visited = st->index;
+					RoadVehArrivesAt(v, st);
+					v->BeginLoading();
+				}
 			}
 			return false;
 		}

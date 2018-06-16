@@ -146,15 +146,17 @@ static TileIndex FindRailStationEnd(TileIndex tile, TileIndexDiff delta, bool ch
 {
 	byte orig_type = 0;
 	Axis orig_axis = AXIS_X;
-	StationID sid = GetStationIndex(tile);
+	const Tile *st_tile = GetTileByType(tile, MP_STATION);
+	StationID sid = GetStationIndex(st_tile);
 
 	if (check_type) orig_type = GetCustomStationSpecIndex(tile);
 	if (check_axis) orig_axis = GetRailStationAxis(tile);
 
 	for (;;) {
 		TileIndex new_tile = TILE_ADD(tile, delta);
+		st_tile = GetTileByType(new_tile, MP_STATION);
 
-		if (!IsTileType(new_tile, MP_STATION) || GetStationIndex(new_tile) != sid) break;
+		if (st_tile == NULL || GetStationIndex(st_tile) != sid) break;
 		if (!HasStationRail(new_tile)) break;
 		if (check_type && GetCustomStationSpecIndex(new_tile) != orig_type) break;
 		if (check_axis && GetRailStationAxis(new_tile) != orig_axis) break;
