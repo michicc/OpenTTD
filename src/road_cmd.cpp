@@ -669,7 +669,7 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 				if ((GetAnyRoadBits(tile, rt) & pieces) == pieces) return_cmd_error(STR_ERROR_ALREADY_BUILT);
 				if (!IsDriveThroughStopTile(tile)) goto do_clear;
 
-				RoadBits curbits = AxisToRoadBits(DiagDirToAxis(GetRoadStopDir(tile)));
+				RoadBits curbits = AxisToRoadBits(DiagDirToAxis(GetRoadStopDir(_m.ToTile(tile))));
 				if (pieces & ~curbits) goto do_clear;
 				pieces = curbits; // we need to pay for both roadbits
 

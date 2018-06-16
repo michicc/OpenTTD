@@ -63,28 +63,24 @@ protected:
 		/* set base cost */
 		if (IsDiagonalTrackdir(trackdir)) {
 			cost += YAPF_TILE_LENGTH;
-			switch (GetTileType(tile)) {
-				case MP_STATION: {
-					const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(tile));
-					if (IsDriveThroughStopTile(tile)) {
-						/* Increase the cost for drive-through road stops */
-						cost += Yapf().PfGetSettings().road_stop_penalty;
-						DiagDirection dir = TrackdirToExitdir(trackdir);
-						if (!RoadStop::IsDriveThroughRoadStopContinuation(tile, tile - TileOffsByDiagDir(dir))) {
-							/* When we're the first road stop in a 'queue' of them we increase
-							 * cost based on the fill percentage of the whole queue. */
-							const RoadStop::Entry *entry = rs->GetEntry(dir);
-							cost += entry->GetOccupied() * Yapf().PfGetSettings().road_stop_occupied_penalty / entry->GetLength();
-						}
-					} else {
-						/* Increase cost for filled road stops */
-						cost += Yapf().PfGetSettings().road_stop_bay_occupied_penalty * (!rs->IsFreeBay(0) + !rs->IsFreeBay(1)) / 2;
-					}
-					break;
-				}
 
-				default:
-					break;
+			if (HasTileByType(tile, MP_STATION)) {
+				const Tile *st_tile = GetTileByType(tile, MP_STATION);
+				const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(st_tile));
+				if (IsDriveThroughStop(st_tile)) {
+					/* Increase the cost for drive-through road stops */
+					cost += Yapf().PfGetSettings().road_stop_penalty;
+					DiagDirection dir = TrackdirToExitdir(trackdir);
+					if (!RoadStop::IsDriveThroughRoadStopContinuation(tile, tile - TileOffsByDiagDir(dir))) {
+						/* When we're the first road stop in a 'queue' of them we increase
+						 * cost based on the fill percentage of the whole queue. */
+						const RoadStop::Entry *entry = rs->GetEntry(dir);
+						cost += entry->GetOccupied() * Yapf().PfGetSettings().road_stop_occupied_penalty / entry->GetLength();
+					}
+				} else {
+					/* Increase cost for filled road stops */
+					cost += Yapf().PfGetSettings().road_stop_bay_occupied_penalty * (!rs->IsFreeBay(0) + !rs->IsFreeBay(1)) / 2;
+				}
 			}
 		} else {
 			/* non-diagonal trackdir */
@@ -269,10 +265,11 @@ public:
 	inline bool PfDetectDestinationTile(TileIndex tile, Trackdir trackdir)
 	{
 		if (m_dest_station != INVALID_STATION) {
-			return IsTileType(tile, MP_STATION) &&
-				GetStationIndex(tile) == m_dest_station &&
-				(m_bus ? IsBusStop(tile) : IsTruckStop(tile)) &&
-				(m_non_artic || IsDriveThroughStopTile(tile));
+			const Tile *st = GetTileByType(tile, MP_STATION);
+			return st != NULL &&
+				GetStationIndex(st) == m_dest_station &&
+				(m_bus ? IsBusStop(st) : IsTruckStop(st)) &&
+				(m_non_artic || IsDriveThroughStop(st));
 		}
 
 		return tile == m_destTile && HasTrackdir(m_destTrackdirs, trackdir);

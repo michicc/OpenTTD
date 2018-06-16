@@ -472,7 +472,7 @@ static void DeleteLastRoadVeh(RoadVehicle *v)
 	v->last_station_visited = first->last_station_visited; // for PreDestructor
 
 	/* Only leave the road stop when we're really gone. */
-	if (IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END)) RoadStop::GetByTile(v->tile, GetRoadStopType(v->tile))->Leave(v);
+	if (IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END)) RoadStop::GetByTile(v->tile, GetRoadStopType(GetTileByType(v->tile, MP_STATION)))->Leave(v);
 
 	delete v;
 }
@@ -536,7 +536,7 @@ uint RoadVehicle::Crash(bool flooded)
 
 		/* If we're in a drive through road stop we ought to leave it */
 		if (IsInsideMM(this->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END)) {
-			RoadStop::GetByTile(this->tile, GetRoadStopType(this->tile))->Leave(this);
+			RoadStop::GetByTile(this->tile, GetRoadStopType(GetTileByType(this->tile, MP_STATION)))->Leave(this);
 		}
 	}
 	this->crashed_ctr = flooded ? 2000 : 1; // max 2220, disappear pretty fast when flooded
@@ -894,17 +894,18 @@ static Trackdir RoadFindPathToDest(RoadVehicle *v, TileIndex tile, DiagDirection
 			/* Road depot owned by another company or with the wrong orientation */
 			trackdirs = TRACKDIR_BIT_NONE;
 		}
-	} else if (IsTileType(tile, MP_STATION) && IsStandardRoadStopTile(tile)) {
+	} else if (HasTileByType(tile, MP_STATION) && IsStandardRoadStopTile(tile)) {
+		Tile *st = GetTileByType(tile, MP_STATION);
 		/* Standard road stop (drive-through stops are treated as normal road) */
 
-		if (!IsTileOwner(tile, v->owner) || GetRoadStopDir(tile) == enterdir || v->HasArticulatedPart()) {
+		if (!IsTileOwner(st, v->owner) || GetRoadStopDir(st) == enterdir || v->HasArticulatedPart()) {
 			/* different station owner or wrong orientation or the vehicle has articulated parts */
 			trackdirs = TRACKDIR_BIT_NONE;
 		} else {
 			/* Our station */
 			RoadStopType rstype = v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK;
 
-			if (GetRoadStopType(tile) != rstype) {
+			if (GetRoadStopType(st) != rstype) {
 				/* Wrong station type */
 				trackdirs = TRACKDIR_BIT_NONE;
 			} else {
@@ -1267,7 +1268,7 @@ again:
 			goto again;
 		}
 
-		if (IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) && IsTileType(v->tile, MP_STATION)) {
+		if (IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) && HasTileByType(v->tile, MP_STATION)) {
 			if (IsReversingRoadTrackdir(dir) && IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END)) {
 				/* New direction is trying to turn vehicle around.
 				 * We can't turn at the exit of a road stop so wait.*/
@@ -1282,14 +1283,15 @@ again:
 			 * stop. It also makes it possible to load when on the edge of
 			 * two road stops; otherwise you could get vehicles that should
 			 * be loading but are not actually loading. */
-			if (IsDriveThroughStopTile(v->tile) &&
+			const Tile *st_tile = GetTileByType(v->tile, MP_STATION);
+			if (IsDriveThroughStop(st_tile) &&
 					RoadStop::IsDriveThroughRoadStopContinuation(v->tile, tile) &&
 					v->tile != tile) {
 				/* So, keep 'our' state */
 				dir = (Trackdir)v->state;
-			} else if (IsRoadStop(v->tile)) {
+			} else if (IsRoadStop(st_tile)) {
 				/* We're not continuing our drive through road stop, so leave. */
-				RoadStop::GetByTile(v->tile, GetRoadStopType(v->tile))->Leave(v);
+				RoadStop::GetByTile(v->tile, GetRoadStopType(st_tile))->Leave(v);
 			}
 		}
 
@@ -1406,7 +1408,7 @@ again:
 				const Tile *st_tile = GetTileByType(v->tile, MP_STATION);
 				if (v->current_order.ShouldStopAtStation(v, GetStationIndex(st_tile)) &&
 					v->owner == GetTileOwner(st_tile) && !v->current_order.IsType(OT_LEAVESTATION) &&
-					GetRoadStopType(v->tile) == (v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK)) {
+					GetRoadStopType(st_tile) == (v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK)) {
 					Station *st = Station::GetByTile(st_tile);
 					v->last_station_visited = st->index;
 					RoadVehArrivesAt(v, st);
@@ -1435,16 +1437,17 @@ again:
 	 * and it's the correct type of stop (bus or truck) and the frame equals the stop frame...
 	 * (the station test and stop type test ensure that other vehicles, using the road stop as
 	 * a through route, do not stop) */
+	const Tile *st_tile = GetTileByType(v->tile, MP_STATION);
 	if (v->IsFrontEngine() && ((IsInsideMM(v->state, RVSB_IN_ROAD_STOP, RVSB_IN_ROAD_STOP_END) &&
 			_road_stop_stop_frame[v->state - RVSB_IN_ROAD_STOP + (_settings_game.vehicle.road_side << RVS_DRIVE_SIDE)] == v->frame) ||
 			(IsInsideMM(v->state, RVSB_IN_DT_ROAD_STOP, RVSB_IN_DT_ROAD_STOP_END) &&
-			v->current_order.ShouldStopAtStation(v, GetStationIndex(v->tile)) &&
-			v->owner == GetTileOwner(v->tile) &&
-			GetRoadStopType(v->tile) == (v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK) &&
+			v->current_order.ShouldStopAtStation(v, GetStationIndex(st_tile)) &&
+			v->owner == GetTileOwner(st_tile) &&
+			GetRoadStopType(st_tile) == (v->IsBus() ? ROADSTOP_BUS : ROADSTOP_TRUCK) &&
 			v->frame == RVC_DRIVE_THROUGH_STOP_FRAME))) {
 
-		RoadStop *rs = RoadStop::GetByTile(v->tile, GetRoadStopType(v->tile));
-		Station *st = Station::GetByTile(v->tile);
+		RoadStop *rs = RoadStop::GetByTile(v->tile, GetRoadStopType(st_tile));
+		Station *st = Station::GetByTile(st_tile);
 
 		/* Vehicle is at the stop position (at a bay) in a road stop.
 		 * Note, if vehicle is loading/unloading it has already been handled,
@@ -1452,7 +1455,7 @@ again:
 		if (!HasBit(v->state, RVS_ENTERED_STOP)) {
 			/* Vehicle has arrived at a bay in a road stop */
 
-			if (IsDriveThroughStopTile(v->tile)) {
+			if (IsDriveThroughStop(st_tile)) {
 				TileIndex next_tile = TileAddByDir(v->tile, v->direction);
 
 				/* Check if next inline bay is free and has compatible road. */
@@ -1471,7 +1474,7 @@ again:
 
 			v->last_station_visited = st->index;
 
-			if (IsDriveThroughStopTile(v->tile) || (v->current_order.IsType(OT_GOTO_STATION) && v->current_order.GetDestination() == st->index)) {
+			if (IsDriveThroughStop(st_tile) || (v->current_order.IsType(OT_GOTO_STATION) && v->current_order.GetDestination() == st->index)) {
 				RoadVehArrivesAt(v, st);
 				v->BeginLoading();
 				return false;
@@ -1683,7 +1686,7 @@ Trackdir RoadVehicle::GetVehicleTrackdir() const
 
 	if (IsStandardRoadStopTile(this->tile)) {
 		/* We'll assume the road vehicle is facing outwards */
-		return DiagDirToDiagTrackdir(GetRoadStopDir(this->tile)); // Road vehicle in a station
+		return DiagDirToDiagTrackdir(GetRoadStopDir(GetTileByType(this->tile, MP_STATION))); // Road vehicle in a station
 	}
 
 	/* Drive through road stops / wormholes (tunnels) */

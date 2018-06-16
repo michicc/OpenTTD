@@ -66,10 +66,10 @@ static inline StationType GetStationType(const Tile *t)
  * @pre GetStationType(t) == STATION_TRUCK || GetStationType(t) == STATION_BUS
  * @return the road stop type
  */
-static inline RoadStopType GetRoadStopType(TileIndex t)
+static inline RoadStopType GetRoadStopType(const Tile *t)
 {
-	assert(GetStationType(_m.ToTile(t)) == STATION_TRUCK || GetStationType(_m.ToTile(t)) == STATION_BUS);
-	return GetStationType(_m.ToTile(t)) == STATION_TRUCK ? ROADSTOP_TRUCK : ROADSTOP_BUS;
+	assert(GetStationType(t) == STATION_TRUCK || GetStationType(t) == STATION_BUS);
+	return GetStationType(t) == STATION_TRUCK ? ROADSTOP_TRUCK : ROADSTOP_BUS;
 }
 
 /**
@@ -201,9 +201,9 @@ bool IsHangar(const Tile *t);
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if station is a truck stop, \c false otherwise
  */
-static inline bool IsTruckStop(TileIndex t)
+static inline bool IsTruckStop(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_TRUCK;
+	return GetStationType(t) == STATION_TRUCK;
 }
 
 /**
@@ -212,9 +212,9 @@ static inline bool IsTruckStop(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if station is a bus stop, \c false otherwise
  */
-static inline bool IsBusStop(TileIndex t)
+static inline bool IsBusStop(const Tile *t)
 {
-	return GetStationType(_m.ToTile(t)) == STATION_BUS;
+	return GetStationType(t) == STATION_BUS;
 }
 
 /**
@@ -223,7 +223,7 @@ static inline bool IsBusStop(TileIndex t)
  * @pre IsTileType(t, MP_STATION)
  * @return \c true if station at the tile is a bus top or a truck stop, \c false otherwise
  */
-static inline bool IsRoadStop(TileIndex t)
+static inline bool IsRoadStop(const Tile *t)
 {
 	assert(IsTileType(t, MP_STATION));
 	return IsTruckStop(t) || IsBusStop(t);
@@ -236,7 +236,8 @@ static inline bool IsRoadStop(TileIndex t)
  */
 static inline bool IsRoadStopTile(TileIndex t)
 {
-	return IsTileType(t, MP_STATION) && IsRoadStop(t);
+	const Tile *s = GetTileByType(t, MP_STATION);
+	return s != NULL && IsRoadStop(s);
 }
 
 /**
@@ -247,6 +248,17 @@ static inline bool IsRoadStopTile(TileIndex t)
 static inline bool IsStandardRoadStopTile(TileIndex t)
 {
 	return IsRoadStopTile(t) && GetStationGfx(t) < GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET;
+}
+
+/**
+ * Is tile \a t a drive through road stop station?
+ * @param t Tile to check
+ * @pre IsTileType(t, MP_STATION)
+ * @return \c true if the tile is a drive through road stop
+ */
+static inline bool IsDriveThroughStop(const Tile *t)
+{
+	return IsRoadStop(t) && GetStationGfx(t) >= GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET;
 }
 
 /**
@@ -278,10 +290,10 @@ static inline StationGfx GetAirportGfx(const Tile *t)
  * @pre IsRoadStopTile(t)
  * @return the direction of the entrance
  */
-static inline DiagDirection GetRoadStopDir(TileIndex t)
+static inline DiagDirection GetRoadStopDir(const Tile *t)
 {
 	StationGfx gfx = GetStationGfx(t);
-	assert(IsRoadStopTile(t));
+	assert(IsRoadStop(t));
 	if (gfx < GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET) {
 		return (DiagDirection)(gfx);
 	} else {

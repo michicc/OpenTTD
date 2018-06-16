@@ -1044,7 +1044,7 @@ bool AfterLoadGame()
 							RoadStop *rs = new RoadStop(t);
 
 							RoadStop **head =
-								IsTruckStop(t) ? &st->truck_stops : &st->bus_stops;
+								IsTruckStop(_m.ToTile(t)) ? &st->truck_stops : &st->bus_stops;
 							*head = rs;
 						}
 						break;
@@ -1192,7 +1192,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION:
-					if (IsRoadStop(t)) SetRoadTypes(t, ROADTYPES_ROAD);
+					if (IsRoadStop(_m.ToTile(t))) SetRoadTypes(t, ROADTYPES_ROAD);
 					break;
 
 				case MP_TUNNELBRIDGE:
@@ -1246,7 +1246,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION:
-					if (!IsRoadStop(t)) break;
+					if (!IsRoadStop(_m.ToTile(t))) break;
 
 					if (fix_roadtypes) SetRoadTypes(t, (RoadTypes)GB(_m[t].m3, 0, 3));
 					SB(_m[t].m7, 0, 5, HasBit(_m[t].m6, 2) ? OWNER_TOWN : GetTileOwner(t));
