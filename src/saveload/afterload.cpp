@@ -345,7 +345,7 @@ static void DecomposeTile(TileIndex tile)
 		}
 
 		case MP_STATION: {
-			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile))) break;
+			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile)) && !IsAirport(_m.ToTile(tile))) break;
 
 			Tile *new_tile = _m.NewTile(tile, MP_STATION, true);
 
