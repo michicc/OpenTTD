@@ -2142,9 +2142,10 @@ static bool AddNearbyStation(TileIndex tile, void *user_data)
 	}
 
 	/* Check if own station and if we stay within station spread */
-	if (!IsTileType(tile, MP_STATION)) return false;
+	const Tile *st_tile = GetTileByType(tile, MP_STATION);
+	if (st_tile == NULL) return false;
 
-	StationID sid = GetStationIndex(tile);
+	StationID sid = GetStationIndex(st_tile);
 
 	/* This station is (likely) a waypoint */
 	if (!T::IsValidID(sid)) return false;
@@ -2178,7 +2179,7 @@ static const T *FindStationsNearby(TileArea ta, bool distant_join)
 
 	/* Check the inside, to return, if we sit on another station */
 	TILE_AREA_LOOP(t, ta) {
-		if (t < MapSize() && IsTileType(t, MP_STATION) && T::IsValidID(GetStationIndex(t))) return T::GetByTile(t);
+		if (t < MapSize() && HasTileByType(t, MP_STATION) && T::IsValidID(GetStationIndex(GetTileByType(t, MP_STATION)))) return T::GetByTile(t);
 	}
 
 	/* Look for deleted stations */

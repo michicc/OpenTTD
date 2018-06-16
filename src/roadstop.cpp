@@ -309,7 +309,7 @@ void RoadStop::Entry::Enter(const RoadVehicle *rv)
 	const Tile *cur = GetTileByType(rs, MP_STATION);
 	const Tile *next_st = GetTileByType(next, MP_STATION);
 	return next_st != NULL &&
-			GetStationIndex(next) == GetStationIndex(rs) &&
+			GetStationIndex(next_st) == GetStationIndex(cur) &&
 			GetStationType(next_st) == GetStationType(cur) &&
 			GetRoadStopDir(next) == GetRoadStopDir(rs) &&
 			IsDriveThroughStopTile(next);

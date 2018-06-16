@@ -374,23 +374,25 @@ static Order GetOrderCmdFromTile(const Vehicle *v, TileIndex tile)
 		return order;
 	}
 
-	/* check rail waypoint */
-	if (IsRailWaypointTile(tile) &&
-			v->type == VEH_TRAIN &&
-			IsTileOwner(tile, _local_company)) {
-		order.MakeGoToWaypoint(GetStationIndex(tile));
-		if (_settings_client.gui.new_nonstop != _ctrl_pressed) order.SetNonStopType(ONSF_NO_STOP_AT_ANY_STATION);
-		return order;
-	}
+	if (HasTileByType(tile, MP_STATION)) {
+		Tile *st_tile = GetTileByType(tile, MP_STATION);
 
-	/* check buoy (no ownership) */
-	if (IsBuoyTile(tile) && v->type == VEH_SHIP) {
-		order.MakeGoToWaypoint(GetStationIndex(tile));
-		return order;
-	}
+		/* check rail waypoint */
+		if (IsRailWaypointTile(tile) &&
+				v->type == VEH_TRAIN &&
+				IsTileOwner(st_tile, _local_company)) {
+			order.MakeGoToWaypoint(GetStationIndex(st_tile));
+			if (_settings_client.gui.new_nonstop != _ctrl_pressed) order.SetNonStopType(ONSF_NO_STOP_AT_ANY_STATION);
+			return order;
+		}
 
-	if (IsTileType(tile, MP_STATION)) {
-		StationID st_index = GetStationIndex(tile);
+		/* check buoy (no ownership) */
+		if ((IsBuoy(st_tile) && v->type == VEH_SHIP)) {
+			order.MakeGoToWaypoint(GetStationIndex(st_tile));
+			return order;
+		}
+
+		StationID st_index = GetStationIndex(st_tile);
 		const Station *st = Station::Get(st_index);
 
 		if (st->owner == _local_company || st->owner == OWNER_NONE) {
