@@ -326,13 +326,25 @@ static inline TropicZone GetTropicZone(TileIndex tile)
 /**
  * Get the current animation frame
  * @param t the tile
- * @pre IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) ||IsTileType(t, MP_STATION)
+ * @pre IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION)
+ * @return frame number
+ */
+static inline byte GetAnimationFrame(const Tile *t)
+{
+	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION));
+	return t->m7;
+}
+
+/**
+ * Get the current animation frame
+ * @param t the tile
+ * @pre IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION)
  * @return frame number
  */
 static inline byte GetAnimationFrame(TileIndex t)
 {
-	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) ||IsTileType(t, MP_STATION));
-	return _m[t].m7;
+	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION));
+	return GetAnimationFrame(_m.ToTile(t));
 }
 
 /**
@@ -341,10 +353,22 @@ static inline byte GetAnimationFrame(TileIndex t)
  * @param frame the new frame number
  * @pre IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) ||IsTileType(t, MP_STATION)
  */
-static inline void SetAnimationFrame(TileIndex t, byte frame)
+static inline void SetAnimationFrame(Tile *t, byte frame)
 {
 	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) ||IsTileType(t, MP_STATION));
-	_m[t].m7 = frame;
+	t->m7 = frame;
+}
+
+/**
+ * Set a new animation frame
+ * @param t the tile
+ * @param frame the new frame number
+ * @pre IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION)
+ */
+static inline void SetAnimationFrame(TileIndex t, byte frame)
+{
+	assert(IsTileType(t, MP_HOUSE) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_STATION));
+	return SetAnimationFrame(_m.ToTile(t), frame);
 }
 
 /**

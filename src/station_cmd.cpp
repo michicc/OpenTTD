@@ -2754,19 +2754,19 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		}
 		switch (gfx) {
 			case APT_RADAR_GRASS_FENCE_SW:
-				t = &_station_display_datas_airport_radar_grass_fence_sw[GetAnimationFrame(ti->tile)];
+				t = &_station_display_datas_airport_radar_grass_fence_sw[GetAnimationFrame(ti->tptr)];
 				break;
 			case APT_GRASS_FENCE_NE_FLAG:
-				t = &_station_display_datas_airport_flag_grass_fence_ne[GetAnimationFrame(ti->tile)];
+				t = &_station_display_datas_airport_flag_grass_fence_ne[GetAnimationFrame(ti->tptr)];
 				break;
 			case APT_RADAR_FENCE_SW:
-				t = &_station_display_datas_airport_radar_fence_sw[GetAnimationFrame(ti->tile)];
+				t = &_station_display_datas_airport_radar_fence_sw[GetAnimationFrame(ti->tptr)];
 				break;
 			case APT_RADAR_FENCE_NE:
-				t = &_station_display_datas_airport_radar_fence_ne[GetAnimationFrame(ti->tile)];
+				t = &_station_display_datas_airport_radar_fence_ne[GetAnimationFrame(ti->tptr)];
 				break;
 			case APT_GRASS_FENCE_NE_FLAG_2:
-				t = &_station_display_datas_airport_flag_grass_fence_ne_2[GetAnimationFrame(ti->tile)];
+				t = &_station_display_datas_airport_flag_grass_fence_ne_2[GetAnimationFrame(ti->tptr)];
 				break;
 		}
 	}
