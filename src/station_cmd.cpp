@@ -1762,7 +1762,7 @@ static RoadStop **FindRoadStopSpot(bool truck_station, Station *st)
 	}
 }
 
-static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags);
+static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted);
 
 /**
  * Find a nearby station that joins this road stop.
@@ -1786,7 +1786,7 @@ static CommandCost FindJoiningRoadStop(StationID existing_stop, StationID statio
  *           bit 8..15: Length of the road stop.
  * @param p2 bit 0: 0 For bus stops, 1 for truck stops.
  *           bit 1: 0 For normal stops, 1 for drive-through.
- *           bit 2..3: The roadtypes.
+ *           bit 2..3: The roadtype.
  *           bit 5: Allow stations directly adjacent to other stations.
  *           bit 6..7: Entrance direction (#DiagDirection) for normal stops.
  *           bit 6: #Axis of the road for drive-through stops.
@@ -1798,7 +1798,7 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 {
 	bool type = HasBit(p2, 0);
 	bool is_drive_through = HasBit(p2, 1);
-	RoadTypes rts = Extract<RoadTypes, 2, 2>(p2);
+	RoadType rt = Extract<RoadType, 2, 2>(p2);
 	StationID station_to_join = GB(p2, 16, 16);
 	bool reuse = (station_to_join != NEW_STATION);
 	if (!reuse) station_to_join = INVALID_STATION;
@@ -1818,10 +1818,10 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 
 	if (distant_join && (!_settings_game.station.distant_join_stations || !Station::IsValidID(station_to_join))) return CMD_ERROR;
 
-	if (!HasExactlyOneBit(rts) || !HasRoadTypesAvail(_current_company, rts)) return CMD_ERROR;
+	if (!HasRoadTypesAvail(_current_company, RoadTypeToRoadTypes(rt))) return CMD_ERROR;
 
 	/* Trams only have drive through stops */
-	if (!is_drive_through && HasBit(rts, ROADTYPE_TRAM)) return CMD_ERROR;
+	if (!is_drive_through && rt == ROADTYPE_TRAM) return CMD_ERROR;
 
 	DiagDirection ddir;
 	Axis axis;
@@ -1841,7 +1841,7 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 	/* Total road stop cost. */
 	CommandCost cost(EXPENSES_CONSTRUCTION, roadstop_area.w * roadstop_area.h * _price[type ? PR_BUILD_STATION_TRUCK : PR_BUILD_STATION_BUS]);
 	StationID est = INVALID_STATION;
-	ret = CheckFlatLandRoadStop(roadstop_area, flags, is_drive_through ? 5 << axis : 1 << ddir, is_drive_through, type, axis, &est, rts);
+	ret = CheckFlatLandRoadStop(roadstop_area, flags, is_drive_through ? 5 << axis : 1 << ddir, is_drive_through, type, axis, &est, RoadTypeToRoadTypes(rt));
 	if (ret.Failed()) return ret;
 	cost.AddCost(ret);
 
@@ -1858,11 +1858,7 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 	if (flags & DC_EXEC) {
 		/* Check every tile in the area. */
 		TILE_AREA_LOOP(cur_tile, roadstop_area) {
-			RoadTypes cur_rts = IsNormalRoadTile(cur_tile) ? GetAllRoadTypes(cur_tile) : ROADTYPES_NONE;
-			Owner road_owner = HasBit(cur_rts, ROADTYPE_ROAD) ? GetTileOwner(GetRoadTileByType(cur_tile, ROADTYPE_ROAD)) : _current_company;
-			Owner tram_owner = HasBit(cur_rts, ROADTYPE_TRAM) ? GetTileOwner(GetRoadTileByType(cur_tile, ROADTYPE_TRAM)) : _current_company;
-
-			if (IsRoadStopTile(cur_tile)) RemoveRoadStop(cur_tile, GetTileByType(cur_tile, MP_STATION), flags);
+			if (IsRoadStopTile(cur_tile)) RemoveRoadStop(cur_tile, GetTileByType(cur_tile, MP_STATION), flags, NULL);
 
 			RoadStop *road_stop = new RoadStop(cur_tile);
 			/* Insert into linked list of RoadStops. */
@@ -1882,25 +1878,36 @@ CommandCost CmdBuildRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 
 			RoadStopType rs_type = type ? ROADSTOP_TRUCK : ROADSTOP_BUS;
 			if (is_drive_through) {
-				/* Update company infrastructure counts. If the current tile is a normal
-				 * road tile, count only the new road bits needed to get a full diagonal road. */
-				RoadType rt;
-				FOR_EACH_SET_ROADTYPE(rt, cur_rts | rts) {
-					Company *c = Company::GetIfValid(rt == ROADTYPE_ROAD ? road_owner : tram_owner);
+				if (!GetRoadTileByType(cur_tile, rt)) {
+					/* Add a road base for our station. We cheat by adding it with no
+					 * set road bits so we don't have to repeat the infrastructure count
+					 * update below here. */
+					MakeRoadNormal(cur_tile, ROAD_NONE, rt, ClosestTownFromTile(tile, UINT_MAX)->index, st->owner);
+				}
+
+				bool first = true;
+				FOR_ALL_ROAD_TILES(road_tile, cur_tile) {
+					int bits_to_add = 2 - CountBits(GetRoadBits(road_tile));
+					/* A road below a drive through station is always a full diagonal road. */
+					SetRoadBits(road_tile, AxisToRoadBits(axis));
+					SetRoadside(road_tile, first ? ROADSIDE_PAVED : ROADSIDE_NONE);
+					first = false;
+
+					Company *c = Company::GetIfValid(GetTileOwner(road_tile));
 					if (c != NULL) {
-						c->infrastructure.road[rt] += 2 - (IsNormalRoadTile(cur_tile) && HasBit(cur_rts, rt) ? CountBits(GetRoadBits(cur_tile, rt)) : 0);
+						c->infrastructure.road[rt] += bits_to_add;
 						DirtyCompanyInfrastructureWindows(c->index);
 					}
 				}
 
-				/* Clear all existing associated tiles and create the new station tile. */
-				DoClearSquare(tile);
-				MakeDriveThroughRoadStop(cur_tile, st->owner, road_owner, tram_owner, st->index, rs_type, rts | cur_rts, axis);
+				MakeDriveThroughRoadStop(cur_tile, st->owner, st->index, rs_type, axis);
 				road_stop->MakeDriveThrough();
 			} else {
-				/* Non-drive-through stop never overbuild and always count as two road bits. */
-				Company::Get(st->owner)->infrastructure.road[FIND_FIRST_BIT(rts)] += 2;
-				MakeRoadStop(cur_tile, st->owner, st->index, rs_type, rts, ddir);
+				/* Non-drive-through stops only overbuild themselves, which means the
+				 * proper road tile is already present. Otherwise add one. */
+				if (GetRoadTileByType(cur_tile, rt) == NULL) MakeRoadNormal(cur_tile, DiagDirToRoadBits(ddir), rt, ClosestTownFromTile(tile, UINT_MAX)->index, st->owner);
+				MakeRoadStop(cur_tile, st->owner, st->index, rs_type, ddir);
+				Company::Get(st->owner)->infrastructure.road[rt] += 1;
 			}
 			Company::Get(st->owner)->infrastructure.station++;
 
@@ -1935,10 +1942,12 @@ static Vehicle *ClearRoadStopStatusEnum(Vehicle *v, void *)
 /**
  * Remove a bus station/truck stop
  * @param tile TileIndex been queried
+ * @param st_tile Pointer to the station tile.
  * @param flags operation to perform
+ * @param[out] tile_deleted Set to true if the tile was removed.
  * @return cost or failure of operation
  */
-static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags)
+static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag flags, bool *tile_deleted)
 {
 	Station *st = Station::GetByTile(tile);
 
@@ -1985,24 +1994,12 @@ static CommandCost RemoveRoadStop(TileIndex tile, Tile *st_tile, DoCommandFlag f
 			pred->next = cur_stop->next;
 		}
 
-		/* Update company infrastructure counts. */
-		RoadType rt;
-		FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
-			Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
-			if (c != NULL) {
-				c->infrastructure.road[rt] -= 2;
-				DirtyCompanyInfrastructureWindows(c->index);
-			}
-		}
 		Company::Get(st->owner)->infrastructure.station--;
 		DirtyCompanyInfrastructureWindows(st->owner);
 
-		if (IsDriveThroughStop(st_tile)) {
-			/* Clears the tile for us */
-			cur_stop->ClearDriveThrough();
-		} else {
-			DoClearSquare(tile);
-		}
+		if (IsDriveThroughStop(st_tile)) cur_stop->ClearDriveThrough();
+		_m.RemoveTile(tile, st_tile);
+		if (tile_deleted != NULL) *tile_deleted = true;
 
 		delete cur_stop;
 
@@ -2066,23 +2063,9 @@ CommandCost CmdRemoveRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 		/* Make sure the specified tile is a road stop of the correct type */
 		Tile *st_tile = GetTileByType(cur_tile, MP_STATION);
 		if (st_tile == NULL || !IsRoadStop(st_tile) || (uint32)GetRoadStopType(st_tile) != GB(p2, 0, 1)) continue;
+		bool is_drive_through = IsDriveThroughStop(st_tile);
 
-		/* Save information on to-be-restored roads before the stop is removed. */
-		RoadTypes rts = ROADTYPES_NONE;
-		RoadBits road_bits = ROAD_NONE;
-		Owner road_owner[] = { OWNER_NONE, OWNER_NONE };
-		assert_compile(lengthof(road_owner) == ROADTYPE_END);
-		if (IsDriveThroughStopTile(cur_tile)) {
-			RoadType rt;
-			FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(cur_tile)) {
-				road_owner[rt] = GetRoadOwner(cur_tile, rt);
-				/* If we don't want to preserve our roads then restore only roads of others. */
-				if (keep_drive_through_roads || road_owner[rt] != _current_company) SetBit(rts, rt);
-			}
-			road_bits = AxisToRoadBits(DiagDirToAxis(GetRoadStopDir(st_tile)));
-		}
-
-		CommandCost ret = RemoveRoadStop(cur_tile, st_tile, flags);
+		CommandCost ret = RemoveRoadStop(cur_tile, st_tile, flags, NULL);
 		if (ret.Failed()) {
 			last_error = ret;
 			continue;
@@ -2090,21 +2073,28 @@ CommandCost CmdRemoveRoadStop(TileIndex tile, DoCommandFlag flags, uint32 p1, ui
 		cost.AddCost(ret);
 		had_success = true;
 
-		/* Restore roads. */
-		if ((flags & DC_EXEC) && rts != ROADTYPES_NONE) {
-			/* Update company infrastructure counts. */
-			RoadType rt;
-			FOR_EACH_SET_ROADTYPE(rt, rts) {
-				Company *c = Company::GetIfValid(GetRoadOwner(cur_tile, rt));
-				if (c != NULL) {
-					c->infrastructure.road[rt] += CountBits(road_bits);
-					DirtyCompanyInfrastructureWindows(c->index);
+		if ((flags & DC_EXEC)) {
+			Roadside rs = HasTileByType(tile, MP_ROAD) ? GetRoadside(GetTileByType(tile, MP_ROAD)) : ROADSIDE_NONE;
+			for (Tile *rt = GetTileByType(tile, MP_ROAD); rt != NULL; ) {
+				/* Remove our roads if we don't want to keep them. */
+				Owner o = GetTileOwner(rt);
+				if (!is_drive_through || (!keep_drive_through_roads && o == _current_company)) {
+					Company *c = Company::GetIfValid(o);
+					if (c != NULL) {
+						c->infrastructure.road[FindFirstBit(GetRoadTypes(rt))] -= CountBits(GetRoadBits(rt));
+						DirtyCompanyInfrastructureWindows(c->index);
+					}
+					bool next = HasAssociatedTile(rt);
+					_m.RemoveTile(tile, rt);
+					/* No following tile, exit loop. */
+					if (!next) continue;
+				} else {
+					rt = GetNextTileByType(rt, MP_ROAD);
 				}
 			}
-
-			TownID town = ClosestTownFromTile(cur_tile, UINT_MAX)->index;
-			if (HasBit(rts, ROADTYPE_ROAD)) MakeRoadNormal(tile, road_bits, ROADTYPE_ROAD, town, road_owner[ROADTYPE_ROAD]);
-			if (HasBit(rts, ROADTYPE_TRAM)) MakeRoadNormal(tile, road_bits, ROADTYPE_TRAM, town, road_owner[ROADTYPE_TRAM]);
+			/* Road side is determined by the first road tile. If we just
+			 * deleted that, we need to propagate the road side. */
+			if (HasTileByType(tile, MP_ROAD)) SetRoadside(GetTileByType(tile, MP_ROAD), rs);
 		}
 	}
 
@@ -2696,8 +2686,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	const NewGRFSpriteLayout *layout = NULL;
 	DrawTileSprites tmp_rail_layout;
 	const DrawTileSprites *t = NULL;
-	RoadTypes roadtypes;
-	int32 total_offset;
+	int32 total_offset = 0;
 	const RailtypeInfo *rti = NULL;
 	uint32 relocation = 0;
 	uint32 ground_relocation = 0;
@@ -2707,7 +2696,6 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 
 	if (HasStationRail(ti->tptr)) {
 		rti = GetRailTypeInfo(GetRailType(ti->tile));
-		roadtypes = ROADTYPES_NONE;
 		total_offset = rti->GetRailtypeSpriteOffset();
 
 		if (IsCustomStationSpecIndex(ti->tptr)) {
@@ -2733,9 +2721,6 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 				}
 			}
 		}
-	} else {
-		roadtypes = IsRoadStopTile(ti->tile) ? GetRoadTypes(ti->tile) : ROADTYPES_NONE;
-		total_offset = 0;
 	}
 
 	StationGfx gfx = GetStationGfx(ti->tptr);
@@ -2855,7 +2840,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	if (IsBuoy(ti->tptr)) {
 		SpriteID sprite = GetCanalSprite(CF_BUOY, ti->tile);
 		if (sprite != 0) total_offset = sprite - SPR_IMG_BUOY;
-	} else if (!IsDock(ti->tptr) && (!IsOilRig(ti->tptr) || !IsTileType(ti->tile, MP_WATER))) {
+	} else if (!IsDock(ti->tptr) && (!IsOilRig(ti->tptr) || !IsTileType(ti->tile, MP_WATER)) && !IsDriveThroughStop(ti->tptr)) {
 		if (layout != NULL) {
 			/* Sprite layout which needs preprocessing */
 			bool separate_ground = HasBit(statspec->flags, SSF_SEPARATE_GROUND);
@@ -2904,12 +2889,6 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	}
 
 	if (HasStationRail(ti->tptr) && HasRailCatenaryDrawn(GetRailType(ti->tile))) DrawRailCatenary(ti);
-
-	if (HasBit(roadtypes, ROADTYPE_TRAM)) {
-		Axis axis = GetRoadStopDir(ti->tptr) == DIAGDIR_NE ? AXIS_X : AXIS_Y;
-		DrawGroundSprite((HasBit(roadtypes, ROADTYPE_ROAD) ? SPR_TRAMWAY_OVERLAY : SPR_TRAMWAY_TRAM) + (axis ^ 1), PAL_NONE);
-		DrawRoadCatenary(ti, axis == AXIS_X ? ROAD_X : ROAD_Y);
-	}
 
 	if (IsRailWaypoint(ti->tptr)) {
 		/* Don't offset the waypoint graphics; they're always the same. */
@@ -2984,28 +2963,6 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	td->owner[0] = GetTileOwner(tptr);
 	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
-	if (IsDriveThroughStop(tptr)) {
-		Owner road_owner = INVALID_OWNER;
-		Owner tram_owner = INVALID_OWNER;
-		RoadTypes rts = GetRoadTypes(tile);
-		if (HasBit(rts, ROADTYPE_ROAD)) road_owner = GetRoadOwner(tile, ROADTYPE_ROAD);
-		if (HasBit(rts, ROADTYPE_TRAM)) tram_owner = GetRoadOwner(tile, ROADTYPE_TRAM);
-
-		/* Is there a mix of owners? */
-		if ((tram_owner != INVALID_OWNER && tram_owner != td->owner[0]) ||
-				(road_owner != INVALID_OWNER && road_owner != td->owner[0])) {
-			uint i = 1;
-			if (road_owner != INVALID_OWNER) {
-				td->owner_type[i] = STR_LAND_AREA_INFORMATION_ROAD_OWNER;
-				td->owner[i] = road_owner;
-				i++;
-			}
-			if (tram_owner != INVALID_OWNER) {
-				td->owner_type[i] = STR_LAND_AREA_INFORMATION_TRAM_OWNER;
-				td->owner[i] = tram_owner;
-			}
-		}
-	}
 	td->build_date = BaseStation::GetByTile(tptr)->build_date;
 
 	if (HasStationRail(tptr)) {
@@ -3073,7 +3030,7 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 			break;
 
 		case TRANSPORT_ROAD:
-			if (IsRoadStop(st_tile) && (GetRoadTypes(st_tile) & sub_mode) != 0) {
+			if (IsRoadStop(st_tile) && (GetAllRoadTypes(tile) & sub_mode) != 0) {
 				DiagDirection dir = GetRoadStopDir(st_tile);
 				Axis axis = DiagDirToAxis(dir);
 
@@ -3950,20 +3907,6 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 {
 	bool tile_delted = false;
 
-	if (IsRoadStopTile(tile)) {
-		for (RoadType rt = ROADTYPE_ROAD; rt < ROADTYPE_END; rt++) {
-			/* Update all roadtypes, no matter if they are present */
-			if (GetRoadOwner(tile, rt) == old_owner) {
-				if (HasTileRoadType(tptr, rt)) {
-					/* A drive-through road-stop has always two road bits. No need to dirty windows here, we'll redraw the whole screen anyway. */
-					Company::Get(old_owner)->infrastructure.road[rt] -= 2;
-					if (new_owner != INVALID_OWNER) Company::Get(new_owner)->infrastructure.road[rt] += 2;
-				}
-				SetRoadOwner(tile, rt, new_owner == INVALID_OWNER ? OWNER_NONE : new_owner);
-			}
-		}
-	}
-
 	if (!IsTileOwner(tptr, old_owner)) return true;
 
 	if (new_owner != INVALID_OWNER) {
@@ -4021,36 +3964,6 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 }
 
 /**
- * Check if a drive-through road stop tile can be cleared.
- * Road stops built on town-owned roads check the conditions
- * that would allow clearing of the original road.
- * @param tile road stop tile to check
- * @param flags command flags
- * @return true if the road can be cleared
- */
-static bool CanRemoveRoadWithStop(TileIndex tile, DoCommandFlag flags)
-{
-	/* Yeah... water can always remove stops, right? */
-	if (_current_company == OWNER_WATER) return true;
-
-	RoadTypes rts = GetRoadTypes(tile);
-	if (HasBit(rts, ROADTYPE_TRAM)) {
-		Owner tram_owner = GetRoadOwner(tile, ROADTYPE_TRAM);
-		if (tram_owner != OWNER_NONE && CheckOwnership(tram_owner).Failed()) return false;
-	}
-	if (HasBit(rts, ROADTYPE_ROAD)) {
-		Owner road_owner = GetRoadOwner(tile, ROADTYPE_ROAD);
-		if (road_owner != OWNER_TOWN) {
-			if (road_owner != OWNER_NONE && CheckOwnership(road_owner).Failed()) return false;
-		} else {
-			if (CheckAllowRemoveRoad(tile, GetAnyRoadBits(tile, ROADTYPE_ROAD), OWNER_TOWN, ROADTYPE_ROAD, flags).Failed()) return false;
-		}
-	}
-
-	return true;
-}
-
-/**
  * Clear a single tile of a station.
  * @param tile The tile to clear.
  * @param tptr Pointer to the actual tile.
@@ -4066,8 +3979,8 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 			case STATION_RAIL:     return_cmd_error(STR_ERROR_MUST_DEMOLISH_RAILROAD);
 			case STATION_WAYPOINT: return_cmd_error(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
 			case STATION_AIRPORT:  return_cmd_error(STR_ERROR_MUST_DEMOLISH_AIRPORT_FIRST);
-			case STATION_TRUCK:    return_cmd_error(HasTileRoadType(_m.ToTile(tile), ROADTYPE_TRAM) ? STR_ERROR_MUST_DEMOLISH_CARGO_TRAM_STATION_FIRST : STR_ERROR_MUST_DEMOLISH_TRUCK_STATION_FIRST);
-			case STATION_BUS:      return_cmd_error(HasTileRoadType(_m.ToTile(tile), ROADTYPE_TRAM) ? STR_ERROR_MUST_DEMOLISH_PASSENGER_TRAM_STATION_FIRST : STR_ERROR_MUST_DEMOLISH_BUS_STATION_FIRST);
+			case STATION_TRUCK:    return_cmd_error(GetRoadTileByType(tile, ROADTYPE_TRAM) != NULL ? STR_ERROR_MUST_DEMOLISH_CARGO_TRAM_STATION_FIRST : STR_ERROR_MUST_DEMOLISH_TRUCK_STATION_FIRST);
+			case STATION_BUS:      return_cmd_error(GetRoadTileByType(tile, ROADTYPE_TRAM) != NULL ? STR_ERROR_MUST_DEMOLISH_PASSENGER_TRAM_STATION_FIRST : STR_ERROR_MUST_DEMOLISH_BUS_STATION_FIRST);
 			case STATION_BUOY:     return_cmd_error(STR_ERROR_BUOY_IN_THE_WAY);
 			case STATION_DOCK:     return_cmd_error(STR_ERROR_MUST_DEMOLISH_DOCK_FIRST);
 			case STATION_OILRIG:
@@ -4080,16 +3993,8 @@ CommandCost ClearTile_Station(TileIndex tile, Tile *tptr, DoCommandFlag flags, b
 		case STATION_RAIL:     return RemoveRailStation(tile, flags);
 		case STATION_WAYPOINT: return RemoveRailWaypoint(tile, flags);
 		case STATION_AIRPORT:  return RemoveAirport(tile, tptr, flags, tile_deleted);
-		case STATION_TRUCK:
-			if (IsDriveThroughStopTile(tile) && !CanRemoveRoadWithStop(tile, flags)) {
-				return_cmd_error(STR_ERROR_MUST_DEMOLISH_TRUCK_STATION_FIRST);
-			}
-			return RemoveRoadStop(tile, tptr, flags);
-		case STATION_BUS:
-			if (IsDriveThroughStopTile(tile) && !CanRemoveRoadWithStop(tile, flags)) {
-				return_cmd_error(STR_ERROR_MUST_DEMOLISH_BUS_STATION_FIRST);
-			}
-			return RemoveRoadStop(tile, tptr, flags);
+		case STATION_TRUCK:    return RemoveRoadStop(tile, tptr, flags, tile_deleted);
+		case STATION_BUS:      return RemoveRoadStop(tile, tptr, flags, tile_deleted);
 		case STATION_BUOY:     return RemoveBuoy(tile, tptr, flags, tile_deleted);
 		case STATION_DOCK:     return RemoveDock(tile, tptr, flags, tile_deleted);
 		default: break;

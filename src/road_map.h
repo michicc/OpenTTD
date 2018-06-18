@@ -202,7 +202,7 @@ static inline RoadTypes GetRoadTypes(const Tile *t)
  */
 static inline RoadTypes GetRoadTypes(TileIndex tile)
 {
-	assert(IsTileType(tile, MP_TUNNELBRIDGE) || IsTileType(tile, MP_STATION));
+	assert(IsTileType(tile, MP_TUNNELBRIDGE));
 	return GetRoadTypes(_m.ToTile(tile));
 }
 
@@ -220,7 +220,7 @@ RoadTypes GetAllRoadTypes(TileIndex tile);
  */
 static inline void SetRoadTypes(Tile *t, RoadTypes rt)
 {
-	assert(IsTileType(t, MP_ROAD) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
+	assert(IsTileType(t, MP_ROAD) || IsTileType(t, MP_TUNNELBRIDGE));
 	SB(t->m7, 6, 2, rt);
 }
 
@@ -288,6 +288,7 @@ static inline Owner GetRoadOwner(const Tile *t, RoadType rt)
  */
 static inline Owner GetRoadOwner(TileIndex t, RoadType rt)
 {
+	assert(IsTileType(t, MP_TUNNELBRIDGE));
 	return GetRoadOwner(_m.ToTile(t), rt);
 }
 
@@ -314,6 +315,7 @@ static inline void SetRoadOwner(Tile *t, RoadType rt, Owner o)
  */
 static inline void SetRoadOwner(TileIndex t, RoadType rt, Owner o)
 {
+	assert(IsTileType(t, MP_TUNNELBRIDGE));
 	SetRoadOwner(_m.ToTile(t), rt, o);
 }
 
@@ -478,6 +480,26 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge
 
 /**
  * Make a normal road tile.
+ * @param road_tile Tile to make a normal road.
+ * @param bits Road bits to set for all present road types.
+ * @param rt   New road type.
+ * @param town Town ID if the road is a town-owned road.
+ * @param road New owner of road.
+ * @param tram New owner of tram tracks.
+ * @return Pointer to the new road tile.
+ */
+static inline Tile *MakeRoadNormal(Tile *road_tile, RoadBits bits, RoadType rt, TownID town, Owner o)
+{
+	SetTileOwner(road_tile, o);
+	road_tile->m2 = town;
+	road_tile->m3 = bits;
+	road_tile->m5 = bits | ROAD_TILE_NORMAL << 6;
+	road_tile->m7 = RoadTypeToRoadTypes(rt) << 6;
+	return road_tile;
+}
+
+/**
+ * Make a normal road tile.
  * @param t    Tile to make a normal road.
  * @param bits Road bits to set for all present road types.
  * @param rt   New road type.
@@ -488,14 +510,10 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge
  */
 static inline Tile *MakeRoadNormal(TileIndex t, RoadBits bits, RoadType rt, TownID town, Owner o)
 {
-	/* Insert ROADTYPE_ROAD in front, all other types at the back. */
-	Tile *road_tile = _m.NewTile(t, MP_ROAD, false, rt == ROADTYPE_ROAD ? _m.ToTile(t) : NULL);
-	SetTileOwner(road_tile, o);
-	road_tile->m2 = town;
-	road_tile->m3 = bits;
-	road_tile->m5 = bits | ROAD_TILE_NORMAL << 6;
-	road_tile->m7 = RoadTypeToRoadTypes(rt) << 6;
-	return road_tile;
+	/* Insert ROADTYPE_ROAD in front, all other types at the back, but before a possible station tile. */
+	Tile *st_tile = GetTileByType(t, MP_STATION);
+	Tile *road_tile = _m.NewTile(t, MP_ROAD, false, rt == ROADTYPE_ROAD ? _m.ToTile(t) : (st_tile != NULL ? st_tile - 1 : NULL));
+	return MakeRoadNormal(road_tile, bits, rt, town, o);
 }
 
 /**

@@ -345,7 +345,7 @@ static void DecomposeTile(TileIndex tile)
 		}
 
 		case MP_STATION: {
-			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile)) && !IsAirport(_m.ToTile(tile))) break;
+			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile)) && !IsAirport(_m.ToTile(tile)) && !IsRoadStop(_m.ToTile(tile))) break;
 
 			Tile *new_tile = _m.NewTile(tile, MP_STATION, true);
 
@@ -378,6 +378,27 @@ static void DecomposeTile(TileIndex tile)
 				}
 			}
 			SetAssociatedTileFlag(new_tile - 1, true);
+
+			if (IsRoadStop(new_tile)) {
+				/* Compute road bits from station type. */
+				RoadBits bits = ROAD_NONE;
+				if (IsDriveThroughStop(new_tile)) {
+					bits = GetRoadStopDir(new_tile) == DIAGDIR_NE ? ROAD_X : ROAD_Y;
+				} else {
+					bits = DiagDirToRoadBits(GetRoadStopDir(new_tile));
+				}
+
+				/* Create road tiles for all present road types. */
+				TownID town = ClosestTownFromTile(tile, UINT_MAX)->index;
+				Owner  owner_road = GetRoadOwner(new_tile, ROADTYPE_ROAD);
+				Owner  owner_tram = GetRoadOwner(new_tile, ROADTYPE_TRAM);
+
+				RoadType rt;
+				RoadTypes rts = GetRoadTypes(new_tile);
+				FOR_EACH_SET_ROADTYPE(rt, rts) {
+					MakeRoadNormal(tile, bits, rt, town, rt == ROADTYPE_TRAM ? owner_tram : owner_road);
+				}
+			}
 			break;
 		}
 
@@ -1229,7 +1250,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION:
-					if (IsRoadStop(_m.ToTile(t))) SetRoadTypes(t, ROADTYPES_ROAD);
+					if (IsRoadStop(_m.ToTile(t))) SB(_m[t].m7, 6, 2, ROADTYPES_ROAD); /* SetRoadTypes(t, ROADTYPES_ROAD); */
 					break;
 
 				case MP_TUNNELBRIDGE:
@@ -1948,7 +1969,7 @@ bool AfterLoadGame()
 							break;
 
 						default:
-							SetWaterClass(t, WATER_CLASS_INVALID);
+							SB(_m[t].m1, 5, 2, WATER_CLASS_INVALID); /* SetWaterClass(t, WATER_CLASS_INVALID); */
 							break;
 					}
 					break;
@@ -2026,8 +2047,8 @@ bool AfterLoadGame()
 				/* works for all RoadTileType */
 				for (RoadType rt = ROADTYPE_ROAD; rt < ROADTYPE_END; rt++) {
 					/* update even non-existing road types to update tile owner too */
-					Owner o = GetRoadOwner(t, rt);
-					if (o < MAX_COMPANIES && !Company::IsValidID(o)) SetRoadOwner(t, rt, OWNER_NONE);
+					Owner o = GetRoadOwner(_m.ToTile(t), rt);
+					if (o < MAX_COMPANIES && !Company::IsValidID(o)) SetRoadOwner(_m.ToTile(t), rt, OWNER_NONE);
 				}
 				if (GetRoadTileType(_m.ToTile(t)) == 1) { // Level crossing
 					if (!Company::IsValidID(GetTileOwner(t))) FixOwnerOfRailTrack(t);
@@ -3043,8 +3064,8 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (!IsStandardRoadStopTile(t)) continue;
 			Owner o = GetTileOwner(t);
-			SetRoadOwner(t, ROADTYPE_ROAD, o);
-			SetRoadOwner(t, ROADTYPE_TRAM, o);
+			SetRoadOwner(_m.ToTile(t), ROADTYPE_ROAD, o);
+			SetRoadOwner(_m.ToTile(t), ROADTYPE_TRAM, o);
 		}
 	}
 

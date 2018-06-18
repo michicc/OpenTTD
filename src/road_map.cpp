@@ -34,13 +34,6 @@
  */
 RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge_entrance)
 {
-	const Tile *st_tile = GetTileByType(tile, MP_STATION);
-	if (st_tile != NULL) {
-		if (!IsRoadStop(st_tile)) return ROAD_NONE;
-		if (IsDriveThroughStop(st_tile)) return (GetRoadStopDir(st_tile) == DIAGDIR_NE) ? ROAD_X : ROAD_Y;
-		return DiagDirToRoadBits(GetRoadStopDir(st_tile));
-	}
-
 	const Tile *road_tile = GetRoadTileByType(tile, rt);
 	if (road_tile != NULL) {
 		switch (GetRoadTileType(road_tile)) {
@@ -50,7 +43,6 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadType rt, bool straight_tunnel_bridge
 		}
 	}
 
-	if (!HasTileRoadType(_m.ToTile(tile), rt)) return ROAD_NONE;
 	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
 		if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return ROAD_NONE;
 		return straight_tunnel_bridge_entrance ?
@@ -71,15 +63,10 @@ RoadTypes GetAllRoadTypes(TileIndex tile)
 		return rts;
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_STATION:
-			if (!IsRoadStopTile(tile)) return ROADTYPES_NONE;
-			return GetRoadTypes(_m.ToTile(tile));
-
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return ROADTYPES_NONE;
-			return GetRoadTypes(_m.ToTile(tile));
-
-		default: return ROADTYPES_NONE;
+	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+		if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return ROADTYPES_NONE;
+		return GetRoadTypes(_m.ToTile(tile));
 	}
+
+	return ROADTYPES_NONE;
 }

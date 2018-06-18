@@ -894,7 +894,9 @@ static Trackdir RoadFindPathToDest(RoadVehicle *v, TileIndex tile, DiagDirection
 			/* Road depot owned by another company or with the wrong orientation */
 			trackdirs = TRACKDIR_BIT_NONE;
 		}
-	} else if (HasTileByType(tile, MP_STATION) && IsStandardRoadStopTile(tile)) {
+	}
+
+	if (HasTileByType(tile, MP_STATION) && IsStandardRoadStopTile(tile)) {
 		Tile *st = GetTileByType(tile, MP_STATION);
 		/* Standard road stop (drive-through stops are treated as normal road) */
 
@@ -1459,7 +1461,7 @@ again:
 				TileIndex next_tile = TileAddByDir(v->tile, v->direction);
 
 				/* Check if next inline bay is free and has compatible road. */
-				if (RoadStop::IsDriveThroughRoadStopContinuation(v->tile, next_tile) && (GetRoadTypes(next_tile) & v->compatible_roadtypes) != 0) {
+				if (RoadStop::IsDriveThroughRoadStopContinuation(v->tile, next_tile) && (GetAllRoadTypes(next_tile) & v->compatible_roadtypes) != 0) {
 					v->frame++;
 					v->x_pos = x;
 					v->y_pos = y;

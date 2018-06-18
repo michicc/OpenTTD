@@ -146,17 +146,6 @@ void AfterLoadCompanyStats()
 					if (c != NULL && !IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]++;
 					break;
 
-				case STATION_BUS:
-				case STATION_TRUCK: {
-					/* Iterate all present road types as each can have a different owner. */
-					RoadType rt;
-					FOR_EACH_SET_ROADTYPE(rt, GetRoadTypes(tile)) {
-						c = Company::GetIfValid(GetRoadOwner(tile, rt));
-						if (c != NULL) c->infrastructure.road[rt] += 2; // A road stop has two road bits.
-					}
-					break;
-				}
-
 				default:
 					break;
 			}

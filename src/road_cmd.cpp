@@ -316,84 +316,56 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 	/* The tile doesn't have the given road type */
 	if (!HasBit(rts, rt)) return_cmd_error(rt == ROADTYPE_TRAM ? STR_ERROR_THERE_IS_NO_TRAMWAY : STR_ERROR_THERE_IS_NO_ROAD);
 
+	if (HasTileByType(tile, MP_STATION) && !IsDriveThroughStopTile(tile)) return CMD_ERROR;
 	if (HasTileByType(tile, MP_ROAD)) {
 		Tile *road_tile = GetRoadTileByType(tile, rt);
 		return RemoveRoadReal(tile, road_tile, flags, pieces, rt, crossing_check, town_check);
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_STATION: {
-			if (!IsDriveThroughStopTile(tile)) return CMD_ERROR;
+	if (GetTileType(tile) != MP_TUNNELBRIDGE) return CMD_ERROR;
 
-			CommandCost ret = EnsureNoVehicleOnGround(tile);
-			if (ret.Failed()) return ret;
-			break;
-		}
-
-		case MP_TUNNELBRIDGE: {
-			if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return CMD_ERROR;
-			CommandCost ret = TunnelBridgeIsFree(tile, GetOtherTunnelBridgeEnd(tile));
-			if (ret.Failed()) return ret;
-			break;
-		}
-
-		default:
-			return CMD_ERROR;
-	}
+	if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) return CMD_ERROR;
+	CommandCost ret = TunnelBridgeIsFree(tile, GetOtherTunnelBridgeEnd(tile));
+	if (ret.Failed()) return ret;
 
 	Owner road_owner = GetRoadOwner(tile, rt);
-	CommandCost ret = CheckAllowRemoveRoad(tile, pieces, road_owner, rt, flags, town_check);
+	ret = CheckAllowRemoveRoad(tile, pieces, road_owner, rt, flags, town_check);
 	if (ret.Failed()) return ret;
 
 	/* If it's the last roadtype, just clear the whole tile */
 	if (rts == RoadTypeToRoadTypes(rt)) return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
 
 	CommandCost cost(EXPENSES_CONSTRUCTION);
-	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
-		TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
-		/* Pay for *every* tile of the bridge or tunnel */
-		uint len = GetTunnelBridgeLength(other_end, tile) + 2;
-		cost.AddCost(len * 2 * _price[PR_CLEAR_ROAD]);
-		if (flags & DC_EXEC) {
-			Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
-			if (c != NULL) {
-				/* A full diagonal road tile has two road bits. */
-				c->infrastructure.road[rt] -= len * 2 * TUNNELBRIDGE_TRACKBIT_FACTOR;
-				DirtyCompanyInfrastructureWindows(c->index);
-			}
-
-			SetRoadTypes(other_end, GetRoadTypes(other_end) & ~RoadTypeToRoadTypes(rt));
-			SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
-
-			/* If the owner of the bridge sells all its road, also move the ownership
-			 * to the owner of the other roadtype, unless the bridge owner is a town. */
-			RoadType other_rt = (rt == ROADTYPE_ROAD) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
-			Owner other_owner = GetRoadOwner(tile, other_rt);
-			if (!IsTileOwner(tile, other_owner) && !IsTileOwner(tile, OWNER_TOWN)) {
-				SetTileOwner(tile, other_owner);
-				SetTileOwner(other_end, other_owner);
-			}
-
-			/* Mark tiles dirty that have been repaved. */
-			if (IsBridge(tile)) {
-				MarkBridgeDirty(tile);
-			} else {
-				MarkTileDirtyByTile(tile);
-				MarkTileDirtyByTile(other_end);
-			}
+	TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
+	/* Pay for *every* tile of the bridge or tunnel */
+	uint len = GetTunnelBridgeLength(other_end, tile) + 2;
+	cost.AddCost(len * 2 * _price[PR_CLEAR_ROAD]);
+	if (flags & DC_EXEC) {
+		Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
+		if (c != NULL) {
+			/* A full diagonal road tile has two road bits. */
+			c->infrastructure.road[rt] -= len * 2 * TUNNELBRIDGE_TRACKBIT_FACTOR;
+			DirtyCompanyInfrastructureWindows(c->index);
 		}
-	} else {
-		assert(IsDriveThroughStopTile(tile));
-		cost.AddCost(_price[PR_CLEAR_ROAD] * 2);
-		if (flags & DC_EXEC) {
-			Company *c = Company::GetIfValid(GetRoadOwner(tile, rt));
-			if (c != NULL) {
-				/* A full diagonal road tile has two road bits. */
-				c->infrastructure.road[rt] -= 2;
-				DirtyCompanyInfrastructureWindows(c->index);
-			}
-			SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
+
+		SetRoadTypes(other_end, GetRoadTypes(other_end) & ~RoadTypeToRoadTypes(rt));
+		SetRoadTypes(tile, GetRoadTypes(tile) & ~RoadTypeToRoadTypes(rt));
+
+		/* If the owner of the bridge sells all its road, also move the ownership
+		* to the owner of the other roadtype, unless the bridge owner is a town. */
+		RoadType other_rt = (rt == ROADTYPE_ROAD) ? ROADTYPE_TRAM : ROADTYPE_ROAD;
+		Owner other_owner = GetRoadOwner(tile, other_rt);
+		if (!IsTileOwner(tile, other_owner) && !IsTileOwner(tile, OWNER_TOWN)) {
+			SetTileOwner(tile, other_owner);
+			SetTileOwner(other_end, other_owner);
+		}
+
+		/* Mark tiles dirty that have been repaved. */
+		if (IsBridge(tile)) {
+			MarkBridgeDirty(tile);
+		} else {
 			MarkTileDirtyByTile(tile);
+			MarkTileDirtyByTile(other_end);
 		}
 	}
 	return cost;
@@ -591,7 +563,17 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 		return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_ROAD] * (rt == ROADTYPE_ROAD ? 2 : 4));
 	}
 
-	if (HasTileByType(tile, MP_ROAD)) {
+	if (HasTileByType(tile, MP_STATION)) {
+		Tile *st_tile = GetTileByType(tile, MP_STATION);
+		if ((GetAnyRoadBits(tile, rt) & pieces) == pieces) return_cmd_error(STR_ERROR_ALREADY_BUILT);
+		if (!IsDriveThroughStop(st_tile)) goto do_clear;
+
+		RoadBits curbits = AxisToRoadBits(DiagDirToAxis(GetRoadStopDir(st_tile)));
+		if (pieces & ~curbits) goto do_clear;
+		pieces = curbits; // we need to pay for both roadbits
+
+		if (GetRoadTileByType(tile, rt) != NULL) return_cmd_error(STR_ERROR_ALREADY_BUILT);
+	} else if (HasTileByType(tile, MP_ROAD)) {
 		/* Check all road tiles for compatibility. */
 		FOR_ALL_ROAD_TILES(road_tile, tile) {
 			switch (GetRoadTileType(road_tile)) {
@@ -665,18 +647,6 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 	} else {
 		/* No road present. */
 		switch (GetTileType(tile)) {
-			case MP_STATION: {
-				if ((GetAnyRoadBits(tile, rt) & pieces) == pieces) return_cmd_error(STR_ERROR_ALREADY_BUILT);
-				if (!IsDriveThroughStopTile(tile)) goto do_clear;
-
-				RoadBits curbits = AxisToRoadBits(DiagDirToAxis(GetRoadStopDir(_m.ToTile(tile))));
-				if (pieces & ~curbits) goto do_clear;
-				pieces = curbits; // we need to pay for both roadbits
-
-				if (HasTileRoadType(_m.ToTile(tile), rt)) return_cmd_error(STR_ERROR_ALREADY_BUILT);
-				break;
-			}
-
 			case MP_TUNNELBRIDGE: {
 				if (GetTunnelBridgeTransportType(tile) != TRANSPORT_ROAD) goto do_clear;
 				/* Only allow building the outern roadbit, so building long roads stops at existing bridges */
@@ -731,7 +701,6 @@ do_clear:;
 
 		CommandCost ret = EnsureNoVehicleOnGround(tile);
 		if (ret.Failed()) return ret;
-
 	}
 
 	uint num_pieces = (!need_to_clear && IsTileType(tile, MP_TUNNELBRIDGE)) ?
@@ -782,19 +751,11 @@ do_clear:;
 				break;
 			}
 
-			case MP_STATION:
-				assert(IsDriveThroughStopTile(tile));
-				SetRoadTypes(tile, GetRoadTypes(tile) | RoadTypeToRoadTypes(rt));
-				SetRoadOwner(tile, rt, company);
-				if (c != NULL) c->infrastructure.road[rt] += 2; // Two pieces for a full diagonal road.
-				break;
-
 			default:
 				if (HasTileByType(tile, MP_ROAD)) {
 					/* Clear road side of the first tile if present. */
 					SetRoadside(GetTileByType(tile, MP_ROAD), ROADSIDE_NONE);
 				}
-
 				road_tile = MakeRoadNormal(tile, pieces, rt, p2, company);
 				if (rt == ROADTYPE_ROAD) {
 					SetDisallowedRoadDirections(road_tile, IsStraightRoad(pieces) ? toggle_drd : DRD_NONE);
@@ -1429,6 +1390,12 @@ static bool TileLoop_Road(TileIndex tile, Tile *&road_tile)
 			/* Only change the road side for the first associated road tile. */
 			if (road_tile != GetTileByType(tile, MP_ROAD)) return true;
 
+			/* Road stops are always on paved ground. */
+			if (HasTileByType(tile, MP_STATION)) {
+				desired = ROADSIDE_PAVED;
+				pre = cur_rs;
+			}
+
 			/* We have our desired type, do nothing */
 			if (cur_rs == desired) return true;
 
@@ -1623,11 +1590,6 @@ static bool ChangeTileOwner_Road(TileIndex tile, Tile *road_tile, Owner old_owne
 				DoCommand(tile, 0, 0, DC_EXEC | DC_BANKRUPT, CMD_LANDSCAPE_CLEAR);
 			} else {
 				SetTileOwner(road_tile, OWNER_NONE);
-				for (RoadType rt = ROADTYPE_ROAD; rt < ROADTYPE_END; rt++) {
-					if (GetRoadOwner(tile, rt) == old_owner) {
-						SetRoadOwner(tile, rt, new_owner);
-					}
-				}
 			}
 		} else {
 			SetTileOwner(road_tile, new_owner);

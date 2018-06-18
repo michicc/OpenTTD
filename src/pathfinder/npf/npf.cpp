@@ -321,18 +321,16 @@ static int32 NPFWaterPathCost(AyStar *as, AyStarNode *current, OpenListNode *par
 static int32 NPFRoadPathCost(AyStar *as, AyStarNode *current, OpenListNode *parent)
 {
 	TileIndex tile = current->tile;
-	int32 cost = 0;
+	int32 cost = NPF_TILE_LENGTH;
 
 	/* Determine base length */
 	if (HasTileByType(tile, MP_ROAD)) {
-		cost = NPF_TILE_LENGTH;
 		/* Increase the cost for level crossings */
 		if (IsLevelCrossingTile(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
 	}
 
 	if (HasTileByType(tile, MP_STATION)) {
 		const Tile *st_tile = GetTileByType(tile, MP_STATION);
-		cost = NPF_TILE_LENGTH;
 		const RoadStop *rs = RoadStop::GetByTile(tile, GetRoadStopType(st_tile));
 		if (IsDriveThroughStop(st_tile)) {
 			/* Increase the cost for drive-through road stops */

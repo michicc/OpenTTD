@@ -83,7 +83,6 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 
 					/* The conditionally connective ones */
 					case MP_TUNNELBRIDGE:
-					case MP_STATION:
 						if (IsNormalRoadTile(neighbor_tile)) {
 							/* Always connective */
 							connective = true;
