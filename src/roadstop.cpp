@@ -45,7 +45,7 @@ RoadStop *RoadStop::GetNextRoadStop(const RoadVehicle *v) const
 {
 	for (RoadStop *rs = this->next; rs != NULL; rs = rs->next) {
 		/* The vehicle cannot go to this roadstop (different roadtype) */
-		if ((GetRoadTypes(rs->xy) & v->compatible_roadtypes) == ROADTYPES_NONE) continue;
+		if ((GetAllRoadTypes(rs->xy) & v->compatible_roadtypes) == ROADTYPES_NONE) continue;
 		/* The vehicle is articulated and can therefore not go to a standard road stop. */
 		if (IsStandardRoadStopTile(rs->xy) && v->HasArticulatedPart()) continue;
 
@@ -151,10 +151,6 @@ void RoadStop::ClearDriveThrough()
 	TileIndex south_tile = this->xy + offset;
 	bool south = IsDriveThroughRoadStopContinuation(this->xy, south_tile);
 	RoadStop *rs_south = south ? RoadStop::GetByTile(south_tile, rst) : NULL;
-
-	/* Must only be cleared after we determined which neighbours are
-	 * part of our little entry 'queue' */
-	DoClearSquare(this->xy);
 
 	if (north) {
 		/* There is a tile to the north, so we can't clear ourselves. */

@@ -214,10 +214,10 @@ template<bool Tfrom, bool Tvia>
 	::RoadTypes r = RoadTypeToRoadTypes((::RoadType)road_type);
 
 	for (const RoadStop *rs = ::Station::Get(station_id)->GetPrimaryRoadStop(ROADSTOP_BUS); rs != NULL; rs = rs->next) {
-		if ((::GetRoadTypes(rs->xy) & r) != 0) return true;
+		if ((::GetAllRoadTypes(rs->xy) & r) != 0) return true;
 	}
 	for (const RoadStop *rs = ::Station::Get(station_id)->GetPrimaryRoadStop(ROADSTOP_TRUCK); rs != NULL; rs = rs->next) {
-		if ((::GetRoadTypes(rs->xy) & r) != 0) return true;
+		if ((::GetAllRoadTypes(rs->xy) & r) != 0) return true;
 	}
 
 	return false;
