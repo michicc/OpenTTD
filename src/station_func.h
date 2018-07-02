@@ -41,6 +41,7 @@ void DeleteOilRig(TileIndex t);
 
 /* Check if a rail station tile is traversable. */
 bool IsStationTileBlocked(TileIndex tile);
+bool IsStationTileBlocked(const Tile *tile);
 
 bool CanStationTileHavePylons(TileIndex tile);
 bool CanStationTileHaveWires(TileIndex tile);

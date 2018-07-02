@@ -100,10 +100,9 @@ static inline StationGfx GetStationGfx(TileIndex t)
  * @param gfx the new graphics
  * @pre IsTileType(t, MP_STATION)
  */
-static inline void SetStationGfx(TileIndex t, StationGfx gfx)
+static inline void SetStationGfx(Tile *t, StationGfx gfx)
 {
-	assert(IsTileType(t, MP_STATION));
-	_m[t].m5 = gfx;
+	t->m5 = gfx;
 }
 
 /**
@@ -115,6 +114,16 @@ static inline void SetStationGfx(TileIndex t, StationGfx gfx)
 static inline bool IsRailStation(const Tile *t)
 {
 	return GetStationType(t) == STATION_RAIL;
+}
+
+/**
+ * Is this tile a station tile and a rail station?
+ * @param t the tile to get the information from
+ * @return true if and only if the tile is a rail station
+ */
+static inline bool IsRailStationTile(const Tile *t)
+{
+	return t != NULL && IsRailStation(t);
 }
 
 /**
@@ -160,6 +169,17 @@ static inline bool IsRailWaypointTile(TileIndex t)
 static inline bool HasStationRail(const Tile *t)
 {
 	return IsRailStation(t) || IsRailWaypoint(t);
+}
+
+/**
+ * Has this station tile a rail? In other words, is this station
+ * tile a rail station or rail waypoint?
+ * @param t the tile to check
+ * @return true if and only if the tile is a station tile and has rail
+ */
+static inline bool HasStationTileRail(const Tile *t)
+{
+	return t != NULL && HasStationRail(t);
 }
 
 /**
@@ -376,9 +396,9 @@ static inline bool IsHangarTile(TileIndex t)
  * @pre HasStationRail(t)
  * @return The direction of the rails on tile \a t.
  */
-static inline Axis GetRailStationAxis(TileIndex t)
+static inline Axis GetRailStationAxis(const Tile *t)
 {
-	assert(HasStationTileRail(t));
+	assert(HasStationRail(t));
 	return HasBit(GetStationGfx(t), 0) ? AXIS_Y : AXIS_X;
 }
 
@@ -390,7 +410,7 @@ static inline Axis GetRailStationAxis(TileIndex t)
  */
 static inline Track GetRailStationTrack(TileIndex t)
 {
-	return AxisToTrack(GetRailStationAxis(t));
+	return AxisToTrack(GetRailStationAxis(_m.ToTile(t)));
 }
 
 /**
@@ -401,7 +421,7 @@ static inline Track GetRailStationTrack(TileIndex t)
  */
 static inline TrackBits GetRailStationTrackBits(TileIndex t)
 {
-	return AxisToTrackBits(GetRailStationAxis(t));
+	return AxisToTrackBits(GetRailStationAxis(_m.ToTile(t)));
 }
 
 /**
@@ -423,9 +443,9 @@ static inline bool IsCompatibleTrainStationTile(TileIndex test_tile, TileIndex s
 	const Tile *test_ptr = GetTileByType(test_tile, MP_STATION);
 	const Tile *station_ptr = GetTileByType(station_tile, MP_STATION);
 	return IsRailStationTile(test_tile) && IsCompatibleRail(GetRailType(test_ptr), GetRailType(station_ptr)) &&
-			GetRailStationAxis(test_tile) == GetRailStationAxis(station_tile) &&
+			GetRailStationAxis(test_ptr) == GetRailStationAxis(station_ptr) &&
 			GetStationIndex(test_ptr) == GetStationIndex(station_ptr) &&
-			!IsStationTileBlocked(test_tile);
+			!IsStationTileBlocked(test_ptr);
 }
 
 /**
