@@ -82,7 +82,7 @@ static Waypoint *FindDeletedWaypointCloseTo(TileIndex tile, StringID str, Compan
 Axis GetAxisForNewWaypoint(TileIndex tile)
 {
 	/* The axis for rail waypoints is easy. */
-	if (IsRailWaypointTile(tile)) return GetRailStationAxis(tile);
+	if (IsRailWaypointTile(tile)) return GetRailStationAxis(GetTileByType(tile, MP_STATION));
 
 	/* Non-plain rail type, no valid axis for waypoints. No need to check
 	 * for more associated rail tiles as the trackbits wouldn't match anyway. */

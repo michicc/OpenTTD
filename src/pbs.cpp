@@ -61,7 +61,7 @@ void SetRailStationPlatformReservation(TileIndex start, DiagDirection dir, bool 
 	TileIndexDiff diff = TileOffsByDiagDir(dir);
 
 	assert(IsRailStationTile(start));
-	assert(GetRailStationAxis(start) == DiagDirToAxis(dir));
+	assert(GetRailStationAxis(GetTileByType(start, MP_STATION)) == DiagDirToAxis(dir));
 
 	do {
 		SetRailStationReservation(tile, b);

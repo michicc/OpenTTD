@@ -299,7 +299,7 @@ static void DecomposeTile(TileIndex tile)
 				bool reserved = HasBit(_m[tile].m5, 4);
 
 				/* Create new rail tile. */
-				Tile *rail_tile = MakeLevelCrossing(tile, GetTileOwner(tile), tracks, GetRailType(tile));
+				Tile *rail_tile = MakeLevelCrossing(tile, GetTileOwner(tile), tracks, GetRailType(_m.ToTile(tile)));
 				if (reserved) SetTrackReservation(rail_tile, tracks);
 				old_tile = _m.ToTile(tile);
 
@@ -1030,36 +1030,37 @@ bool AfterLoadGame()
 					if (HasBit(_m[t].m6, 3)) SetBit(_m[t].m6, 2);
 					StationGfx gfx = GetStationGfx(t);
 					StationType st;
+					Tile *tptr = _m.ToTile(t);
 					if (       IsInsideMM(gfx,   0,   8)) { // Rail station
 						st = STATION_RAIL;
-						SetStationGfx(t, gfx - 0);
+						SetStationGfx(tptr, gfx - 0);
 					} else if (IsInsideMM(gfx,   8,  67)) { // Airport
 						st = STATION_AIRPORT;
-						SetStationGfx(t, gfx - 8);
+						SetStationGfx(tptr, gfx - 8);
 					} else if (IsInsideMM(gfx,  67,  71)) { // Truck
 						st = STATION_TRUCK;
-						SetStationGfx(t, gfx - 67);
+						SetStationGfx(tptr, gfx - 67);
 					} else if (IsInsideMM(gfx,  71,  75)) { // Bus
 						st = STATION_BUS;
-						SetStationGfx(t, gfx - 71);
+						SetStationGfx(tptr, gfx - 71);
 					} else if (gfx == 75) {                 // Oil rig
 						st = STATION_OILRIG;
-						SetStationGfx(t, gfx - 75);
+						SetStationGfx(tptr, gfx - 75);
 					} else if (IsInsideMM(gfx,  76,  82)) { // Dock
 						st = STATION_DOCK;
-						SetStationGfx(t, gfx - 76);
+						SetStationGfx(tptr, gfx - 76);
 					} else if (gfx == 82) {                 // Buoy
 						st = STATION_BUOY;
-						SetStationGfx(t, gfx - 82);
+						SetStationGfx(tptr, gfx - 82);
 					} else if (IsInsideMM(gfx,  83, 168)) { // Extended airport
 						st = STATION_AIRPORT;
-						SetStationGfx(t, gfx - 83 + 67 - 8);
+						SetStationGfx(tptr, gfx - 83 + 67 - 8);
 					} else if (IsInsideMM(gfx, 168, 170)) { // Drive through truck
 						st = STATION_TRUCK;
-						SetStationGfx(t, gfx - 168 + GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET);
+						SetStationGfx(tptr, gfx - 168 + GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET);
 					} else if (IsInsideMM(gfx, 170, 172)) { // Drive through bus
 						st = STATION_BUS;
-						SetStationGfx(t, gfx - 170 + GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET);
+						SetStationGfx(tptr, gfx - 170 + GFX_TRUCK_BUS_DRIVETHROUGH_OFFSET);
 					} else {
 						/* Restore the signals */
 						ResetSignalHandlers();
@@ -2581,16 +2582,17 @@ bool AfterLoadGame()
 		};
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (IsAirportTile(t)) {
-				StationGfx old_gfx = GetStationGfx(t);
+				Tile *tptr = GetTileByType(t, MP_STATION);
+				StationGfx old_gfx = GetStationGfx(tptr);
 				byte offset = 0;
 				for (uint i = 0; i < lengthof(atc); i++) {
 					if (old_gfx < atc[i].old_start) {
-						SetStationGfx(t, old_gfx - offset);
+						SetStationGfx(tptr, old_gfx - offset);
 						break;
 					}
 					if (old_gfx < atc[i].old_start + atc[i].num_frames) {
-						SetAnimationFrame(t, old_gfx - atc[i].old_start);
-						SetStationGfx(t, atc[i].old_start - offset);
+						SetAnimationFrame(tptr, old_gfx - atc[i].old_start);
+						SetStationGfx(tptr, atc[i].old_start - offset);
 						break;
 					}
 					offset += atc[i].num_frames - 1;

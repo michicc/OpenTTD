@@ -409,7 +409,7 @@ TileIndex GetNearbyTile(byte parameter, TileIndex tile, bool signed_offsets, Axi
 	if (signed_offsets && y >= 8) y -= 16;
 
 	/* Swap width and height depending on axis for railway stations */
-	if (axis == INVALID_AXIS && HasStationTileRail(tile)) axis = GetRailStationAxis(tile);
+	if (axis == INVALID_AXIS && HasStationTileRail(tile)) axis = GetRailStationAxis(GetTileByType(tile, MP_STATION));
 	if (axis == AXIS_Y) Swap(x, y);
 
 	/* Make sure we never roam outside of the map, better wrap in that case */

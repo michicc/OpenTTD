@@ -1347,9 +1347,10 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 			int w = plat_len;
 			do {
 				byte layout = *layout_ptr++;
-				if (IsRailStationTile(tile) && HasStationReservation(tile)) {
+				Tile *st_tile = GetTileByType(tile, MP_STATION);
+				if (IsRailStationTile(st_tile) && HasStationReservation(tile)) {
 					/* Check for trains having a reservation for this tile. */
-					Train *v = GetTrainForReservation(tile, AxisToTrack(GetRailStationAxis(tile)));
+					Train *v = GetTrainForReservation(tile, AxisToTrack(GetRailStationAxis(st_tile)));
 					if (v != NULL) {
 						*affected_vehicles.Append() = v;
 						FreeTrainReservation(v);
@@ -1357,34 +1358,34 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 				}
 
 				/* Railtype can change when overbuilding. */
-				if (IsRailStationTile(tile)) {
+				if (IsRailStationTile(st_tile)) {
 					if (!IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]--;
 					c->infrastructure.station--;
 				}
 
 				/* Remove animation if overbuilding */
 				DeleteAnimatedTile(tile);
-				byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION)) : 0;
+				byte old_specindex = HasStationTileRail(st_tile) ? GetCustomStationSpecIndex(st_tile) : 0;
 				MakeRailStation(tile, st->owner, st->index, axis, layout & ~1, rt);
 				/* Free the spec if we overbuild something */
 				DeallocateSpecFromStation(st, old_specindex);
 
 				SetCustomStationSpecIndex(tile, specindex);
-				SetStationTileRandomBits(GetTileByType(tile, MP_STATION), GB(Random(), 0, 4));
-				SetAnimationFrame(tile, 0);
+				SetStationTileRandomBits(st_tile, GB(Random(), 0, 4));
+				SetAnimationFrame(st_tile, 0);
 
 				if (!IsStationTileBlocked(tile)) c->infrastructure.rail[rt]++;
 				c->infrastructure.station++;
 
 				if (statspec != NULL) {
 					/* Use a fixed axis for GetPlatformInfo as our platforms / numtracks are always the right way around */
-					uint32 platinfo = GetPlatformInfo(AXIS_X, GetStationGfx(tile), plat_len, numtracks_orig, plat_len - w, numtracks_orig - numtracks, false);
+					uint32 platinfo = GetPlatformInfo(AXIS_X, GetStationGfx(st_tile), plat_len, numtracks_orig, plat_len - w, numtracks_orig - numtracks, false);
 
 					/* As the station is not yet completely finished, the station does not yet exist. */
 					uint16 callback = GetStationCallback(CBID_STATION_TILE_LAYOUT, platinfo, 0, statspec, NULL, tile);
 					if (callback != CALLBACK_FAILED) {
 						if (callback < 8) {
-							SetStationGfx(tile, (callback & ~1) + axis);
+							SetStationGfx(st_tile, (callback & ~1) + axis);
 						} else {
 							ErrorUnknownCallbackResult(statspec->grf_prop.grffile->grfid, CBID_STATION_TILE_LAYOUT, callback);
 						}
@@ -2708,12 +2709,12 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 
 				if (HasBit(statspec->callback_mask, CBM_STATION_SPRITE_LAYOUT)) {
 					uint16 callback = GetStationCallback(CBID_STATION_SPRITE_LAYOUT, 0, 0, statspec, st, ti->tile);
-					if (callback != CALLBACK_FAILED) tile_layout = (callback & ~1) + GetRailStationAxis(ti->tile);
+					if (callback != CALLBACK_FAILED) tile_layout = (callback & ~1) + GetRailStationAxis(ti->tptr);
 				}
 
 				/* Ensure the chosen tile layout is valid for this custom station */
 				if (statspec->renderdata != NULL) {
-					layout = &statspec->renderdata[tile_layout < statspec->tiles ? tile_layout : (uint)GetRailStationAxis(ti->tile)];
+					layout = &statspec->renderdata[tile_layout < statspec->tiles ? tile_layout : (uint)GetRailStationAxis(ti->tptr)];
 					if (!layout->NeedsPreprocessing()) {
 						t = layout;
 						layout = NULL;
@@ -2882,8 +2883,8 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 
 			/* PBS debugging, draw reserved tracks darker */
 			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationRail(ti->tptr) && HasStationReservation(ti->tile)) {
-				const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
-				DrawGroundSprite(GetRailStationAxis(ti->tile) == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH);
+				const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tptr));
+				DrawGroundSprite(GetRailStationAxis(ti->tptr) == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH);
 			}
 		}
 	}
@@ -4013,7 +4014,7 @@ static CommandCost TerraformTile_Station(TileIndex tile, Tile *tptr, DoCommandFl
 			switch (GetStationType(tptr)) {
 				case STATION_WAYPOINT:
 				case STATION_RAIL: {
-					DiagDirection direction = AxisToDiagDir(GetRailStationAxis(tile));
+					DiagDirection direction = AxisToDiagDir(GetRailStationAxis(tptr));
 					if (!AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, direction)) break;
 					if (!AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, ReverseDiagDir(direction))) break;
 					return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);

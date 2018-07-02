@@ -356,7 +356,7 @@ static SigFlags ExploreSegment(Owner owner)
 			case MP_STATION:
 				if (!HasStationRail(rail_tile)) continue;
 				if (GetTileOwner(rail_tile) != owner) continue;
-				if (DiagDirToAxis(enterdir) != GetRailStationAxis(tile)) continue; // different axis
+				if (DiagDirToAxis(enterdir) != GetRailStationAxis(rail_tile)) continue; // different axis
 				if (IsStationTileBlocked(tile)) continue; // 'eye-candy' station tile
 
 				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, NULL, &TrainOnTileEnum)) flags |= SF_TRAIN;

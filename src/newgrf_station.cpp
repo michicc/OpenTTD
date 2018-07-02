@@ -72,7 +72,7 @@ struct ETileArea : TileArea {
 
 			case TA_PLATFORM: {
 				TileIndex start, end;
-				Axis axis = GetRailStationAxis(tile);
+				Axis axis = GetRailStationAxis(GetTileByType(tile, MP_STATION));
 				TileIndexDiff delta = TileOffsByDiagDir(AxisToDiagDir(axis));
 
 				for (end = tile; IsRailStationTile(end + delta) && IsCompatibleTrainStationTile(end + delta, tile); end += delta) { /* Nothing */ }
@@ -150,7 +150,7 @@ static TileIndex FindRailStationEnd(TileIndex tile, TileIndexDiff delta, bool ch
 	StationID sid = GetStationIndex(st_tile);
 
 	if (check_type) orig_type = GetCustomStationSpecIndex(st_tile);
-	if (check_axis) orig_axis = GetRailStationAxis(tile);
+	if (check_axis) orig_axis = GetRailStationAxis(st_tile);
 
 	for (;;) {
 		TileIndex new_tile = TILE_ADD(tile, delta);
@@ -159,7 +159,7 @@ static TileIndex FindRailStationEnd(TileIndex tile, TileIndexDiff delta, bool ch
 		if (st_tile == NULL || GetStationIndex(st_tile) != sid) break;
 		if (!HasStationRail(st_tile)) break;
 		if (check_type && GetCustomStationSpecIndex(st_tile) != orig_type) break;
-		if (check_axis && GetRailStationAxis(new_tile) != orig_axis) break;
+		if (check_axis && GetRailStationAxis(st_tile) != orig_axis) break;
 
 		tile = new_tile;
 	}
@@ -179,7 +179,8 @@ static uint32 GetPlatformInfoHelper(TileIndex tile, bool check_type, bool check_
 	tx -= sx; ex -= sx;
 	ty -= sy; ey -= sy;
 
-	return GetPlatformInfo(GetRailStationAxis(tile), GetStationGfx(tile), ex, ey, tx, ty, centred);
+	const Tile *st_tile = GetTileByType(tile, MP_STATION);
+	return GetPlatformInfo(GetRailStationAxis(st_tile), GetStationGfx(st_tile), ex, ey, tx, ty, centred);
 }
 
 
@@ -193,7 +194,7 @@ static uint32 GetRailContinuationInfo(TileIndex tile)
 	static const Direction y_dir[8] = { DIR_SE, DIR_NW, DIR_SW, DIR_NE, DIR_S, DIR_W, DIR_E, DIR_N };
 	static const DiagDirection y_exits[8] = { DIAGDIR_SE, DIAGDIR_NW, DIAGDIR_SW, DIAGDIR_NE, DIAGDIR_SE, DIAGDIR_NW, DIAGDIR_SE, DIAGDIR_NW };
 
-	Axis axis = GetRailStationAxis(tile);
+	Axis axis = GetRailStationAxis(GetTileByType(tile, MP_STATION));
 
 	/* Choose appropriate lookup table to use */
 	const Direction *dir = axis == AXIS_X ? x_dir : y_dir;
@@ -345,7 +346,7 @@ TownScopeResolver *StationResolverObject::GetTown()
 		}
 
 		case 0x67: { // Land info of nearby tile
-			Axis axis = GetRailStationAxis(this->tile);
+			Axis axis = GetRailStationAxis(GetTileByType(this->tile, MP_STATION));
 			TileIndex tile = this->tile;
 			if (parameter != 0) tile = GetNearbyTile(parameter, tile); // only perform if it is required
 
@@ -364,7 +365,7 @@ TownScopeResolver *StationResolverObject::GetTown()
 			const Tile *nearby_st = GetTileByType(nearby_tile, MP_STATION);
 
 			uint32 grfid = this->st->speclist[GetCustomStationSpecIndex(tile_st)].grfid;
-			bool perpendicular = GetRailStationAxis(this->tile) != GetRailStationAxis(nearby_tile);
+			bool perpendicular = GetRailStationAxis(tile_st) != GetRailStationAxis(nearby_st);
 			bool same_station = this->st->TileBelongsToRailStation(nearby_tile);
 			uint32 res = GB(GetStationGfx(nearby_st), 1, 2) << 12 | !!perpendicular << 11 | !!same_station << 10;
 
@@ -851,6 +852,19 @@ const StationSpec *GetStationSpec(TileIndex t)
 	return GetStationSpec(GetTileByType(t, MP_STATION));
 }
 
+
+/**
+ * Check whether a rail station tile is NOT traversable.
+ * @param tile %Tile to test.
+ * @return Station tile is blocked.
+ * @note This could be cached (during build) in the map array to save on all the dereferencing.
+ */
+bool IsStationTileBlocked(const Tile *tile)
+{
+	const StationSpec *statspec = GetStationSpec(tile);
+
+	return statspec != NULL && HasBit(statspec->blocked, GetStationGfx(tile));
+}
 
 /**
  * Check whether a rail station tile is NOT traversable.
