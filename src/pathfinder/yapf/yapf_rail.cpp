@@ -76,10 +76,10 @@ private:
 	{
 		TileIndex     start = tile;
 		TileIndexDiff diff = TileOffsByDiagDir(dir);
+		Track         track = DiagDirToDiagTrack(dir);
 
 		do {
-			if (HasStationReservation(tile)) return false;
-			SetRailStationReservation(tile, true);
+			if (!TryReserveTrack(GetTileByType(tile, MP_RAILWAY), track)) return false;
 			MarkTileDirtyByTile(tile);
 			tile = TILE_ADD(tile, diff);
 		} while (IsCompatibleTrainStationTile(tile, start) && tile != m_origin_tile);
@@ -117,7 +117,7 @@ private:
 			TileIndex     start = tile;
 			TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(td)));
 			while ((tile != m_res_fail_tile || td != m_res_fail_td) && IsCompatibleTrainStationTile(tile, start)) {
-				SetRailStationReservation(tile, false);
+				UnreserveRailTrack(tile, TrackdirToTrack(td));
 				tile = TILE_ADD(tile, diff);
 			}
 		} else if (tile != m_res_fail_tile || td != m_res_fail_td) {

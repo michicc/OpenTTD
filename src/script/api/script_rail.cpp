@@ -132,7 +132,7 @@
 {
 	if (!IsRailStationTile(tile)) return RAILTRACK_INVALID;
 
-	return (RailTrack)::GetRailStationTrackBits(tile);
+	return (RailTrack)::GetAllTrackBits(tile);
 }
 
 /* static */ bool ScriptRail::BuildRailDepot(TileIndex tile, TileIndex front)
@@ -232,7 +232,6 @@
 {
 	if (!IsRailTile(tile)) return RAILTRACK_INVALID;
 
-	if (IsRailStationTile(tile) || IsRailWaypointTile(tile)) return ::TrackToTrackBits(::GetRailStationTrack(tile));
 	if (IsRailDepotTile(tile)) return ::TRACK_BIT_NONE;
 	return ::GetAllTrackBits(tile);
 }

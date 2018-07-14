@@ -238,7 +238,7 @@ CommandCost CmdBuildRailWaypoint(TileIndex start_tile, DoCommandFlag flags, uint
 			wp->xy = start_tile;
 		}
 		/* Only one rail tile present or we would have errored out earlier. */
-		wp->owner = GetTileOwner(HasTileByType(start_tile, MP_RAILWAY) ? GetTileByType(start_tile, MP_RAILWAY) : _m.ToTile(start_tile));
+		wp->owner = GetTileOwner(HasTileByType(start_tile, MP_STATION) ? GetTileByType(start_tile, MP_STATION) : GetTileByType(start_tile, MP_RAILWAY));
 
 		wp->rect.BeforeAddRect(start_tile, width, height, StationRect::ADD_TRY);
 
@@ -266,19 +266,16 @@ CommandCost CmdBuildRailWaypoint(TileIndex start_tile, DoCommandFlag flags, uint
 		Company *c = Company::Get(wp->owner);
 		for (int i = 0; i < count; i++) {
 			TileIndex tile = start_tile + i * offset;
-			byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION)) : 0;
-			if (!HasStationTileRail(tile)) c->infrastructure.station++;
+			Tile *st_tile = GetTileByType(tile, MP_STATION);
 
-			/* At most one rail tile is possible. */
-			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-			bool reserved = rail_tile != NULL ?
-					HasBit(GetRailReservationTrackBits(rail_tile), AxisToTrack(axis)) :
-					HasStationReservation(tile);
-			RailType rt = GetRailType(rail_tile != NULL ? rail_tile : _m.ToTile(tile));
-			if (rail_tile != NULL) _m.RemoveTile(tile, rail_tile);
-			MakeRailWaypoint(tile, wp->owner, wp->index, axis, layout_ptr[i], rt);
-			SetCustomStationSpecIndex(tile, map_spec_index);
-			SetRailStationReservation(tile, reserved);
+			byte old_specindex = st_tile != NULL ? GetCustomStationSpecIndex(st_tile) : 0;
+
+			/* We are overbuilding? */
+			if (st_tile == NULL) {
+				st_tile = MakeRailWaypoint(tile, wp->owner, wp->index, axis, layout_ptr[i]);
+				c->infrastructure.station++;
+			}
+			SetCustomStationSpecIndex(st_tile, map_spec_index);
 			MarkTileDirtyByTile(tile);
 
 			DeallocateSpecFromStation(wp, old_specindex);

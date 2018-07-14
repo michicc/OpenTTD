@@ -143,7 +143,7 @@ public:
 	{
 		TileIndexDiff diff = TileOffsByDiagDir(TrackdirToExitdir(ReverseTrackdir(trackdir)));
 		for (; skipped >= 0; skipped--, tile += diff) {
-			if (HasStationReservation(tile)) return true;
+			if (GetReservedTrackbits(tile) != TRACK_BIT_NONE) return true;
 		}
 		return false;
 	}

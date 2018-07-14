@@ -65,6 +65,8 @@
  */
 /* static */ const FlowStat::SharesMap FlowStat::empty_sharesmap;
 
+static void FreeTrainReservation(Train *v);
+
 /**
  * Check whether the given tile is a hangar.
  * @param t the tile to of whether it is a hangar.
@@ -881,43 +883,43 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 					return_cmd_error(STR_ERROR_ADJOINS_MORE_THAN_ONE_EXISTING);
 				}
 			}
-		} else {
-			/* Rail type is only valid when building a railway station; if station to
-			 * build isn't a rail station it's INVALID_RAILTYPE. */
-			Tile *rail_tile = GetTileByType(tile_cur, MP_RAILWAY);
-			if (rt != INVALID_RAILTYPE && rail_tile != NULL &&
-					GetNextTileByType(rail_tile, MP_RAILWAY) == NULL && // More than one associated tile will always have wrong tracks
-					IsPlainRail(rail_tile) && !HasSignals(rail_tile) &&
-					HasPowerOnRail(GetRailType(rail_tile), rt)) {
-				/* Allow overbuilding if the tile:
-				 *  - has rail, but no signals
-				 *  - it has exactly one track
-				 *  - the track is in line with the station
-				 *  - the current rail type has power on the to-be-built type (e.g. convert normal rail to el rail)
-				 */
-				TrackBits tracks = GetTrackBits(rail_tile);
-				Track track = RemoveFirstTrack(&tracks);
-				Track expected_track = HasBit(invalid_dirs, DIAGDIR_NE) ? TRACK_X : TRACK_Y;
-
-				if (tracks == TRACK_BIT_NONE && track == expected_track) {
-					/* Check for trains having a reservation for this tile. */
-					if (HasBit(GetRailReservationTrackBits(rail_tile), track)) {
-						Train *v = GetTrainForReservation(tile_cur, track);
-						if (v != NULL) {
-							*affected_vehicles.Append() = v;
-						}
-					}
-					CommandCost ret = DoCommand(tile_cur, 0, track, flags, CMD_REMOVE_SINGLE_RAIL);
-					if (ret.Failed()) return ret;
-					cost.AddCost(ret);
-					/* With flags & ~DC_EXEC CmdLandscapeClear would fail since the rail still exists */
-					continue;
-				}
-			}
-			ret = DoCommand(tile_cur, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
-			if (ret.Failed()) return ret;
-			cost.AddCost(ret);
 		}
+
+		/* Rail type is only valid when building a railway station; if station to
+		 * build isn't a rail station it's INVALID_RAILTYPE. */
+		Tile *rail_tile = GetTileByType(tile_cur, MP_RAILWAY);
+		if (rt != INVALID_RAILTYPE && rail_tile != NULL &&
+				GetNextTileByType(rail_tile, MP_RAILWAY) == NULL && // More than one associated tile will always have wrong tracks
+				IsPlainRail(rail_tile) && !HasSignals(rail_tile) &&
+				HasPowerOnRail(GetRailType(rail_tile), rt)) {
+			/* Allow overbuilding if the tile:
+			 *  - has rail, but no signals
+			 *  - it has exactly one track
+			 *  - the track is in line with the station
+			 *  - the current rail type has power on the to-be-built type (e.g. convert normal rail to el rail)
+			 */
+			TrackBits tracks = GetTrackBits(rail_tile);
+			Track track = RemoveFirstTrack(&tracks);
+			Track expected_track = HasBit(invalid_dirs, DIAGDIR_NE) ? TRACK_X : TRACK_Y;
+
+			if (tracks == TRACK_BIT_NONE && track == expected_track) {
+				/* Check for trains having a reservation for this tile. */
+				if (HasBit(GetRailReservationTrackBits(rail_tile), track)) {
+					Train *v = GetTrainForReservation(tile_cur, track);
+					if (v != NULL) {
+						*affected_vehicles.Append() = v;
+					}
+				}
+				CommandCost ret = DoCommand(tile_cur, 0, track, flags, CMD_REMOVE_SINGLE_RAIL);
+				if (ret.Failed()) return ret;
+				cost.AddCost(ret);
+				/* With flags & ~DC_EXEC CmdLandscapeClear would fail since the rail still exists */
+				continue;
+			}
+		}
+		ret = DoCommand(tile_cur, 0, 0, flags, CMD_LANDSCAPE_CLEAR);
+		if (ret.Failed()) return ret;
+		cost.AddCost(ret);
 	}
 
 	return cost;
@@ -1348,34 +1350,25 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 			do {
 				byte layout = *layout_ptr++;
 				Tile *st_tile = GetTileByType(tile, MP_STATION);
-				if (IsRailStationTile(st_tile) && HasStationReservation(tile)) {
-					/* Check for trains having a reservation for this tile. */
-					Train *v = GetTrainForReservation(tile, AxisToTrack(GetRailStationAxis(st_tile)));
-					if (v != NULL) {
-						*affected_vehicles.Append() = v;
-						FreeTrainReservation(v);
-					}
-				}
-
-				/* Railtype can change when overbuilding. */
-				if (IsRailStationTile(st_tile)) {
-					if (!IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]--;
-					c->infrastructure.station--;
-				}
 
 				/* Remove animation if overbuilding */
 				DeleteAnimatedTile(tile);
-				byte old_specindex = HasStationTileRail(st_tile) ? GetCustomStationSpecIndex(st_tile) : 0;
-				MakeRailStation(tile, st->owner, st->index, axis, layout & ~1, rt);
+
+				/* Railtype can change when overbuilding. */
+				byte old_specindex = 0;
+				if (IsRailStationTile(st_tile)) {
+					old_specindex = GetCustomStationSpecIndex(st_tile);
+					MakeStation(st_tile, st->owner, st->index, STATION_RAIL, layout & ~1);
+				} else {
+					st_tile = MakeRailStation(tile, st->owner, st->index, axis, layout & ~1);
+					c->infrastructure.station++;
+				}
+
 				/* Free the spec if we overbuild something */
 				DeallocateSpecFromStation(st, old_specindex);
-
-				SetCustomStationSpecIndex(tile, specindex);
+				SetCustomStationSpecIndex(st_tile, specindex);
 				SetStationTileRandomBits(st_tile, GB(Random(), 0, 4));
 				SetAnimationFrame(st_tile, 0);
-
-				if (!IsStationTileBlocked(tile)) c->infrastructure.rail[rt]++;
-				c->infrastructure.station++;
 
 				if (statspec != NULL) {
 					/* Use a fixed axis for GetPlatformInfo as our platforms / numtracks are always the right way around */
@@ -1394,6 +1387,11 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 					/* Trigger station animation -- after building? */
 					TriggerStationAnimation(st, tile, SAT_BUILT);
 				}
+
+				/* Add rail tile back. */
+				bool blocked = IsStationTileBlocked(st_tile);
+				MakeRailNormal(_m.NewTile(tile, MP_RAILWAY, false, _m.ToTile(tile)), st->owner, blocked ? TRACK_BIT_NONE : TrackToTrackBits(track), rt);
+				if (!blocked) c->infrastructure.rail[rt]++;
 
 				tile += tile_delta;
 			} while (--w);
@@ -1435,7 +1433,7 @@ CommandCost CmdBuildRailStation(TileIndex tile_org, DoCommandFlag flags, uint32 
 			/* If there is at least on reservation on the platform, we reserve the whole platform. */
 			bool reservation = false;
 			for (TileIndex t = platform_begin; !reservation && t <= platform_end; t += tile_offset) {
-				reservation = HasStationReservation(t);
+				reservation = GetReservedTrackbits(t) != TRACK_BIT_NONE;
 			}
 
 			if (reservation) {
@@ -1546,7 +1544,7 @@ CommandCost RemoveFromRailBaseStation(TileArea ta, SmallVector<T *, 4> &affected
 		/* If we reached here, the tile is valid so increase the quantity of tiles we will remove */
 		quantity++;
 
-		if (keep_rail || IsStationTileBlocked(tile)) {
+		if (keep_rail || !HasTileByType(tile, MP_RAILWAY)) {
 			/* Don't refund the 'steel' of the track when we keep the
 			 *  rail, or when the tile didn't have any rail at all. */
 			total_cost.AddCost(-_price[PR_CLEAR_RAIL]);
@@ -1554,25 +1552,34 @@ CommandCost RemoveFromRailBaseStation(TileArea ta, SmallVector<T *, 4> &affected
 
 		if (flags & DC_EXEC) {
 			/* read variables before the station tile is removed */
-			uint specindex = GetCustomStationSpecIndex(GetTileByType(tile, MP_STATION));
-			Track track = GetRailStationTrack(tile);
-			Owner owner = GetTileOwner(tile);
-			RailType rt = GetRailType(tile);
+			Tile *st_tile = GetTileByType(tile, MP_STATION);
+			uint specindex = GetCustomStationSpecIndex(st_tile);
+			Track track = AxisToTrack(GetRailStationAxis(st_tile));
+			Owner owner = GetTileOwner(st_tile);
 			Train *v = NULL;
 
-			if (HasStationReservation(tile)) {
+			if (HasReservedTracks(tile, TrackToTrackBits(track))) {
 				v = GetTrainForReservation(tile, track);
 				if (v != NULL) FreeTrainReservation(v);
 			}
 
-			bool build_rail = keep_rail && !IsStationTileBlocked(tile);
-			if (!build_rail && !IsStationTileBlocked(tile)) Company::Get(owner)->infrastructure.rail[rt]--;
-
-			DoClearSquare(tile);
+			DeleteAnimatedTile(tile);
+			_m.RemoveTile(tile, st_tile);
 			DeleteNewGRFInspectWindow(GSF_STATIONS, tile);
-			if (build_rail) MakeRailNormal(tile, owner, TrackToTrackBits(track), rt);
 			Company::Get(owner)->infrastructure.station--;
 			DirtyCompanyInfrastructureWindows(owner);
+
+			/* Remove rail unless if we want to keep it. */
+			Tile *rail = GetTileByType(tile, MP_RAILWAY);
+			if (rail != NULL && (!keep_rail || GetTrackBits(rail) == TRACK_BIT_NONE)) {
+				Company *c = Company::GetIfValid(GetTileOwner(rail));
+				if (c != NULL && GetTrackBits(rail) != TRACK_BIT_NONE) {
+					c->infrastructure.rail[GetRailType(rail)]--;
+					DirtyCompanyInfrastructureWindows(c->index);
+				}
+				_m.RemoveTile(tile, rail);
+				MakeClearGrass(tile);
+			}
 
 			st->rect.AfterRemoveTile(st, tile);
 			AddTrackToSignalBuffer(tile, track, owner);
@@ -2695,8 +2702,9 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 	const StationSpec *statspec = NULL;
 	uint tile_layout = 0;
 
+	const Tile *rail_tile = GetTileByType(ti->tile, MP_RAILWAY);
 	if (HasStationRail(ti->tptr)) {
-		rti = GetRailTypeInfo(GetRailType(ti->tile));
+		rti = GetRailTypeInfo(GetRailType(rail_tile));
 		total_offset = rti->GetRailtypeSpriteOffset();
 
 		if (IsCustomStationSpecIndex(ti->tptr)) {
@@ -2871,7 +2879,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 			DrawGroundSprite(image, PAL_NONE);
 			DrawGroundSprite(ground + overlay_offset, PAL_NONE);
 
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationReservation(ti->tile)) {
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && GetReservedTrackbits(ti->tile) != TRACK_BIT_NONE) {
 				SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
 				DrawGroundSprite(overlay + overlay_offset, PALETTE_CRASH);
 			}
@@ -2882,14 +2890,14 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 			DrawGroundSprite(image, GroundSpritePaletteTransform(image, pal, palette));
 
 			/* PBS debugging, draw reserved tracks darker */
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationRail(ti->tptr) && HasStationReservation(ti->tile)) {
-				const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tptr));
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationRail(ti->tptr) && GetReservedTrackbits(ti->tile) != TRACK_BIT_NONE) {
+				const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(rail_tile));
 				DrawGroundSprite(GetRailStationAxis(ti->tptr) == AXIS_X ? rti->base_sprites.single_x : rti->base_sprites.single_y, PALETTE_CRASH);
 			}
 		}
 	}
 
-	if (HasStationRail(ti->tptr) && HasRailCatenaryDrawn(GetRailType(ti->tile))) DrawRailCatenary(ti);
+	if (HasStationRail(ti->tptr) && HasRailCatenaryDrawn(GetRailType(rail_tile))) DrawRailCatenary(ti);
 
 	if (IsRailWaypoint(ti->tptr)) {
 		/* Don't offset the waypoint graphics; they're always the same. */
@@ -2978,10 +2986,6 @@ static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 				td->grf = gc->GetName();
 			}
 		}
-
-		const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(tile));
-		td->rail_speed = rti->max_speed;
-		td->railtype = rti->strings.name;
 	}
 
 	if (IsAirport(tptr)) {
@@ -3024,12 +3028,6 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, Tile *st_tile, Tra
 	TrackBits trackbits = TRACK_BIT_NONE;
 
 	switch (mode) {
-		case TRANSPORT_RAIL:
-			if (HasStationRail(st_tile) && !IsStationTileBlocked(tile)) {
-				trackbits = TrackToTrackBits(GetRailStationTrack(tile));
-			}
-			break;
-
 		case TRANSPORT_ROAD:
 			if (IsRoadStop(st_tile) && (GetAllRoadTypes(tile) & sub_mode) != 0) {
 				DiagDirection dir = GetRoadStopDir(st_tile);
@@ -3920,14 +3918,6 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 
 		/* Update counts for underlying infrastructure. */
 		switch (GetStationType(tptr)) {
-			case STATION_RAIL:
-			case STATION_WAYPOINT:
-				if (!IsStationTileBlocked(tile)) {
-					old_company->infrastructure.rail[GetRailType(tile)]--;
-					new_company->infrastructure.rail[GetRailType(tile)]++;
-				}
-				break;
-
 			case STATION_BUS:
 			case STATION_TRUCK:
 				/* Road stops were already handled above. */
@@ -3944,7 +3934,7 @@ static bool ChangeTileOwner_Station(TileIndex tile, Tile *tptr, Owner old_owner,
 		}
 
 		/* for buoys, owner of tile is owner of water, st->owner == OWNER_NONE */
-		SetTileOwner(tile, new_owner);
+		SetTileOwner(tptr, new_owner);
 		InvalidateWindowClassesData(WC_STATION_LIST, 0);
 	} else {
 		if (IsDriveThroughStopTile(tile)) {

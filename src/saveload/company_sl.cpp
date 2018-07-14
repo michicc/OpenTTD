@@ -139,16 +139,6 @@ void AfterLoadCompanyStats()
 
 			c = Company::GetIfValid(GetTileOwner(tile));
 			if (c != NULL && !IsAirport(station_tile) && !IsBuoy(station_tile)) c->infrastructure.station++;
-
-			switch (GetStationType(station_tile)) {
-				case STATION_RAIL:
-				case STATION_WAYPOINT:
-					if (c != NULL && !IsStationTileBlocked(tile)) c->infrastructure.rail[GetRailType(tile)]++;
-					break;
-
-				default:
-					break;
-			}
 		}
 
 		switch (GetTileType(tile)) {

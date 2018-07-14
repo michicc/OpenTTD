@@ -403,28 +403,6 @@ static inline Axis GetRailStationAxis(const Tile *t)
 }
 
 /**
- * Get the rail track of a rail station tile.
- * @param t Tile to query
- * @pre HasStationRail(t)
- * @return The rail track of the rails on tile \a t.
- */
-static inline Track GetRailStationTrack(TileIndex t)
-{
-	return AxisToTrack(GetRailStationAxis(_m.ToTile(t)));
-}
-
-/**
- * Get the trackbits of a rail station tile.
- * @param t Tile to query
- * @pre HasStationRail(t)
- * @return The trackbits of the rails on tile \a t.
- */
-static inline TrackBits GetRailStationTrackBits(TileIndex t)
-{
-	return AxisToTrackBits(GetRailStationAxis(_m.ToTile(t)));
-}
-
-/**
  * Check if a tile is a valid continuation to a railstation tile.
  * The tile \a test_tile is a valid continuation to \a station_tile, if all of the following are true:
  * \li \a test_tile is a rail station tile
@@ -446,41 +424,6 @@ static inline bool IsCompatibleTrainStationTile(TileIndex test_tile, TileIndex s
 			GetRailStationAxis(test_ptr) == GetRailStationAxis(station_ptr) &&
 			GetStationIndex(test_ptr) == GetStationIndex(station_ptr) &&
 			!IsStationTileBlocked(test_ptr);
-}
-
-/**
- * Get the reservation state of the rail station
- * @pre HasStationRail(t)
- * @param t the station tile
- * @return reservation state
- */
-static inline bool HasStationReservation(TileIndex t)
-{
-	assert(HasStationTileRail(t));
-	return HasBit(_m[t].m6, 2);
-}
-
-/**
- * Set the reservation state of the rail station
- * @pre HasStationRail(t)
- * @param t the station tile
- * @param b the reservation state
- */
-static inline void SetRailStationReservation(TileIndex t, bool b)
-{
-	assert(HasStationTileRail(t));
-	SB(_m[t].m6, 2, 1, b ? 1 : 0);
-}
-
-/**
- * Get the reserved track bits for a waypoint
- * @pre HasStationRail(t)
- * @param t the tile
- * @return reserved track bits
- */
-static inline TrackBits GetStationReservationTrackBits(TileIndex t)
-{
-	return HasStationReservation(t) ? GetRailStationTrackBits(t) : TRACK_BIT_NONE;
 }
 
 /**
@@ -542,10 +485,10 @@ static inline bool IsCustomStationSpecIndex(const Tile *t)
  * @param specindex The new spec.
  * @pre HasStationTileRail(t)
  */
-static inline void SetCustomStationSpecIndex(TileIndex t, byte specindex)
+static inline void SetCustomStationSpecIndex(Tile *t, byte specindex)
 {
 	assert(HasStationTileRail(t));
-	_m[t].m4 = specindex;
+	t->m4 = specindex;
 }
 
 /**
@@ -614,13 +557,10 @@ static inline Tile *MakeStation(Tile *st_tile, Owner o, StationID sid, StationTy
  * @param sid the station to which this tile belongs
  * @param a the axis of this tile
  * @param section the StationGfx to be used for this tile
- * @param rt the railtype of this tile
  */
-static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
+static inline Tile * MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, byte section)
 {
-	MakeStation(_m.ToTile(t), o, sid, STATION_RAIL, section + a);
-	SetRailType(_m.ToTile(t), rt);
-	SetRailStationReservation(t, false);
+	return MakeStation(_m.NewTile(t, MP_STATION), o, sid, STATION_RAIL, section + a);
 }
 
 /**
@@ -630,13 +570,10 @@ static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, 
  * @param sid the waypoint to which this tile belongs
  * @param a the axis of this tile
  * @param section the StationGfx to be used for this tile
- * @param rt the railtype of this tile
  */
-static inline void MakeRailWaypoint(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
+static inline Tile * MakeRailWaypoint(TileIndex t, Owner o, StationID sid, Axis a, byte section)
 {
-	MakeStation(_m.ToTile(t), o, sid, STATION_WAYPOINT, section + a);
-	SetRailType(_m.ToTile(t), rt);
-	SetRailStationReservation(t, false);
+	return MakeStation(_m.NewTile(t, MP_STATION), o, sid, STATION_WAYPOINT, section + a);
 }
 
 /**

@@ -156,10 +156,6 @@ extern const TrackdirBits _uphill_trackdirs[] = {
 static RailType GetTileRailTypeCommon(TileIndex tile)
 {
 	switch (GetTileType(tile)) {
-		case MP_STATION:
-			if (HasStationTileRail(tile)) return GetRailType(tile);
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) return GetRailType(tile);
 			break;

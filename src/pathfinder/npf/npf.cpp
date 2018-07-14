@@ -442,7 +442,7 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 		 * give any station tile a penalty, because every possible route will get
 		 * this penalty exactly once, on its end tile (if it's a station) and it
 		 * will therefore not make a difference. */
-		cost = NPF_TILE_LENGTH + _settings_game.pf.npf.npf_rail_station_penalty;
+		cost += _settings_game.pf.npf.npf_rail_station_penalty;
 
 		if (IsRailWaypoint(station_tile)) {
 			NPFFindStationOrTileData *fstd = (NPFFindStationOrTileData*)as->user_target;
@@ -622,7 +622,7 @@ static void NPFSaveTargetData(AyStar *as, OpenListNode *current)
 			ftd->node.tile = end_tile;
 			if (!IsWaitingPositionFree(v, end_tile, target->node.direction, _settings_game.pf.forbid_90_deg)) return;
 			SetRailStationPlatformReservation(target->node.tile, dir, true);
-			SetRailStationReservation(target->node.tile, false);
+			UnreserveRailTrack(target->node.tile, DiagDirToDiagTrack(dir));
 		} else {
 			if (!IsWaitingPositionFree(v, target->node.tile, target->node.direction, _settings_game.pf.forbid_90_deg)) return;
 		}

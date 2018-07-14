@@ -178,7 +178,7 @@ struct CFollowTrackT
 			/* Check skipped station tiles as well. */
 			TileIndexDiff diff = TileOffsByDiagDir(m_exitdir);
 			for (TileIndex tile = m_new_tile - diff * m_tiles_skipped; tile != m_new_tile; tile += diff) {
-				if (HasStationReservation(tile)) {
+				if (GetReservedTrackbits(tile) != TRACK_BIT_NONE) {
 					m_new_td_bits = TRACKDIR_BIT_NONE;
 					m_err = EC_RESERVED;
 					return false;

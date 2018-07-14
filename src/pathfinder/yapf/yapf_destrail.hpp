@@ -169,7 +169,7 @@ public:
 		if (m_dest_station_id != INVALID_STATION) {
 			return HasStationTileRail(tile)
 				&& (GetStationIndex(tile) == m_dest_station_id)
-				&& (GetRailStationTrack(tile) == TrackdirToTrack(td));
+				&& ((GetAllTrackBits(tile) & TrackToTrackBits(TrackdirToTrack(td))) != TRACK_BIT_NONE);
 		}
 
 		return (tile == m_destTile) && HasTrackdir(m_destTrackdirs, td);

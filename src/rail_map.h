@@ -230,6 +230,7 @@ static inline RailType GetRailType(const Tile *t)
  */
 static inline RailType GetRailType(TileIndex t)
 {
+	assert(GetTileType(t) == MP_TUNNELBRIDGE);
 	return GetRailType(_m.ToTile(t));
 }
 

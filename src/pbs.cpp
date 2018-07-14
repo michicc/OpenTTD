@@ -34,10 +34,6 @@ TrackBits GetReservedTrackbits(TileIndex t)
 	}
 
 	switch (GetTileType(t)) {
-		case MP_STATION:
-			if (HasStationTileRail(t)) return GetStationReservationTrackBits(t);
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) return GetTunnelBridgeReservationTrackBits(t);
 			break;
@@ -59,12 +55,17 @@ void SetRailStationPlatformReservation(TileIndex start, DiagDirection dir, bool 
 {
 	TileIndex     tile = start;
 	TileIndexDiff diff = TileOffsByDiagDir(dir);
+	Axis          axis = DiagDirToAxis(dir);
 
 	assert(IsRailStationTile(start));
-	assert(GetRailStationAxis(GetTileByType(start, MP_STATION)) == DiagDirToAxis(dir));
+	assert(GetRailStationAxis(GetTileByType(start, MP_STATION)) == axis);
 
 	do {
-		SetRailStationReservation(tile, b);
+		if (b) {
+			TryReserveTrack(GetTileByType(tile, MP_RAILWAY), AxisToTrack(axis));
+		} else {
+			UnreserveTrack(GetTileByType(tile, MP_RAILWAY), AxisToTrack(axis));
+		}
 		MarkTileDirtyByTile(tile);
 		tile = TILE_ADD(tile, diff);
 	} while (IsCompatibleTrainStationTile(tile, start));
@@ -93,7 +94,16 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 
 	Tile *rail_tile = GetRailTileFromTrack(tile, t);
 	if (rail_tile != NULL) {
-		if (IsPlainRail(rail_tile)) return TryReserveTrack(rail_tile, t);
+		if (IsPlainRail(rail_tile)) {
+			if (TryReserveTrack(rail_tile, t)) {
+				if (IsRailStationTile(tile)) {
+					if (trigger_stations) TriggerStationRandomisation(NULL, tile, SRT_PATH_RESERVATION);
+					MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
+				}
+				return true;
+			}
+			return false;
+		}
 		if (IsRailDepot(rail_tile)) {
 			if (!HasDepotReservation(rail_tile)) {
 				SetDepotReservation(rail_tile, true);
@@ -110,15 +120,6 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_STATION:
-			if (HasStationTileRail(tile) && !HasStationReservation(tile)) {
-				SetRailStationReservation(tile, true);
-				if (trigger_stations && IsRailStationTile(tile)) TriggerStationRandomisation(NULL, tile, SRT_PATH_RESERVATION);
-				MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
-				return true;
-			}
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL && !GetTunnelBridgeReservationTrackBits(tile)) {
 				SetTunnelBridgeReservation(tile, true);
@@ -151,7 +152,10 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 
 	Tile *rail_tile = GetRailTileFromTrack(tile, t);
 	if (rail_tile != NULL) {
-		if (IsPlainRail(rail_tile)) UnreserveTrack(rail_tile, t);
+		if (IsPlainRail(rail_tile)) {
+			UnreserveTrack(rail_tile, t);
+			if (HasStationTileRail(tile)) MarkTileDirtyByTile(tile);
+		}
 		if (IsRailDepot(rail_tile)) {
 			SetDepotReservation(rail_tile, false);
 			MarkTileDirtyByTile(tile);
@@ -164,13 +168,6 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_STATION:
-			if (HasStationTileRail(tile)) {
-				SetRailStationReservation(tile, false);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) SetTunnelBridgeReservation(tile, false);
 			break;
@@ -205,7 +202,7 @@ static PBSTileInfo FollowReservation(Owner o, RailTypes rts, TileIndex tile, Tra
 				TileIndexDiff diff = TileOffsByDiagDir(ft.m_exitdir);
 				while (ft.m_tiles_skipped-- > 0) {
 					ft.m_new_tile -= diff;
-					if (HasStationReservation(ft.m_new_tile)) {
+					if (GetReservedTrackbits(ft.m_new_tile) != TRACK_BIT_NONE) {
 						tile = ft.m_new_tile;
 						trackdir = DiagDirToDiagTrackdir(ft.m_exitdir);
 						break;
