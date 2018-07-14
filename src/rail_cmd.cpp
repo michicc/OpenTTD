@@ -1671,7 +1671,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 	TrainList affected_trains;
 
 	CommandCost cost(EXPENSES_CONSTRUCTION);
-	CommandCost error = CommandCost(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK); // by default, there is no track to convert.
+	CommandCost err = CommandCost(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK); // by default, there is no track to convert.
 
 	TileIterator *iter = diagonal ? (TileIterator *)new DiagonalTileIterator(area_start, area_end) : new OrthogonalTileIterator(area_start, area_end);
 	for (; (tile = *iter) != INVALID_TILE; ++(*iter)) {
@@ -1684,9 +1684,6 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 			tptr = _m.ToTile(tile);
 			tt = GetTileType(tptr);
 			switch (tt) {
-				case MP_STATION:
-					if (!HasStationRail(tptr)) continue;
-					break;
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(tile) != TRANSPORT_RAIL) continue;
 					break;
@@ -1697,7 +1694,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 		do {
 			/* Check for disallowed level crossings. */
 			if (IsLevelCrossingTile(tptr) && RailNoLevelCrossings(totype)) {
-				error.MakeError(STR_ERROR_CROSSING_DISALLOWED);
+				err.MakeError(STR_ERROR_CROSSING_DISALLOWED);
 				continue;
 			}
 
@@ -1710,7 +1707,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 			/* Trying to convert other's rail */
 			CommandCost ret = CheckTileOwnership(tile, tptr);
 			if (ret.Failed()) {
-				error = ret;
+				err = ret;
 				continue;
 			}
 
@@ -1722,7 +1719,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 				if (!IsCompatibleRail(type, totype)) {
 					CommandCost ret = IsPlainRailTile(tptr) ? EnsureNoTrainOnTrackBits(tile, GetTrackBits(tptr)) : EnsureNoVehicleOnGround(tile);
 					if (ret.Failed()) {
-						error = ret;
+						err = ret;
 						continue;
 					}
 				}
@@ -1739,18 +1736,16 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 					}
 
 					/* Update the company infrastructure counters. */
-					if (!IsRailStationTile(tile) || !IsStationTileBlocked(tile)) {
-						Company *c = Company::Get(GetTileOwner(tptr));
-						uint num_pieces = IsLevelCrossingTile(tile) ? LEVELCROSSING_TRACKBIT_FACTOR : 1;
-						if (IsPlainRailTile(tptr)) {
-							TrackBits bits = GetTrackBits(tptr);
-							num_pieces = CountBits(bits);
-							if (TracksOverlap(bits)) num_pieces *= num_pieces;
-						}
-						c->infrastructure.rail[type] -= num_pieces;
-						c->infrastructure.rail[totype] += num_pieces;
-						DirtyCompanyInfrastructureWindows(c->index);
+					Company *c = Company::Get(GetTileOwner(tptr));
+					uint num_pieces = IsLevelCrossingTile(tptr) ? LEVELCROSSING_TRACKBIT_FACTOR : 1;
+					if (IsPlainRailTile(tptr)) {
+						TrackBits bits = GetTrackBits(tptr);
+						num_pieces = CountBits(bits);
+						if (TracksOverlap(bits)) num_pieces *= num_pieces;
 					}
+					c->infrastructure.rail[type] -= num_pieces;
+					c->infrastructure.rail[totype] += num_pieces;
+					DirtyCompanyInfrastructureWindows(c->index);
 
 					SetRailType(tptr, totype);
 					MarkTileDirtyByTile(tile);
@@ -1804,7 +1799,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 					if (!IsCompatibleRail(GetRailType(_m.ToTile(tile)), totype)) {
 						CommandCost ret = TunnelBridgeIsFree(tile, endtile);
 						if (ret.Failed()) {
-							error = ret;
+							err = ret;
 							continue;
 						}
 					}
@@ -1848,11 +1843,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 					break;
 				}
 
-				default: // MP_STATION
-					if (flags & DC_EXEC) YapfNotifyTrackLayoutChange(tile, GetRailStationTrack(tile));
-
-					cost.AddCost(RailConvertCost(type, totype));
-					break;
+				default: NOT_REACHED();
 			}
 
 			for (uint i = 0; i < vehicles_affected.Length(); ++i) {
@@ -1871,7 +1862,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 	}
 
 	delete iter;
-	return (cost.GetCost() == 0) ? error : cost;
+	return (cost.GetCost() == 0) ? err : cost;
 }
 
 static CommandCost RemoveTrainDepot(TileIndex tile, Tile *rail_tile, DoCommandFlag flags, bool *tile_deleted)
@@ -2400,7 +2391,10 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 	_drawtile_track_palette = COMPANY_SPRITE_COLOUR(GetTileOwner(ti->tptr));
 
-	if (IsPlainRail(ti->tptr)) {
+	if (IsRailStationTile(ti->tile)) {
+		/* Due to NewGRF complexities, drawing rail for stations is handled purely by the station code. */
+		return;
+	} else if (IsPlainRail(ti->tptr)) {
 		TrackBits rails = GetTrackBits(ti->tptr);
 		if (IsValidCorner(halftile_corner)) {
 			rails &= draw_halftile ? CornerToTrackBits(halftile_corner) : ~CornerToTrackBits(halftile_corner);

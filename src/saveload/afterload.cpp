@@ -55,6 +55,7 @@
 #include "../order_backup.h"
 #include "../error.h"
 #include "../disaster_vehicle.h"
+#include "../newgrf_station.h"
 
 
 #include "saveload_internal.h"
@@ -346,8 +347,6 @@ static void DecomposeTile(TileIndex tile)
 		}
 
 		case MP_STATION: {
-			if (!IsBuoy(_m.ToTile(tile)) && !IsDock(_m.ToTile(tile)) && !IsOilRig(_m.ToTile(tile)) && !IsAirport(_m.ToTile(tile)) && !IsRoadStop(_m.ToTile(tile))) break;
-
 			Tile *new_tile = _m.NewTile(tile, MP_STATION, true);
 
 			/* Copy old tile to the new tile. */
@@ -398,6 +397,22 @@ static void DecomposeTile(TileIndex tile)
 				RoadTypes rts = GetRoadTypes(new_tile);
 				FOR_EACH_SET_ROADTYPE(rt, rts) {
 					MakeRoadNormal(tile, bits, rt, town, rt == ROADTYPE_TRAM ? owner_tram : owner_road);
+				}
+			} else if (HasStationRail(new_tile)) {
+				/* Get rail bits from station type, checked for blocked stations. */
+				TrackBits bits = TRACK_BIT_NONE;
+				const StationSpec *statspec = GetStationSpec(new_tile);
+				if (statspec == NULL || !HasBit(statspec->blocked, GetStationGfx(new_tile))) {
+					bits = AxisToTrackBits(GetRailStationAxis(new_tile));
+				}
+
+				if (bits != TRACK_BIT_NONE) {
+					bool reserved = HasBit(new_tile->m6, 2);
+
+					Owner o = GetTileOwner(new_tile);
+					RailType rt = GetRailType(new_tile);
+					Tile *rail = MakeRailNormal(_m.NewTile(tile, MP_RAILWAY, false, new_tile - 1), o, bits, rt);
+					if (reserved) SetTrackReservation(rail, bits);
 				}
 			}
 			break;
@@ -2130,7 +2145,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_STATION: // Clear PBS reservation on station
-					if (HasStationRail(_m.ToTile(t))) SetRailStationReservation(t, false);
+					if (HasStationRail(_m.ToTile(t))) SB(_m[t].m6, 2, 1, 0);
 					break;
 
 				case MP_TUNNELBRIDGE: // Clear PBS reservation on tunnels/bridges
@@ -2139,14 +2154,6 @@ bool AfterLoadGame()
 
 				default: break;
 			}
-		}
-	}
-
-	/* Reserve all tracks trains are currently on. */
-	if (IsSavegameVersionBefore(101)) {
-		const Train *t;
-		FOR_ALL_TRAINS(t) {
-			if (t->First() == t) t->ReserveTrackUnderConsist();
 		}
 	}
 
@@ -3076,7 +3083,7 @@ bool AfterLoadGame()
 		 * other places to assert upon e.g. station reconstruction. */
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (HasStationTileRail(t) && IsStationTileBlocked(t)) {
-				SetRailStationReservation(t, false);
+				SB(_m[t].m6, 2, 1, 0);
 			}
 		}
 	}
@@ -3196,6 +3203,14 @@ bool AfterLoadGame()
 	/* Decompose all tiles into their base tile components. */
 	for (TileIndex t = 0; t < map_size; t++) {
 		DecomposeTile(t);
+	}
+
+	/* Reserve all tracks trains are currently on. */
+	if (IsSavegameVersionBefore(101)) {
+		const Train *t;
+		FOR_ALL_TRAINS(t) {
+			if (t->First() == t) t->ReserveTrackUnderConsist();
+		}
 	}
 
 	/* Station acceptance is some kind of cache */

@@ -353,16 +353,6 @@ static SigFlags ExploreSegment(Owner owner)
 				continue; // continue the while() loop
 			}
 
-			case MP_STATION:
-				if (!HasStationRail(rail_tile)) continue;
-				if (GetTileOwner(rail_tile) != owner) continue;
-				if (DiagDirToAxis(enterdir) != GetRailStationAxis(rail_tile)) continue; // different axis
-				if (IsStationTileBlocked(tile)) continue; // 'eye-candy' station tile
-
-				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, NULL, &TrainOnTileEnum)) flags |= SF_TRAIN;
-				tile += TileOffsByDiagDir(exitdir);
-				break;
-
 			case MP_TUNNELBRIDGE: {
 				if (GetTileOwner(tile) != owner) continue;
 				if (GetTunnelBridgeTransportType(tile) != TRANSPORT_RAIL) continue;
@@ -500,9 +490,7 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 					_tbdset.Add(tile, INVALID_DIAGDIR, tptr); // start from depot inside
 					break;
 				}
-				FALLTHROUGH;
 
-			case MP_STATION:
 				if ((TrackStatusToTrackBits(GetTileTrackStatus(tile, TRANSPORT_RAIL, 0)) & _enterdir_to_trackbits[dir]) != TRACK_BIT_NONE) {
 					/* only add to set when there is some 'interesting' track */
 					_tbdset.Add(tile, dir, tptr);

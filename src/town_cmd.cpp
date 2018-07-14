@@ -1342,14 +1342,14 @@ static bool CanFollowRoad(TileIndex tile, DiagDirection dir)
 	RoadBits target_rb = GetTownRoadBits(target_tile);
 	if (_settings_game.economy.allow_town_roads || _generating_world) {
 		/* Check whether a road connection exists or can be build. */
+		if (HasTileByType(target_tile, MP_STATION)) {
+			return IsDriveThroughStopTile(target_tile);
+		}
 		if (HasTileByType(target_tile, MP_ROAD)) {
 			return target_rb != ROAD_NONE;
 		}
 
 		switch (GetTileType(target_tile)) {
-			case MP_STATION:
-				return IsDriveThroughStopTile(target_tile);
-
 			case MP_TUNNELBRIDGE:
 				return GetTunnelBridgeTransportType(target_tile) == TRANSPORT_ROAD;
 

@@ -25,6 +25,7 @@
 #include "tunnelbridge_map.h"
 #include "newgrf_animation_base.h"
 #include "newgrf_class_func.h"
+#include "pbs.h"
 
 #include "safeguards.h"
 
@@ -315,9 +316,9 @@ TownScopeResolver *StationResolverObject::GetTown()
 			if (!HasBit(_svc.valid, 1)) { _svc.v41 = GetPlatformInfoHelper(this->tile, true,  false, false); SetBit(_svc.valid, 1); }
 			return _svc.v41;
 
-		case 0x42: return GetTerrainType(this->tile) | (GetReverseRailTypeTranslation(GetRailType(this->tile), this->statspec->grf_prop.grffile) << 8);
+		case 0x42: return GetTerrainType(this->tile) | (GetReverseRailTypeTranslation(GetRailType(GetTileByType(this->tile, MP_RAILWAY)), this->statspec->grf_prop.grffile) << 8);
 		case 0x43: return GetCompanyInfo(this->st->owner); // Station owner
-		case 0x44: return HasStationReservation(this->tile) ? 7 : 4; // PBS status
+		case 0x44: return GetReservedTrackbits(this->tile) != TRACK_BIT_NONE ? 7 : 4; // PBS status
 		case 0x45:
 			if (!HasBit(_svc.valid, 2)) { _svc.v45 = GetRailContinuationInfo(this->tile); SetBit(_svc.valid, 2); }
 			return _svc.v45;
