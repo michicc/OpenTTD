@@ -50,6 +50,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 	byte production_rate[INDUSTRY_NUM_OUTPUTS];            ///< production rate for each cargo
 	byte prod_level;                                       ///< general production level
 	CargoID accepts_cargo[INDUSTRY_NUM_INPUTS];            ///< 16 input cargo slots
+	CargoTypes produced_accepted_mask;                     ///< Bit mask of all cargoes that are always accepted and also produced.
 	uint16 this_month_production[INDUSTRY_NUM_OUTPUTS];    ///< stats of this month's production per cargo
 	uint16 this_month_transported[INDUSTRY_NUM_OUTPUTS];   ///< stats of this month's transport per cargo
 	byte last_month_pct_transported[INDUSTRY_NUM_OUTPUTS]; ///< percentage transported per cargo in the last full month
@@ -184,6 +185,8 @@ void PlantRandomFarmField(const Industry *i);
 void ReleaseDisastersTargetingIndustry(IndustryID);
 
 bool IsTileForestIndustry(TileIndex tile);
+
+void UpdateIndustryAcceptance(Industry *ind);
 
 #define FOR_ALL_INDUSTRIES_FROM(var, start) FOR_ALL_ITEMS_FROM(Industry, industry_index, var, start)
 #define FOR_ALL_INDUSTRIES(var) FOR_ALL_INDUSTRIES_FROM(var, 0)

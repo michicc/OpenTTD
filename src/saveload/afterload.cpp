@@ -3186,6 +3186,12 @@ bool AfterLoadGame()
 		FOR_ALL_STATIONS(st) UpdateStationAcceptance(st, false);
 	}
 
+	/* Update cargo acceptance of industries. */
+	if (IsSavegameVersionBefore(SLV_YACD)) {
+		Industry *ind;
+		FOR_ALL_INDUSTRIES(ind) UpdateIndustryAcceptance(ind);
+	}
+
 	/* Road stops is 'only' updating some caches */
 	AfterLoadRoadStops();
 	AfterLoadLabelMaps();

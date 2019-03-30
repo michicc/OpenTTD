@@ -1675,6 +1675,28 @@ static void PopulateStationsNearby(Industry *ind)
 	}
 }
 
+/** Update the mask of always accepted cargoes that are also produced. */
+void UpdateIndustryAcceptance(Industry *ind)
+{
+	CargoArray accepted;
+	CargoTypes always_accepted = 0;
+
+	/* Gather always accepted cargoes for all tiles of this industry. */
+	TILE_AREA_LOOP(tile, ind->location) {
+		if (IsTileType(tile, MP_INDUSTRY) && GetIndustryIndex(tile) == ind->index) {
+			AddAcceptedCargo_Industry(tile, accepted, &always_accepted);
+		}
+	}
+
+	/* Create mask of produced cargoes. */
+	CargoTypes produced = 0;
+	for (uint i = 0; i < lengthof(ind->produced_cargo); i++) {
+		if (ind->produced_cargo[i] != CT_INVALID) SetBit(produced, ind->produced_cargo[i]);
+	}
+
+	ind->produced_accepted_mask = always_accepted & produced;
+}
+
 /**
  * Put an industry on the map.
  * @param i       Just allocated poolitem, mostly empty.
@@ -1854,6 +1876,7 @@ static void DoCreateNewIndustry(Industry *i, TileIndex tile, IndustryType type, 
 	if (GetIndustrySpec(i->type)->behaviour & INDUSTRYBEH_PLANT_ON_BUILT) {
 		for (uint j = 0; j != 50; j++) PlantRandomFarmField(i);
 	}
+	UpdateIndustryAcceptance(i);
 	InvalidateWindowData(WC_INDUSTRY_DIRECTORY, 0, 0);
 
 	if (!_generating_world) PopulateStationsNearby(i);
@@ -2795,6 +2818,7 @@ void IndustryMonthlyLoop()
 	Industry *i;
 	FOR_ALL_INDUSTRIES(i) {
 		UpdateIndustryStatistics(i);
+		UpdateIndustryAcceptance(i);
 		if (i->prod_level == PRODLEVEL_CLOSURE) {
 			delete i;
 		} else {
