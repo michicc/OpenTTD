@@ -3189,7 +3189,12 @@ bool AfterLoadGame()
 	/* Update cargo acceptance of industries. */
 	if (IsSavegameVersionBefore(SLV_YACD)) {
 		Industry *ind;
-		FOR_ALL_INDUSTRIES(ind) UpdateIndustryAcceptance(ind);
+		FOR_ALL_INDUSTRIES(ind) {
+			UpdateIndustryAcceptance(ind);
+			for (byte j = 0; j < lengthof(ind->average_production); j++) {
+				ind->accepts_cargo[j] = ind->last_month_production[j];
+			}
+		}
 	}
 
 	/* Road stops is 'only' updating some caches */
