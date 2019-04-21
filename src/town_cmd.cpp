@@ -2695,6 +2695,8 @@ CommandCost CmdRenameTown(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32
 
 		t->UpdateVirtCoord();
 		InvalidateWindowData(WC_TOWN_DIRECTORY, 0, 1);
+		InvalidateWindowClassesData(WC_TOWN_VIEW, -2); // Resort destination list.
+		InvalidateWindowClassesData(WC_INDUSTRY_VIEW, -2); // Resort destination list.
 		UpdateAllStationVirtCoords();
 	}
 	return CommandCost();

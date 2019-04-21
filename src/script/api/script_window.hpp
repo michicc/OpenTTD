@@ -1510,6 +1510,8 @@ public:
 		WID_IV_CAPTION                               = ::WID_IV_CAPTION,                               ///< Caption of the window.
 		WID_IV_VIEWPORT                              = ::WID_IV_VIEWPORT,                              ///< Viewport of the industry.
 		WID_IV_INFO                                  = ::WID_IV_INFO,                                  ///< Info of the industry.
+		WID_IV_DESTS                                 = ::WID_IV_DESTS,                                 ///< List of cargo destinations for the industry.
+		WID_IV_DESTS_SCROLL                          = ::WID_IV_DESTS_SCROLL,                          ///< Scrollbar for the list of cargo destinations.
 		WID_IV_GOTO                                  = ::WID_IV_GOTO,                                  ///< Goto button.
 		WID_IV_DISPLAY                               = ::WID_IV_DISPLAY,                               ///< Display chain button.
 	};
@@ -2506,6 +2508,8 @@ public:
 		WID_TV_CAPTION                               = ::WID_TV_CAPTION,                               ///< Caption of window.
 		WID_TV_VIEWPORT                              = ::WID_TV_VIEWPORT,                              ///< View of the center of the town.
 		WID_TV_INFO                                  = ::WID_TV_INFO,                                  ///< General information about the town.
+		WID_TV_DESTS                                 = ::WID_TV_DESTS,                                 ///< List of cargo destinations for the town.
+		WID_TV_DESTS_SCROLL                          = ::WID_TV_DESTS_SCROLL,                          ///< Scrollbar for the list of cargo destinations.
 		WID_TV_CENTER_VIEW                           = ::WID_TV_CENTER_VIEW,                           ///< Center the main view on this town.
 		WID_TV_SHOW_AUTHORITY                        = ::WID_TV_SHOW_AUTHORITY,                        ///< Show the town authority window.
 		WID_TV_CHANGE_NAME                           = ::WID_TV_CHANGE_NAME,                           ///< Change the name of this town.

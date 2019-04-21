@@ -453,6 +453,9 @@
     <ClInclude Include="..\src\cargodest_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\cargodest_gui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\cargomonitor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -1345,6 +1348,9 @@
       <Filter>GUI Source Code</Filter>
     </ClCompile>
     <ClCompile Include="..\src\build_vehicle_gui.cpp">
+      <Filter>GUI Source Code</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\cargodest_gui.cpp">
       <Filter>GUI Source Code</Filter>
     </ClCompile>
     <ClCompile Include="..\src\cheat_gui.cpp">
