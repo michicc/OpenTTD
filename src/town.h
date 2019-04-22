@@ -20,6 +20,7 @@
 #include "tilematrix_type.hpp"
 #include "cargodest_base.h"
 #include <list>
+#include <functional>
 
 template <typename T>
 struct BuildingCounts {
@@ -151,7 +152,7 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		return Town::Get(GetTownIndex(tile));
 	}
 
-	static Town *GetRandom();
+	static Town *GetRandom(std::function<bool(const Town *)> enum_proc = nullptr);
 	static void PostDestructor(size_t index);
 };
 

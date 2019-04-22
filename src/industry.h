@@ -20,6 +20,7 @@
 #include "tilearea_type.h"
 #include "station_base.h"
 #include "cargodest_base.h"
+#include <functional>
 
 
 typedef Pool<Industry, IndustryID, 64, 64000> IndustryPool;
@@ -135,7 +136,7 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 		return Industry::Get(GetIndustryIndex(tile));
 	}
 
-	static Industry *GetRandom();
+	static Industry *GetRandom(std::function<bool(const Industry *)> enum_proc = nullptr);
 	static void PostDestructor(size_t index);
 
 	/**

@@ -183,16 +183,27 @@ void Town::InitializeLayout(TownLayout layout)
 
 /**
  * Return a random valid town.
+ * @param enum_proc Callback function. Return true for a matching town and false to continue iterating.
  * @return random town, nullptr if there are no towns
  */
-/* static */ Town *Town::GetRandom()
+/* static */ Town *Town::GetRandom(std::function<bool(const Town *)> enum_proc)
 {
-	if (Town::GetNumItems() == 0) return nullptr;
-	int num = RandomRange((uint16)Town::GetNumItems());
+	uint16 max_num = 0;
+	if (enum_proc) {
+		/* A callback was given, count all matching towns. */
+		Town *t;
+		FOR_ALL_TOWNS(t) {
+			if (enum_proc(t)) max_num++;
+		}
+	} else {
+		max_num = (uint16)Town::GetNumItems();
+	}
+	if (max_num == 0) return nullptr;
+
+	int num = RandomRange(max_num);
 	size_t index = MAX_UVALUE(size_t);
 
 	while (num >= 0) {
-		num--;
 		index++;
 
 		/* Make sure we have a valid town */
@@ -200,6 +211,8 @@ void Town::InitializeLayout(TownLayout layout)
 			index++;
 			assert(index < Town::GetPoolSize());
 		}
+
+		if (!enum_proc || enum_proc(Town::Get(index))) num--;
 	}
 
 	return Town::Get(index);

@@ -199,16 +199,27 @@ void Industry::PostDestructor(size_t index)
 
 /**
  * Return a random valid industry.
+ * @param enum_proc Callback function. Return true for a matching industry and false to continue iterating.
  * @return random industry, nullptr if there are no industries
  */
-/* static */ Industry *Industry::GetRandom()
+/* static */ Industry *Industry::GetRandom(std::function<bool(const Industry *)> enum_proc)
 {
-	if (Industry::GetNumItems() == 0) return nullptr;
-	int num = RandomRange((uint16)Industry::GetNumItems());
+	uint16 max_num = 0;
+	if (enum_proc) {
+		/* A callback was given, count all matching industries. */
+		Industry *ind;
+		FOR_ALL_INDUSTRIES(ind) {
+			if (enum_proc(ind)) max_num++;
+		}
+	} else {
+		max_num = (uint16)Industry::GetNumItems();
+	}
+	if (max_num == 0) return nullptr;
+
+	int num = RandomRange(max_num);
 	size_t index = MAX_UVALUE(size_t);
 
 	while (num >= 0) {
-		num--;
 		index++;
 
 		/* Make sure we have a valid industry */
@@ -216,6 +227,8 @@ void Industry::PostDestructor(size_t index)
 			index++;
 			assert(index < Industry::GetPoolSize());
 		}
+
+		if (!enum_proc || enum_proc(Industry::Get(index))) num--;
 	}
 
 	return Industry::Get(index);
