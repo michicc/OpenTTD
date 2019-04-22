@@ -99,6 +99,17 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 		return this->location.tile;
 	}
 
+	bool AcceptsCargo(CargoID cid) const override
+	{
+		if (HasBit(this->produced_accepted_mask, cid)) return true;
+		return GetCargoAcceptedIndex(cid) >= 0;
+	}
+
+	bool SuppliesCargo(CargoID cid) const override
+	{
+		return GetCargoProducedIndex(cid) >= 0;
+	}
+
 	/**
 	 * Check if a given tile belongs to this industry.
 	 * @param tile The tile to check.

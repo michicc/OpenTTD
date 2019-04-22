@@ -57,6 +57,11 @@ struct CargoSourceSink {
 	/** Get the base map coordinate of this entity. */
 	virtual TileIndex GetXY() const = 0;
 
+	/** Is this cargo accepted? */
+	virtual bool AcceptsCargo(CargoID cid) const = 0;
+	/** Is this cargo produced? */
+	virtual bool SuppliesCargo(CargoID cid) const = 0;
+
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
 

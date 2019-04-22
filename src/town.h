@@ -131,6 +131,16 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		return this->xy;
 	}
 
+	bool AcceptsCargo(CargoID cid) const override
+	{
+		return HasBit(this->cargo_accepted_total, cid);
+	}
+
+	bool SuppliesCargo(CargoID cid) const override
+	{
+		return HasBit(this->cargo_produced, cid);
+	}
+
 	/**
 	 * Calculate the max town noise.
 	 * The value is counted using the population divided by the content of the
