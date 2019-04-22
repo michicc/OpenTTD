@@ -56,7 +56,7 @@ const SaveLoad *GetLinkGraphJobDesc()
 
 	/* Build the SaveLoad array on first call and don't touch it later on */
 	if (saveloads.size() == 0) {
-		size_t offset_gamesettings = cpp_offsetof(GameSettings, linkgraph);
+		size_t offset_gamesettings = cpp_offsetof(GameSettings, cargo);
 		size_t offset_component = cpp_offsetof(LinkGraphJob, settings);
 
 		size_t prefixlen = strlen(prefix);

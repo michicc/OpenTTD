@@ -1375,6 +1375,11 @@ static bool UpdateClientConfigValues(int32 p1)
 	return true;
 }
 
+static bool EnableDistributionString(int32 val)
+{
+	return val != DT_SYMMETRIC;
+}
+
 /* End - Callback Functions */
 
 /**

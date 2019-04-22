@@ -146,10 +146,10 @@ LinkGraphSchedule::~LinkGraphSchedule()
 void OnTick_LinkGraph()
 {
 	if (_date_fract != LinkGraphSchedule::SPAWN_JOIN_TICK) return;
-	Date offset = _date % _settings_game.linkgraph.recalc_interval;
+	Date offset = _date % _settings_game.cargo.linkgraph.recalc_interval;
 	if (offset == 0) {
 		LinkGraphSchedule::instance.SpawnNext();
-	} else if (offset == _settings_game.linkgraph.recalc_interval / 2) {
+	} else if (offset == _settings_game.cargo.linkgraph.recalc_interval / 2) {
 		PerformanceMeasurer framerate(PFE_GL_LINKGRAPH);
 		LinkGraphSchedule::instance.JoinNext();
 	}

@@ -1733,18 +1733,22 @@ static SettingsContainer &GetSettingsTree()
 				industries->Add(new SettingEntry("station.serve_neutral_industries"));
 			}
 
-			SettingsPage *cdist = environment->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST));
+			SettingsPage *cargo = environment->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST));
 			{
-				cdist->Add(new SettingEntry("linkgraph.recalc_time"));
-				cdist->Add(new SettingEntry("linkgraph.recalc_interval"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_pax"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_mail"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_armoured"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_default"));
-				cdist->Add(new SettingEntry("linkgraph.accuracy"));
-				cdist->Add(new SettingEntry("linkgraph.demand_distance"));
-				cdist->Add(new SettingEntry("linkgraph.demand_size"));
-				cdist->Add(new SettingEntry("linkgraph.short_path_saturation"));
+				cargo->Add(new SettingEntry("cargo.distribution_pax"));
+				cargo->Add(new SettingEntry("cargo.distribution_mail"));
+				cargo->Add(new SettingEntry("cargo.distribution_armoured"));
+				cargo->Add(new SettingEntry("cargo.distribution_default"));
+
+				SettingsPage *cdist = cargo->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_LINKGRAPH));
+				{
+					cdist->Add(new SettingEntry("cargo.linkgraph.recalc_time"));
+					cdist->Add(new SettingEntry("cargo.linkgraph.recalc_interval"));
+					cdist->Add(new SettingEntry("cargo.linkgraph.accuracy"));
+					cdist->Add(new SettingEntry("cargo.linkgraph.demand_distance"));
+					cdist->Add(new SettingEntry("cargo.linkgraph.demand_size"));
+					cdist->Add(new SettingEntry("cargo.linkgraph.short_path_saturation"));
+				}
 			}
 
 			environment->Add(new SettingEntry("station.modified_catchment"));
@@ -2115,7 +2119,8 @@ struct GameSettingsWindow : Window {
 
 					DropDownList list;
 					for (int i = sdb->min; i <= (int)sdb->max; i++) {
-						list.emplace_back(new DropDownListStringItem(sdb->str_val + i - sdb->min, i, false));
+						bool masked = sdb->proc_disp != nullptr ? !sdb->proc_disp(i) : false;
+						list.emplace_back(new DropDownListStringItem(sdb->str_val + i - sdb->min, i, masked));
 					}
 
 					ShowDropDownListAt(this, std::move(list), value, -1, wi_rect, COLOUR_ORANGE, true);

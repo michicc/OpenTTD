@@ -85,7 +85,8 @@ enum SettingType {
 	ST_ALL,       ///< Used in setting filter to match all types.
 };
 
-typedef bool OnChange(int32 var);           ///< callback prototype on data modification
+typedef bool OnChange(int32 var);            ///< callback prototype on data modification
+typedef bool OnDisplay(int32 var);           ///< callback prototype on data modification
 typedef size_t OnConvert(const char *value); ///< callback prototype for conversion error
 
 /** Properties of config file settings. */
@@ -103,6 +104,7 @@ struct SettingDescBase {
 	StringID str_val;       ///< (Translated) first string describing the value.
 	OnChange *proc;         ///< callback procedure for when the value is changed
 	OnConvert *proc_cnvt;   ///< callback procedure when loading value mechanism fails
+	OnDisplay *proc_disp;   ///< callback procedure to get a string to display (only used for multistrings).
 	SettingCategory cat;    ///< assigned categories of the setting
 };
 

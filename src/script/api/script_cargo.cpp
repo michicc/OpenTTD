@@ -71,5 +71,5 @@
 /* static */ ScriptCargo::DistributionType ScriptCargo::GetDistributionType(CargoID cargo_type)
 {
 	if (!ScriptCargo::IsValidCargo(cargo_type)) return INVALID_DISTRIBUTION_TYPE;
-	return (ScriptCargo::DistributionType)_settings_game.linkgraph.GetDistributionType(cargo_type);
+	return (ScriptCargo::DistributionType)_settings_game.cargo.GetDistributionType(cargo_type);
 }
