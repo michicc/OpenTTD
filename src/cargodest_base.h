@@ -48,6 +48,9 @@ struct CargoSourceSink {
 	/** NOSAVE: Sum of the destination weights for each cargo type. */
 	uint cargo_links_weight[NUM_CARGO];
 
+	/** NOSAVE: Desired link count for each cargo. */
+	uint16 num_links_expected[NUM_CARGO];
+
 	virtual ~CargoSourceSink();
 
 	/** Get the type of this entity. */
@@ -62,8 +65,17 @@ struct CargoSourceSink {
 	/** Is this cargo produced? */
 	virtual bool SuppliesCargo(CargoID cid) const = 0;
 
+	/** Is there a link to the given destination for a cargo? */
+	bool HasLinkTo(CargoID cid, const CargoSourceSink *dest) const
+	{
+		return std::find(this->cargo_links[cid].begin(), this->cargo_links[cid].end(), dest) != this->cargo_links[cid].end();
+	}
+
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
+
+	/** Create the special cargo links for a cargo if not already present. */
+	virtual void CreateSpecialLinks(CargoID cid);
 
 	void SaveCargoSourceSink();
 	void LoadCargoSourceSink();

@@ -455,6 +455,7 @@
     <ClInclude Include="..\src\cargo_type.h" />
     <ClInclude Include="..\src\cargoaction.h" />
     <ClInclude Include="..\src\cargodest_base.h" />
+    <ClInclude Include="..\src\cargodest_func.h" />
     <ClInclude Include="..\src\cargodest_gui.h" />
     <ClInclude Include="..\src\cargomonitor.h" />
     <ClInclude Include="..\src\cargopacket.h" />

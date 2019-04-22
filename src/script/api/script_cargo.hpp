@@ -68,6 +68,7 @@ public:
 		DT_MANUAL = ::DT_MANUAL,         ///< Manual distribution.
 		DT_ASYMMETRIC = ::DT_ASYMMETRIC, ///< Asymmetric distribution. Usually cargo will only travel in one direction.
 		DT_SYMMETRIC = ::DT_SYMMETRIC,   ///< Symmetric distribution. The same amount of cargo travels in each direction between each pair of nodes.
+		DT_FIXED = ::DT_FIXED,           ///< Fixed destinations. Cargo will only travel to pre-determined destinations.
 		INVALID_DISTRIBUTION_TYPE = 0xFFFF, ///< Invalid distribution type.
 	};
 

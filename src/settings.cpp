@@ -64,6 +64,8 @@
 #include "roadveh.h"
 #include "fios.h"
 #include "strings_func.h"
+#include "industry.h"
+#include "cargodest_func.h"
 
 #include "void_map.h"
 #include "station_base.h"
@@ -1341,6 +1343,28 @@ static bool InvalidateShipPathCache(int32 p1)
 	FOR_ALL_SHIPS(s) {
 		s->path.clear();
 	}
+	return true;
+}
+
+static bool CargodestModeChanged(int32 p1)
+{
+	/* Clear all links for cargoes that aren't routed anymore. */
+	CargoSourceSink *css;
+	FOR_ALL_TOWNS(css) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			if (_settings_game.cargo.GetDistributionType(cid) != DT_FIXED) css->cargo_links[cid].clear();
+		}
+	}
+
+	FOR_ALL_INDUSTRIES(css)	{
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			if (_settings_game.cargo.GetDistributionType(cid) != DT_FIXED) css->cargo_links[cid].clear();
+		}
+	}
+
+	/* Update remaining links. */
+	UpdateCargoLinks();
+
 	return true;
 }
 

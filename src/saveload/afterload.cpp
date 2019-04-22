@@ -57,6 +57,7 @@
 #include "../error.h"
 #include "../disaster_vehicle.h"
 #include "../ship.h"
+#include "../cargodest_func.h"
 
 
 #include "saveload_internal.h"
@@ -3195,6 +3196,8 @@ bool AfterLoadGame()
 				ind->accepts_cargo[j] = ind->last_month_production[j];
 			}
 		}
+
+		UpdateCargoLinks();
 	}
 
 	/* Road stops is 'only' updating some caches */

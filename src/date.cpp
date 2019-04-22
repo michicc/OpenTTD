@@ -20,6 +20,7 @@
 #include "rail_gui.h"
 #include "linkgraph/linkgraph.h"
 #include "saveload/saveload.h"
+#include "cargodest_func.h"
 
 #include "safeguards.h"
 
@@ -240,6 +241,7 @@ static void OnNewMonth()
 	IndustryMonthlyLoop();
 	SubsidyMonthlyLoop();
 	StationMonthlyLoop();
+	UpdateCargoLinks();
 	if (_network_server) NetworkServerMonthlyLoop();
 }
 

@@ -141,6 +141,8 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		return HasBit(this->cargo_produced, cid);
 	}
 
+	void CreateSpecialLinks(CargoID cid) override;
+
 	/**
 	 * Calculate the max town noise.
 	 * The value is counted using the population divided by the content of the

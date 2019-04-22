@@ -35,6 +35,7 @@
 #include "game/game_instance.hpp"
 #include "string_func.h"
 #include "thread.h"
+#include "cargodest_func.h"
 
 #include "safeguards.h"
 
@@ -145,6 +146,7 @@ static void _GenerateWorld()
 				GenerateIndustries();
 				GenerateObjects();
 				GenerateTrees();
+				UpdateCargoLinks();
 			}
 		}
 

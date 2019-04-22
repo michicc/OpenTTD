@@ -28,9 +28,10 @@ enum DistributionType : byte {
 	DT_ASYMMETRIC = 1,       ///< Asymmetric distribution. Usually cargo will only travel in one direction.
 	DT_MAX_NONSYMMETRIC = 1, ///< Maximum non-symmetric distribution.
 	DT_SYMMETRIC = 2,        ///< Symmetric distribution. The same amount of cargo travels in each direction between each pair of nodes.
-	DT_MAX = 2,
-	DT_NUM = 3,
-	DT_END = 3
+	DT_FIXED = 3,            ///< Fixed destinations. Cargo will only travel to pre-determined destinations.
+	DT_MAX = 3,
+	DT_NUM = 4,
+	DT_END = 4
 };
 
 /* It needs to be 8bits, because we save and load it as such
