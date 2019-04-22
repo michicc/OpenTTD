@@ -228,6 +228,30 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 	}
 }
 
+/** Remove invalid links from a cargo source/sink. */
+static void RemoveInvalidLinks(CargoSourceSink *css)
+{
+	for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+		/* Remove outgoing links if cargo isn't supplied anymore. */
+		if (!css->SuppliesCargo(cid)) {
+			for (auto &l : css->cargo_links[cid]) {
+				if (l.dest != nullptr) l.dest->num_incoming_links[cid]--;
+			}
+			css->cargo_links[cid].clear();
+			css->cargo_links_weight[cid] = 0;
+		}
+
+		/* Remove outgoing links if the dest doesn't accept the cargo anymore. */
+		css->cargo_links[cid].erase(std::remove_if(css->cargo_links[cid].begin(), css->cargo_links[cid].end(), [=](const CargoLink & l) {
+				if (l.dest != nullptr && !l.dest->AcceptsCargo(cid)) {
+					l.dest->num_incoming_links[cid]--;
+					return true;
+				}
+				return false;
+			}), css->cargo_links[cid].end());
+	}
+}
+
 /** Updated the desired link count for each cargo. */
 static void UpdateExpectedLinks(Town *t)
 {
@@ -311,6 +335,10 @@ void UpdateCargoLinks()
 
 	Town *t;
 	Industry *ind;
+
+	/* Remove links that have become invalid. */
+	FOR_ALL_TOWNS(t) RemoveInvalidLinks(t);
+	FOR_ALL_INDUSTRIES(ind) RemoveInvalidLinks(ind);
 
 	/* Recalculate the number of expected links. */
 	FOR_ALL_TOWNS(t) UpdateExpectedLinks(t);
