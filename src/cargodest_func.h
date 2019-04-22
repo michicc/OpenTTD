@@ -13,5 +13,6 @@
 #define CARGODEST_FUNC_H
 
 void UpdateCargoLinks();
+void RebuildCargoLinkCounts();
 
 #endif /* CARGODEST_FUNC_H */

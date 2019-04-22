@@ -1363,6 +1363,7 @@ static bool CargodestModeChanged(int32 p1)
 	}
 
 	/* Update remaining links. */
+	RebuildCargoLinkCounts();
 	UpdateCargoLinks();
 
 	return true;
