@@ -110,6 +110,8 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 		return GetCargoProducedIndex(cid) >= 0;
 	}
 
+	uint GetDestinationWeight(CargoID cid, byte weight_mod) const override;
+
 	/**
 	 * Check if a given tile belongs to this industry.
 	 * @param tile The tile to check.

@@ -73,6 +73,9 @@ struct CargoSourceSink {
 		return std::find(this->cargo_links[cid].begin(), this->cargo_links[cid].end(), dest) != this->cargo_links[cid].end();
 	}
 
+	/** Get the link weight for this as a destination for a specific cargo. */
+	virtual uint GetDestinationWeight(CargoID cid, byte weight_mod) const = 0;
+
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
 

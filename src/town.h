@@ -142,6 +142,7 @@ struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	}
 
 	void CreateSpecialLinks(CargoID cid) override;
+	uint GetDestinationWeight(CargoID cid, byte weight_mod) const override;
 
 	/**
 	 * Calculate the max town noise.
