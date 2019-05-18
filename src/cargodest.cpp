@@ -25,6 +25,7 @@ static const byte LWM_TONY_BIG    = 3; ///< Weight modifier for big towns.
 static const byte LWM_TONY_CITY   = 4; ///< Weight modifier for cities.
 static const byte LWM_TONY_NEARBY = 5; ///< Weight modifier for nearby towns.
 static const byte LWM_INTOWN      = 8; ///< Weight modifier for in-town links.
+static const byte LWM_IND_ANY     = 2; ///< Default weight modifier for industries.
 
 static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
 
@@ -228,6 +229,37 @@ static CargoSourceSink *FindIndustryDestination(CargoSourceSink *source, CargoID
 		});
 }
 
+/** Find a supply for a cargo type. */
+static CargoSourceSink *FindSupplySource(Industry *dest, CargoID cid)
+{
+	CargoSourceSink *source = nullptr;
+
+	/* Search for industries before towns. Try for a nearby
+	 * industry first, then for any industry. */
+	bool nearby = true;
+	for (int i = 0; source == nullptr && i < 2; i++) {
+		source = Industry::GetRandom([=](const Industry * ind) {
+				if (ind->index == dest->index) return false;
+				if (!ind->SuppliesCargo(cid)) return false;
+
+				if (nearby && DistanceSquare(ind->GetXY(), dest->GetXY()) >= ScaleByMapSize1D(_settings_game.cargo.yacd.ind_nearby_dist)) return false;
+
+				return true;
+			});
+
+		nearby = false;
+	}
+
+	if (source == nullptr) {
+		/* Try a town. */
+		source = Town::GetRandom([=](const Town * t) {
+				return t->SuppliesCargo(cid);
+			});
+	}
+
+	return source;
+}
+
 /**
  * Remove the link with the lowest weight from a cargo source. The
  * reverse link is removed as well if the cargo has symmetric demand.
@@ -373,6 +405,37 @@ static void UpdateExpectedLinks(Industry *ind)
 	}
 }
 
+/** Make sure an industry has at least one incoming link for each accepted cargo. */
+void AddMissingIndustryLinks(Industry *ind)
+{
+	for (uint i = 0; i < lengthof(ind->accepts_cargo); i++) {
+		CargoID cid = ind->accepts_cargo[i];
+		if (!IsCargoIDValid(cid)) continue;
+
+		/* Do we already have at least one cargo source? */
+		if (ind->num_incoming_links[cid] > 0) continue;
+
+		CargoSourceSink *source = FindSupplySource(ind, cid);
+		if (source == NULL) continue; // Too bad...
+
+		if (source->cargo_links[cid].size() >= source->num_links_expected[cid] + MAX_EXTRA_LINKS) {
+			/* Increase the expected link count if adding another link would
+			 * exceed the count, as otherwise this (or another) link would
+			 * get removed right again. */
+			source->num_links_expected[cid]++;
+		}
+
+		source->cargo_links[cid].emplace_back(ind, LWM_IND_ANY);
+		ind->num_incoming_links[cid]++;
+
+		/* If this is a symmetric cargo and we produce it as well, create a back link. */
+		if (IsSymmetricCargo(cid) && ind->SuppliesCargo(cid) && source->AcceptsCargo(cid)) {
+			ind->cargo_links[cid].emplace_back(source, LWM_IND_ANY);
+			source->num_incoming_links[cid]++;
+		}
+	}
+}
+
 /** Update the demand links. */
 void UpdateCargoLinks(Town *t)
 {
@@ -447,6 +510,9 @@ void UpdateCargoLinks()
 	/* Recalculate the number of expected links. */
 	FOR_ALL_TOWNS(t) UpdateExpectedLinks(t);
 	FOR_ALL_INDUSTRIES(ind) UpdateExpectedLinks(ind);
+
+	/* Make sure each industry gets at at least some input cargo. */
+	FOR_ALL_INDUSTRIES(ind) AddMissingIndustryLinks(ind);
 
 	/* Update the demand link list. */
 	FOR_ALL_TOWNS(t) UpdateCargoLinks(t);
