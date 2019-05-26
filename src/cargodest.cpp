@@ -19,13 +19,15 @@
 #include <tuple>
 
 /* Possible link weight modifiers. */
-static const byte LWM_ANYWHERE    = 1; ///< Weight modifier for undetermined destinations.
-static const byte LWM_TONY_ANY    = 2; ///< Default weight modifier for towns.
-static const byte LWM_TONY_BIG    = 3; ///< Weight modifier for big towns.
-static const byte LWM_TONY_CITY   = 4; ///< Weight modifier for cities.
-static const byte LWM_TONY_NEARBY = 5; ///< Weight modifier for nearby towns.
-static const byte LWM_INTOWN      = 8; ///< Weight modifier for in-town links.
-static const byte LWM_IND_ANY     = 2; ///< Default weight modifier for industries.
+static const byte LWM_ANYWHERE      = 1; ///< Weight modifier for undetermined destinations.
+static const byte LWM_TONY_ANY      = 2; ///< Default weight modifier for towns.
+static const byte LWM_TONY_BIG      = 3; ///< Weight modifier for big towns.
+static const byte LWM_TONY_CITY     = 4; ///< Weight modifier for cities.
+static const byte LWM_TONY_NEARBY   = 5; ///< Weight modifier for nearby towns.
+static const byte LWM_INTOWN        = 8; ///< Weight modifier for in-town links.
+static const byte LWM_IND_ANY       = 2; ///< Default weight modifier for industries.
+static const byte LWM_IND_NEARBY    = 3; ///< Weight modifier for nearby industries.
+static const byte LWM_IND_PRODUCING = 4; ///< Weight modifier for producing industries.
 
 static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
 
@@ -36,6 +38,8 @@ static const uint CITY_TOWN_LINKS = 5; ///< Additional number of links for citie
 static const uint16 POP_SCALE_TOWN[] = { 200, 100, 1000, 180 };
 /** Link weight scale divisor for pax/non-pax cargoes for normal tows and big towns. */
 static const uint WEIGHT_SCALE_TOWN[] = { 20, 10, 80, 40 };
+/** Cargo amount scale for town and normal cargoes. */
+static const uint16 CARGO_SCALE_IND[] = { 250, 200 };
 
 /** Are cargo destinations for all cargo types disabled? */
 static bool AllCargoDestinationsDisabled()
@@ -217,16 +221,53 @@ static std::tuple<CargoSourceSink *, byte> FindTownDestination(CargoSourceSink *
 	return std::make_tuple(dest, dest_weight);
 }
 
-/** Find an industry as a destination. */
-static CargoSourceSink *FindIndustryDestination(CargoSourceSink *source, CargoID cid)
+/** Filter for selecting nearby towns. */
+static bool EnumNearbyIndustry(const CargoSourceSink *source, const Industry *ind)
 {
+	return DistanceSquare(ind->GetXY(), source->GetXY()) < ScaleByMapSize1D(_settings_game.cargo.yacd.ind_nearby_dist);
+}
+
+/** Enumerate industries that are producing cargo. */
+static bool EnumProducingIndustry(const CargoSourceSink *source, const Industry *ind)
+{
+	for (CargoID c : ind->produced_cargo) {
+		if (IsCargoIDValid(c)) return true;
+	}
+
+	return false;
+}
+
+/** Find an industry as a destination. */
+static std::tuple<CargoSourceSink *, byte> FindIndustryDestination(CargoSourceSink *source, CargoID cid)
+{
+	/* Enum functions for: nearby town, city, big town, and any town. */
+	typedef bool (*EnumProc)(const CargoSourceSink *, const Industry *);
+	static const EnumProc destclass_enum[] = {
+		&EnumNearbyIndustry, &EnumProducingIndustry, nullptr
+	};
+	static const byte destclass_weight[] = { LWM_IND_NEARBY, LWM_IND_PRODUCING, LWM_IND_ANY };
+	assert_compile(lengthof(destclass_enum) == lengthof(destclass_weight));
+
 	IndustryID self = source->GetType() == ST_INDUSTRY ? (IndustryID)source->GetID() : INVALID_INDUSTRY;
+	bool try_local = Chance16(8, 10);
 
-	return Industry::GetRandom([=](const Industry *ind) {
-			if (ind->index == self) return false;
+	/* Try each destination class in order until we find a match. */
+	Industry *dest = nullptr;
+	byte dest_weight = LWM_IND_ANY;
+	for (int i = try_local ? 0 : 1; dest == nullptr && i < lengthof(destclass_enum); i++) {
+		dest_weight = destclass_weight[i];
+		dest = Industry::GetRandom([=](const Industry * ind) {
+				if (ind->index == self) return false;
+				if (!EnumAnyDest(source, ind, cid, IsSymmetricCargo(cid))) return false;
 
-			return EnumAnyDest(source, ind, cid, IsSymmetricCargo(cid));
-		});
+				/* Apply filter. */
+				if (destclass_enum[i] != nullptr && !destclass_enum[i](source, ind)) return false;
+
+				return true;
+			});
+	}
+
+	return std::make_tuple(dest, dest_weight);
 }
 
 /** Find a supply for a cargo type. */
@@ -315,9 +356,9 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 		/* Chance for town first is chance_a/chance_b, otherwise try industry first. */
 		if (Chance16(chance_a, chance_b)) {
 			std::tie(dest, dest_weight) = FindTownDestination(source, cid, prefer_local);
-			if (dest == nullptr) dest = FindIndustryDestination(source, cid);
+			if (dest == nullptr) std::tie(dest, dest_weight) = FindIndustryDestination(source, cid);
 		} else {
-			dest = FindIndustryDestination(source, cid);
+			std::tie(dest, dest_weight) = FindIndustryDestination(source, cid);
 			if (dest == nullptr) std::tie(dest, dest_weight) = FindTownDestination(source, cid, prefer_local);
 		}
 
@@ -399,7 +440,10 @@ static void UpdateExpectedLinks(Industry *ind)
 		if (_settings_game.cargo.GetDistributionType(cid) == DT_FIXED) {
 			ind->CreateSpecialLinks(cid);
 
-			uint num_links = _settings_game.cargo.yacd.base_ind_links[IsTownCargo(cid) ? 0 : 1];
+			uint num_links = _settings_game.cargo.yacd.base_ind_links[IsTownCargo(cid) ? 0 : (IsSymmetricCargo(cid) ? 1 : 2)];
+			/* Add links based on the average industry production. */
+			num_links += ind->average_production[i] / CARGO_SCALE_IND[IsTownCargo(cid) ? 0 : 1];
+
 			ind->num_links_expected[cid] = ClampToU16(num_links + 1); // Account for the one special link.
 		}
 	}
