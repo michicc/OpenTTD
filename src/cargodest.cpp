@@ -17,6 +17,7 @@
 #include "window_func.h"
 #include <algorithm>
 #include <tuple>
+#include <numeric>
 
 /* Possible link weight modifiers. */
 static const byte LWM_ANYWHERE      = 1; ///< Weight modifier for undetermined destinations.
@@ -29,10 +30,11 @@ static const byte LWM_IND_ANY       = 2; ///< Default weight modifier for indust
 static const byte LWM_IND_NEARBY    = 3; ///< Weight modifier for nearby industries.
 static const byte LWM_IND_PRODUCING = 4; ///< Weight modifier for producing industries.
 
-static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
+static const uint LINK_MIN_WEIGHT   = 5; ///< Minimum link weight.
 
-static const uint MAX_EXTRA_LINKS = 2; ///< Number of extra links allowed.
-static const uint CITY_TOWN_LINKS = 5; ///< Additional number of links for cities.
+static const uint MAX_EXTRA_LINKS   = 2; ///< Number of extra links allowed.
+static const uint CITY_TOWN_LINKS   = 5; ///< Additional number of links for cities.
+static const uint MAX_IND_STOCKPILE = 2048; ///< Maximum stockpile to consider for industry link weight.
 
 /** Population/cargo amount scale divisor for pax/non-pax cargoes for normal tows and big towns. */
 static const uint16 POP_SCALE_TOWN[] = { 200, 100, 1000, 180 };
@@ -40,6 +42,8 @@ static const uint16 POP_SCALE_TOWN[] = { 200, 100, 1000, 180 };
 static const uint WEIGHT_SCALE_TOWN[] = { 20, 10, 80, 40 };
 /** Cargo amount scale for town and normal cargoes. */
 static const uint16 CARGO_SCALE_IND[] = { 250, 200 };
+/** Link weight scale divisor for produced and accepted cargo. */
+static const uint16 WEIGHT_SCALE_IND[] = { 25, 50 };
 
 /** Are cargo destinations for all cargo types disabled? */
 static bool AllCargoDestinationsDisabled()
@@ -153,7 +157,23 @@ uint Town::GetDestinationWeight(CargoID cid, byte weight_mod) const
 
 uint Industry::GetDestinationWeight(CargoID cid, byte weight_mod) const
 {
-	return weight_mod;
+	uint weight = LINK_MIN_WEIGHT;
+
+	for (uint i = 0; i < lengthof(this->accepts_cargo); i++) {
+		if (this->accepts_cargo[i] != cid) continue;
+		/* Empty stockpile means more weight for the link. Stockpiles
+		 * above a fixed maximum have no further effect. */
+		uint stockpile = ClampU(this->incoming_cargo_waiting[i], 0, MAX_IND_STOCKPILE);
+		weight += (MAX_IND_STOCKPILE - stockpile) * weight_mod / WEIGHT_SCALE_IND[1];
+	}
+
+	/* Add a weight for the produced cargo. Use the average production
+	 * here so the weight isn't fluctuating that much when the input
+	 * cargo isn't delivered regularly. */
+	uint16 total_prod = std::accumulate(std::begin(this->average_production), std::end(this->average_production), 0);
+	weight += total_prod * weight_mod / WEIGHT_SCALE_IND[0];
+
+	return weight;
 }
 
 
