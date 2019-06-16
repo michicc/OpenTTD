@@ -55,6 +55,8 @@ struct TownCache {
 
 /** Town data structure. */
 struct Town : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
+	using TownPool::PoolItem<&_town_pool>::Get;
+
 	TileIndex xy;                  ///< town center tile
 
 	TownCache cache; ///< Container for all cacheable data.

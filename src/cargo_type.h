@@ -146,9 +146,10 @@ public:
 
 /** Types of cargo source and destination */
 enum SourceType : byte {
-	ST_INDUSTRY,     ///< Source/destination is an industry
-	ST_TOWN,         ///< Source/destination is a town
-	ST_HEADQUARTERS, ///< Source/destination are company headquarters
+	ST_INDUSTRY,         ///< Source/destination is an industry
+	ST_TOWN,             ///< Source/destination is a town
+	ST_HEADQUARTERS,     ///< Source/destination are company headquarters
+	ST_UNDEFINED = 0xFF, ///< Type of source/destination is not defined
 };
 
 typedef uint16 SourceID; ///< Contains either industry ID, town ID or company ID (or INVALID_SOURCE)

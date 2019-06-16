@@ -73,6 +73,8 @@ struct CargoSourceSink {
 		return std::find(this->cargo_links[cid].begin(), this->cargo_links[cid].end(), dest) != this->cargo_links[cid].end();
 	}
 
+	const CargoLink *GetRandomLink(CargoID cid, bool allow_self, bool allow_random = false, SourceType dst_type = ST_UNDEFINED) const;
+
 	/** Get the link weight for this as a destination for a specific cargo. */
 	virtual uint GetDestinationWeight(CargoID cid, byte weight_mod) const = 0;
 
@@ -85,6 +87,8 @@ struct CargoSourceSink {
 	void SaveCargoSourceSink();
 	void LoadCargoSourceSink();
 	void PtrsCargoSourceSink();
+
+	static CargoSourceSink *Get(SourceType type, SourceID id);
 };
 
 #endif /* CARGODEST_BASE_H */

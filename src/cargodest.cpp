@@ -64,6 +64,15 @@ static bool IsSymmetricCargo(CargoID cid)
 	return IsCargoInClass(cid, CC_PASSENGERS) || IsCargoInClass(cid, CC_MAIL);
 }
 
+CargoSourceSink *CargoSourceSink::Get(SourceType type, SourceID id)
+{
+	switch (type) {
+		case ST_INDUSTRY: return Town::Get(id);
+		case ST_TOWN: return Industry::Get(id);
+		default: NOT_REACHED();
+	}
+}
+
 /* virtual */ CargoSourceSink::~CargoSourceSink()
 {
 	if (Town::CleaningPool() || Industry::CleaningPool()) return;
@@ -93,6 +102,41 @@ static bool IsSymmetricCargo(CargoID cid)
 			if (l.dest != nullptr) l.dest->num_incoming_links[cid]--;
 		}
 	}
+}
+
+/**
+ * Get a random demand link.
+ * @param cid Cargo type
+ * @param allow_self Indicates if the local link is acceptable as a result.
+ * @param allow_random Indicates if the random dest link is acceptable as a result
+ * @param dst_type Indicates the acceptable destination types. Use \c ST_UNDEFINED if any type is acceptable.
+ * @return Pointer to a demand link or \c nullptr if no link found.
+ */
+const CargoLink *CargoSourceSink::GetRandomLink(CargoID cid, bool allow_self, bool allow_random, SourceType dst_type) const
+{
+	/* Collect candidate links. */
+	uint cand_sum = 0;
+	std::vector<const CargoLink *> candidates;
+	for (const auto &l : this->cargo_links[cid]) {
+		if (l.dest == nullptr && !allow_random) continue; // Random destination link not wanted.
+		if (l.dest == this && !allow_self) continue; // Local link not wanted.
+
+		if (l.dest != nullptr && dst_type != ST_UNDEFINED && l.dest->GetType() != dst_type) continue;
+		if (l.dest != nullptr && !l.dest->AcceptsCargo(cid)) continue;
+
+		candidates.push_back(&l);
+		cand_sum += l.weight;
+	}
+
+	/* Randomly choose a cargo link. */
+	uint weight = RandomRange(cand_sum - 1);
+	uint cur_sum = 0;
+	for (const auto l : candidates) {
+		cur_sum += l->weight;
+		if (cur_sum > weight) return l;
+	}
+
+	return nullptr;
 }
 
 void CargoSourceSink::UpdateLinkWeightSums()
