@@ -335,7 +335,7 @@ public:
 	/** We want to 'destruct' the right class. */
 	virtual ~Vehicle();
 
-	void BeginLoading();
+	void BeginLoading(StationID station);
 	void CancelReservation(StationID next, Station *st);
 	void LeaveStation();
 
