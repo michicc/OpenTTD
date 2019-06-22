@@ -3199,6 +3199,13 @@ bool AfterLoadGame()
 		}
 
 		UpdateCargoLinks();
+
+		Vehicle *v;
+		FOR_ALL_VEHICLES(v) {
+			/* Set the current order index from the order list. */
+			Order *o = v->GetOrder(v->cur_implicit_order_index);
+			v->current_order.index = o != NULL ? o->index : INVALID_ORDER;
+		}
 	}
 
 	/* Road stops is 'only' updating some caches */

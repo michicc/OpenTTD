@@ -55,6 +55,8 @@ public:
 
 	Order(uint32 packed);
 
+	static void PostDestructor(size_t index);
+
 	/**
 	 * Check whether this order is of the given type.
 	 * @param type the type to check against.

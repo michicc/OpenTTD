@@ -58,6 +58,19 @@ Order::~Order()
 }
 
 /**
+ * Invalidating some stuff after removing item from the pool.
+ * @param index index of deleted item.
+ */
+/* static */ void Order::PostDestructor(size_t index)
+{
+	Vehicle *v;
+	FOR_ALL_VEHICLES(v) {
+		if (v->current_order.index == index) v->current_order.index = INVALID_ORDER;
+		if (v->last_loading_order == index) v->last_loading_order = INVALID_ORDER;
+	}
+}
+
+/**
  * 'Free' the order
  * @note ONLY use on "current_order" vehicle orders!
  */
@@ -2121,6 +2134,10 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 	}
 
 	v->current_order = *order;
+	/* Set the index of the current order to the index of the implicit order,
+	 * this is needed as the index is used for route link generation. */
+	v->current_order.index = v->GetOrder(v->cur_implicit_order_index)->index;
+
 	return UpdateOrderDest(v, order, conditional_depth + 1, pbs_look_ahead);
 }
 
@@ -2204,6 +2221,9 @@ bool ProcessOrders(Vehicle *v)
 
 	/* Otherwise set it, and determine the destination tile. */
 	v->current_order = *order;
+	/* Set the index of the current order to the index of the implicit order,
+	 * this is needed as the index is used for route link generation. */
+	v->current_order.index = v->GetOrder(v->cur_implicit_order_index)->index;
 
 	InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
 	switch (v->type) {

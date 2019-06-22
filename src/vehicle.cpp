@@ -354,6 +354,8 @@ Vehicle::Vehicle(VehicleType type)
 	this->cargo_age_counter  = 1;
 	this->last_station_visited = INVALID_STATION;
 	this->last_loading_station = INVALID_STATION;
+	this->last_loading_order = INVALID_ORDER;
+	this->current_order.index = INVALID_ORDER;
 }
 
 /**
@@ -2136,6 +2138,7 @@ void Vehicle::BeginLoading(StationID station)
 					implicit_order->MakeImplicit(this->last_station_visited);
 					InsertOrder(this, implicit_order, this->cur_implicit_order_index);
 					if (this->cur_implicit_order_index > 0) --this->cur_implicit_order_index;
+					this->current_order.index = implicit_order->index;
 
 					/* InsertOrder disabled creation of implicit orders for all vehicles with the same implicit order.
 					 * Reenable it for this vehicle */
@@ -2209,10 +2212,12 @@ void Vehicle::LeaveStation()
 
 			/* if the vehicle could load here or could stop with cargo loaded set the last loading station */
 			this->last_loading_station = this->last_station_visited;
+			this->last_loading_order = this->current_order.index; // The various MakeXXX functions do not reset the order index, as such it is still the one from the incoming order.
 		} else {
 			/* if the vehicle couldn't load and had to unload or transfer everything
 			 * set the last loading station to invalid as it will leave empty. */
 			this->last_loading_station = INVALID_STATION;
+			this->last_loading_order = INVALID_ORDER;
 		}
 	}
 
