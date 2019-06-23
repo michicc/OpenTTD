@@ -592,6 +592,11 @@ void UpdateAircraftCache(Aircraft *v, bool update_range)
 	Aircraft *u = v->Next(); // Shadow for mail
 	u->vcache.cached_cargo_age_period = GetVehicleProperty(u, PROP_AIRCRAFT_CARGO_AGE_PERIOD, EngInfo(u->engine_type)->cargo_age_period);
 
+	/* Cache carried cargo types. */
+	v->vcache.cached_cargo_mask = 0;
+	if (v->cargo_type != INVALID_CARGO && v->cargo_cap > 0) SetBit(v->vcache.cached_cargo_mask, v->cargo_type);
+	if (u->cargo_type != INVALID_CARGO && u->cargo_cap > 0) SetBit(v->vcache.cached_cargo_mask, u->cargo_type);
+
 	/* Update aircraft range. */
 	if (update_range) {
 		v->acache.cached_max_range = GetVehicleProperty(v, PROP_AIRCRAFT_RANGE, AircraftVehInfo(v->engine_type)->max_range);

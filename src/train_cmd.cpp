@@ -144,6 +144,7 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 		u->InvalidateNewGRFCache();
 	}
 
+	CargoTypes cargo_mask = 0;
 	for (Train *u = this; u != nullptr; u = u->Next()) {
 		const Engine *e_u = u->GetEngine();
 		const RailVehicleInfo *rvi_u = &e_u->u.rail;
@@ -199,6 +200,7 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 			if (new_cap != u->cargo_cap) ShowNewGrfVehicleError(u->engine_type, STR_NEWGRF_BROKEN, STR_NEWGRF_BROKEN_CAPACITY, GBUG_VEH_CAPACITY, true);
 		}
 		u->vcache.cached_cargo_age_period = GetVehicleProperty(u, PROP_TRAIN_CARGO_AGE_PERIOD, e_u->info.cargo_age_period);
+		if (u->cargo_type != INVALID_CARGO && u->cargo_cap > 0) SetBit(cargo_mask, u->cargo_type);
 
 		/* check the vehicle length (callback) */
 		uint16 veh_len = CALLBACK_FAILED;
@@ -233,6 +235,8 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 	this->vcache.cached_max_speed = max_speed;
 	this->tcache.cached_tilt = train_can_tilt;
 	this->tcache.cached_max_curve_speed = this->GetCurveSpeedLimit();
+
+	this->vcache.cached_cargo_mask = cargo_mask;
 
 	/* recalculate cached weights and power too (we do this *after* the rest, so it is known which wagons are powered and need extra weight added) */
 	this->CargoChanged();

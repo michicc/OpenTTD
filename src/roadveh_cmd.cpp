@@ -223,6 +223,7 @@ void RoadVehUpdateCache(RoadVehicle *v, bool same_length)
 
 	v->gcache.cached_total_length = 0;
 
+	CargoTypes cargo_mask = 0;
 	for (RoadVehicle *u = v; u != nullptr; u = u->Next()) {
 		/* Check the v->first cache. */
 		assert(u->First() == v);
@@ -243,7 +244,10 @@ void RoadVehUpdateCache(RoadVehicle *v, bool same_length)
 
 		/* Update cargo aging period. */
 		u->vcache.cached_cargo_age_period = GetVehicleProperty(u, PROP_ROADVEH_CARGO_AGE_PERIOD, EngInfo(u->engine_type)->cargo_age_period);
+		if (u->cargo_type != INVALID_CARGO && u->cargo_cap > 0) SetBit(cargo_mask, u->cargo_type);
 	}
+
+	v->vcache.cached_cargo_mask = cargo_mask;
 
 	uint max_speed = GetVehicleProperty(v, PROP_ROADVEH_SPEED, 0);
 	v->vcache.cached_max_speed = (max_speed != 0) ? max_speed * 4 : RoadVehInfo(v->engine_type)->max_speed;
