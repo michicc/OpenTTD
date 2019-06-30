@@ -632,7 +632,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, last_station_visited,  SLE_FILE_U8  | SLE_VAR_U16,   SL_MIN_VERSION,   SLV_5),
 		 SLE_CONDVAR(Vehicle, last_station_visited,  SLE_UINT16,                   SLV_5, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, last_loading_station,  SLE_UINT16,                 SLV_182, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, last_loading_order,    SLE_UINT16,                SLV_YACD, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, last_loading_order,    SLE_UINT32,                SLV_YACD, SL_MAX_VERSION),
 
 		     SLE_VAR(Vehicle, cargo_type,            SLE_UINT8),
 		 SLE_CONDVAR(Vehicle, cargo_subtype,         SLE_UINT8,                   SLV_35, SL_MAX_VERSION),
@@ -666,7 +666,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, current_order.type,    SLE_UINT8,                    SLV_5, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.flags,   SLE_UINT8,                    SLV_5, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.dest,    SLE_UINT16,                   SLV_5, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, current_order.index,   SLE_UINT16,                SLV_YACD, SL_MAX_VERSION),
+		 SLE_CONDVAR(Vehicle, current_order.index,   SLE_UINT32,                SLV_YACD, SL_MAX_VERSION),
 
 		/* Refit in current order */
 		 SLE_CONDVAR(Vehicle, current_order.refit_cargo,   SLE_UINT8,             SLV_36, SL_MAX_VERSION),
