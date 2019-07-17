@@ -137,6 +137,22 @@ struct AirportMovingData {
 
 AirportMovingData RotateAirportMovingData(const AirportMovingData *orig, Direction rotation, uint num_tiles_x, uint num_tiles_y);
 
+/** Type of airport landing points. */
+enum AirportLandingType {
+	ALT_HELIPAD,   ///< Entry is a helicopter pad, AirportLandingPoint::size has no meaning.
+	ALT_RUNWAY,    ///< Entry is a land runway, AirportLandingPoint::size is the length in tiles.
+	ALT_END = 255, ///< Marker to signal end of landing point list.
+};
+
+/** A single landing point of an airport, corresponds to one runway/heli pad. */
+struct AirportLandingPoint {
+	AirportLandingType type; ///< Type of the landing point.
+	uint size;               ///< Size of the entry point, the exact meaning depends on #type.
+	Direction dir;           ///< Direction the aircraft has to face to enter the state machine.
+	uint64 fta_block;        ///< FTA blocks that have to be free to allow landing.
+	byte fta_pos;            ///< Index in to the state machine.
+};
+
 struct AirportFTAbuildup;
 
 /** Finite sTate mAchine (FTA) of an airport. */
@@ -157,7 +173,8 @@ public:
 		const byte *entry_points,
 		Flags flags,
 		const AirportFTAbuildup *apFA,
-		byte delta_z
+		byte delta_z,
+		const AirportLandingPoint *landing_points
 	);
 
 	~AirportFTAClass();
@@ -181,6 +198,7 @@ public:
 	byte nofelements;                     ///< number of positions the airport consists of
 	const byte *entry_points;             ///< when an airplane arrives at this airport, enter it at position entry_point, index depends on direction
 	byte delta_z;                         ///< Z adjustment for helicopter pads
+	const AirportLandingPoint *landing_points; ///< Landing points of the airport.
 };
 
 DECLARE_ENUM_AS_BIT_SET(AirportFTAClass::Flags)

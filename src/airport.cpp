@@ -26,7 +26,7 @@
  */
 #define AIRPORT_GENERIC(name, terminals, num_helipads, flags, delta_z) \
 	static const AirportFTAClass _airportfta_ ## name(_airport_moving_data_ ## name, terminals, \
-			num_helipads, _airport_entries_ ## name, flags, _airport_fta_ ## name, delta_z);
+			num_helipads, _airport_entries_ ## name, flags, _airport_fta_ ## name, delta_z, _airport_landing_points_ ## name);
 
 /**
  * Define an airport.
@@ -115,7 +115,8 @@ AirportFTAClass::AirportFTAClass(
 	const byte *entry_points_,
 	Flags flags_,
 	const AirportFTAbuildup *apFA,
-	byte delta_z_
+	byte delta_z_,
+	const AirportLandingPoint *landing_points_
 ) :
 	moving_data(moving_data_),
 	terminals(terminals_),
@@ -123,7 +124,8 @@ AirportFTAClass::AirportFTAClass(
 	flags(flags_),
 	nofelements(AirportGetNofElements(apFA)),
 	entry_points(entry_points_),
-	delta_z(delta_z_)
+	delta_z(delta_z_),
+	landing_points(landing_points_)
 {
 	/* Build the state machine itself */
 	this->layout = AirportBuildAutomata(this->nofelements, apFA);

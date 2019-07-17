@@ -408,6 +408,9 @@ static const AirportMovingData _airport_moving_data_oilrig[9] = {
 ///////////////////////////////////////////////////////////////////////
 /////**********Movement Machine on Airports*********************///////
 static const byte _airport_entries_dummy[] = {0, 1, 2, 3};
+static const AirportLandingPoint _airport_landing_points_dummy[] = {
+	{ ALT_END, 0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_dummy[] = {
 	{ 0, TO_ALL, 0, 3},
 	{ 1, TO_ALL, 0, 0},
@@ -421,6 +424,11 @@ static const AirportFTAbuildup _airport_fta_dummy[] = {
 static const HangarTileTable _airport_depots_country[] = { {{3, 0}, DIR_SE, 0} };
 static const byte _airport_terminal_country[] = {1, 2};
 static const byte _airport_entries_country[] = {16, 15, 18, 17};
+static const AirportLandingPoint _airport_landing_points_country[] = {
+	{ ALT_RUNWAY,  4, DIR_NE, NOTHING_block, 11 },
+	{ ALT_HELIPAD, 1, DIR_NE, NOTHING_block, 20 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_country[] = {
 	{  0, HANGAR, NOTHING_block, 1 },
 	{  1, TERMGROUP, AIRPORT_BUSY_block, 0 }, { 1, HANGAR, 0, 0 }, { 1, TERM1, TERM1_block, 2 }, { 1, TERM2, 0, 4 }, { 1, HELITAKEOFF, 0, 19 }, { 1, TO_ALL, 0, 6 },
@@ -453,6 +461,11 @@ static const AirportFTAbuildup _airport_fta_country[] = {
 static const HangarTileTable _airport_depots_commuter[] = { {{4, 0}, DIR_SE, 0} };
 static const byte _airport_terminal_commuter[] = { 1, 3 };
 static const byte _airport_entries_commuter[] = {22, 21, 24, 23};
+static const AirportLandingPoint _airport_landing_points_commuter[] = {
+	{ ALT_RUNWAY,  5, DIR_NE, IN_WAY_block,  17 },
+	{ ALT_HELIPAD, 1, DIR_SE, NOTHING_block, 25 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_commuter[] = {
 	{  0, HANGAR, NOTHING_block, 1 }, { 0, HELITAKEOFF, TAXIWAY_BUSY_block, 1 }, { 0, TO_ALL, 0, 1 },
 	{  1, TERMGROUP, TAXIWAY_BUSY_block, 0 }, { 1, HANGAR, 0, 0 }, { 1, TAKEOFF, 0, 11 }, { 1, TERM1, TAXIWAY_BUSY_block, 10 }, { 1, TERM2, TAXIWAY_BUSY_block, 10 }, { 1, TERM3, TAXIWAY_BUSY_block, 10 }, { 1, HELIPAD1, TAXIWAY_BUSY_block, 10 }, { 1, HELIPAD2, TAXIWAY_BUSY_block, 10 }, { 1, HELITAKEOFF, TAXIWAY_BUSY_block, 37 }, { 1, TO_ALL, 0, 0 },
@@ -504,6 +517,11 @@ static const AirportFTAbuildup _airport_fta_commuter[] = {
 static const HangarTileTable _airport_depots_city[] = { {{5, 0}, DIR_SE, 0} };
 static const byte _airport_terminal_city[] = { 1, 3 };
 static const byte _airport_entries_city[] = {26, 29, 27, 28};
+static const AirportLandingPoint _airport_landing_points_city[] = {
+	{ ALT_RUNWAY,  6, DIR_NE, NOTHING_block, 14 },
+	{ ALT_HELIPAD, 1, DIR_SE, NOTHING_block, 23 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_city[] = {
 	{  0, HANGAR, NOTHING_block, 1 }, { 0, TAKEOFF, OUT_WAY_block, 1 }, { 0, TO_ALL, 0, 1 },
 	{  1, TERMGROUP, TAXIWAY_BUSY_block, 0 }, { 1, HANGAR, 0, 0 }, { 1, TERM2, 0, 6 }, { 1, TERM3, 0, 6 }, { 1, TO_ALL, 0, 7 }, // for all else, go to 7
@@ -545,6 +563,11 @@ static const AirportFTAbuildup _airport_fta_city[] = {
 static const HangarTileTable _airport_depots_metropolitan[] = { {{5, 0}, DIR_SE, 0} };
 static const byte _airport_terminal_metropolitan[] = { 1, 3 };
 static const byte _airport_entries_metropolitan[] = {20, 19, 22, 21};
+static const AirportLandingPoint _airport_landing_points_metropolitan[] = {
+	{ ALT_RUNWAY,  6, DIR_NE, NOTHING_block, 14 },
+	{ ALT_HELIPAD, 1, DIR_SE, NOTHING_block, 25 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_metropolitan[] = {
 	{  0, HANGAR, NOTHING_block, 1 },
 	{  1, TERMGROUP, TAXIWAY_BUSY_block, 0 }, { 1, HANGAR, 0, 0 }, { 1, TERM2, 0, 6 }, { 1, TERM3, 0, 6 }, { 1, TO_ALL, 0, 7 }, // for all else, go to 7
@@ -584,6 +607,11 @@ static const AirportFTAbuildup _airport_fta_metropolitan[] = {
 static const HangarTileTable _airport_depots_international[] = { {{0, 3}, DIR_SE, 0}, {{6, 1}, DIR_SE, 1} };
 static const byte _airport_terminal_international[] = { 2, 3, 3 };
 static const byte _airport_entries_international[] = { 38, 37, 40, 39 };
+static const AirportLandingPoint _airport_landing_points_international[] = {
+	{ ALT_RUNWAY,  7, DIR_NE, NOTHING_block, 33 },
+	{ ALT_HELIPAD, 1, DIR_SE, NOTHING_block, 41 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_international[] = {
 	{  0, HANGAR, NOTHING_block, 2 }, { 0, TERMGROUP, TERM_GROUP1_block, 0 }, { 0, TERMGROUP, TERM_GROUP2_ENTER1_block, 1 }, { 0, HELITAKEOFF, AIRPORT_ENTRANCE_block, 2 }, { 0, TO_ALL, 0, 2 },
 	{  1, HANGAR, NOTHING_block, 3 }, { 1, TERMGROUP, HANGAR2_AREA_block, 1 }, { 1, HELITAKEOFF, HANGAR2_AREA_block, 3 }, { 1, TO_ALL, 0, 3 },
@@ -651,6 +679,12 @@ static const AirportFTAbuildup _airport_fta_international[] = {
 static const HangarTileTable _airport_depots_intercontinental[] = { {{0, 5}, DIR_SE, 0}, {{8, 4}, DIR_SE, 1} };
 static const byte _airport_terminal_intercontinental[] = { 2, 4, 4 };
 static const byte _airport_entries_intercontinental[] = { 44, 43, 46, 45 };
+static const AirportLandingPoint _airport_landing_points_intercontinental[] = {
+	{ ALT_RUNWAY,  8, DIR_NE, NOTHING_block, 37 },
+	{ ALT_RUNWAY,  8, DIR_SW, NOTHING_block, 63 },
+	{ ALT_HELIPAD, 1, DIR_SE, NOTHING_block, 23 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_intercontinental[] = {
 	{  0, HANGAR, NOTHING_block, 2 }, { 0, TERMGROUP, HANGAR1_AREA_block | TERM_GROUP1_block, 0 }, { 0, TERMGROUP, HANGAR1_AREA_block | TERM_GROUP1_block, 1 }, { 0, TAKEOFF, HANGAR1_AREA_block | TERM_GROUP1_block, 2 }, { 0, TO_ALL, 0, 2 },
 	{  1, HANGAR, NOTHING_block, 3 }, { 1, TERMGROUP, HANGAR2_AREA_block, 1 }, { 1, TERMGROUP, HANGAR2_AREA_block, 0 }, { 1, TO_ALL, 0, 3 },
@@ -743,6 +777,10 @@ static const AirportFTAbuildup _airport_fta_intercontinental[] = {
 
 /* heliports, oilrigs don't have depots */
 static const byte _airport_entries_heliport[] = { 7, 7, 7, 7 };
+static const AirportLandingPoint _airport_landing_points_heliport[] = {
+	{ ALT_HELIPAD, 1, DIR_NE, HELIPAD1_block, 3 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_heliport[] = {
 	{ 0, HELIPAD1, HELIPAD1_block, 1 },
 	{ 1, HELITAKEOFF, NOTHING_block, 0 }, // takeoff
@@ -757,11 +795,16 @@ static const AirportFTAbuildup _airport_fta_heliport[] = {
 	{ MAX_ELEMENTS, TO_ALL, 0, 0 } // end marker. DO NOT REMOVE
 };
 #define _airport_entries_oilrig _airport_entries_heliport
+#define _airport_landing_points_oilrig _airport_landing_points_heliport
 #define _airport_fta_oilrig _airport_fta_heliport
 
 /* helidepots */
 static const HangarTileTable _airport_depots_helidepot[] = { {{1, 0}, DIR_SE, 0} };
 static const byte _airport_entries_helidepot[] = { 4, 4, 4, 4 };
+static const AirportLandingPoint _airport_landing_points_helidepot[] = {
+	{ ALT_HELIPAD, 1, DIR_NE, NOTHING_block, 7 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_helidepot[] = {
 	{  0, HANGAR, NOTHING_block, 1 },
 	{  1, TERMGROUP, HANGAR2_AREA_block, 0 }, { 1, HANGAR, 0, 0 }, { 1, HELIPAD1, HELIPAD1_block, 14 }, { 1, HELITAKEOFF, 0, 15 }, { 1, TO_ALL, 0, 0 },
@@ -791,6 +834,10 @@ static const AirportFTAbuildup _airport_fta_helidepot[] = {
 /* helistation */
 static const HangarTileTable _airport_depots_helistation[] = { {{0, 0}, DIR_SE, 0} };
 static const byte _airport_entries_helistation[] = { 25, 25, 25, 25 };
+static const AirportLandingPoint _airport_landing_points_helistation[] = {
+	{ ALT_HELIPAD, 1, DIR_NE, NOTHING_block, 15 },
+	{ ALT_END,     0, INVALID_DIR, NOTHING_block, 0 },
+};
 static const AirportFTAbuildup _airport_fta_helistation[] = {
 	{  0, HANGAR, NOTHING_block, 8 },    { 0, HELIPAD1, 0, 1 }, { 0, HELIPAD2, 0, 1 }, { 0, HELIPAD3, 0, 1 }, { 0, HELITAKEOFF, 0, 1 }, { 0, TO_ALL, 0, 0 },
 	{  1, TERMGROUP, HANGAR2_AREA_block, 0 },  { 1, HANGAR, 0, 0 }, { 1, HELITAKEOFF, 0, 3 }, { 1, TO_ALL, 0, 4 },
