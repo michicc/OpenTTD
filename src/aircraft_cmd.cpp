@@ -42,6 +42,33 @@
 
 #include "safeguards.h"
 
+
+const char *_AirportMovementStatesStr[] = {
+	"TO_ALL",
+	"HANGAR",
+	"TERM1",
+	"TERM2",
+	"TERM3",
+	"TERM4",
+	"TERM5",
+	"TERM6",
+	"HELIPAD1",
+	"HELIPAD2",
+	"TAKEOFF",
+	"STARTTAKEOFF",
+	"ENDTAKEOFF",
+	"HELITAKEOFF",
+	"FLYING",
+	"LANDING",
+	"ENDLANDING",
+	"HELILANDING",
+	"HELIENDLANDING",
+	"TERM7",
+	"TERM8",
+	"HELIPAD3",
+	"MAX_HEADINGS",
+};
+
 void Aircraft::UpdateDeltaXY()
 {
 	this->x_offs = -1;
@@ -2030,6 +2057,9 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 
 static bool AircraftEventHandler(Aircraft *v, int loop)
 {
+	if (v->state != v->prev_state) DEBUG(misc, 0, "New state: %s", _AirportMovementStatesStr[v->state]);
+	v->prev_state = v->state;
+
 	if (v->vehstatus & VS_CRASHED) {
 		return HandleCrashedAircraft(v);
 	}
