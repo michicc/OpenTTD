@@ -627,6 +627,9 @@
     <ClInclude Include="..\src\gfxinit.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\3rdparty\opengl\glext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\goal_base.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -895,6 +898,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\object_type.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\video\opengl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\src\openttd.h">
@@ -3061,6 +3067,9 @@
       <Filter>Video</Filter>
     </ClCompile>
     <ClCompile Include="..\src\video\null_v.cpp">
+      <Filter>Video</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\video\opengl.cpp">
       <Filter>Video</Filter>
     </ClCompile>
     <ClCompile Include="..\src\video\sdl_v.cpp">

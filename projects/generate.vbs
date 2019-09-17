@@ -181,7 +181,8 @@ Sub load_main_data(filename, ByRef vcxproj, ByRef filters, ByRef files)
 						line = "AI" Or _
 						line = "USE_SSE" Or _
 						line = "USE_XAUDIO2" Or _
-						line = "USE_THREADS" _
+						line = "USE_THREADS" Or _
+						line = "OPENGL" _
 					) Then skip = skip + 1
 					deep = deep + 1
 				Case "#"

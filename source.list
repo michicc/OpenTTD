@@ -200,6 +200,9 @@ gfx_func.h
 gfx_layout.h
 gfx_type.h
 gfxinit.h
+#if OPENGL
+	3rdparty/opengl/glext.h
+#end
 goal_base.h
 goal_type.h
 graph_gui.h
@@ -290,6 +293,9 @@ video/null_v.h
 object.h
 object_base.h
 object_type.h
+#if OPENGL
+	video/opengl.h
+#end
 openttd.h
 order_backup.h
 order_base.h
@@ -1089,6 +1095,9 @@ pathfinder/yapf/yapf_type.hpp
 # Video
 video/dedicated_v.cpp
 video/null_v.cpp
+#if OPENGL
+	video/opengl.cpp
+#end
 #if DEDICATED
 #else
 	#if ALLEGRO

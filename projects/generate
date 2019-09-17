@@ -79,6 +79,7 @@ with_cocoa="0"
 enable_directmusic="1"
 enable_fluidsynth="0"
 with_threads="1"
+enable_opengl="1"
 file_prefix="..\\\\\\\\src\\\\\\\\"
 
 safety_check() {
@@ -140,6 +141,7 @@ load_main_data() {
 			if ($0 == "FLUIDSYNTH"  && "'$enable_fluidsynth'" != "1")  { next; }
 			if ($0 == "USE_XAUDIO2" && "'$with_xaudio2'" == "0")       { next; }
 			if ($0 == "USE_THREADS" && "'$with_threads'" == "0")       { next; }
+			if ($0 == "OPENGL"      && "'$enable_opengl'" == "0")      { next; }
 
 			skip += 1;
 
