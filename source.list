@@ -1033,6 +1033,7 @@ misc/fixedsizearray.hpp
 misc/getoptdata.cpp
 misc/getoptdata.h
 misc/hashtable.hpp
+misc/lrucache.hpp
 misc/str.hpp
 
 # Network Core
