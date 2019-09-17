@@ -411,6 +411,9 @@ sound/xaudio2_s.h
 zoom_func.h
 zoom_type.h
 #if WIN32
+	#if OPENGL
+		3rdparty/opengl/wglext.h
+	#end
 #else
 	music/bemidi.h
 	music/cocoa_m.h

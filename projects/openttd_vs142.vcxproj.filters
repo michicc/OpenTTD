@@ -1245,6 +1245,9 @@
     <ClInclude Include="..\src\zoom_type.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\3rdparty\opengl\wglext.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClCompile Include="..\src\core\alloc_func.cpp">
       <Filter>Core Source Code</Filter>
     </ClCompile>
