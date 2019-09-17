@@ -19,6 +19,7 @@
 #include "blitter/factory.hpp"
 #include "core/math_func.hpp"
 #include "core/mem_func.hpp"
+#include "video/video_driver.hpp"
 
 #include "table/sprites.h"
 #include "table/strings.h"
@@ -968,6 +969,8 @@ void GfxClearSpriteCache()
 		SpriteCache *sc = GetSpriteCache(i);
 		if (sc->type != ST_RECOLOUR && sc->ptr != nullptr) DeleteEntryFromSpriteCache(i);
 	}
+
+	VideoDriver::GetInstance()->ClearSystemSprites();
 }
 
 /* static */ ReusableBuffer<SpriteLoader::CommonPixel> SpriteLoader::Sprite::buffer[ZOOM_LVL_COUNT];
