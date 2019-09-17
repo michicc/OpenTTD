@@ -29,6 +29,12 @@ class OpenGLBackend : public ZeroedMemoryAllocator, SpriteEncoder {
 private:
 	static OpenGLBackend *instance; ///< Singleton instance pointer.
 
+	bool persistent_mapping_supported; ///< Persistent pixel buffer mapping supported.
+	GLsync sync_vid_mapping;           ///< Sync object for the persistently mapped video buffer.
+	GLsync sync_anim_mapping;          ///< Sync object for the persistently mapped animation buffer.
+
+	void  *vid_buffer;   ///< Pointer to the mapped video buffer.
+	void  *anim_buffer;  ///< Pointer to the mapped animation buffer.
 	GLuint vid_pbo;     ///< Pixel buffer object storing the memory used for the video driver to draw to.
 	GLuint vid_texture; ///< Texture handle for the video buffer texture.
 	GLuint vid_program; ///< Shader program for rendering a RGBA video buffer.
