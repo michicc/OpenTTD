@@ -49,6 +49,8 @@ protected:
 
 	/** (Re-)create the backing store. */
 	virtual bool AllocateBackingStore(int w, int h, bool force = false) = 0;
+	/** Get a pointer to the video buffer. */
+	virtual void *GetVideoPointer() = 0;
 	/** Palette of the window has changed. */
 	virtual void PaletteChanged(HWND hWnd) = 0;
 	/** Window got a paint message. */
@@ -63,7 +65,7 @@ protected:
 /** The GDI video driver for windows. */
 class VideoDriver_Win32GDI : public VideoDriver_Win32Base {
 public:
-	VideoDriver_Win32GDI() : dib_sect(nullptr), gdi_palette(nullptr) {}
+	VideoDriver_Win32GDI() : dib_sect(nullptr), gdi_palette(nullptr), buffer_bits(nullptr) {}
 
 	const char *Start(const char * const *param) override;
 
@@ -77,9 +79,11 @@ protected:
 	HBITMAP  dib_sect;      ///< Blitter target.
 	HPALETTE gdi_palette;   ///< Handle to windows palette.
 	RECT     update_rect;   ///< Rectangle to update during the next paint event.
+	void     *buffer_bits;  ///< Video buffer memory.
 
 	bool AllocateBackingStore(int w, int h, bool force = false) override;
 	void PaletteChanged(HWND hWnd) override;
+	void *GetVideoPointer() override { return this->buffer_bits; }
 	void Paint(HWND hWnd, bool in_sizemove) override;
 	void PaintThread() override;
 
@@ -127,6 +131,7 @@ protected:
 	uint8 GetFullscreenBpp() override { return 32; } // OpenGL is always 32 bpp.
 
 	bool AllocateBackingStore(int w, int h, bool force = false) override;
+	void *GetVideoPointer() override;
 	void PaletteChanged(HWND hWnd) override;
 	void Paint(HWND hWnd, bool in_sizemove) override;
 	void PaintThread() override {}
