@@ -1812,7 +1812,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 					if (flags & DC_EXEC) {
 						Track track = DiagDirToDiagTrack(GetTunnelBridgeDirection(tile));
-						if (HasTunnelBridgeReservation(tile)) {
+						if (GetReservedTrackbits(tile) != TRACK_BIT_NONE) {
 							Train *v = GetTrainForReservation(tile, track);
 							if (v != NULL && !HasPowerOnRail(v->railtype, totype)) {
 								/* No power on new rail type, reroute. */
@@ -1824,7 +1824,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 						/* Update the company infrastructure counters. */
 						uint num_pieces = (GetTunnelBridgeLength(tile, endtile) + 2) * TUNNELBRIDGE_TRACKBIT_FACTOR;
 						Company *c = Company::Get(GetTileOwner(tile));
-						c->infrastructure.rail[GetRailType(tile)] -= num_pieces;
+						c->infrastructure.rail[GetRailType(GetTileByType(tile, MP_RAILWAY))] -= num_pieces; // TODO !!!!!!!!!!!!!!!!!!!!!!!!!
 						c->infrastructure.rail[totype] += num_pieces;
 						DirtyCompanyInfrastructureWindows(c->index);
 
@@ -2399,6 +2399,9 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 	if (IsRailStationTile(ti->tile)) {
 		/* Due to NewGRF complexities, drawing rail for stations is handled purely by the station code. */
+		return;
+	} else if (IsTunnelTile(ti->tile) || IsBridgeTile(ti->tile)) {
+		/* Due to the visual hacks employed by bridges/tunnels, drawing is done by the tunnelbridge code. */
 		return;
 	} else if (IsPlainRail(ti->tptr)) {
 		TrackBits rails = GetTrackBits(ti->tptr);

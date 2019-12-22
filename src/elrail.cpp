@@ -80,19 +80,12 @@ static inline TLG GetTLG(TileIndex t)
 }
 
 /** Common part of #GetRailTrackBitsUniversal and #GetSingleRailTrackBitsUniversal */
-static TrackBits GetRailTrackBitsUniversalHelper(TileIndex t, byte *override)
+static void ApplyTunnelBridgePCPOverride(TileIndex t, byte *override)
 {
-	switch (GetTileType(t)) {
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(t) != TRANSPORT_RAIL) return TRACK_BIT_NONE;
-			if (!HasRailCatenary(GetRailType(t))) return TRACK_BIT_NONE;
-			if (override != NULL && (IsTunnel(t) || GetTunnelBridgeLength(t, GetOtherBridgeEnd(t)) > 0)) {
-				*override = 1 << GetTunnelBridgeDirection(t);
-			}
-			return DiagDirToDiagTrackBits(GetTunnelBridgeDirection(t));
+	if (override == NULL) return;
 
-		default:
-			return TRACK_BIT_NONE;
+	if (IsTunnelTile(t) || (IsBridgeTile(t) && GetTunnelBridgeLength(t, GetOtherBridgeEnd(t)) > 0)) {
+		*override = 1 << GetTunnelBridgeDirection(t);
 	}
 }
 
@@ -107,10 +100,11 @@ static TrackBits GetSingleRailTrackBitsUniversal(TileIndex t, Tile *rail_tile, b
 {
 	if (IsTileType(rail_tile, MP_RAILWAY)) {
 		if (!IsNormalRail(rail_tile) || !HasRailCatenary(GetRailType(rail_tile))) return TRACK_BIT_NONE;
+		ApplyTunnelBridgePCPOverride(t, override);
 		return GetTrackBits(rail_tile);
 	}
 
-	return GetRailTrackBitsUniversalHelper(t, override);
+	return TRACK_BIT_NONE;
 }
 
 /**
@@ -127,10 +121,11 @@ static TrackBits GetRailTrackBitsUniversal(TileIndex t, byte *override)
 		FOR_ALL_RAIL_TILES(rail_tile, t) {
 			if (IsNormalRail(rail_tile) && HasRailCatenary(GetRailType(rail_tile))) tracks |= GetTrackBits(rail_tile);
 		}
+		ApplyTunnelBridgePCPOverride(t, override);
 		return tracks;
 	}
 
-	return GetRailTrackBitsUniversalHelper(t, override);
+	return TRACK_BIT_NONE;
 }
 
 /**

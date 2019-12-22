@@ -152,20 +152,6 @@ extern const TrackdirBits _uphill_trackdirs[] = {
 };
 
 
-/** Helper for #GetTileRailType. */
-static RailType GetTileRailTypeCommon(TileIndex tile)
-{
-	switch (GetTileType(tile)) {
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) return GetRailType(tile);
-			break;
-
-		default:
-			break;
-	}
-	return INVALID_RAILTYPE;
-}
-
 /**
  * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
  * @param tile Tile to query.
@@ -177,7 +163,7 @@ RailType GetTileRailType(TileIndex tile, Track track)
 	Tile *rail_tile = GetRailTileFromTrack(tile, track);
 	if (rail_tile != NULL) return GetRailType(rail_tile);
 
-	return GetTileRailTypeCommon(tile);
+	return INVALID_RAILTYPE;
 }
 
 /**
@@ -191,8 +177,7 @@ RailType GetTileRailType(TileIndex tile, DiagDirection diagdir)
 	Tile *rail_tile = GetRailTileFromDiagDir(tile, diagdir);
 	if (rail_tile != NULL) return GetRailType(rail_tile);
 
-	return GetTileRailTypeCommon(tile);
-
+	return INVALID_RAILTYPE;
 }
 
 /**

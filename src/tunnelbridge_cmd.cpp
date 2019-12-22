@@ -301,7 +301,6 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 	int z_end;
 	Slope tileh_start = GetTileSlope(tile_start, &z_start);
 	Slope tileh_end = GetTileSlope(tile_end, &z_end);
-	bool pbs_reservation = false;
 
 	CommandCost terraform_cost_north = CheckBridgeSlope(BRIDGE_PIECE_NORTH, direction, &tileh_start, &z_start);
 	CommandCost terraform_cost_south = CheckBridgeSlope(BRIDGE_PIECE_SOUTH, direction, &tileh_end,   &z_end);
@@ -319,7 +318,7 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 		/* Replace a current bridge. */
 
 		/* If this is a railway bridge, make sure the railtypes match. */
-		if (transport_type == TRANSPORT_RAIL && GetRailType(tile_start) != railtype) {
+		if (transport_type == TRANSPORT_RAIL && GetRailType(GetTileByType(tile_start, MP_RAILWAY)) != railtype) {
 			return_cmd_error(STR_ERROR_MUST_DEMOLISH_BRIDGE_FIRST);
 		}
 
@@ -355,11 +354,6 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 		if (is_new_owner) owner = company;
 
 		switch (transport_type) {
-			case TRANSPORT_RAIL:
-				/* Keep the reservation, the path stays valid. */
-				pbs_reservation = HasTunnelBridgeReservation(tile_start);
-				break;
-
 			case TRANSPORT_ROAD:
 				/* Do not remove road types when upgrading a bridge */
 				roadtypes |= GetRoadTypes(tile_start);
@@ -486,10 +480,10 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 			case TRANSPORT_RAIL:
 				/* Add to company infrastructure count if required. */
 				if (is_new_owner && c != NULL) c->infrastructure.rail[railtype] += (bridge_len + 2) * TUNNELBRIDGE_TRACKBIT_FACTOR;
-				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir,                 railtype);
-				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir), railtype);
-				SetTunnelBridgeReservation(tile_start, pbs_reservation);
-				SetTunnelBridgeReservation(tile_end,   pbs_reservation);
+				MakeRailBridgeRamp(tile_start, owner, bridge_type, dir);
+				MakeRailBridgeRamp(tile_end,   owner, bridge_type, ReverseDiagDir(dir));
+				MakeRailNormal(tile_start, owner, DiagDirToDiagTrackBits(dir), railtype);
+				MakeRailNormal(tile_end,   owner, DiagDirToDiagTrackBits(dir), railtype);
 				break;
 
 			case TRANSPORT_ROAD: {
@@ -531,7 +525,7 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 
 	if ((flags & DC_EXEC) && transport_type == TRANSPORT_RAIL) {
 		Track track = AxisToTrack(direction);
-		AddSideToSignalBuffer(tile_start, INVALID_DIAGDIR, company);
+		AddSideToSignalBuffer(tile_start, ReverseDiagDir(AxisToDiagDir(direction)), company);
 		YapfNotifyTrackLayoutChange(tile_start, track);
 	}
 
@@ -729,9 +723,12 @@ CommandCost CmdBuildTunnel(TileIndex start_tile, DoCommandFlag flags, uint32 p1,
 		uint num_pieces = (tiles + 2) * TUNNELBRIDGE_TRACKBIT_FACTOR;
 		if (transport_type == TRANSPORT_RAIL) {
 			if (!IsTunnelTile(start_tile) && c != NULL) c->infrastructure.rail[railtype] += num_pieces;
-			MakeRailTunnel(start_tile, company, direction,                 railtype);
-			MakeRailTunnel(end_tile,   company, ReverseDiagDir(direction), railtype);
-			AddSideToSignalBuffer(start_tile, INVALID_DIAGDIR, company);
+			MakeTunnel(start_tile, company, direction,                 TRANSPORT_RAIL);
+			MakeTunnel(end_tile,   company, ReverseDiagDir(direction), TRANSPORT_RAIL);
+			MakeRailNormal(start_tile, company, DiagDirToDiagTrackBits(direction), railtype);
+			MakeRailNormal(end_tile,   company, DiagDirToDiagTrackBits(direction), railtype);
+
+			AddTrackToSignalBuffer(start_tile, DiagDirToDiagTrack(direction), company);
 			YapfNotifyTrackLayoutChange(start_tile, DiagDirToDiagTrack(direction));
 		} else {
 			if (c != NULL) {
@@ -840,7 +837,7 @@ static CommandCost DoClearTunnel(TileIndex tile, DoCommandFlag flags)
 			Owner owner = GetTileOwner(tile);
 
 			Train *v = NULL;
-			if (HasTunnelBridgeReservation(tile)) {
+			if (GetReservedTrackbits(tile) != TRACK_BIT_NONE) {
 				v = GetTrainForReservation(tile, track);
 				if (v != NULL) FreeTrainTrackReservation(v);
 			}
@@ -925,7 +922,7 @@ static CommandCost DoClearBridge(TileIndex tile, DoCommandFlag flags)
 		int height = GetBridgeHeight(tile);
 		Train *v = NULL;
 
-		if (rail && HasTunnelBridgeReservation(tile)) {
+		if (rail && GetReservedTrackbits(tile) != TRACK_BIT_NONE) {
 			v = GetTrainForReservation(tile, DiagDirToDiagTrack(direction));
 			if (v != NULL) FreeTrainTrackReservation(v);
 		}
@@ -1181,7 +1178,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 		SpriteID image;
 		SpriteID railtype_overlay = 0;
 		if (transport_type == TRANSPORT_RAIL) {
-			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
+			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(GetTileByType(ti->tile, MP_RAILWAY)));
 			image = rti->base_sprites.tunnel;
 			if (rti->UsesOverlay()) {
 				/* Check if the railtype has custom tunnel portals. */
@@ -1213,14 +1210,15 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 				}
 			}
 		} else {
-			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
+			Tile *rtile = GetTileByType(ti->tile, MP_RAILWAY);
+			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(rtile));
 			if (rti->UsesOverlay()) {
 				SpriteID surface = GetCustomRailSprite(rti, ti->tile, RTSG_TUNNEL);
 				if (surface != 0) DrawGroundSprite(surface + tunnelbridge_direction, PAL_NONE);
 			}
 
 			/* PBS debugging, draw reserved tracks darker */
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasTunnelBridgeReservation(ti->tile)) {
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && GetRailReservationTrackBits(rtile) != TRACK_BIT_NONE) {
 				if (rti->UsesOverlay()) {
 					SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
 					DrawGroundSprite(overlay + RTO_X + DiagDirToAxis(tunnelbridge_direction), PALETTE_CRASH);
@@ -1229,7 +1227,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 				}
 			}
 
-			if (HasRailCatenaryDrawn(GetRailType(ti->tile))) {
+			if (HasRailCatenaryDrawn(GetRailType(rtile))) {
 				/* Maybe draw pylons on the entry side */
 				DrawRailCatenary(ti);
 
@@ -1257,7 +1255,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 		bool ice = HasTunnelBridgeSnowOrDesert(ti->tile);
 
 		if (transport_type == TRANSPORT_RAIL) {
-			base_offset = GetRailTypeInfo(GetRailType(ti->tile))->bridge_offset;
+			base_offset = GetRailTypeInfo(GetRailType(GetTileByType(ti->tile, MP_RAILWAY)))->bridge_offset;
 			assert(base_offset != 8); // This one is used for roads
 		} else {
 			base_offset = 8;
@@ -1316,7 +1314,8 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 			}
 			EndSpriteCombine();
 		} else if (transport_type == TRANSPORT_RAIL) {
-			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(ti->tile));
+			Tile *rtile = GetTileByType(ti->tile, MP_RAILWAY);
+			const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(rtile));
 			if (rti->UsesOverlay()) {
 				SpriteID surface = GetCustomRailSprite(rti, ti->tile, RTSG_BRIDGE);
 				if (surface != 0) {
@@ -1332,7 +1331,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 			}
 
 			/* PBS debugging, draw reserved tracks darker */
-			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasTunnelBridgeReservation(ti->tile)) {
+			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && GetRailReservationTrackBits(rtile) != TRACK_BIT_NONE) {
 				if (rti->UsesOverlay()) {
 					SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
 					if (HasBridgeFlatRamp(ti->tileh, DiagDirToAxis(tunnelbridge_direction))) {
@@ -1350,7 +1349,7 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 			}
 
 			EndSpriteCombine();
-			if (HasRailCatenaryDrawn(GetRailType(ti->tile))) {
+			if (HasRailCatenaryDrawn(GetRailType(rtile))) {
 				DrawRailCatenary(ti);
 			}
 		}
@@ -1487,7 +1486,7 @@ void DrawBridgeMiddle(const TileInfo *ti)
 			}
 		}
 
-		if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && !IsInvisibilitySet(TO_BRIDGES) && HasTunnelBridgeReservation(rampnorth)) {
+		if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && !IsInvisibilitySet(TO_BRIDGES) && GetReservedTrackbits(rampnorth) != TRACK_BIT_NONE) {
 			if (rti->UsesOverlay()) {
 				SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
 				AddSortableSpriteToDraw(overlay + RTO_X + axis, PALETTE_CRASH, ti->x, ti->y, 16, 16, 0, bridge_z, IsTransparencySet(TO_BRIDGES));

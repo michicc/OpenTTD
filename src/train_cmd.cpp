@@ -1859,7 +1859,7 @@ void ReverseTrainDirection(Train *v)
 	 * tunnels/bridges that is needed for UpdateSignalsOnSegment. */
 	DiagDirection dir = VehicleExitDir(v->direction, v->track);
 	if (IsRailDepotTile(v->tile)) dir = GetRailDepotDirection(GetRailDepotTile(v->tile));
-	if (IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
+	//if (IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
 
 	if (UpdateSignalsOnSegment(v->tile, dir, v->owner) == SIGSEG_PBS || _settings_game.pf.reserve_paths) {
 		/* If we are currently on a tile with conventional signals, we can't treat the
@@ -2197,15 +2197,15 @@ static void ClearPathReservation(const Train *v, TileIndex tile, Trackdir track_
 {
 	DiagDirection dir = TrackdirToExitdir(track_dir);
 
-	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+	if (HasTileByType(tile, MP_TUNNELBRIDGE)) {
 		/* Are we just leaving a tunnel/bridge? */
 		if (GetTunnelBridgeDirection(tile) == ReverseDiagDir(dir)) {
 			TileIndex end = GetOtherTunnelBridgeEnd(tile);
 
 			if (TunnelBridgeIsFree(tile, end, v).Succeeded()) {
 				/* Free the reservation only if no other train is on the tiles. */
-				SetTunnelBridgeReservation(tile, false);
-				SetTunnelBridgeReservation(end, false);
+				UnreserveRailTrack(tile, TrackdirToTrack(track_dir));
+				UnreserveRailTrack(end,  TrackdirToTrack(track_dir));
 
 				if (_settings_client.gui.show_track_reservation) {
 					if (IsBridge(tile)) {
@@ -2240,7 +2240,7 @@ void FreeTrainTrackReservation(const Train *v)
 
 	TileIndex tile = v->tile;
 	Trackdir  td = v->GetVehicleTrackdir();
-	bool      free_tile = !(IsRailStationTile(v->tile) || IsTileType(v->tile, MP_TUNNELBRIDGE));
+	bool      free_tile = !(IsRailStationTile(v->tile) || HasTileByType(v->tile, MP_TUNNELBRIDGE));
 	StationID station_id = IsRailStationTile(v->tile) ? GetStationIndex(v->tile) : INVALID_STATION;
 
 	/* Can't be holding a reservation if we enter a depot. */
@@ -2938,10 +2938,10 @@ uint Train::Crash(bool flooded)
 		if (!HasBit(this->flags, VRF_TRAIN_STUCK)) FreeTrainTrackReservation(this);
 		for (const Train *v = this; v != NULL; v = v->Next()) {
 			ClearPathReservation(v, v->tile, v->GetVehicleTrackdir());
-			if (IsTileType(v->tile, MP_TUNNELBRIDGE)) {
+			if (HasTileByType(v->tile, MP_TUNNELBRIDGE)) {
 				/* ClearPathReservation will not free the wormhole exit
 				 * if the train has just entered the wormhole. */
-				SetTunnelBridgeReservation(GetOtherTunnelBridgeEnd(v->tile), false);
+				UnreserveRailTrack(GetOtherTunnelBridgeEnd(v->tile), TrackdirToTrack(v->GetVehicleTrackdir()));
 			}
 		}
 
@@ -3497,7 +3497,7 @@ static void DeleteLastWagon(Train *v)
 	if (IsRailDepotTile(tile)) {
 		UpdateSignalsOnSegment(tile, GetRailDepotDirection(GetRailDepotTile(tile)), owner);
 	} else if (IsTileType(tile, MP_TUNNELBRIDGE)) {
-		UpdateSignalsOnSegment(tile, INVALID_DIAGDIR, owner);
+		UpdateSignalsOnSegment(tile, ReverseDiagDir(GetTunnelBridgeDirection(tile)), owner);
 	} else {
 		SetSignalsOnBothDir(tile, track, owner);
 	}

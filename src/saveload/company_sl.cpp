@@ -118,6 +118,12 @@ void AfterLoadCompanyStats()
 					if (TracksOverlap(bits)) pieces *= pieces;
 				}
 				if (IsLevelCrossing(rail_tile)) pieces *= LEVELCROSSING_TRACKBIT_FACTOR;
+				if (IsTunnelTile(tile) || IsBridgeTile(tile)) {
+					/* Only count the virtual tunnel/bridge tiles if we're on the northern end tile. */
+					TileIndex other_end = GetOtherTunnelBridgeEnd(tile);
+					if (tile < other_end) pieces += GetTunnelBridgeLength(tile, other_end);
+					pieces *= TUNNELBRIDGE_TRACKBIT_FACTOR;
+				}
 				c->infrastructure.rail[GetRailType(rail_tile)] += pieces;
 
 				if (HasSignals(rail_tile)) c->infrastructure.signal += CountBits(GetPresentSignals(rail_tile));
@@ -172,11 +178,6 @@ void AfterLoadCompanyStats()
 					uint len = (GetTunnelBridgeLength(tile, other_end) + 2) * TUNNELBRIDGE_TRACKBIT_FACTOR;
 
 					switch (GetTunnelBridgeTransportType(tile)) {
-						case TRANSPORT_RAIL:
-							c = Company::GetIfValid(GetTileOwner(tile));
-							if (c != NULL) c->infrastructure.rail[GetRailType(tile)] += len;
-							break;
-
 						case TRANSPORT_ROAD: {
 							/* Iterate all present road types as each can have a different owner. */
 							RoadType rt;

@@ -1913,8 +1913,6 @@ static void SetDefaultRailGui()
 				FOR_ALL_RAIL_TILES(rail_tile, t) {
 					count[GetRailType(rail_tile)]++;
 				}
-			} else if (IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) {
-				count[GetRailType(t)]++;
 			}
 		}
 

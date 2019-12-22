@@ -379,7 +379,7 @@ static inline void SetAnimationFrame(TileIndex t, byte frame)
 static inline bool MayHaveAssociatedTile(const Tile *tile)
 {
 	TileType tt = GetTileType(tile);
-	return tt == MP_CLEAR || tt == MP_WATER || tt == MP_RAILWAY || tt == MP_ROAD;
+	return tt == MP_CLEAR || tt == MP_WATER || tt == MP_RAILWAY || tt == MP_ROAD || tt == MP_TUNNELBRIDGE;
 }
 
 /**

@@ -33,14 +33,6 @@ TrackBits GetReservedTrackbits(TileIndex t)
 		return bits;
 	}
 
-	switch (GetTileType(t)) {
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) return GetTunnelBridgeReservationTrackBits(t);
-			break;
-
-		default:
-			break;
-	}
 	return TRACK_BIT_NONE;
 }
 
@@ -119,17 +111,6 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 		return false;
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL && !GetTunnelBridgeReservationTrackBits(tile)) {
-				SetTunnelBridgeReservation(tile, true);
-				return true;
-			}
-			break;
-
-		default:
-			break;
-	}
 	return false;
 }
 
@@ -165,15 +146,6 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 			UpdateLevelCrossing(tile);
 		}
 		return;
-	}
-
-	switch (GetTileType(tile)) {
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) SetTunnelBridgeReservation(tile, false);
-			break;
-
-		default:
-			break;
 	}
 }
 

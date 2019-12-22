@@ -42,6 +42,41 @@ bool IsTunnelInWay(TileIndex, int z);
 bool IsTunnelInWayDir(TileIndex tile, int z, DiagDirection dir);
 
 /**
+ * Makes a tunnel entrance
+ * @param t the entrance of the tunnel
+ * @param o the owner of the entrance
+ * @param d the direction facing out of the tunnel
+ * @param tt the transport type of the tunnel
+ * @return Pointer to the newly created tile.
+ */
+static inline Tile *MakeTunnel(Tile *t, Owner o, DiagDirection d, TransportType tt)
+{
+	SetTileType(t, MP_TUNNELBRIDGE);
+	SetTileOwner(t, o);
+	t->m2 = 0;
+	t->m3 = 0;
+	t->m4 = 0;
+	t->m5 = tt << 2 | d;
+	SB(t->m6, 2, 4, 0);
+	t->m7 = 0;
+	t->m8 = 0;
+	return t;
+}
+
+/**
+ * Makes a tunnel entrance
+ * @param t the entrance of the tunnel
+ * @param o the owner of the entrance
+ * @param d the direction facing out of the tunnel
+ * @param tt the transport type of the tunnel
+ * @return Pointer to the newly created tile.
+ */
+static inline Tile *MakeTunnel(TileIndex t, Owner o, DiagDirection d, TransportType tt)
+{
+	return MakeTunnel(_m.ToTile(t), o, d, tt);
+}
+
+/**
  * Makes a road tunnel entrance
  * @param t the entrance of the tunnel
  * @param o the owner of the entrance
@@ -58,30 +93,10 @@ static inline void MakeRoadTunnel(TileIndex t, Owner o, DiagDirection d, RoadTyp
 	_m[t].m5 = TRANSPORT_ROAD << 2 | d;
 	SB(_m[t].m6, 2, 4, 0);
 	_m[t].m7 = 0;
-	_m[t].m8 = 0;
+	_m[t].m8 = r;
 	SetRoadOwner(t, ROADTYPE_ROAD, o);
 	if (o != OWNER_TOWN) SetRoadOwner(t, ROADTYPE_TRAM, o);
 	SetRoadTypes(t, r);
-}
-
-/**
- * Makes a rail tunnel entrance
- * @param t the entrance of the tunnel
- * @param o the owner of the entrance
- * @param d the direction facing out of the tunnel
- * @param r the rail type used in the tunnel
- */
-static inline void MakeRailTunnel(TileIndex t, Owner o, DiagDirection d, RailType r)
-{
-	SetTileType(t, MP_TUNNELBRIDGE);
-	SetTileOwner(t, o);
-	_m[t].m2 = 0;
-	_m[t].m3 = 0;
-	_m[t].m4 = 0;
-	_m[t].m5 = TRANSPORT_RAIL << 2 | d;
-	SB(_m[t].m6, 2, 4, 0);
-	_m[t].m7 = 0;
-	_m[t].m8 = r;
 }
 
 #endif /* TUNNEL_MAP_H */

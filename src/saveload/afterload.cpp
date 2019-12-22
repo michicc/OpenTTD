@@ -415,6 +415,26 @@ static void DecomposeTile(TileIndex tile)
 			break;
 		}
 
+		case MP_TUNNELBRIDGE: {
+			Tile *old_tile = _m.ToTile(tile);
+
+			switch (GetTunnelBridgeTransportType(tile)) {
+				case TRANSPORT_RAIL:
+					if (HasTileByType(tile, MP_RAILWAY)) break; // Already split.
+
+					Owner o = GetTileOwner(old_tile);
+					RailType rt = GetRailType(old_tile);
+					TrackBits tb = DiagDirToDiagTrackBits(GetTunnelBridgeDirection(tile));
+					bool reserved = HasBit(old_tile->m5, 4);
+
+					Tile *rail = MakeRailNormal(tile, GetTileOwner(old_tile), tb, rt);
+					if (reserved) SetTrackReservation(rail, tb);
+
+					break;
+			}
+			break;
+		}
+
 		default:
 			break;
 	}
@@ -2179,7 +2199,7 @@ bool AfterLoadGame()
 					break;
 
 				case MP_TUNNELBRIDGE: // Clear PBS reservation on tunnels/bridges
-					if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) SetTunnelBridgeReservation(t, false);
+					if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) SB(_m[t].m5, 4, 1, 0);
 					break;
 
 				default: break;

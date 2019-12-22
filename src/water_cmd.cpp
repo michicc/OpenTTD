@@ -1023,7 +1023,9 @@ void DoFloodTile(TileIndex target)
 	Slope tileh = GetTileSlope(target);
 	if (tileh != SLOPE_FLAT) {
 		/* make coast.. */
-		if (HasTileByType(target, MP_RAILWAY)) {
+		if (HasTileByType(target, MP_TUNNELBRIDGE)) {
+			/* TODO: make shore under bridge head. */
+		} else if (HasTileByType(target, MP_RAILWAY)) {
 			/* If one associated tile is plain rail, all tiles will be, so no need to check more. */
 			if (IsPlainRail(GetTileByType(target, MP_RAILWAY))) {
 				FloodVehicles(target);
