@@ -12,7 +12,12 @@
 #ifndef CARGODEST_FUNC_H
 #define CARGODEST_FUNC_H
 
+#include "vehicle_type.h"
+#include "station_type.h"
+
 void UpdateCargoLinks();
 void RebuildCargoLinkCounts();
+
+void UpdateVehicleRouteLinks(const Vehicle *v, StationID arrived_at);
 
 #endif /* CARGODEST_FUNC_H */

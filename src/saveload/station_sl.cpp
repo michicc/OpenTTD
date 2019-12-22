@@ -231,6 +231,7 @@ static uint16 _cargo_source;
 static uint32 _cargo_source_xy;
 static uint8  _cargo_days;
 static Money  _cargo_feeder_share;
+static uint32 _num_routes;
 
 static const SaveLoad _station_speclist_desc[] = {
 	SLE_CONDVAR(StationSpecList, grfid,    SLE_UINT32, SLV_27, SL_MAX_VERSION),
@@ -287,10 +288,30 @@ const SaveLoad *GetGoodsDesc()
 		 SLE_CONDVAR(GoodsEntry, node,                 SLE_UINT16,                SLV_183, SL_MAX_VERSION),
 		SLEG_CONDVAR(            _num_flows,           SLE_UINT32,                SLV_183, SL_MAX_VERSION),
 		 SLE_CONDVAR(GoodsEntry, max_waiting_cargo,    SLE_UINT32,                SLV_183, SL_MAX_VERSION),
+		SLEG_CONDVAR(            _num_routes,          SLE_UINT32,               SLV_YACD, SL_MAX_VERSION),
 		SLE_END()
 	};
 
 	return goods_desc;
+}
+
+/**
+ * Wrapper function to get the RouteLinks's internal structure while
+ * some of the variables itself are private.
+ * @return The SaveLoad description for RouteLinks.
+ */
+const SaveLoad *GetRouteLinkDescription()
+{
+	static const SaveLoad _routelink_desc[] = {
+		SLE_VAR(RouteLink, dest,           SLE_UINT16),
+		SLE_VAR(RouteLink, prev_order,     SLE_UINT16),
+		SLE_VAR(RouteLink, next_order,     SLE_UINT16),
+		SLE_VAR(RouteLink, owner,          SLE_UINT8),
+
+		SLE_END()
+	};
+
+	return _routelink_desc;
 }
 
 typedef std::pair<const StationID, std::list<CargoPacket *> > StationCargoPair;
@@ -500,6 +521,10 @@ static void RealSave_STNN(BaseStation *bst)
 			for (StationCargoPacketMap::ConstMapIterator it(st->goods[i].cargo.Packets()->begin()); it != st->goods[i].cargo.Packets()->end(); ++it) {
 				SlObject(const_cast<StationCargoPacketMap::value_type *>(&(*it)), _cargo_list_desc);
 			}
+
+			for (auto &route : st->goods[i].routes) {
+				SlObject(&route, GetRouteLinkDescription());
+			}
 		}
 	}
 
@@ -521,6 +546,7 @@ static void Save_STNN()
 static void Load_STNN()
 {
 	_num_flows = 0;
+	_num_routes = 0;
 
 	uint num_cargo = IsSavegameVersionBefore(SLV_EXTEND_CARGOTYPES) ? 32 : NUM_CARGO;
 	int index;
@@ -564,6 +590,11 @@ static void Load_STNN()
 						const_cast<StationCargoPacketMap &>(*(st->goods[i].cargo.Packets()))[pair.first].swap(pair.second);
 						assert(pair.second.empty());
 					}
+				}
+
+				for (uint j = 0; j < _num_routes; j++) {
+					st->goods[i].routes.emplace_back();
+					SlObject(&st->goods[i].routes.back(), GetRouteLinkDescription());
 				}
 			}
 		}

@@ -20,6 +20,7 @@
 #include "linkgraph/linkgraph_type.h"
 #include "newgrf_storage.h"
 #include "bitmap_type.h"
+#include "cargodest_base.h"
 #include <map>
 #include <set>
 
@@ -260,6 +261,8 @@ struct GoodsEntry {
 	NodeID node;            ///< ID of node in link graph referring to this goods entry.
 	FlowStatMap flows;      ///< Planned flows through this station.
 	uint max_waiting_cargo; ///< Max cargo from this station waiting at any station.
+
+	RouteLinks routes;      ///< List of originating route links.
 
 	/**
 	 * Reports whether a vehicle has ever tried to load the cargo at this station.

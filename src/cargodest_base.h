@@ -15,6 +15,9 @@
 #include "cargo_type.h"
 #include "tile_type.h"
 #include "town_type.h"
+#include "order_type.h"
+#include "station_type.h"
+#include "company_type.h"
 #include <vector>
 
 struct CargoSourceSink;
@@ -90,5 +93,44 @@ struct CargoSourceSink {
 
 	static CargoSourceSink *Get(SourceType type, SourceID id);
 };
+
+/** Holds information about a route service between two stations. */
+struct RouteLink {
+private:
+	friend const struct SaveLoad *GetRouteLinkDescription(); ///< Saving and loading of route links.
+	friend void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner);
+
+	StationID       dest;            ///< Destination station id.
+	OrderID         prev_order;      ///< Id of the order the vehicle had when arriving at the origin.
+	OrderID         next_order;      ///< Id of the order the vehicle will leave the station with.
+	Owner           owner;           ///< Owner of the vehicle of the link.
+
+public:
+	RouteLink(StationID dest = INVALID_STATION, OrderID prev_order = INVALID_ORDER, OrderID next_order = INVALID_ORDER, Owner owner = INVALID_OWNER)
+		: dest(dest), prev_order(prev_order), next_order(next_order), owner(owner)
+	{}
+
+	/** Get the target station of this link. */
+	inline StationID GetDestination() const { return this->dest; }
+
+	/** Get the order id that lead to the origin station. */
+	inline OrderID GetOriginOrderId() const { return this->prev_order; }
+
+	/** Get the order id that lead to the destination station. */
+	inline OrderID GetDestOrderId() const { return this->next_order; }
+
+	/** Get the owner of this link. */
+	inline Owner GetOwner() const { return this->owner; }
+
+	/** Update the destination of the route link. */
+	inline void SetDestination(StationID dest_id, OrderID dest_order_id)
+	{
+		this->dest = dest_id;
+		this->next_order = dest_order_id;
+	}
+};
+
+/** Vector of route links. */
+typedef std::vector<RouteLink> RouteLinks;
 
 #endif /* CARGODEST_BASE_H */
