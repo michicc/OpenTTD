@@ -215,6 +215,8 @@ private:
 
 	uint size_x, size_y;
 
+	friend void Save_MAPR();
+	friend void Load_MAPR();
 public:
 	Map() : size_x(0), size_y(0) {}
 
@@ -227,6 +229,9 @@ public:
 	/** Clear map contents. */
 	void Clear();
 
+	/** Get raw tile count. */
+	size_t GetTileCount() const;
+
 	/** Get the #Tile for the given tile index. */
 	inline Tile &operator[](TileIndex tile)
 	{
@@ -238,6 +243,35 @@ public:
 	{
 		return &this->operator[](tile);
 	}
+
+	/** Helper class for iterating over all tiles in the map. */
+	struct Iterator {
+		/** Prefix increment operator. */
+		Iterator &operator ++();
+		/** Postfix increment operator. */
+		Iterator operator ++(int);
+
+		Tile &operator *() { return *tile; }
+		Tile *operator ->() { return &(*tile); }
+
+		/** Equality operator. */
+		bool operator ==(const Iterator &rhs) { return this->tile == rhs.tile; }
+		/** Inequality operator. */
+		bool operator !=(const Iterator &rhs) { return this->tile != rhs.tile; }
+
+	private:
+		std::vector<Tile>::iterator tile;
+		uint y_pos;
+
+		Iterator(std::vector<Tile>::iterator &tile, uint y_pos) : tile(tile), y_pos(y_pos) {}
+
+		friend class Map;
+	};
+
+	/** Return an iterator to the beginning of tile storage. */
+	Iterator begin();
+	/** Return an iterator pointing to the element behind the last valid tile. */
+	Iterator end();
 };
 
 /**

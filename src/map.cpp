@@ -15,6 +15,7 @@
 #include "water_map.h"
 #include "string_func.h"
 #include <algorithm>
+#include <numeric>
 
 #include "safeguards.h"
 
@@ -77,6 +78,39 @@ void Map::Clear()
 	for (auto &i : this->tiles) {
 		std::fill(i.begin(), i.end(), Tile());
 	}
+}
+
+size_t Map::GetTileCount() const
+{
+	return std::accumulate(this->tiles.begin(), this->tiles.end(), size_t{0}, [](size_t s, const std::vector<Tile> &t) { return s + t.size(); });
+}
+
+Map::Iterator& Map::Iterator::operator ++()
+{
+	tile++;
+	/* Move to next map line if the end of the current line is reached and we are not at the final end. */
+	if (tile == _m.tiles[y_pos].end() && y_pos < _m.tiles.size() - 1) {
+		tile = _m.tiles[++y_pos].begin();
+	}
+
+	return *this;
+}
+
+Map::Iterator Map::Iterator::operator ++(int)
+{
+	Iterator old(*this);
+	++(*this);
+	return old;
+}
+
+Map::Iterator Map::begin()
+{
+	return Map::Iterator(this->tiles.front().begin(), 0);
+}
+
+Map::Iterator Map::end()
+{
+	return Map::Iterator(this->tiles.back().end(), this->size_y - 1);
 }
 
 
