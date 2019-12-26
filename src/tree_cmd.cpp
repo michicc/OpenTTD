@@ -632,10 +632,10 @@ static void TileLoopTreesAlps(TileIndex tile)
 	MarkTileDirtyByTile(tile);
 }
 
-static void TileLoop_Trees(TileIndex tile)
+static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 {
 	if (GetTreeGround(tile) == TREE_GROUND_SHORE) {
-		TileLoop_Water(tile);
+		TileLoop_Water(tile, tree_tile);
 	} else {
 		switch (_settings_game.game_creation.landscape) {
 			case LT_TROPIC: TileLoopTreesDesert(tile); break;
@@ -657,7 +657,7 @@ static void TileLoop_Trees(TileIndex tile)
 	}
 	if (GetTreeCounter(tile) < 15) {
 		AddTreeCounter(tile, 1);
-		return;
+		return true;
 	}
 	SetTreeCounter(tile, 0);
 
@@ -694,10 +694,10 @@ static void TileLoop_Trees(TileIndex tile)
 						tile += TileOffsByDir((Direction)(Random() & 7));
 
 						/* Cacti don't spread */
-						if (!CanPlantTreesOnTile(tile, false)) return;
+						if (!CanPlantTreesOnTile(tile, false)) return true;
 
 						/* Don't plant trees, if ground was freshly cleared */
-						if (IsTileType(tile, MP_CLEAR) && GetClearGround(tile) == CLEAR_GRASS && GetClearDensity(tile) != 3) return;
+						if (IsTileType(tile, MP_CLEAR) && GetClearGround(tile) == CLEAR_GRASS && GetClearDensity(tile) != 3) return true;
 
 						PlantTreesOnTile(tile, treetype, 0, 0);
 
@@ -705,7 +705,7 @@ static void TileLoop_Trees(TileIndex tile)
 					}
 
 					default:
-						return;
+						return true;
 				}
 			}
 			break;
@@ -746,6 +746,7 @@ static void TileLoop_Trees(TileIndex tile)
 	}
 
 	MarkTileDirtyByTile(tile);
+	return true;
 }
 
 void OnTick_Trees()
