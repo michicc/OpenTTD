@@ -258,6 +258,7 @@ static inline void SetFence(TileIndex t, DiagDirection side, uint h)
  */
 static inline void MakeClear(TileIndex t, ClearGround g, uint density)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
 	SetTileType(t, MP_CLEAR);
 	_m[t].m1 = 0;
 	SetTileOwner(t, OWNER_NONE);
@@ -265,7 +266,7 @@ static inline void MakeClear(TileIndex t, ClearGround g, uint density)
 	_m[t].m3 = 0;
 	_m[t].m4 = 0 << 5 | 0 << 2;
 	SetClearGroundDensity(t, g, density); // Sets m5
-	_m[t].m6 = 0;
+	SB(_m[t].m6, 1, 7, 0); // Keep associated tile flag.
 	_m[t].m7 = 0;
 	_m[t].m8 = 0;
 }
