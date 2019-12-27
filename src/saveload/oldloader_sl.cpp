@@ -48,7 +48,7 @@ void FixOldMapArray()
 	/* TTO/TTD/TTDP savegames could have buoys at tile 0
 	 * (without assigned station struct) */
 	MemSetT(&_m[0], 0);
-	SetTileType(0, MP_WATER);
+	SetTileType((TileIndex)0, MP_WATER);
 	SetTileOwner(0, OWNER_WATER);
 }
 

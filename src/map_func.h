@@ -244,6 +244,9 @@ public:
 		return &this->operator[](tile);
 	}
 
+	Tile *NewTile(TileIndex tile, TileType type, bool raw_alloc = false, Tile *after = nullptr);
+	void RemoveTile(TileIndex index, Tile *tile);
+
 	/** Helper class for iterating over all tiles in the map. */
 	struct Iterator {
 		/** Prefix increment operator. */
