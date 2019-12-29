@@ -113,17 +113,22 @@ public:
 #else
 #	define LANDINFOD_LEVEL 1
 #endif
-		DEBUG(misc, LANDINFOD_LEVEL, "TILE: %#x (%i,%i)", tile, TileX(tile), TileY(tile));
-		DEBUG(misc, LANDINFOD_LEVEL, "type   = %#x", _m[tile].type);
-		DEBUG(misc, LANDINFOD_LEVEL, "height = %#x", _m[tile].height);
-		DEBUG(misc, LANDINFOD_LEVEL, "m1     = %#x", _m[tile].m1);
-		DEBUG(misc, LANDINFOD_LEVEL, "m2     = %#x", _m[tile].m2);
-		DEBUG(misc, LANDINFOD_LEVEL, "m3     = %#x", _m[tile].m3);
-		DEBUG(misc, LANDINFOD_LEVEL, "m4     = %#x", _m[tile].m4);
-		DEBUG(misc, LANDINFOD_LEVEL, "m5     = %#x", _m[tile].m5);
-		DEBUG(misc, LANDINFOD_LEVEL, "m6     = %#x", _m[tile].m6);
-		DEBUG(misc, LANDINFOD_LEVEL, "m7     = %#x", _m[tile].m7);
-		DEBUG(misc, LANDINFOD_LEVEL, "m8     = %#x", _m[tile].m8);
+		static const char * const ttype_to_str[] = {"MP_CLEAR", "MP_RAILWAY", "MP_ROAD", "MP_HOUSE", "MP_TREES", "MP_STATION", "MP_WATER", "MP_VOID", "MP_INDUSTRY", "MP_TUNNELBRIDGE", "MP_OBJECT"};
+
+		const Tile *tptr = _m.ToTile(tile);
+		do {
+			DEBUG(misc, LANDINFOD_LEVEL, "type   = %#x (%s)", tptr->type, GetTileType(tptr) < lengthof(ttype_to_str) ? ttype_to_str[GetTileType(tptr)] : "invalid");
+			DEBUG(misc, LANDINFOD_LEVEL, "height = %#x", tptr->height);
+			DEBUG(misc, LANDINFOD_LEVEL, "m1     = %#x", tptr->m1);
+			DEBUG(misc, LANDINFOD_LEVEL, "m2     = %#x", tptr->m2);
+			DEBUG(misc, LANDINFOD_LEVEL, "m3     = %#x", tptr->m3);
+			DEBUG(misc, LANDINFOD_LEVEL, "m4     = %#x", tptr->m4);
+			DEBUG(misc, LANDINFOD_LEVEL, "m5     = %#x", tptr->m5);
+			DEBUG(misc, LANDINFOD_LEVEL, "m6     = %#x", tptr->m6);
+			DEBUG(misc, LANDINFOD_LEVEL, "m7     = %#x", tptr->m7);
+			DEBUG(misc, LANDINFOD_LEVEL, "m8     = %#x", tptr->m8);
+		} while (HasAssociatedTile(tptr++));
+		DEBUG(misc, LANDINFOD_LEVEL, "");
 #undef LANDINFOD_LEVEL
 	}
 
@@ -133,59 +138,91 @@ public:
 
 		Town *t = ClosestTownFromTile(tile, _settings_game.economy.dist_local_authority);
 
-		/* Because build_date is not set yet in every TileDesc, we make sure it is empty */
-		TileDesc td;
+		/* Query tile descriptions for all tiles at this tile index. */
+		std::vector<TileDesc> tds;
+		Tile *tptr = _m.ToTile(tile);
+		do {
+			tds.emplace_back();
+			TileDesc &td = tds.back();
 
-		td.build_date = INVALID_DATE;
+			/* Because build_date is not set yet in every TileDesc, we make sure it is empty */
+			td.build_date = INVALID_DATE;
 
-		/* Most tiles have only one owner, but
-		 *  - drivethrough roadstops can be build on town owned roads (up to 2 owners) and
-		 *  - roads can have up to four owners (railroad, road, tram, 3rd-roadtype "highway").
-		 */
-		td.owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER; // At least one owner is displayed, though it might be "N/A".
-		td.owner_type[1] = STR_NULL;       // STR_NULL results in skipping the owner
-		td.owner_type[2] = STR_NULL;
-		td.owner_type[3] = STR_NULL;
-		td.owner[0] = OWNER_NONE;
-		td.owner[1] = OWNER_NONE;
-		td.owner[2] = OWNER_NONE;
-		td.owner[3] = OWNER_NONE;
+			/* Most tiles have only one owner, but
+			 *  - drivethrough roadstops can be build on town owned roads (up to 2 owners) and
+			 *  - roads can have up to four owners (railroad, road, tram, 3rd-roadtype "highway").
+			 */
+			td.owner_type[0] = STR_NULL;       // STR_NULL results in skipping the owner
+			td.owner_type[1] = STR_NULL;
+			td.owner_type[2] = STR_NULL;
+			td.owner_type[3] = STR_NULL;
+			td.owner[0] = OWNER_NONE;
+			td.owner[1] = OWNER_NONE;
+			td.owner[2] = OWNER_NONE;
+			td.owner[3] = OWNER_NONE;
 
-		td.station_class = STR_NULL;
-		td.station_name = STR_NULL;
-		td.airport_class = STR_NULL;
-		td.airport_name = STR_NULL;
-		td.airport_tile_name = STR_NULL;
-		td.railtype = STR_NULL;
-		td.rail_speed = 0;
-		td.roadtype = STR_NULL;
-		td.road_speed = 0;
-		td.tramtype = STR_NULL;
-		td.tram_speed = 0;
+			td.station_class = STR_NULL;
+			td.station_name = STR_NULL;
+			td.airport_class = STR_NULL;
+			td.airport_name = STR_NULL;
+			td.airport_tile_name = STR_NULL;
+			td.railtype = STR_NULL;
+			td.rail_speed = 0;
+			td.roadtype = STR_NULL;
+			td.road_speed = 0;
+			td.tramtype = STR_NULL;
+			td.tram_speed = 0;
 
-		td.grf = nullptr;
+			td.grf = nullptr;
+
+			GetTileDesc(tile, tptr, &td);
+		} while (HasAssociatedTile(tptr++));
 
 		CargoArray acceptance;
 		AddAcceptedCargo(tile, acceptance, nullptr);
-		GetTileDesc(tile, &td);
 
 		char buffer[LAND_INFO_LINE_BUFF_SIZE];
 		char *buffer_last = lastof(buffer);
 		char *strp = buffer;
 
 		/* Tiletype */
-		SetDParam(0, td.dparam[0]);
-		GetString(buffer, td.str, buffer_last);
+		bool found = false;
+		StringID prev_str = INVALID_STRING_ID;
+		uint64 prev_param = 0;
+		for (TileDesc &td : tds) {
+			if (td.str == prev_str && td.dparam[0] == prev_param) continue;
+
+			/* Add a comma between each item. */
+			if (found) strp = strecpy(strp, ", ", buffer_last);
+			found = true;
+
+			prev_str = td.str;
+			prev_param = td.dparam[0];
+			SetDParam(0, td.dparam[0]);
+			strp = GetString(strp, td.str, buffer_last);
+		}
 		this->landinfo_data.emplace_back(buffer);
 
-		/* Up to four owners */
-		for (uint i = 0; i < 4; i++) {
-			if (td.owner_type[i] == STR_NULL) continue;
+		/* Owners */
+		found = false;
+		Owner prev_owner = INVALID_OWNER;
+		for (TileDesc &td : tds) {
+			for (uint i = 0; i < 4; i++) {
+				if (td.owner_type[i] == STR_NULL) continue;
+				if (td.owner[i] == prev_owner) continue;
+				prev_owner = td.owner[i];
 
+				SetDParam(0, STR_LAND_AREA_INFORMATION_OWNER_N_A);
+				if (td.owner[i] != OWNER_NONE && td.owner[i] != OWNER_WATER) GetNameOfOwner(td.owner[i], tile);
+				GetString(buffer, td.owner_type[i], buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+				found = true;
+			}
+		}
+		if (!found) {
+			/* No real owner of the tile. */
 			SetDParam(0, STR_LAND_AREA_INFORMATION_OWNER_N_A);
-			if (td.owner[i] != OWNER_NONE && td.owner[i] != OWNER_WATER) GetNameOfOwner(td.owner[i], tile);
-			GetString(buffer, td.owner_type[i], buffer_last);
-			this->landinfo_data.emplace_back(buffer);
+			GetString(buffer, STR_LAND_AREA_INFORMATION_OWNER, buffer_last);
 		}
 
 		/* Cost to clear/revenue when cleared */
@@ -227,100 +264,102 @@ public:
 		GetString(buffer, STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY, buffer_last);
 		this->landinfo_data.emplace_back(buffer);
 
-		/* Build date */
-		if (td.build_date != INVALID_DATE) {
-			SetDParam(0, td.build_date);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_BUILD_DATE, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+		for (TileDesc &td : tds) {
+			/* Build date */
+			if (td.build_date != INVALID_DATE) {
+				SetDParam(0, td.build_date);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_BUILD_DATE, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Station class */
-		if (td.station_class != STR_NULL) {
-			SetDParam(0, td.station_class);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_STATION_CLASS, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Station class */
+			if (td.station_class != STR_NULL) {
+				SetDParam(0, td.station_class);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_STATION_CLASS, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Station type name */
-		if (td.station_name != STR_NULL) {
-			SetDParam(0, td.station_name);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_STATION_TYPE, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Station type name */
+			if (td.station_name != STR_NULL) {
+				SetDParam(0, td.station_name);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_STATION_TYPE, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Airport class */
-		if (td.airport_class != STR_NULL) {
-			SetDParam(0, td.airport_class);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORT_CLASS, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Airport class */
+			if (td.airport_class != STR_NULL) {
+				SetDParam(0, td.airport_class);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORT_CLASS, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Airport name */
-		if (td.airport_name != STR_NULL) {
-			SetDParam(0, td.airport_name);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORT_NAME, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Airport name */
+			if (td.airport_name != STR_NULL) {
+				SetDParam(0, td.airport_name);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORT_NAME, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Airport tile name */
-		if (td.airport_tile_name != STR_NULL) {
-			SetDParam(0, td.airport_tile_name);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Airport tile name */
+			if (td.airport_tile_name != STR_NULL) {
+				SetDParam(0, td.airport_tile_name);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Rail type name */
-		if (td.railtype != STR_NULL) {
-			SetDParam(0, td.railtype);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Rail type name */
+			if (td.railtype != STR_NULL) {
+				SetDParam(0, td.railtype);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_RAIL_TYPE, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Rail speed limit */
-		if (td.rail_speed != 0) {
-			SetDParam(0, td.rail_speed);
-			GetString(buffer, STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Rail speed limit */
+			if (td.rail_speed != 0) {
+				SetDParam(0, td.rail_speed);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Road type name */
-		if (td.roadtype != STR_NULL) {
-			SetDParam(0, td.roadtype);
-			GetString(buffer, STR_LANG_AREA_INFORMATION_ROAD_TYPE, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Road type name */
+			if (td.roadtype != STR_NULL) {
+				SetDParam(0, td.roadtype);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_ROAD_TYPE, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Road speed limit */
-		if (td.road_speed != 0) {
-			SetDParam(0, td.road_speed);
-			GetString(buffer, STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Road speed limit */
+			if (td.road_speed != 0) {
+				SetDParam(0, td.road_speed);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Tram type name */
-		if (td.tramtype != STR_NULL) {
-			SetDParam(0, td.tramtype);
-			GetString(buffer, STR_LANG_AREA_INFORMATION_TRAM_TYPE, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Tram type name */
+			if (td.tramtype != STR_NULL) {
+				SetDParam(0, td.tramtype);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_TRAM_TYPE, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 
-		/* Tram speed limit */
-		if (td.tram_speed != 0) {
-			SetDParam(0, td.tram_speed);
-			GetString(buffer, STR_LANG_AREA_INFORMATION_TRAM_SPEED_LIMIT, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
-		}
+			/* Tram speed limit */
+			if (td.tram_speed != 0) {
+				SetDParam(0, td.tram_speed);
+				GetString(buffer, STR_LANG_AREA_INFORMATION_TRAM_SPEED_LIMIT, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+				}
 
-		/* NewGRF name */
-		if (td.grf != nullptr) {
-			SetDParamStr(0, td.grf);
-			GetString(buffer, STR_LAND_AREA_INFORMATION_NEWGRF_NAME, buffer_last);
-			this->landinfo_data.emplace_back(buffer);
+			/* NewGRF name */
+			if (td.grf != nullptr) {
+				SetDParamStr(0, td.grf);
+				GetString(buffer, STR_LAND_AREA_INFORMATION_NEWGRF_NAME, buffer_last);
+				this->landinfo_data.emplace_back(buffer);
+			}
 		}
 
 		/* Cargo acceptance is displayed in a extra multiline */
 		strp = GetString(buffer, STR_LAND_AREA_INFORMATION_CARGO_ACCEPTED, buffer_last);
-		bool found = false;
+		found = false;
 
 		for (CargoID i = 0; i < NUM_CARGO; ++i) {
 			if (acceptance[i] > 0) {

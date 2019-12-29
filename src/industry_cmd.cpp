@@ -473,12 +473,13 @@ static void AddAcceptedCargo_Industry(TileIndex tile, CargoArray &acceptance, Ca
 	}
 }
 
-static void GetTileDesc_Industry(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Industry(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	const Industry *i = Industry::GetByTile(tile);
 	const IndustrySpec *is = GetIndustrySpec(i->type);
 
 	td->owner[0] = i->owner;
+	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 	td->str = is->name;
 	if (!IsIndustryCompleted(tile)) {
 		SetDParamX(td->dparam, 0, td->str);

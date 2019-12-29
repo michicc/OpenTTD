@@ -1681,7 +1681,7 @@ static Foundation GetFoundation_TunnelBridge(TileIndex tile, Slope tileh)
 	return IsTunnel(tile) ? FOUNDATION_NONE : GetBridgeFoundation(tileh, DiagDirToAxis(GetTunnelBridgeDirection(tile)));
 }
 
-static void GetTileDesc_TunnelBridge(TileIndex tile, TileDesc *td)
+static void GetTileDesc_TunnelBridge(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	TransportType tt = GetTunnelBridgeTransportType(tile);
 
@@ -1691,6 +1691,7 @@ static void GetTileDesc_TunnelBridge(TileIndex tile, TileDesc *td)
 		td->str = (tt == TRANSPORT_WATER) ? STR_LAI_BRIDGE_DESCRIPTION_AQUEDUCT : GetBridgeSpec(GetBridgeType(tile))->transport_name[tt];
 	}
 	td->owner[0] = GetTileOwner(tile);
+	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 
 	Owner road_owner = INVALID_OWNER;
 	Owner tram_owner = INVALID_OWNER;
