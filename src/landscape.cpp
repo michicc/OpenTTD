@@ -339,11 +339,20 @@ uint GetPartialPixelZ(int x, int y, Slope corners)
 	return z;
 }
 
+extern int GetSlopePixelZ_TunnelBridge(TileIndex tile, uint x, uint y); // From tunnelbridge_cmd.cpp
+
 int GetSlopePixelZ(int x, int y)
 {
 	TileIndex tile = TileVirtXY(x, y);
+	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+		/* Special case for bridge/tunnel tiles as vehicles don't follow the landscape there. */
+		return GetSlopePixelZ_TunnelBridge(tile, x, y);
+	}
 
-	return _tile_type_procs[GetTileType(tile)]->get_slope_z_proc(tile, x, y);
+	int z;
+	Slope tileh = GetFoundationPixelSlope(tile, &z);
+
+	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
 }
 
 /**
@@ -359,7 +368,10 @@ int GetSlopePixelZOutsideMap(int x, int y)
 	if (IsInsideBS(x, 0, MapSizeX() * TILE_SIZE) && IsInsideBS(y, 0, MapSizeY() * TILE_SIZE)) {
 		return GetSlopePixelZ(x, y);
 	} else {
-		return _tile_type_procs[MP_VOID]->get_slope_z_proc(INVALID_TILE, x, y);
+		int z;
+
+		Slope tileh = GetTilePixelSlopeOutsideMap(x >> 4, y >> 4, &z);
+		return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
 	}
 }
 

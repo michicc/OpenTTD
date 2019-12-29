@@ -1637,7 +1637,7 @@ void DrawBridgeMiddle(const TileInfo *ti)
 }
 
 
-static int GetSlopePixelZ_TunnelBridge(TileIndex tile, uint x, uint y)
+int GetSlopePixelZ_TunnelBridge(TileIndex tile, uint x, uint y)
 {
 	int z;
 	Slope tileh = GetTilePixelSlope(tile, &z);
@@ -2021,7 +2021,6 @@ static CommandCost TerraformTile_TunnelBridge(TileIndex tile, Tile *tptr, DoComm
 
 extern const TileTypeProcs _tile_type_tunnelbridge_procs = {
 	DrawTile_TunnelBridge,           // draw_tile_proc
-	GetSlopePixelZ_TunnelBridge,     // get_slope_z_proc
 	ClearTile_TunnelBridge,          // clear_tile_proc
 	nullptr,                            // add_accepted_cargo_proc
 	GetTileDesc_TunnelBridge,        // get_tile_desc_proc
