@@ -561,10 +561,15 @@ static CommandCost ClearTile_Water(TileIndex tile, Tile *tptr, DoCommandFlag fla
 				MarkCanalsAndRiversAroundDirty(tile);
 				if (remove) RemoveDockingTile(tile);
 			}
-			if (IsSlopeWithOneCornerRaised(slope)) {
-				return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_WATER]);
+
+			if (HasTileByType(tile, MP_TREES)) {
+				return CommandCost(EXPENSES_CONSTRUCTION);
 			} else {
-				return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_ROUGH]);
+				if (IsSlopeWithOneCornerRaised(slope)) {
+					return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_WATER]);
+				} else {
+					return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_ROUGH]);
+				}
 			}
 		}
 
@@ -1082,9 +1087,6 @@ FloodingBehaviour GetFloodingBehaviour(TileIndex tile)
 			}
 			return FLOOD_NONE;
 
-		case MP_TREES:
-			return (GetTreeGround(tile) == TREE_GROUND_SHORE ? FLOOD_DRYUP : FLOOD_NONE);
-
 		default:
 			return FLOOD_NONE;
 	}
@@ -1112,16 +1114,15 @@ void DoFloodTile(TileIndex target)
 				break;
 			}
 
-			case MP_TREES:
-				if (!IsSlopeWithOneCornerRaised(tileh)) {
-					SetTreeGroundDensity(target, TREE_GROUND_SHORE, 3);
+			case MP_CLEAR:
+				if (!IsSlopeWithOneCornerRaised(tileh) && HasTileByType(target, MP_TREES)) {
+					/* Slope with trees, convert to shore. */
+					MakeShore(target);
 					MarkTileDirtyByTile(target);
 					flooded = true;
 					break;
 				}
-				FALLTHROUGH;
 
-			case MP_CLEAR:
 				if (DoCommand(target, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
 					MakeShore(target);
 					MarkTileDirtyByTile(target);
@@ -1181,15 +1182,11 @@ static void DoDryUp(TileIndex tile)
 			MarkTileDirtyByTile(tile);
 			break;
 
-		case MP_TREES:
-			SetTreeGroundDensity(tile, TREE_GROUND_GRASS, 3);
-			MarkTileDirtyByTile(tile);
-			break;
-
 		case MP_WATER:
 			assert(IsCoast(tile));
 
-			if (DoCommand(tile, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
+			/* Don't clear trees on coastal tiles. */
+			if (HasTileByType(tile, MP_TREES) || DoCommand(tile, 0, 0, DC_EXEC, CMD_LANDSCAPE_CLEAR).Succeeded()) {
 				MakeClear(tile, CLEAR_GRASS, 3);
 				MarkTileDirtyByTile(tile);
 			}
@@ -1218,9 +1215,6 @@ bool TileLoop_Water(TileIndex tile, Tile *&tptr)
 				if (!IsValidTile(dest)) continue;
 				/* do not try to flood water tiles - increases performance a lot */
 				if (IsTileType(dest, MP_WATER)) continue;
-
-				/* TREE_GROUND_SHORE is the sign of a previous flood. */
-				if (IsTileType(dest, MP_TREES) && GetTreeGround(dest) == TREE_GROUND_SHORE) continue;
 
 				int z_dest;
 				Slope slope_dest = GetFoundationSlope(dest, &z_dest) & ~SLOPE_HALFTILE_MASK & ~SLOPE_STEEP;

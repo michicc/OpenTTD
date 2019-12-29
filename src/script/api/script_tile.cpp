@@ -27,7 +27,6 @@
 	switch (::GetTileType(tile)) {
 		default: return false;
 		case MP_CLEAR: return true;
-		case MP_TREES: return true;
 		case MP_WATER: return IsCoast(tile);
 		case MP_ROAD:
 			/* Tram bits aren't considered buildable */
@@ -69,8 +68,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_WATER) && ::IsCoast(tile)) ||
-		(::IsTileType(tile, MP_TREES) && ::GetTreeGround(tile) == TREE_GROUND_SHORE);
+	return ::IsCoastTile(tile);
 }
 
 /* static */ bool ScriptTile::IsStationTile(TileIndex tile)
@@ -98,7 +96,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return ::IsTileType(tile, MP_TREES);
+	return ::HasTileByType(tile, MP_TREES);
 }
 
 /* static */ bool ScriptTile::IsFarmTile(TileIndex tile)

@@ -432,6 +432,8 @@ CommandCost CmdBuildBridge(TileIndex end_tile, DoCommandFlag flags, uint32 p1, u
 				return_cmd_error(STR_ERROR_MUST_DEMOLISH_BRIDGE_FIRST);
 			}
 
+			if (HasTileByType(tile, MP_TREES)) goto not_valid_below;
+
 			switch (GetTileType(tile)) {
 				case MP_WATER:
 					if (!IsWater(tile) && !IsCoast(tile)) goto not_valid_below;

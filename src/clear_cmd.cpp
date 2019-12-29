@@ -35,7 +35,7 @@ static CommandCost ClearTile_Clear(TileIndex tile, Tile *tptr, DoCommandFlag fla
 	};
 	CommandCost price(EXPENSES_CONSTRUCTION);
 
-	if (!IsClearGround(tile, CLEAR_GRASS) || GetClearDensity(tile) != 0) {
+	if (!HasTileByType(tile, MP_TREES) && (!IsClearGround(tile, CLEAR_GRASS) || GetClearDensity(tile) != 0)) {
 		price.AddCost(_price[clear_price_table[GetClearGround(tile)]]);
 	}
 
