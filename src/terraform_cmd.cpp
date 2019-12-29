@@ -281,17 +281,33 @@ CommandCost CmdTerraformLand(TileIndex tile, DoCommandFlag flags, uint32 p1, uin
 			/* Check tiletype-specific things, and add extra-cost */
 			const bool curr_gen = _generating_world;
 			if (_game_mode == GM_EDITOR) _generating_world = true; // used to create green terraformed land
+
 			DoCommandFlag tile_flags = flags | DC_AUTO | DC_FORCE_CLEAR_TILE;
 			if (pass == 0) {
 				tile_flags &= ~DC_EXEC;
 				tile_flags |= DC_NO_MODIFY_TOWN_RATING;
 			}
-			CommandCost cost;
+
+			CommandCost cost(EXPENSES_CONSTRUCTION);
 			if (indirectly_cleared) {
 				cost = DoCommand(tile, 0, 0, tile_flags, CMD_LANDSCAPE_CLEAR);
 			} else {
-				cost = _tile_type_procs[GetTileType(tile)]->terraform_tile_proc(tile, tile_flags, z_min, tileh);
+				bool clear_tile = true;
+				Tile *tptr = _m.ToTile(tile);
+				do {
+					CommandCost res = _tile_type_procs[GetTileType(tptr)]->terraform_tile_proc(tile, tptr, tile_flags, z_min, tileh);
+					if (!res.Failed() || res.GetErrorMessage() != INVALID_STRING_ID) {
+						clear_tile = false;
+						cost.AddCost(res);
+					}
+				} while (HasAssociatedTile(tptr++));
+
+				/* Try clearing the tile if terraforming failed. */
+				if (clear_tile) {
+					cost = DoCommand(tile, 0, 0, tile_flags, CMD_LANDSCAPE_CLEAR);
+				}
 			}
+
 			_generating_world = curr_gen;
 			if (cost.Failed()) {
 				_terraform_err_tile = tile;
