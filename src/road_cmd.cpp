@@ -2155,7 +2155,7 @@ static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, int 
 }
 
 
-static void ChangeTileOwner_Road(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Road(TileIndex tile, Tile *road_tile, Owner old_owner, Owner new_owner)
 {
 	if (IsRoadDepot(tile)) {
 		if (GetTileOwner(tile) == old_owner) {
@@ -2176,7 +2176,7 @@ static void ChangeTileOwner_Road(TileIndex tile, Owner old_owner, Owner new_owne
 				}
 			}
 		}
-		return;
+		return true;
 	}
 
 	FOR_ALL_ROADTRAMTYPES(rtt) {
@@ -2207,6 +2207,7 @@ static void ChangeTileOwner_Road(TileIndex tile, Owner old_owner, Owner new_owne
 			}
 		}
 	}
+	return true;
 }
 
 static CommandCost TerraformTile_Road(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)

@@ -774,9 +774,10 @@ static TrackStatus GetTileTrackStatus_Trees(TileIndex tile, TransportType mode, 
 	return 0;
 }
 
-static void ChangeTileOwner_Trees(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Trees(TileIndex tile, Tile *tptr, Owner old_owner, Owner new_owner)
 {
 	/* not used */
+	return true;
 }
 
 void InitializeTrees()
