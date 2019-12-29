@@ -911,12 +911,10 @@ static void DrawTile_Water(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 	switch (GetWaterTileType(ti->tile)) {
 		case WATER_TILE_CLEAR:
 			DrawWaterClassGround(ti);
-			DrawBridgeMiddle(ti);
 			break;
 
 		case WATER_TILE_COAST: {
 			DrawShoreTile(ti, draw_halftile, halftile_corner);
-			DrawBridgeMiddle(ti);
 			break;
 		}
 

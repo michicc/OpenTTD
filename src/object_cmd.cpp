@@ -400,8 +400,6 @@ static void DrawTile_Object(TileInfo *ti, bool draw_halftile, Corner halftile_co
 	} else {
 		DrawNewObjectTile(ti, spec);
 	}
-
-	DrawBridgeMiddle(ti);
 }
 
 static Foundation GetFoundation_Object(TileIndex tile, Tile *tptr, Slope tileh)
