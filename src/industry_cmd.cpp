@@ -551,7 +551,7 @@ static bool TransportIndustryGoods(TileIndex tile)
 }
 
 
-static void AnimateTile_Industry(TileIndex tile)
+static void AnimateTile_Industry(TileIndex tile, Tile *ind_tile)
 {
 	IndustryGfx gfx = GetIndustryGfx(tile);
 
