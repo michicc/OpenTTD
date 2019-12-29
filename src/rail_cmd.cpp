@@ -2936,7 +2936,7 @@ int TicksToLeaveDepot(const Train *v)
  * Tile callback routine when vehicle enters tile
  * @see vehicle_enter_tile_proc
  */
-static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, Tile *rail_tile, int x, int y)
 {
 	/* This routine applies only to trains in depot tiles. */
 	if (u->type != VEH_TRAIN || !IsRailDepotTile(tile)) return VETSB_CONTINUE;

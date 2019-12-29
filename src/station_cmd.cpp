@@ -3332,7 +3332,7 @@ static bool ClickTile_Station(TileIndex tile, Tile *tptr)
 	return true;
 }
 
-static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Station(Vehicle *v, TileIndex tile, Tile *st_tile, int x, int y)
 {
 	if (v->type == VEH_TRAIN) {
 		StationID station_id = GetStationIndex(tile);
