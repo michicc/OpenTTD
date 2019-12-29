@@ -398,7 +398,7 @@ static Foundation GetFoundation_Industry(TileIndex tile, Slope tileh)
 	return FlatteningFoundation(tileh);
 }
 
-static void AddAcceptedCargo_Industry(TileIndex tile, CargoArray &acceptance, CargoTypes *always_accepted)
+static void AddAcceptedCargo_Industry(TileIndex tile, Tile *ind_tile, CargoArray &acceptance, CargoTypes *always_accepted)
 {
 	IndustryGfx gfx = GetIndustryGfx(tile);
 	const IndustryTileSpec *itspec = GetIndustryTileSpec(gfx);
