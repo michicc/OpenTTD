@@ -1274,10 +1274,8 @@ static void ViewportAddLandscape()
 				_vd.last_foundation_child[0] = nullptr;
 				_vd.last_foundation_child[1] = nullptr;
 
-				do {
-					TileType tt = tile_info.tptr != nullptr ? GetTileType(tile_info.tptr) : tile_type;
-					_tile_type_procs[tile_type]->draw_tile_proc(&tile_info);
-				} while (tile_info.tptr != nullptr && HasAssociatedTile(tile_info.tptr++));
+				DrawTile(&tile_info);
+
 				if (tile_info.tile != INVALID_TILE) DrawTileSelection(&tile_info);
 			}
 		}

@@ -2816,7 +2816,7 @@ bool SplitGroundSpriteForOverlay(const TileInfo *ti, SpriteID *ground, RailTrack
 	return true;
 }
 
-static void DrawTile_Station(TileInfo *ti)
+static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	const NewGRFSpriteLayout *layout = nullptr;
 	DrawTileSprites tmp_rail_layout;
@@ -2915,9 +2915,9 @@ static void DrawTile_Station(TileInfo *ti)
 			if (!HasFoundationNW(ti->tile, slope, z)) SetBit(edge_info, 0);
 			if (!HasFoundationNE(ti->tile, slope, z)) SetBit(edge_info, 1);
 			SpriteID image = GetCustomStationFoundationRelocation(statspec, st, ti->tile, tile_layout, edge_info);
-			if (image == 0) goto draw_default_foundation;
-
-			if (HasBit(statspec->flags, SSF_EXTENDED_FOUNDATIONS)) {
+			if (image == 0) {
+				DrawFoundation(ti, FOUNDATION_LEVELED);
+			} else if (HasBit(statspec->flags, SSF_EXTENDED_FOUNDATIONS)) {
 				/* Station provides extended foundations. */
 
 				static const uint8 foundation_parts[] = {
@@ -2928,6 +2928,8 @@ static void DrawTile_Station(TileInfo *ti)
 				};
 
 				AddSortableSpriteToDraw(image + foundation_parts[ti->tileh], PAL_NONE, ti->x, ti->y, 16, 16, 7, ti->z);
+				OffsetGroundSprite(31, 1);
+				ti->z += ApplyPixelFoundationToSlope(FOUNDATION_LEVELED, &ti->tileh);
 			} else {
 				/* Draw simple foundations, built up from 8 possible foundation sprites. */
 
@@ -2955,23 +2957,20 @@ static void DrawTile_Station(TileInfo *ti)
 					/* We always have to draw at least one sprite to make sure there is a boundingbox and a sprite with the
 					 * correct offset for the childsprites.
 					 * So, draw the (completely empty) sprite of the default foundations. */
-					goto draw_default_foundation;
-				}
-
-				StartSpriteCombine();
-				for (int i = 0; i < 8; i++) {
-					if (HasBit(parts, i)) {
-						AddSortableSpriteToDraw(image + i, PAL_NONE, ti->x, ti->y, 16, 16, 7, ti->z);
+					DrawFoundation(ti, FOUNDATION_LEVELED);
+				} else {
+					StartSpriteCombine();
+					for (int i = 0; i < 8; i++) {
+						if (HasBit(parts, i)) {
+							AddSortableSpriteToDraw(image + i, PAL_NONE, ti->x, ti->y, 16, 16, 7, ti->z);
+						}
 					}
-				}
-				EndSpriteCombine();
-			}
+					EndSpriteCombine();
 
-			OffsetGroundSprite(31, 1);
-			ti->z += ApplyPixelFoundationToSlope(FOUNDATION_LEVELED, &ti->tileh);
-		} else {
-draw_default_foundation:
-			DrawFoundation(ti, FOUNDATION_LEVELED);
+					OffsetGroundSprite(31, 1);
+					ti->z += ApplyPixelFoundationToSlope(FOUNDATION_LEVELED, &ti->tileh);
+				}
+			}
 		}
 	}
 
@@ -2987,9 +2986,9 @@ draw_default_foundation:
 			TileIndex water_tile = ti->tile + TileOffsByDiagDir(GetDockDirection(ti->tile));
 			WaterClass wc = HasTileWaterClass(water_tile) ? GetWaterClass(water_tile) : WATER_CLASS_INVALID;
 			if (wc == WATER_CLASS_SEA) {
-				DrawShoreTile(ti->tileh);
+				DrawShoreTile(ti, draw_halftile, halftile_corner);
 			} else {
-				DrawClearLandTile(ti, 3);
+				DrawClearLandTile(ti, 3, draw_halftile, halftile_corner);
 			}
 		}
 	} else {
@@ -3126,8 +3125,34 @@ void StationPickerDrawSprite(int x, int y, StationType st, RailType railtype, Ro
 	DrawRailTileSeqInGUI(x, y, t, st == STATION_WAYPOINT ? 0 : total_offset, 0, pal);
 }
 
-static Foundation GetFoundation_Station(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Station(TileIndex tile, Tile *tptr, Slope tileh)
 {
+	/* Docks don't have a foundation. */
+	if (IsDock(tile)) return FOUNDATION_NONE;
+
+	/* Is this a rail station with a custom foundation? */
+	if (HasStationRail(tile) && IsCustomStationSpecIndex(tile)) {
+		const BaseStation *st = BaseStation::GetByTile(tile);
+		const StationSpec *statspec = st->speclist[GetCustomStationSpecIndex(tile)].spec;
+
+		if (statspec != NULL && HasBit(statspec->flags, SSF_CUSTOM_FOUNDATIONS)) {
+			/* Custom foundations are handled by the station drawing code. */
+			return tileh == SLOPE_FLAT ? FOUNDATION_NONE : FOUNDATION_SPECIAL;
+		}
+	}
+
+	if (tileh != SLOPE_FLAT && IsAirport(tile)) {
+		StationGfx gfx = GetAirportGfx(tile);
+		if (gfx >= NEW_AIRPORTTILE_OFFSET) {
+			const AirportTileSpec *ats = AirportTileSpec::Get(gfx);
+			if (ats->grf_prop.spritegroup != NULL && HasBit(ats->callback_mask, CBM_AIRT_DRAW_FOUNDATIONS)) {
+				/* Called to determine the type (if any) of foundation to draw */
+				uint32 callback_res = GetAirportTileCallback(CBID_AIRPTILE_DRAW_FOUNDATIONS, 0, 0, ats, Station::GetByTile(tile), tile);
+				if (callback_res != CALLBACK_FAILED && !ConvertBooleanCallback(ats->grf_prop.grffile, CBID_AIRPTILE_DRAW_FOUNDATIONS, callback_res)) return FOUNDATION_NONE;
+			}
+		}
+	}
+
 	return FlatteningFoundation(tileh);
 }
 

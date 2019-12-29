@@ -460,12 +460,12 @@ struct TreeListEnt : PalSpriteID {
 	byte x, y;
 };
 
-static void DrawTile_Trees(TileInfo *ti)
+static void DrawTile_Trees(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	switch (GetTreeGround(ti->tile)) {
-		case TREE_GROUND_SHORE: DrawShoreTile(ti->tileh); break;
-		case TREE_GROUND_GRASS: DrawClearLandTile(ti, GetTreeDensity(ti->tile)); break;
-		case TREE_GROUND_ROUGH: DrawHillyLandTile(ti); break;
+		case TREE_GROUND_SHORE: DrawShoreTile(ti, draw_halftile, halftile_corner); break;
+		case TREE_GROUND_GRASS: DrawClearLandTile(ti, GetTreeDensity(ti->tile), draw_halftile, halftile_corner); break;
+		case TREE_GROUND_ROUGH: DrawHillyLandTile(ti, draw_halftile, halftile_corner); break;
 		default: DrawGroundSprite(_clear_land_sprites_snow_desert[GetTreeDensity(ti->tile)] + SlopeToSpriteOffset(ti->tileh), PAL_NONE); break;
 	}
 
@@ -531,7 +531,7 @@ static void DrawTile_Trees(TileInfo *ti)
 }
 
 
-static Foundation GetFoundation_Trees(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Trees(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	return FOUNDATION_NONE;
 }
