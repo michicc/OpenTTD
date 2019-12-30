@@ -277,9 +277,10 @@ static SigFlags ExploreSegment(Owner owner)
 
 		switch (GetTileType(tile)) {
 			case MP_RAILWAY: {
-				if (GetTileOwner(tile) != owner) continue; // do not propagate signals on others' tiles (remove for tracksharing)
+				Tile *rail_tile = _m.ToTile(tile);
+				if (GetTileOwner(rail_tile) != owner) continue; // do not propagate signals on others' tiles (remove for tracksharing)
 
-				if (IsRailDepot(tile)) {
+				if (IsRailDepot(rail_tile)) {
 					if (enterdir == INVALID_DIAGDIR) { // from 'inside' - train just entered or left the depot
 						if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
 						exitdir = GetRailDepotDirection(tile);
@@ -496,7 +497,7 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 				break;
 
 			case MP_RAILWAY:
-				if (IsRailDepot(tile)) {
+				if (IsRailDepot(_m.ToTile(tile))) {
 					/* 'optimization assert' do not try to update signals in other cases */
 					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(tile));
 					_tbdset.Add(tile, INVALID_DIAGDIR); // start from depot inside

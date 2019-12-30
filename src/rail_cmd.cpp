@@ -249,7 +249,7 @@ static CommandCost EnsureNoTrainOnTrack(TileIndex tile, Track track)
  */
 static CommandCost CheckTrackCombination(TileIndex tile, TrackBits to_build, uint flags)
 {
-	if (!IsPlainRail(tile)) return_cmd_error(STR_ERROR_IMPOSSIBLE_TRACK_COMBINATION);
+	if (!IsPlainRail(_m.ToTile(tile))) return_cmd_error(STR_ERROR_IMPOSSIBLE_TRACK_COMBINATION);
 
 	/* So, we have a tile with tracks on it (and possibly signals). Let's see
 	 * what tracks first */
@@ -453,10 +453,12 @@ CommandCost CmdBuildSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, u
 
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY: {
+			Tile *rail_tile = _m.ToTile(tile);
+
 			CommandCost ret = CheckTileOwnership(tile);
 			if (ret.Failed()) return ret;
 
-			if (!IsPlainRail(tile)) return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR); // just get appropriate error message
+			if (!IsPlainRail(rail_tile)) return DoCommand(tile, 0, 0, flags, CMD_LANDSCAPE_CLEAR); // just get appropriate error message
 
 			if (!IsCompatibleRail(GetRailType(tile), railtype)) return_cmd_error(STR_ERROR_IMPOSSIBLE_TRACK_COMBINATION);
 
@@ -665,8 +667,10 @@ CommandCost CmdRemoveSingleRail(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 
 		case MP_RAILWAY: {
 			TrackBits present;
+			Tile *rail_tile = _m.ToTile(tile);
+
 			/* There are no rails present at depots. */
-			if (!IsPlainRail(tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+			if (!IsPlainRail(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 
 			if (_current_company != OWNER_WATER) {
 				CommandCost ret = CheckTileOwnership(tile);
@@ -1222,7 +1226,7 @@ static bool CheckSignalAutoFill(TileIndex &tile, Trackdir &trackdir, int &signal
 
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY:
-			if (IsRailDepot(tile)) return false;
+			if (IsRailDepot(_m.ToTile(tile))) return false;
 			if (!remove && HasSignalOnTrack(tile, TrackdirToTrack(trackdir))) return false;
 			signal_ctr++;
 			if (IsDiagonalTrackdir(trackdir)) {
@@ -1289,7 +1293,8 @@ static CommandCost CmdSignalTrackHelper(TileIndex tile, DoCommandFlag flags, uin
 	TileIndex end_tile = p1;
 	if (signal_density == 0 || signal_density > 20) return CMD_ERROR;
 
-	if (!IsPlainRailTile(tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	if (!IsPlainRailTile(rail_tile)) return_cmd_error(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 
 	/* for vertical/horizontal tracks, double the given signals density
 	 * since the original amount will be too dense (shorter tracks) */
@@ -1580,6 +1585,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 	TileIterator *iter = diagonal ? (TileIterator *)new DiagonalTileIterator(area_start, area_end) : new OrthogonalTileIterator(area_start, area_end);
 	for (; (tile = *iter) != INVALID_TILE; ++(*iter)) {
+		Tile     *tptr = _m.ToTile(tile);
 		TileType tt = GetTileType(tile);
 
 		/* Check if there is any track on tile */
@@ -1662,7 +1668,7 @@ CommandCost CmdConvertRail(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 		switch (tt) {
 			case MP_RAILWAY:
-				switch (GetRailTileType(tile)) {
+				switch (GetRailTileType(tptr)) {
 					case RAIL_TILE_DEPOT:
 						if (flags & DC_EXEC) {
 							/* notify YAPF about the track layout change */
@@ -1813,23 +1819,23 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_DEPOT_TRAIN]);
 }
 
-static CommandCost ClearTile_Track(TileIndex tile, Tile *tptr, DoCommandFlag flags, bool &tile_deleted)
+static CommandCost ClearTile_Track(TileIndex tile, Tile *rail_tile, DoCommandFlag flags, bool &tile_deleted)
 {
 	CommandCost cost(EXPENSES_CONSTRUCTION);
 
 	if (flags & DC_AUTO) {
-		if (!IsTileOwner(tile, _current_company)) {
+		if (!IsTileOwner(rail_tile, _current_company)) {
 			return_cmd_error(STR_ERROR_AREA_IS_OWNED_BY_ANOTHER);
 		}
 
-		if (IsPlainRail(tile)) {
+		if (IsPlainRail(rail_tile)) {
 			return_cmd_error(STR_ERROR_MUST_REMOVE_RAILROAD_TRACK);
 		} else {
 			return_cmd_error(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
 		}
 	}
 
-	switch (GetRailTileType(tile)) {
+	switch (GetRailTileType(rail_tile)) {
 		case RAIL_TILE_SIGNALS:
 		case RAIL_TILE_NORMAL: {
 			Slope tileh = GetTileSlope(tile);
@@ -2402,7 +2408,7 @@ static void DrawTile_Track(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 
 	_drawtile_track_palette = COMPANY_SPRITE_COLOUR(GetTileOwner(ti->tile));
 
-	if (IsPlainRail(ti->tile)) {
+	if (IsPlainRail(ti->tptr)) {
 		TrackBits rails = GetTrackBits(ti->tile);
 		if (IsValidCorner(halftile_corner)) {
 			rails &= draw_halftile ? CornerToTrackBits(halftile_corner) : ~CornerToTrackBits(halftile_corner);
@@ -2548,7 +2554,7 @@ void DrawTrainDepotSprite(int x, int y, int dir, RailType railtype)
 
 static Foundation GetFoundation_Track(TileIndex tile, Tile *rail_tile, Slope tileh)
 {
-	return IsPlainRail(tile) ? GetRailFoundation(tileh, GetTrackBits(tile)) : FlatteningFoundation(tileh);
+	return IsPlainRail(rail_tile) ? GetRailFoundation(tileh, GetTrackBits(tile)) : FlatteningFoundation(tileh);
 }
 
 static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
@@ -2568,7 +2574,7 @@ static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 
 			/* for non-flat track, use lower part of track
 			 * in other cases, use the highest part with track */
-			if (IsPlainRail(tile)) {
+			if (IsPlainRail(rail_tile)) {
 				TrackBits track = GetTrackBits(tile);
 				Foundation f = GetRailFoundation(slope, track);
 
@@ -2628,7 +2634,7 @@ static bool TileLoop_Track(TileIndex tile, Tile *&rail_tile)
 
 	new_ground = RAIL_GROUND_GRASS;
 
-	if (IsPlainRail(tile) && old_ground != RAIL_GROUND_BARREN) { // wait until bottom is green
+	if (IsPlainRail(rail_tile) && old_ground != RAIL_GROUND_BARREN) { // wait until bottom is green
 		/* determine direction of fence */
 		TrackBits rail = GetTrackBits(tile);
 
@@ -2679,7 +2685,7 @@ set_ground:
 static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	/* Case of half tile slope with water. */
-	if (mode == TRANSPORT_WATER && IsPlainRail(tile) && GetRailGroundType(tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(GetTileSlope(tile))) {
+	if (mode == TRANSPORT_WATER && IsPlainRail(rail_tile) && GetRailGroundType(tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(GetTileSlope(tile))) {
 		TrackBits tb = GetTrackBits(tile);
 		switch (tb) {
 			default: NOT_REACHED();
@@ -2696,7 +2702,7 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 	TrackBits trackbits = TRACK_BIT_NONE;
 	TrackdirBits red_signals = TRACKDIR_BIT_NONE;
 
-	switch (GetRailTileType(tile)) {
+	switch (GetRailTileType(rail_tile)) {
 		default: NOT_REACHED();
 		case RAIL_TILE_NORMAL:
 			trackbits = GetTrackBits(tile);
@@ -2740,7 +2746,7 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, Tile *rail_tile, Tra
 
 static bool ClickTile_Track(TileIndex tile, Tile *rail_tile)
 {
-	if (!IsRailDepot(tile)) return false;
+	if (!IsRailDepot(rail_tile)) return false;
 
 	ShowDepotWindow(tile, VEH_TRAIN);
 	return true;
@@ -2753,7 +2759,7 @@ static void GetTileDesc_Track(TileIndex tile, Tile *tptr, TileDesc *td)
 	td->railtype = rti->strings.name;
 	td->owner[0] = GetTileOwner(tile);
 	td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
-	switch (GetRailTileType(tile)) {
+	switch (GetRailTileType(tptr)) {
 		case RAIL_TILE_NORMAL:
 			td->str = STR_LAI_RAIL_DESCRIPTION_TRACK;
 			break;
@@ -2847,7 +2853,7 @@ static bool ChangeTileOwner_Track(TileIndex tile, Tile *tptr, Owner old_owner, O
 	if (new_owner != INVALID_OWNER) {
 		/* Update company infrastructure counts. No need to dirty windows here, we'll redraw the whole screen anyway. */
 		uint num_pieces = 1;
-		if (IsPlainRail(tile)) {
+		if (IsPlainRail(tptr)) {
 			TrackBits bits = GetTrackBits(tile);
 			num_pieces = CountBits(bits);
 			if (TracksOverlap(bits)) num_pieces *= num_pieces;
@@ -2906,7 +2912,7 @@ int TicksToLeaveDepot(const Train *v)
 static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, Tile *rail_tile, int x, int y)
 {
 	/* This routine applies only to trains in depot tiles. */
-	if (u->type != VEH_TRAIN || !IsRailDepotTile(tile)) return VETSB_CONTINUE;
+	if (u->type != VEH_TRAIN || !IsRailDepot(rail_tile)) return VETSB_CONTINUE;
 
 	/* Depot direction. */
 	DiagDirection dir = GetRailDepotDirection(tile);
@@ -3014,7 +3020,7 @@ static CommandCost TerraformTile_Track(TileIndex tile, Tile *tptr, DoCommandFlag
 {
 	int z_old;
 	Slope tileh_old = GetTileSlope(tile, &z_old);
-	if (IsPlainRail(tile)) {
+	if (IsPlainRail(tptr)) {
 		TrackBits rail_bits = GetTrackBits(tile);
 		/* Is there flat water on the lower halftile that must be cleared expensively? */
 		bool was_water = (GetRailGroundType(tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(tileh_old));
