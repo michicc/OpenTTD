@@ -188,9 +188,9 @@ static inline bool HasTrack(TileIndex tile, Track track)
  * @pre IsRailDepotTile(t)
  * @return the direction the depot is facing
  */
-static inline DiagDirection GetRailDepotDirection(TileIndex t)
+static inline DiagDirection GetRailDepotDirection(const Tile *t)
 {
-	return (DiagDirection)GB(_m[t].m5, 0, 2);
+	return (DiagDirection)GB(t->m5, 0, 2);
 }
 
 /**
@@ -199,11 +199,21 @@ static inline DiagDirection GetRailDepotDirection(TileIndex t)
  * @param t the tile to get the depot track from
  * @return the track of the depot
  */
-static inline Track GetRailDepotTrack(TileIndex t)
+static inline Track GetRailDepotTrack(const Tile *t)
 {
 	return DiagDirToDiagTrack(GetRailDepotDirection(t));
 }
 
+/**
+ * Get the actual tile of a rail depot.
+ * @param tile The tile index
+ * @return Pointer to the depot tile
+ */
+static inline Tile *GetRailDepotTile(TileIndex tile)
+{
+	assert(IsRailDepotTile(tile));
+	return GetTileByType(tile, MP_RAILWAY);
+}
 
 /**
  * Returns the reserved track bits of the tile
@@ -275,10 +285,10 @@ static inline void UnreserveTrack(TileIndex tile, Track t)
  * @param t the depot tile
  * @return reservation state
  */
-static inline bool HasDepotReservation(TileIndex t)
+static inline bool HasDepotReservation(const Tile *t)
 {
-	assert(IsRailDepotTile(t));
-	return HasBit(_m[t].m5, 4);
+	assert(IsRailDepot(t));
+	return HasBit(t->m5, 4);
 }
 
 /**
@@ -287,10 +297,10 @@ static inline bool HasDepotReservation(TileIndex t)
  * @param t the depot tile
  * @param b the reservation state
  */
-static inline void SetDepotReservation(TileIndex t, bool b)
+static inline void SetDepotReservation(Tile *t, bool b)
 {
-	assert(IsRailDepotTile(t));
-	SB(_m[t].m5, 4, 1, (byte)b);
+	assert(IsRailDepot(t));
+	SB(t->m5, 4, 1, (byte)b);
 }
 
 /**
@@ -299,7 +309,7 @@ static inline void SetDepotReservation(TileIndex t, bool b)
  * @param t the tile
  * @return reserved track bits
  */
-static inline TrackBits GetDepotReservationTrackBits(TileIndex t)
+static inline TrackBits GetDepotReservationTrackBits(const Tile *t)
 {
 	return HasDepotReservation(t) ? TrackToTrackBits(GetRailDepotTrack(t)) : TRACK_BIT_NONE;
 }

@@ -46,14 +46,28 @@ static inline bool IsDepotTile(TileIndex tile)
 /**
  * Get the index of which depot is attached to the tile.
  * @param t the tile
+ * @return DepotID
+ */
+static inline DepotID GetDepotIndex(const Tile *t)
+{
+	return t->m2;
+}
+
+/**
+ * Get the index of which depot is attached to the tile.
+ * @param t the tile
  * @pre IsRailDepotTile(t) || IsRoadDepotTile(t) || IsShipDepotTile(t)
  * @return DepotID
  */
 static inline DepotID GetDepotIndex(TileIndex t)
 {
-	/* Hangars don't have a Depot class, thus store no DepotID. */
-	assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || IsShipDepotTile(t));
-	return _m[t].m2;
+	if (IsRailDepotTile(t)) {
+		return GetDepotIndex(GetRailDepotTile(t));
+	} else {
+		/* Hangars don't have a Depot class, thus store no DepotID. */
+		assert(IsRoadDepotTile(t) || IsShipDepotTile(t));
+		return GetDepotIndex(_m.ToTile(t));
+	}
 }
 
 /**

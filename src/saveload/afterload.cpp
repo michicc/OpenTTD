@@ -2001,8 +2001,8 @@ bool AfterLoadGame()
 					}
 
 					/* Clear PBS reservation on track */
-					if (IsRailDepotTile(t)) {
-						SetDepotReservation(t, false);
+					if (IsRailDepot(rail_tile)) {
+						SetDepotReservation(rail_tile, false);
 					} else {
 						SetTrackReservation(t, TRACK_BIT_NONE);
 					}

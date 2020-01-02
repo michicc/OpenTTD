@@ -537,7 +537,7 @@ void DrawRailCatenary(const TileInfo *ti, bool draw_halftile, Corner halftile_co
 	switch (GetTileType(ti->tile)) {
 		case MP_RAILWAY:
 			if (IsRailDepot(ti->tptr)) {
-				const SortableSpriteStruct *sss = &RailCatenarySpriteData_Depot[GetRailDepotDirection(ti->tile)];
+				const SortableSpriteStruct *sss = &RailCatenarySpriteData_Depot[GetRailDepotDirection(ti->tptr)];
 
 				SpriteID wire_base = GetWireBase(ti->tile);
 

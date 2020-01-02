@@ -26,7 +26,7 @@ TrackBits GetReservedTrackbits(TileIndex t)
 	switch (GetTileType(t)) {
 		case MP_RAILWAY: {
 			Tile *rail_tile = _m.ToTile(t);
-			if (IsRailDepot(rail_tile)) return GetDepotReservationTrackBits(t);
+			if (IsRailDepot(rail_tile)) return GetDepotReservationTrackBits(rail_tile);
 			if (IsPlainRail(rail_tile)) return GetRailReservationTrackBits(t);
 			break;
 		}
@@ -97,8 +97,8 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 			Tile *rail_tile = _m.ToTile(tile);
 			if (IsPlainRail(rail_tile)) return TryReserveTrack(tile, t);
 			if (IsRailDepot(rail_tile)) {
-				if (!HasDepotReservation(tile)) {
-					SetDepotReservation(tile, true);
+				if (!HasDepotReservation(rail_tile)) {
+					SetDepotReservation(rail_tile, true);
 					MarkTileDirtyByTile(tile); // some GRFs change their appearance when tile is reserved
 					return true;
 				}
@@ -158,7 +158,7 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 		case MP_RAILWAY: {
 			Tile *rail_tile = _m.ToTile(tile);
 			if (IsRailDepot(rail_tile)) {
-				SetDepotReservation(tile, false);
+				SetDepotReservation(rail_tile, false);
 				MarkTileDirtyByTile(tile);
 				break;
 			}
@@ -299,7 +299,7 @@ PBSTileInfo FollowTrainReservation(const Train *v, Vehicle **train_on_res)
 	TileIndex tile = v->tile;
 	Trackdir  trackdir = v->GetVehicleTrackdir();
 
-	if (IsRailDepotTile(tile) && !GetDepotReservationTrackBits(tile)) return PBSTileInfo(tile, trackdir, false);
+	if (IsRailDepotTile(tile) && !GetDepotReservationTrackBits(GetRailDepotTile(tile))) return PBSTileInfo(tile, trackdir, false);
 
 	FindTrainOnTrackInfo ftoti;
 	ftoti.res = FollowReservation(v->owner, GetRailTypeInfo(v->railtype)->compatible_railtypes, tile, trackdir);

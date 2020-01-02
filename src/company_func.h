@@ -28,7 +28,7 @@ bool CheckCompanyHasMoney(CommandCost &cost);
 void SubtractMoneyFromCompany(CommandCost cost);
 void SubtractMoneyFromCompanyFract(CompanyID company, CommandCost cost);
 CommandCost CheckOwnership(Owner owner, TileIndex tile = 0);
-CommandCost CheckTileOwnership(TileIndex tile);
+CommandCost CheckTileOwnership(TileIndex tile, struct Tile *tptr = nullptr);
 
 extern CompanyID _local_company;
 extern CompanyID _current_company;
