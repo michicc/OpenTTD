@@ -508,13 +508,15 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 					TrackBits tracks = GetCrossingRailBits(tile);
 					bool reserved = HasCrossingReservation(tile);
 					MakeRailNormal(tile, GetTileOwner(tile), tracks, GetRailType(tile));
-					if (reserved) SetTrackReservation(tile, tracks);
+
+					Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+					if (reserved) SetTrackReservation(rail_tile, tracks);
 
 					/* Update rail count for level crossings. The plain track should still be accounted
 					 * for, so only subtract the difference to the level crossing cost. */
-					Company *c = Company::GetIfValid(GetTileOwner(tile));
+					Company *c = Company::GetIfValid(GetTileOwner(rail_tile));
 					if (c != nullptr) {
-						c->infrastructure.rail[GetRailType(tile)] -= LEVELCROSSING_TRACKBIT_FACTOR - 1;
+						c->infrastructure.rail[GetRailType(rail_tile)] -= LEVELCROSSING_TRACKBIT_FACTOR - 1;
 						DirtyCompanyInfrastructureWindows(c->index);
 					}
 				} else {
@@ -781,7 +783,7 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 				}
 
 				/* Always add road to the roadtypes (can't draw without it) */
-				bool reserved = HasBit(GetRailReservationTrackBits(tile), railtrack);
+				bool reserved = HasBit(GetRailReservationTrackBits(_m.ToTile(tile)), railtrack);
 				MakeRoadCrossing(tile, company, company, GetTileOwner(tile), roaddir, GetRailType(tile), rtt == RTT_ROAD ? rt : INVALID_ROADTYPE, (rtt == RTT_TRAM) ? rt : INVALID_ROADTYPE, p2);
 				SetCrossingReservation(tile, reserved);
 				UpdateLevelCrossing(tile, false);

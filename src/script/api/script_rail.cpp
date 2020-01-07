@@ -103,7 +103,7 @@
 {
 	if (!ScriptTile::HasTransportType(tile, ScriptTile::TRANSPORT_RAIL)) return RAILTYPE_INVALID;
 
-	return (RailType)::GetRailType(tile);
+	return (RailType)::GetTileRailType(tile);
 }
 
 /* static */ bool ScriptRail::ConvertRailType(TileIndex start_tile, TileIndex end_tile, ScriptRail::RailType convert_to)
@@ -230,7 +230,7 @@
 	if (IsRailStationTile(tile) || IsRailWaypointTile(tile)) return ::TrackToTrackBits(::GetRailStationTrack(tile));
 	if (IsLevelCrossingTile(tile)) return ::GetCrossingRailBits(tile);
 	if (IsRailDepotTile(tile)) return ::TRACK_BIT_NONE;
-	return ::GetTrackBits(tile);
+	return ::GetTrackBits(GetTileByType(tile, MP_RAILWAY));
 }
 
 /* static */ bool ScriptRail::BuildRailTrack(TileIndex tile, RailTrack rail_track)

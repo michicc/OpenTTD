@@ -463,7 +463,7 @@ static inline uint32 GetSmallMapRoutesPixels(TileIndex tile, TileType t)
 
 		case MP_RAILWAY: {
 			AndOr andor = {
-				MKCOLOUR_0XX0(GetRailTypeInfo(GetRailType(tile))->map_colour),
+				MKCOLOUR_0XX0(GetRailTypeInfo(GetRailType(GetTileByType(tile, MP_RAILWAY)))->map_colour),
 				_smallmap_contours_andor[t].mand
 			};
 

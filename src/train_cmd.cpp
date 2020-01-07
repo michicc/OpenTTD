@@ -586,7 +586,7 @@ static CommandCost CmdBuildRailWagon(TileIndex tile, DoCommandFlag flags, const 
 	const RailVehicleInfo *rvi = &e->u.rail;
 
 	/* Check that the wagon can drive on the track in question */
-	if (!IsCompatibleRail(rvi->railtype, GetRailType(tile))) return CMD_ERROR;
+	if (!IsCompatibleRail(rvi->railtype, GetTileRailType(tile))) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
 		Train *v = new Train();
@@ -720,7 +720,7 @@ CommandCost CmdBuildRailVehicle(TileIndex tile, DoCommandFlag flags, const Engin
 	/* Check if depot and new engine uses the same kind of tracks *
 	 * We need to see if the engine got power on the tile to avoid electric engines in non-electric depots */
 	const Tile *depot = GetRailDepotTile(tile);
-	if (!HasPowerOnRail(rvi->railtype, GetRailType(tile))) return CMD_ERROR;
+	if (!HasPowerOnRail(rvi->railtype, GetRailType(depot))) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
 		DiagDirection dir = GetRailDepotDirection(depot);
@@ -2258,7 +2258,7 @@ void FreeTrainTrackReservation(const Train *v)
 			if (HasSignalOnTrackdir(rail_tile, td)) {
 				if (!IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)))) {
 					/* Conventional signal along trackdir: remove reservation and stop. */
-					UnreserveTrack(tile, TrackdirToTrack(td));
+					UnreserveTrack(rail_tile, TrackdirToTrack(td));
 					break;
 				} else {
 					if (GetSignalStateByTrackdir(rail_tile, td) == SIGNAL_STATE_RED) {
@@ -2839,7 +2839,7 @@ static void TrainEnterStation(Train *v, StationID station)
 static inline bool CheckCompatibleRail(const Train *v, TileIndex tile)
 {
 	return IsTileOwner(tile, v->owner) &&
-			(!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetRailType(tile)));
+			(!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetTileRailType(tile)));
 }
 
 /** Data structure for storing engine speed changes of an acceleration type. */
@@ -2881,7 +2881,7 @@ static bool TrainMovedChangeSignals(TileIndex tile, DiagDirection dir)
 {
 	Tile *rail = GetTileByType(tile, MP_RAILWAY);
 	if (rail != nullptr &&	HasSignals(rail)) {
-		TrackdirBits tracks = TrackBitsToTrackdirBits(GetTrackBits(tile)) & DiagdirReachesTrackdirs(dir);
+		TrackdirBits tracks = TrackBitsToTrackdirBits(GetTrackBits(rail)) & DiagdirReachesTrackdirs(dir);
 		Trackdir trackdir = FindFirstTrackdir(tracks);
 		if (UpdateSignalsOnSegment(tile, TrackdirToExitdir(trackdir), GetTileOwner(rail)) == SIGSEG_PBS && HasSignalOnTrackdir(rail, trackdir)) {
 			/* A PBS block with a non-PBS signal facing us? */

@@ -132,9 +132,19 @@ static inline bool IsRailDepotTile(TileIndex t)
  * @param t the tile to get the rail type from
  * @return the rail type of the tile
  */
+static inline RailType GetRailType(const Tile *t)
+{
+	return (RailType)GB(t->m8, 0, 6);
+}
+
+/**
+ * Gets the rail type of the given tile
+ * @param t the tile to get the rail type from
+ * @return the rail type of the tile
+ */
 static inline RailType GetRailType(TileIndex t)
 {
-	return (RailType)GB(_m[t].m8, 0, 6);
+	return GetRailType(_m.ToTile(t));
 }
 
 /**
@@ -142,11 +152,22 @@ static inline RailType GetRailType(TileIndex t)
  * @param t the tile to set the rail type of
  * @param r the new rail type for the tile
  */
-static inline void SetRailType(TileIndex t, RailType r)
+static inline void SetRailType(Tile *t, RailType r)
 {
-	SB(_m[t].m8, 0, 6, r);
+	SB(t->m8, 0, 6, r);
 }
 
+
+/**
+ * Gets the track bits of the given tile
+ * @param tile the tile pointer to get the track bits from
+ * @return the track bits of the tile
+ */
+static inline TrackBits GetTrackBits(const Tile *tile)
+{
+	assert(IsPlainRailTile(tile));
+	return (TrackBits)GB(tile->m5, 0, 6);
+}
 
 /**
  * Gets the track bits of the given tile
@@ -155,8 +176,7 @@ static inline void SetRailType(TileIndex t, RailType r)
  */
 static inline TrackBits GetTrackBits(TileIndex tile)
 {
-	assert(IsPlainRailTile(tile));
-	return (TrackBits)GB(_m[tile].m5, 0, 6);
+	return GetTrackBits(_m.ToTile(tile));
 }
 
 /**
@@ -164,10 +184,10 @@ static inline TrackBits GetTrackBits(TileIndex tile)
  * @param t the tile to set the track bits of
  * @param b the new track bits for the tile
  */
-static inline void SetTrackBits(TileIndex t, TrackBits b)
+static inline void SetTrackBits(Tile *t, TrackBits b)
 {
 	assert(IsPlainRailTile(t));
-	SB(_m[t].m5, 0, 6, b);
+	SB(t->m5, 0, 6, b);
 }
 
 /**
@@ -177,7 +197,7 @@ static inline void SetTrackBits(TileIndex t, TrackBits b)
  * @pre IsPlainRailTile(tile)
  * @return true if and only if the given track exists on the tile
  */
-static inline bool HasTrack(TileIndex tile, Track track)
+static inline bool HasTrack(const Tile *tile, Track track)
 {
 	return HasBit(GetTrackBits(tile), track);
 }
@@ -221,13 +241,13 @@ static inline Tile *GetRailDepotTile(TileIndex tile)
  * @param t the tile to query
  * @return the track bits
  */
-static inline TrackBits GetRailReservationTrackBits(TileIndex t)
+static inline TrackBits GetRailReservationTrackBits(const Tile *t)
 {
 	assert(IsPlainRailTile(t));
-	byte track_b = GB(_m[t].m2, 8, 3);
+	byte track_b = GB(t->m2, 8, 3);
 	Track track = (Track)(track_b - 1);    // map array saves Track+1
 	if (track_b == 0) return TRACK_BIT_NONE;
-	return (TrackBits)(TrackToTrackBits(track) | (HasBit(_m[t].m2, 11) ? TrackToTrackBits(TrackToOppositeTrack(track)) : 0));
+	return (TrackBits)(TrackToTrackBits(track) | (HasBit(t->m2, 11) ? TrackToTrackBits(TrackToOppositeTrack(track)) : 0));
 }
 
 /**
@@ -236,14 +256,14 @@ static inline TrackBits GetRailReservationTrackBits(TileIndex t)
  * @param t the tile to change
  * @param b the track bits
  */
-static inline void SetTrackReservation(TileIndex t, TrackBits b)
+static inline void SetTrackReservation(Tile *t, TrackBits b)
 {
 	assert(IsPlainRailTile(t));
 	assert(b != INVALID_TRACK_BIT);
 	assert(!TracksOverlap(b));
 	Track track = RemoveFirstTrack(&b);
-	SB(_m[t].m2, 8, 3, track == INVALID_TRACK ? 0 : track + 1);
-	SB(_m[t].m2, 11, 1, (byte)(b != TRACK_BIT_NONE));
+	SB(t->m2, 8, 3, track == INVALID_TRACK ? 0 : track + 1);
+	SB(t->m2, 11, 1, (byte)(b != TRACK_BIT_NONE));
 }
 
 /**
@@ -253,7 +273,7 @@ static inline void SetTrackReservation(TileIndex t, TrackBits b)
  * @param t the rack to reserve
  * @return true if successful
  */
-static inline bool TryReserveTrack(TileIndex tile, Track t)
+static inline bool TryReserveTrack(Tile *tile, Track t)
 {
 	assert(HasTrack(tile, t));
 	TrackBits bits = TrackToTrackBits(t);
@@ -271,7 +291,7 @@ static inline bool TryReserveTrack(TileIndex tile, Track t)
  * @param tile the tile
  * @param t the track to free
  */
-static inline void UnreserveTrack(TileIndex tile, Track t)
+static inline void UnreserveTrack(Tile *tile, Track t)
 {
 	assert(HasTrack(tile, t));
 	TrackBits res = GetRailReservationTrackBits(tile);

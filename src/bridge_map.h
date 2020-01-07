@@ -169,7 +169,7 @@ static inline void MakeRoadBridgeRamp(TileIndex t, Owner o, Owner owner_road, Ow
 static inline void MakeRailBridgeRamp(TileIndex t, Owner o, BridgeType bridgetype, DiagDirection d, RailType rt)
 {
 	MakeBridgeRamp(t, o, bridgetype, d, TRANSPORT_RAIL);
-	SetRailType(t, rt);
+	SetRailType(_m.ToTile(t), rt);
 }
 
 /**
