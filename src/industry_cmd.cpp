@@ -978,6 +978,7 @@ static const byte _plantfarmfield_type[] = {1, 1, 1, 1, 1, 3, 3, 4, 4, 4, 5, 5, 
  */
 static bool IsSuitableForFarmField(TileIndex tile, bool allow_fields)
 {
+	if (HasTileByType(tile, MP_RAILWAY)) return false;
 	if (IsTileType(tile, MP_CLEAR)) {
 		return !IsClearGround(tile, CLEAR_SNOW) && !IsClearGround(tile, CLEAR_DESERT) && (allow_fields || !IsClearGround(tile, CLEAR_FIELDS));
 	}

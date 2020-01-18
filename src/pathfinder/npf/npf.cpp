@@ -407,14 +407,10 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	/* HACK: We create a OpenListNode manually, so we can call EndNodeCheck */
 	OpenListNode new_node;
 
-	/* Determine base length */
+	/* Determine base length. Checking for MP_RAILWAY is done below. */
 	switch (GetTileType(tile)) {
 		case MP_TUNNELBRIDGE:
 			cost = IsTunnel(tile) ? NPFTunnelCost(current) : NPFBridgeCost(current);
-			break;
-
-		case MP_RAILWAY:
-			cost = _trackdir_length[trackdir]; // Should be different for diagonal tracks
 			break;
 
 		case MP_ROAD: // Railway crossing
@@ -472,6 +468,10 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	/* Check for signals */
 	if (HasTileByType(tile, MP_RAILWAY)) {
 		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+
+		/* Base length */
+		cost = _trackdir_length[trackdir]; // Should be different for diagonal tracks
+
 		if (HasSignalOnTrackdir(rail_tile, trackdir)) {
 			SignalType sigtype = GetSignalType(rail_tile, TrackdirToTrack(trackdir));
 			/* Ordinary track with signals */
