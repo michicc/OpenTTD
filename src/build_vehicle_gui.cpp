@@ -30,6 +30,7 @@
 #include "cargotype.h"
 #include "core/geometry_func.hpp"
 #include "autoreplace_func.h"
+#include "depot_map.h"
 
 #include "widgets/build_vehicle_widget.h"
 
@@ -1111,7 +1112,7 @@ struct BuildVehicleWindow : Window {
 
 		this->FinishInitNested(tile == INVALID_TILE ? (int)type : tile);
 
-		this->owner = (tile != INVALID_TILE) ? GetTileOwner(tile) : _local_company;
+		this->owner = (tile != INVALID_TILE) ? GetDepotOwner(tile) : _local_company;
 
 		this->eng_list.ForceRebuild();
 		this->GenerateBuildList(); // generate the list, since we need it in the next line

@@ -287,7 +287,7 @@ struct DepotWindow : Window {
 		this->SetupWidgetData(type);
 		this->FinishInitNested(tile);
 
-		this->owner = GetTileOwner(tile);
+		this->owner = GetDepotOwner(tile);
 		OrderBackup::Reset();
 	}
 
@@ -740,7 +740,7 @@ struct DepotWindow : Window {
 
 		/* Setup disabled buttons. */
 		TileIndex tile = this->window_number;
-		this->SetWidgetsDisabledState(!IsTileOwner(tile, _local_company),
+		this->SetWidgetsDisabledState(!IsDepotOwner(tile, _local_company),
 			WID_D_STOP_ALL,
 			WID_D_START_ALL,
 			WID_D_SELL,
@@ -824,7 +824,7 @@ struct DepotWindow : Window {
 				break;
 
 			case WID_D_VEHICLE_LIST:
-				ShowVehicleListWindow(GetTileOwner(this->window_number), this->type, (TileIndex)this->window_number);
+				ShowVehicleListWindow(GetDepotOwner(this->window_number), this->type, (TileIndex)this->window_number);
 				break;
 
 			case WID_D_AUTOREPLACE:

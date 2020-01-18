@@ -75,7 +75,7 @@ CommandCost CmdRenameDepot(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 
 		/* Update the depot list */
 		VehicleType vt = GetDepotVehicleType(d->xy);
-		SetWindowDirty(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VL_DEPOT_LIST, vt, GetTileOwner(d->xy), d->index).Pack());
+		SetWindowDirty(GetWindowClassForVehicleType(vt), VehicleListIdentifier(VL_DEPOT_LIST, vt, GetDepotOwner(d->xy), d->index).Pack());
 	}
 	return CommandCost();
 }
