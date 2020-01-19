@@ -13,6 +13,7 @@
 #include "../../ship.h"
 #include "../../roadstop_base.h"
 #include "../../vehicle_func.h"
+#include "../../clear_map.h"
 #include "../pathfinder_func.h"
 #include "../pathfinder_type.h"
 #include "../follow_track.hpp"
@@ -281,24 +282,16 @@ static uint NPFReservedTrackCost(AyStarNode *current)
 static void NPFMarkTile(TileIndex tile)
 {
 	if (_debug_npf_level < 1 || _networking) return;
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			/* DEBUG: mark visited tiles by mowing the grass under them ;-) */
-			if (!IsRailDepot(_m.ToTile(tile))) {
-				SetRailGroundType(tile, RAIL_GROUND_BARREN);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
 
-		case MP_ROAD:
-			if (!IsRoadDepot(tile)) {
-				SetRoadside(tile, ROADSIDE_BARREN);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
-
-		default:
-			break;
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		/* DEBUG: mark visited tiles by mowing the grass under them ;-) */
+		if (IsTileType(tile, MP_CLEAR)) {
+			SetClearDensity(tile, 0);
+			MarkTileDirtyByTile(tile);
+		}
+	} else if (IsTileType(tile, MP_ROAD) && !IsRoadDepot(tile)) {
+		SetRoadside(tile, ROADSIDE_BARREN);
+		MarkTileDirtyByTile(tile);
 	}
 }
 
@@ -693,8 +686,8 @@ static void NPFSaveTargetData(AyStar *as, OpenListNode *current)
  */
 static bool CanEnterTileOwnerCheck(Owner owner, TileIndex tile, DiagDirection enterdir)
 {
-	if (IsTileType(tile, MP_RAILWAY) || // Rail tile (also rail depot)
-			HasStationTileRail(tile) ||     // Rail station tile/waypoint
+	if (HasTileByType(tile, MP_RAILWAY)) return IsTileOwner(GetTileByType(tile, MP_RAILWAY), owner);
+	if (HasStationTileRail(tile) ||         // Rail station tile/waypoint
 			IsRoadDepotTile(tile) ||        // Road depot tile
 			IsStandardRoadStopTile(tile)) { // Road station tile (but not drive-through stops)
 		return IsTileOwner(tile, owner);  // You need to own these tiles entirely to use them

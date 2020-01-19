@@ -37,6 +37,7 @@
 #include "genworld.h"
 #include "company_gui.h"
 #include "road_func.h"
+#include "clear_map.h"
 
 #include "table/strings.h"
 #include "table/roadtypes.h"
@@ -507,9 +508,11 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 				if (GetRoadType(tile, OtherRoadTramType(rtt)) == INVALID_ROADTYPE) {
 					TrackBits tracks = GetCrossingRailBits(tile);
 					bool reserved = HasCrossingReservation(tile);
-					MakeRailNormal(tile, GetTileOwner(tile), tracks, GetRailType(tile));
+					RailType rail_type = GetRailType(tile);
+					Owner rail_o = GetTileOwner(tile);
 
-					Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+					MakeClearGrass(tile);
+					Tile *rail_tile = MakeRailNormal(tile, rail_o, tracks, rail_type);
 					if (reserved) SetTrackReservation(rail_tile, tracks);
 
 					/* Update rail count for level crossings. The plain track should still be accounted
@@ -651,6 +654,75 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 	RoadTramType rtt = GetRoadTramType(rt);
 
 	bool need_to_clear = false;
+
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+
+		if (IsSteepSlope(tileh)) {
+			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
+		}
+
+		/* Level crossings may only be built on these slopes */
+		if (!HasBit(VALID_LEVEL_CROSSING_SLOPES, tileh)) {
+			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
+		}
+
+		if (GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) goto do_clear;
+
+		if (RoadNoLevelCrossing(rt)) {
+			return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_ROAD);
+		}
+
+		if (RailNoLevelCrossings(GetRailType(rail_tile))) {
+			return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_RAIL);
+		}
+
+		Axis roaddir;
+		switch (GetTrackBits(rail_tile)) {
+			case TRACK_BIT_X:
+				if (pieces & ROAD_X) goto do_clear;
+				roaddir = AXIS_Y;
+				break;
+
+			case TRACK_BIT_Y:
+				if (pieces & ROAD_Y) goto do_clear;
+				roaddir = AXIS_X;
+				break;
+
+			default: goto do_clear;
+		}
+
+		CommandCost ret = EnsureNoVehicleOnGround(tile);
+		if (ret.Failed()) return ret;
+
+		if (flags & DC_EXEC) {
+			Track railtrack = AxisToTrack(OtherAxis(roaddir));
+			YapfNotifyTrackLayoutChange(tile, railtrack);
+			bool reserved = HasBit(GetRailReservationTrackBits(rail_tile), railtrack);
+			RailType rail_type = GetRailType(rail_tile);
+			Owner rail_o = GetTileOwner(rail_tile);
+
+			/* Update company infrastructure counts. A level crossing has two road bits. */
+			UpdateCompanyRoadInfrastructure(rt, company, 2);
+
+			/* Update rail count for level crossings. The plain track is already
+			 * counted, so only add the difference to the level crossing cost. */
+			Company *c = Company::GetIfValid(rail_o);
+			if (c != nullptr) {
+				c->infrastructure.rail[rail_type] += LEVELCROSSING_TRACKBIT_FACTOR - 1;
+				DirtyCompanyInfrastructureWindows(c->index);
+			}
+
+			_m.RemoveTile(tile, rail_tile);
+			/* Always add road to the roadtypes (can't draw without it) */
+			MakeRoadCrossing(tile, company, company, GetTileOwner(tile), roaddir, GetRailType(tile), rtt == RTT_ROAD ? rt : INVALID_ROADTYPE, (rtt == RTT_TRAM) ? rt : INVALID_ROADTYPE, p2);
+			SetCrossingReservation(tile, reserved);
+			UpdateLevelCrossing(tile, false);
+			MarkTileDirtyByTile(tile);
+		}
+		return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_ROAD] * (rt == ROADTYPE_ROAD ? 2 : 4));
+	}
+
 	switch (GetTileType(tile)) {
 		case MP_ROAD:
 			switch (GetRoadTileType(tile)) {
@@ -729,68 +801,6 @@ CommandCost CmdBuildRoad(TileIndex tile, DoCommandFlag flags, uint32 p1, uint32 
 				default: NOT_REACHED();
 			}
 			break;
-
-		case MP_RAILWAY: {
-			if (IsSteepSlope(tileh)) {
-				return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
-			}
-
-			/* Level crossings may only be built on these slopes */
-			if (!HasBit(VALID_LEVEL_CROSSING_SLOPES, tileh)) {
-				return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
-			}
-
-			if (GetRailTileType(_m.ToTile(tile)) != RAIL_TILE_NORMAL) goto do_clear;
-
-			if (RoadNoLevelCrossing(rt)) {
-				return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_ROAD);
-			}
-
-			if (RailNoLevelCrossings(GetRailType(tile))) {
-				return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_RAIL);
-			}
-
-			Axis roaddir;
-			switch (GetTrackBits(tile)) {
-				case TRACK_BIT_X:
-					if (pieces & ROAD_X) goto do_clear;
-					roaddir = AXIS_Y;
-					break;
-
-				case TRACK_BIT_Y:
-					if (pieces & ROAD_Y) goto do_clear;
-					roaddir = AXIS_X;
-					break;
-
-				default: goto do_clear;
-			}
-
-			CommandCost ret = EnsureNoVehicleOnGround(tile);
-			if (ret.Failed()) return ret;
-
-			if (flags & DC_EXEC) {
-				Track railtrack = AxisToTrack(OtherAxis(roaddir));
-				YapfNotifyTrackLayoutChange(tile, railtrack);
-				/* Update company infrastructure counts. A level crossing has two road bits. */
-				UpdateCompanyRoadInfrastructure(rt, company, 2);
-
-				/* Update rail count for level crossings. The plain track is already
-				 * counted, so only add the difference to the level crossing cost. */
-				Company *c = Company::GetIfValid(GetTileOwner(tile));
-				if (c != nullptr) {
-					c->infrastructure.rail[GetRailType(tile)] += LEVELCROSSING_TRACKBIT_FACTOR - 1;
-					DirtyCompanyInfrastructureWindows(c->index);
-				}
-
-				/* Always add road to the roadtypes (can't draw without it) */
-				bool reserved = HasBit(GetRailReservationTrackBits(_m.ToTile(tile)), railtrack);
-				MakeRoadCrossing(tile, company, company, GetTileOwner(tile), roaddir, GetRailType(tile), rtt == RTT_ROAD ? rt : INVALID_ROADTYPE, (rtt == RTT_TRAM) ? rt : INVALID_ROADTYPE, p2);
-				SetCrossingReservation(tile, reserved);
-				UpdateLevelCrossing(tile, false);
-				MarkTileDirtyByTile(tile);
-			}
-			return CommandCost(EXPENSES_CONSTRUCTION, 2 * RoadBuildCost(rt));
-		}
 
 		case MP_STATION: {
 			if ((GetAnyRoadBits(tile, rtt) & pieces) == pieces) return_cmd_error(STR_ERROR_ALREADY_BUILT);

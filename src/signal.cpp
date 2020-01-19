@@ -275,82 +275,81 @@ static SigFlags ExploreSegment(Owner owner)
 		TileIndex oldtile = tile; // tile we are leaving
 		DiagDirection exitdir = enterdir == INVALID_DIAGDIR ? INVALID_DIAGDIR : ReverseDiagDir(enterdir); // expected new exit direction (for straight line)
 
-		switch (GetTileType(tile)) {
-			case MP_RAILWAY: {
-				Tile *rail_tile = _m.ToTile(tile);
-				if (GetTileOwner(rail_tile) != owner) continue; // do not propagate signals on others' tiles (remove for tracksharing)
+		if (HasTileByType(tile, MP_RAILWAY)) {
+			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 
-				if (IsRailDepot(rail_tile)) {
-					if (enterdir == INVALID_DIAGDIR) { // from 'inside' - train just entered or left the depot
-						if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
-						exitdir = GetRailDepotDirection(rail_tile);
-						tile += TileOffsByDiagDir(exitdir);
-						enterdir = ReverseDiagDir(exitdir);
-						break;
-					} else if (enterdir == GetRailDepotDirection(rail_tile)) { // entered a depot
-						if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
-						continue;
-					} else {
-						continue;
-					}
-				}
+			if (GetTileOwner(rail_tile) != owner) continue; // do not propagate signals on others' tiles (remove for tracksharing)
 
-				assert(IsValidDiagDirection(enterdir));
-				TrackBits tracks = GetTrackBits(rail_tile); // trackbits of tile
-				TrackBits tracks_masked = (TrackBits)(tracks & _enterdir_to_trackbits[enterdir]); // only incidating trackbits
-
-				if (tracks == TRACK_BIT_HORZ || tracks == TRACK_BIT_VERT) { // there is exactly one incidating track, no need to check
-					tracks = tracks_masked;
-					/* If no train detected yet, and there is not no train -> there is a train -> set the flag */
-					if (!(flags & SF_TRAIN) && EnsureNoTrainOnTrackBits(tile, tracks).Failed()) flags |= SF_TRAIN;
-				} else {
-					if (tracks_masked == TRACK_BIT_NONE) continue; // no incidating track
+			if (IsRailDepot(rail_tile)) {
+				if (enterdir == INVALID_DIAGDIR) { // from 'inside' - train just entered or left the depot
+					if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
+					exitdir = GetRailDepotDirection(rail_tile);
+					tile += TileOffsByDiagDir(exitdir);
+					enterdir = ReverseDiagDir(exitdir);
+					if (!MaybeAddToTodoSet(tile, enterdir, oldtile, exitdir)) return flags | SF_FULL;
+				} else if (enterdir == GetRailDepotDirection(rail_tile)) { // entered a depot
 					if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
 				}
+				continue;
+			}
 
-				if (HasSignals(rail_tile)) { // there is exactly one track - not zero, because there is exit from this tile
-					Track track = TrackBitsToTrack(tracks_masked); // mask TRACK_BIT_X and Y too
-					if (HasSignalOnTrack(rail_tile, track)) { // now check whole track, not trackdir
-						SignalType sig = GetSignalType(rail_tile, track);
-						Trackdir trackdir = (Trackdir)FindFirstBit((tracks * 0x101) & _enterdir_to_trackdirbits[enterdir]);
-						Trackdir reversedir = ReverseTrackdir(trackdir);
-						/* add (tile, reversetrackdir) to 'to-be-updated' set when there is
-						 * ANY conventional signal in REVERSE direction
-						 * (if it is a presignal EXIT and it changes, it will be added to 'to-be-done' set later) */
-						if (HasSignalOnTrackdir(rail_tile, reversedir)) {
-							if (IsPbsSignal(sig)) {
-								flags |= SF_PBS;
-							} else if (!_tbuset.Add(tile, reversedir)) {
-								return flags | SF_FULL;
-							}
+			assert(IsValidDiagDirection(enterdir));
+			TrackBits tracks = GetTrackBits(rail_tile); // trackbits of tile
+			TrackBits tracks_masked = (TrackBits)(tracks & _enterdir_to_trackbits[enterdir]); // only incidating trackbits
+
+			if (tracks == TRACK_BIT_HORZ || tracks == TRACK_BIT_VERT) { // there is exactly one incidating track, no need to check
+				tracks = tracks_masked;
+				/* If no train detected yet, and there is not no train -> there is a train -> set the flag */
+				if (!(flags & SF_TRAIN) && EnsureNoTrainOnTrackBits(tile, tracks).Failed()) flags |= SF_TRAIN;
+			} else {
+				if (tracks_masked == TRACK_BIT_NONE) continue; // no incidating track
+				if (!(flags & SF_TRAIN) && HasVehicleOnPos(tile, nullptr, &TrainOnTileEnum)) flags |= SF_TRAIN;
+			}
+
+			if (HasSignals(rail_tile)) { // there is exactly one track - not zero, because there is exit from this tile
+				Track track = TrackBitsToTrack(tracks_masked); // mask TRACK_BIT_X and Y too
+				if (HasSignalOnTrack(rail_tile, track)) { // now check whole track, not trackdir
+					SignalType sig = GetSignalType(rail_tile, track);
+					Trackdir trackdir = (Trackdir)FindFirstBit((tracks * 0x101) & _enterdir_to_trackdirbits[enterdir]);
+					Trackdir reversedir = ReverseTrackdir(trackdir);
+					/* add (tile, reversetrackdir) to 'to-be-updated' set when there is
+					 * ANY conventional signal in REVERSE direction
+					 * (if it is a presignal EXIT and it changes, it will be added to 'to-be-done' set later) */
+					if (HasSignalOnTrackdir(rail_tile, reversedir)) {
+						if (IsPbsSignal(sig)) {
+							flags |= SF_PBS;
+						} else if (!_tbuset.Add(tile, reversedir)) {
+							return flags | SF_FULL;
 						}
-						if (HasSignalOnTrackdir(rail_tile, trackdir) && !IsOnewaySignal(rail_tile, track)) flags |= SF_PBS;
+					}
+					if (HasSignalOnTrackdir(rail_tile, trackdir) && !IsOnewaySignal(rail_tile, track)) flags |= SF_PBS;
 
-						/* if it is a presignal EXIT in OUR direction and we haven't found 2 green exits yes, do special check */
-						if (!(flags & SF_GREEN2) && IsPresignalExit(rail_tile, track) && HasSignalOnTrackdir(rail_tile, trackdir)) { // found presignal exit
-							if (flags & SF_EXIT) flags |= SF_EXIT2; // found two (or more) exits
-							flags |= SF_EXIT; // found at least one exit - allow for compiler optimizations
-							if (GetSignalStateByTrackdir(rail_tile, trackdir) == SIGNAL_STATE_GREEN) { // found green presignal exit
-								if (flags & SF_GREEN) flags |= SF_GREEN2;
-								flags |= SF_GREEN;
-							}
+					/* if it is a presignal EXIT in OUR direction and we haven't found 2 green exits yes, do special check */
+					if (!(flags & SF_GREEN2) && IsPresignalExit(rail_tile, track) && HasSignalOnTrackdir(rail_tile, trackdir)) { // found presignal exit
+						if (flags & SF_EXIT) flags |= SF_EXIT2; // found two (or more) exits
+						flags |= SF_EXIT; // found at least one exit - allow for compiler optimizations
+						if (GetSignalStateByTrackdir(rail_tile, trackdir) == SIGNAL_STATE_GREEN) { // found green presignal exit
+							if (flags & SF_GREEN) flags |= SF_GREEN2;
+							flags |= SF_GREEN;
 						}
-
-						continue;
 					}
-				}
 
-				for (DiagDirection dir = DIAGDIR_BEGIN; dir < DIAGDIR_END; dir++) { // test all possible exit directions
-					if (dir != enterdir && (tracks & _enterdir_to_trackbits[dir])) { // any track incidating?
-						TileIndex newtile = tile + TileOffsByDiagDir(dir);  // new tile to check
-						DiagDirection newdir = ReverseDiagDir(dir); // direction we are entering from
-						if (!MaybeAddToTodoSet(newtile, newdir, tile, dir)) return flags | SF_FULL;
-					}
+					continue;
 				}
+			}
 
-				continue; // continue the while() loop
+			for (DiagDirection dir = DIAGDIR_BEGIN; dir < DIAGDIR_END; dir++) { // test all possible exit directions
+				if (dir != enterdir && (tracks & _enterdir_to_trackbits[dir])) { // any track incidating?
+					TileIndex newtile = tile + TileOffsByDiagDir(dir);  // new tile to check
+					DiagDirection newdir = ReverseDiagDir(dir); // direction we are entering from
+					if (!MaybeAddToTodoSet(newtile, newdir, tile, dir)) return flags | SF_FULL;
 				}
+			}
 
+			continue; // continue the while() loop
+		}
+
+		switch (GetTileType(tile)) {
 			case MP_STATION:
 				if (!HasStationRail(tile)) continue;
 				if (GetTileOwner(tile) != owner) continue;
@@ -488,7 +487,9 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 		 * modification of railbits (including both rail building and removal),
 		 * train entering/leaving block, train leaving depot...
 		 */
-		switch (GetTileType(tile)) {
+		Tile *tptr = GetTileByType(tile, MP_RAILWAY);
+		if (tptr == nullptr) tptr = _m.ToTile(tile);
+		switch (GetTileType(tptr)) {
 			case MP_TUNNELBRIDGE:
 				/* 'optimization assert' - do not try to update signals when it is not needed */
 				assert(GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL);
@@ -498,9 +499,9 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 				break;
 
 			case MP_RAILWAY:
-				if (IsRailDepot(_m.ToTile(tile))) {
+				if (IsRailDepot(tptr)) {
 					/* 'optimization assert' do not try to update signals in other cases */
-					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(_m.ToTile(tile)));
+					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(tptr));
 					_tbdset.Add(tile, INVALID_DIAGDIR); // start from depot inside
 					break;
 				}

@@ -170,16 +170,6 @@ static inline TrackBits GetTrackBits(const Tile *tile)
 }
 
 /**
- * Gets the track bits of the given tile
- * @param tile the tile to get the track bits from
- * @return the track bits of the tile
- */
-static inline TrackBits GetTrackBits(TileIndex tile)
-{
-	return GetTrackBits(_m.ToTile(tile));
-}
-
-/**
  * Sets the track bits of the given tile
  * @param t the tile to set the track bits of
  * @param b the new track bits for the tile
@@ -545,68 +535,61 @@ static inline bool HasBlockSignalOnTrackdir(TileIndex tile, Trackdir td)
 
 RailType GetTileRailType(TileIndex tile);
 
-/** The ground 'under' the rail */
-enum RailGroundType {
-	RAIL_GROUND_BARREN       =  0, ///< Nothing (dirt)
-	RAIL_GROUND_GRASS        =  1, ///< Grassy
-	RAIL_GROUND_FENCE_NW     =  2, ///< Grass with a fence at the NW edge
-	RAIL_GROUND_FENCE_SE     =  3, ///< Grass with a fence at the SE edge
-	RAIL_GROUND_FENCE_SENW   =  4, ///< Grass with a fence at the NW and SE edges
-	RAIL_GROUND_FENCE_NE     =  5, ///< Grass with a fence at the NE edge
-	RAIL_GROUND_FENCE_SW     =  6, ///< Grass with a fence at the SW edge
-	RAIL_GROUND_FENCE_NESW   =  7, ///< Grass with a fence at the NE and SW edges
-	RAIL_GROUND_FENCE_VERT1  =  8, ///< Grass with a fence at the eastern side
-	RAIL_GROUND_FENCE_VERT2  =  9, ///< Grass with a fence at the western side
-	RAIL_GROUND_FENCE_HORIZ1 = 10, ///< Grass with a fence at the southern side
-	RAIL_GROUND_FENCE_HORIZ2 = 11, ///< Grass with a fence at the northern side
-	RAIL_GROUND_ICE_DESERT   = 12, ///< Icy or sandy
-	RAIL_GROUND_WATER        = 13, ///< Grass with a fence and shore or water on the free halftile
-	RAIL_GROUND_HALF_SNOW    = 14, ///< Snow only on higher part of slope (steep or one corner raised)
+/** The type of fences around the rail. */
+enum RailFenceType {
+	RAIL_FENCE_NONE   =  0, ///< No fences
+	RAIL_FENCE_NW     =  1, ///< Grass with a fence at the NW edge
+	RAIL_FENCE_SE     =  2, ///< Grass with a fence at the SE edge
+	RAIL_FENCE_SENW   =  3, ///< Grass with a fence at the NW and SE edges
+	RAIL_FENCE_NE     =  4, ///< Grass with a fence at the NE edge
+	RAIL_FENCE_SW     =  5, ///< Grass with a fence at the SW edge
+	RAIL_FENCE_NESW   =  6, ///< Grass with a fence at the NE and SW edges
+	RAIL_FENCE_VERT1  =  7, ///< Grass with a fence at the eastern side
+	RAIL_FENCE_VERT2  =  8, ///< Grass with a fence at the western side
+	RAIL_FENCE_HORIZ1 =  9, ///< Grass with a fence at the southern side
+	RAIL_FENCE_HORIZ2 = 10, ///< Grass with a fence at the northern side
 };
 
-static inline void SetRailGroundType(TileIndex t, RailGroundType rgt)
+static inline void SetRailFenceType(Tile *t, RailFenceType rft)
 {
-	SB(_m[t].m4, 0, 4, rgt);
+	SB(t->m4, 0, 4, rft);
 }
 
-static inline RailGroundType GetRailGroundType(TileIndex t)
+static inline RailFenceType GetRailFenceType(const Tile *t)
 {
-	return (RailGroundType)GB(_m[t].m4, 0, 4);
-}
-
-static inline bool IsSnowRailGround(TileIndex t)
-{
-	return GetRailGroundType(t) == RAIL_GROUND_ICE_DESERT;
+	return (RailFenceType)GB(t->m4, 0, 4);
 }
 
 
-static inline void MakeRailNormal(TileIndex t, Owner o, TrackBits b, RailType r)
+static inline Tile *MakeRailNormal(Tile *rail_tile, Owner o, TrackBits b, RailType r)
 {
-	SetTileType(t, MP_RAILWAY);
-	SetTileOwner(t, o);
-	SetDockingTile(t, false);
-	_m[t].m2 = 0;
-	_m[t].m3 = 0;
-	_m[t].m4 = 0;
-	_m[t].m5 = RAIL_TILE_NORMAL << 6 | b;
-	SB(_m[t].m6, 2, 4, 0);
-	_m[t].m7 = 0;
-	_m[t].m8 = r;
+	SetTileType(rail_tile, MP_RAILWAY);
+	SetTileOwner(rail_tile, o);
+	rail_tile->m2 = 0;
+	rail_tile->m3 = 0;
+	rail_tile->m4 = 0;
+	rail_tile->m5 = RAIL_TILE_NORMAL << 6 | b;
+	SB(rail_tile->m6, 2, 4, 0);
+	rail_tile->m7 = 0;
+	rail_tile->m8 = r;
+	return rail_tile;
+}
+
+static inline Tile *MakeRailNormal(TileIndex t, Owner o, TrackBits b, RailType r)
+{
+	Tile *rail_tile = _m.NewTile(t, MP_RAILWAY);
+	return MakeRailNormal(rail_tile, o, b, r);
 }
 
 
 static inline void MakeRailDepot(TileIndex t, Owner o, DepotID did, DiagDirection d, RailType r)
 {
-	SetTileType(t, MP_RAILWAY);
-	SetTileOwner(t, o);
-	SetDockingTile(t, false);
-	_m[t].m2 = did;
-	_m[t].m3 = 0;
-	_m[t].m4 = 0;
-	_m[t].m5 = RAIL_TILE_DEPOT << 6 | d;
-	SB(_m[t].m6, 2, 4, 0);
-	_m[t].m7 = 0;
-	_m[t].m8 = r;
+	Tile *rail_tile = _m.NewTile(t, MP_RAILWAY);
+	SetTileOwner(rail_tile, o);
+	rail_tile->m2 = did;
+	rail_tile->m3 = 0;
+	rail_tile->m5 = RAIL_TILE_DEPOT << 6 | d;
+	rail_tile->m8 = r;
 }
 
 #endif /* RAIL_MAP_H */
