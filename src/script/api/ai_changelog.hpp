@@ -36,6 +36,7 @@
  *
  * Other changes:
  * \li AITile::DemolishTile works without a selected company
+ * \li AIRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
  *
  * \b 1.9.0
  *

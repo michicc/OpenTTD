@@ -46,7 +46,7 @@ protected:
 			this->rail_tile = GetTileByType(tile, MP_RAILWAY);
 			this->td = td;
 			this->tile_type = GetTileType(tile);
-			this->rail_type = GetTileRailType(tile);
+			this->rail_type = this->rail_tile != nullptr ? GetRailType(this->rail_tile) : GetTileRailType(tile, TrackdirToTrack(td));
 		}
 	};
 

@@ -1133,7 +1133,7 @@ struct BuildVehicleWindow : Window {
 				if (this->listview_mode) {
 					this->filter.railtype = INVALID_RAILTYPE;
 				} else {
-					this->filter.railtype = GetTileRailType(this->window_number);
+					this->filter.railtype = GetTileRailType(this->window_number, GetRailDepotTrack(GetRailDepotTile(this->window_number)));
 				}
 				break;
 

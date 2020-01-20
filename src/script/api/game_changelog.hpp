@@ -28,6 +28,9 @@
  * \li GSEngine::EnableForCompany
  * \li GSEngine::DisableForCompany
  *
+ * Other changes:
+ * \li GSRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
+ *
  * \b 1.9.0
  *
  * API additions:

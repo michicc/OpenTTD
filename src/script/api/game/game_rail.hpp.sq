@@ -71,7 +71,7 @@ void SQGSRail_Register(Squirrel *engine)
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::SetCurrentRailType,              "SetCurrentRailType",              2, ".i");
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::TrainCanRunOnRail,               "TrainCanRunOnRail",               3, ".ii");
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::TrainHasPowerOnRail,             "TrainHasPowerOnRail",             3, ".ii");
-	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::GetRailType,                     "GetRailType",                     2, ".i");
+	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::GetRailType,                     "GetRailType",                     3, ".ii");
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::ConvertRailType,                 "ConvertRailType",                 4, ".iii");
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::GetRailDepotFrontTile,           "GetRailDepotFrontTile",           2, ".i");
 	SQGSRail.DefSQStaticMethod(engine, &ScriptRail::GetRailStationDirection,         "GetRailStationDirection",         2, ".i");

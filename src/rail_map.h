@@ -585,7 +585,8 @@ static inline bool HasBlockSignalOnTrackdir(TileIndex tile, Trackdir td)
 }
 
 
-RailType GetTileRailType(TileIndex tile);
+RailType GetTileRailType(TileIndex tile, Track track);
+RailType GetTileRailType(TileIndex tile, DiagDirection diagdir);
 
 /** The type of fences around the rail. */
 enum RailFenceType {
