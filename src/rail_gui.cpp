@@ -107,9 +107,8 @@ static void GenericPlaceRail(TileIndex tile, int cmd)
  */
 static void PlaceExtraDepotRail(TileIndex tile, DiagDirection dir, Track track)
 {
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = GetRailTileFromDiagDir(tile, dir);
 	if (rail_tile == nullptr || GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) return;
-	if ((GetTrackBits(rail_tile) & DiagdirReachesTracks(dir)) == 0) return;
 
 	DoCommandP(tile, _cur_railtype, track, CMD_BUILD_SINGLE_RAIL);
 }
@@ -1914,10 +1913,13 @@ static void SetDefaultRailGui()
 			uint count[RAILTYPE_END];
 			memset(count, 0, sizeof(count));
 			for (TileIndex t = 0; t < MapSize(); t++) {
-				const Tile *rail_tile = GetTileByType(t, MP_RAILWAY);
-				if (rail_tile != nullptr || IsLevelCrossingTile(t) || HasStationTileRail(t) ||
+				if (HasTileByType(t, MP_RAILWAY)) {
+					FOR_ALL_RAIL_TILES(rail_tile, t) {
+						count[GetRailType(rail_tile)]++;
+					}
+				} else if (IsLevelCrossingTile(t) || HasStationTileRail(t) ||
 						(IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL)) {
-					count[GetRailType(rail_tile != nullptr ? rail_tile : _m.ToTile(t))]++;
+					count[GetRailType(t)]++;
 				}
 			}
 

@@ -462,6 +462,7 @@ static inline uint32 GetSmallMapRoutesPixels(TileIndex tile, TileType t)
 			}
 
 		case MP_RAILWAY: {
+			/* Use first associated tile for map colour. */
 			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 			AndOr andor = {
 				MKCOLOUR_0XX0(GetRailTypeInfo(GetRailType(rail_tile != nullptr ? rail_tile : _m.ToTile(tile)))->map_colour),
@@ -568,6 +569,7 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 		case MP_HOUSE:    return MKCOLOUR_XXXX(PC_DARK_RED);
 		default:
 			if (HasTileByType(tile, MP_RAILWAY)) {
+				/* Use owner of first associated tile for map colour. */
 				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
 			} else {
 				/* FIXME: For MP_ROAD there are multiple owners.

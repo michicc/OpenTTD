@@ -30,11 +30,15 @@
  * @param ax the axis of the road over the rail
  * @return true if it is a valid tile
  */
-static bool IsPossibleCrossing(TileIndex tile, const Tile *rail_tile, Axis ax)
+static bool IsPossibleCrossing(TileIndex tile, Axis ax)
 {
-	return (GetRailTileType(rail_tile) == RAIL_TILE_NORMAL &&
-		GetTrackBits(rail_tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
-		GetFoundationSlope(tile) == SLOPE_FLAT);
+	bool possible = true;
+	FOR_ALL_RAIL_TILES(rail_tile, tile) {
+		possible &= GetRailTileType(rail_tile) == RAIL_TILE_NORMAL &&
+			GetTrackBits(rail_tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
+			GetFoundationSlope(tile) == SLOPE_FLAT;
+	}
+	return possible;
 }
 
 /**
@@ -56,7 +60,7 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 		if (org_rb & target_rb) {
 			if (HasTileByType(neighbor_tile, MP_RAILWAY)) {
 				/* If the neighbor tile is inconnective remove the planed road connection to it */
-				if (!IsPossibleCrossing(neighbor_tile, GetTileByType(neighbor_tile, MP_RAILWAY), DiagDirToAxis(dir))) org_rb ^= target_rb;
+				if (!IsPossibleCrossing(neighbor_tile, DiagDirToAxis(dir))) org_rb ^= target_rb;
 				continue;
 			}
 

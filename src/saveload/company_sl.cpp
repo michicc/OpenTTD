@@ -105,8 +105,7 @@ void AfterLoadCompanyStats()
 
 	Company *c;
 	for (TileIndex tile = 0; tile < MapSize(); tile++) {
-		if (HasTileByType(tile, MP_RAILWAY)) {
-			const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		FOR_ALL_RAIL_TILES(rail_tile, tile) {
 			c = Company::GetIfValid(GetTileOwner(rail_tile));
 			if (c != nullptr) {
 				uint pieces = 1;
