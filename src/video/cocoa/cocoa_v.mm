@@ -383,6 +383,13 @@ void QZ_GameSizeChanged()
 	BlitterFactory::GetCurrentBlitter()->PostResize();
 
 	GameSizeChanged();
+
+	/* We need to store the window size as non-Retina size in
+	 * the config file to get same windows size on next start. */
+	if (_cocoa_subdriver->cocoaview != nil) {
+		_cur_resolution.width = [ _cocoa_subdriver->cocoaview frame ].size.width;
+		_cur_resolution.height = [ _cocoa_subdriver->cocoaview frame ].size.height;
+	}
 }
 
 /**

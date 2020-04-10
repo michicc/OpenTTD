@@ -155,6 +155,8 @@ public:
 		clipRect.size.width = rect.size.width;
 		clipRect.size.height = rect.size.height;
 
+		if ([ self respondsToSelector:@selector(convertRectToBacking:) ]) clipRect = [ self convertRectToBacking:clipRect ];
+
 		/* Blit dirty part of image */
 		CGImageRef clippedImage = CGImageCreateWithImageInRect(fullImage, clipRect);
 		CGContextDrawImage(viewContext, blitRect, clippedImage);
@@ -175,6 +177,8 @@ public:
 
 			clipRect.size.width = rect.size.width;
 			clipRect.size.height = rect.size.height;
+
+			if ([ self respondsToSelector:@selector(convertRectToBacking:) ]) clipRect = [ self convertRectToBacking:clipRect ];
 
 			/* Blit dirty part of image */
 			CGImageRef clippedImage = CGImageCreateWithImageInRect(fullImage, clipRect);
@@ -346,8 +350,13 @@ bool WindowQuartzSubdriver::SetVideoMode(int width, int height, int bpp)
 		[ this->window makeKeyAndOrderFront:nil ];
 	}
 
-	[this->window setColorSpace:[NSColorSpace sRGBColorSpace]];
+#if 0
+	this->color_space = [ [ this->window colorSpace ] CGColorSpace ];
+	CGColorSpaceRetain(this->color_space);
+#else
+	[ this->window setColorSpace:[ NSColorSpace sRGBColorSpace ] ];
 	this->color_space = CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+#endif
 
 	bool ret = WindowResized();
 	this->UpdatePalette(0, 256);
@@ -438,6 +447,7 @@ void WindowQuartzSubdriver::Draw(bool force_update)
 
 		/* Normally drawRect will be automatically called by Mac OS X during next update cycle,
 		 * and then blitting will occur. If force_update is true, it will be done right now. */
+		if ([ this->cocoaview respondsToSelector:@selector(convertRectFromBacking:) ]) dirtyrect = [ this->cocoaview convertRectFromBacking:dirtyrect ];
 		[ this->cocoaview setNeedsDisplayInRect:dirtyrect ];
 		if (force_update) [ this->cocoaview displayIfNeeded ];
 	}
@@ -491,6 +501,7 @@ bool WindowQuartzSubdriver::ChangeResolution(int w, int h, int bpp)
 /* Convert local coordinate to window server (CoreGraphics) coordinate */
 CGPoint WindowQuartzSubdriver::PrivateLocalToCG(NSPoint *p)
 {
+	if ([ this->cocoaview respondsToSelector:@selector(convertPointFromBacking:) ]) *p = [ this->cocoaview convertPointFromBacking:*p ];
 
 	p->y = this->window_height - p->y;
 	*p = [ this->cocoaview convertPoint:*p toView:nil ];
@@ -505,7 +516,7 @@ CGPoint WindowQuartzSubdriver::PrivateLocalToCG(NSPoint *p)
 		*p = [ this->window convertBaseToScreen:*p ];
 #endif
 	}
-	p->y = this->device_height - p->y;
+	p->y = this->device_height / [ this->cocoaview backingScaleFactor ] - p->y;
 
 	CGPoint cgp;
 	cgp.x = p->x;
@@ -518,7 +529,9 @@ NSPoint WindowQuartzSubdriver::GetMouseLocation(NSEvent *event)
 {
 	NSPoint pt;
 
-	if ( [ event window ] == nil) {
+	NSWindow *wnd = [ event window ];
+	if ( wnd == nil) {
+		wnd = [ this->cocoaview window ];
 #if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
 		if ([ [ this->cocoaview window ] respondsToSelector:@selector(convertRectFromScreen:) ]) {
 			pt = [ this->cocoaview convertPoint:[ [ this->cocoaview window ] convertRectFromScreen:NSMakeRect([ event locationInWindow ].x, [ event locationInWindow ].y, 0, 0) ].origin fromView:nil ];
@@ -534,6 +547,7 @@ NSPoint WindowQuartzSubdriver::GetMouseLocation(NSEvent *event)
 		pt = [ event locationInWindow ];
 	}
 
+	if ([ wnd respondsToSelector:@selector(convertRectToBacking:) ]) pt = [ wnd convertRectToBacking:NSMakeRect(pt.x, pt.y, 0, 0) ].origin;
 	pt.y = this->window_height - pt.y;
 
 	return pt;
@@ -541,7 +555,10 @@ NSPoint WindowQuartzSubdriver::GetMouseLocation(NSEvent *event)
 
 bool WindowQuartzSubdriver::MouseIsInsideView(NSPoint *pt)
 {
-	return [ cocoaview mouse:*pt inRect:[ this->cocoaview bounds ] ];
+	NSRect r = NSMakeRect(pt->x, pt->y, 0, 0);
+	if ([ cocoaview respondsToSelector:@selector(convertRectFromBacking:) ]) r = [ cocoaview convertRectFromBacking:r ];
+
+	return [ cocoaview mouse:r.origin inRect:[ this->cocoaview bounds ] ];
 }
 
 
@@ -565,6 +582,9 @@ bool WindowQuartzSubdriver::WindowResized()
 	if (this->window == nil || this->cocoaview == nil) return true;
 
 	NSRect newframe = [ this->cocoaview frame ];
+	if ([ this->cocoaview respondsToSelector:@selector(convertRectToBacking:) ]) {
+		newframe = [ this->cocoaview convertRectToBacking:newframe ];
+	}
 
 	this->window_width = (int)newframe.size.width;
 	this->window_height = (int)newframe.size.height;
