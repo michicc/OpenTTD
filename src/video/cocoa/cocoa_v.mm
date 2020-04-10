@@ -546,7 +546,7 @@ bool VideoDriver_Cocoa::ToggleFullscreen(bool full_screen)
  */
 bool VideoDriver_Cocoa::AfterBlitterChange()
 {
-	return this->ChangeResolution(_screen.width, _screen.height);
+	return this->ChangeResolution(_cur_resolution.width, _cur_resolution.height);
 }
 
 /**
