@@ -257,7 +257,7 @@ static void RealSave_Town(Town *t)
 	SlObject(&t->cargo_accepted, GetTileMatrixDesc());
 	if (t->cargo_accepted.area.w != 0) {
 		uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
-		SlArray(t->cargo_accepted.data, arr_len, SLE_UINT64);
+		SlArray(t->cargo_accepted.data.data(), arr_len, SLE_UINT64);
 	}
 }
 
@@ -294,12 +294,12 @@ static void Load_TOWN()
 		if (IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE) || !IsSavegameVersionUntil(SLV_REMOVE_TOWN_CARGO_CACHE)) SlObject(&t->cargo_accepted, GetTileMatrixDesc());
 		if (t->cargo_accepted.area.w != 0) {
 			uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
-			t->cargo_accepted.data = MallocT<CargoTypes>(arr_len);
+			t->cargo_accepted.data.resize(arr_len);
 			if (IsSavegameVersionBefore(SLV_FIX_TOWN_ACCEPTANCE)) {
 				if (IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE)) SlSkipBytes(4 * arr_len);
 				UpdateTownCargoes(t);
 			} else {
-				SlArray(t->cargo_accepted.data, arr_len, SLE_UINT64);
+				SlArray(t->cargo_accepted.data.data(), arr_len, SLE_UINT64);
 
 				/* Rebuild total cargo acceptance. */
 				UpdateTownCargoTotal(t);
