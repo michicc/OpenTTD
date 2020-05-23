@@ -58,6 +58,10 @@ struct OrthogonalTileArea {
 	{
 		return TILE_ADDXY(this->tile, this->w / 2, this->h / 2);
 	}
+
+	bool operator ==(const OrthogonalTileArea &o) const noexcept {
+		return this->tile == o.tile && this->w == o.w && this->h == o.h;
+	}
 };
 
 /** Represents a diagonal tile area. */

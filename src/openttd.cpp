@@ -1141,9 +1141,23 @@ static void CheckCaches()
 	if (_debug_desync_level <= 1) return;
 
 	/* Check the town caches. */
-	std::vector<TownCache> old_town_caches;
+	std::vector<TownCache>        old_town_caches;
+	std::vector<CargoTypes>       old_town_cargo_produced;
+	std::vector<CargoTypes>       old_town_cargo_accepted_total;
+	std::vector<AcceptanceMatrix> old_town_cargo_accepted;
 	for (const Town *t : Town::Iterate()) {
 		old_town_caches.push_back(t->cache);
+		old_town_cargo_produced.push_back(t->cargo_produced);
+		old_town_cargo_accepted_total.push_back(t->cargo_accepted_total);
+		old_town_cargo_accepted.push_back(t->cargo_accepted);
+	}
+
+	const CargoTypes old_town_cargoes_accepted = _town_cargoes_accepted;
+
+	/* Rebuild area of cargo acceptance matrix, as RebuildTownCaches will not recalculate the area. */
+	for (TileIndex t = 0; t < MapSize(); t++) {
+		if (!IsTileType(t, MP_HOUSE)) continue;
+		Town::Get(GetTownIndex(t))->cargo_accepted.Add(t);
 	}
 
 	extern void RebuildTownCaches();
@@ -1155,7 +1169,27 @@ static void CheckCaches()
 		if (MemCmpT(old_town_caches.data() + i, &t->cache) != 0) {
 			DEBUG(desync, 2, "town cache mismatch: town %i", (int)t->index);
 		}
+		if (old_town_cargo_produced[i] != t->cargo_produced) {
+			DEBUG(desync, 2, "town cargo_produced mismatch: town %i, old: " OTTD_PRINTFHEX64 ", new: " OTTD_PRINTFHEX64, (int)t->index, old_town_cargo_produced[i], t->cargo_produced);
+		}
+		if (old_town_cargo_accepted_total[i] != t->cargo_accepted_total) {
+			DEBUG(desync, 2, "town cargo_accepted_total mismatch: town %i, old: " OTTD_PRINTFHEX64 ", new: " OTTD_PRINTFHEX64, (int)t->index, old_town_cargo_accepted_total[i], t->cargo_accepted_total);
+		}
+		if (old_town_cargo_accepted[i].GetArea() == t->cargo_accepted.GetArea()) {
+			TILE_AREA_LOOP(tile, t->cargo_accepted.GetArea()) {
+				if (old_town_cargo_accepted[i][tile] != t->cargo_accepted[tile]) {
+					DEBUG(desync, 2, "town cargo_accepted mismatch: town %i, first wrong tile: 0x%x,  old: " OTTD_PRINTFHEX64 ", new: " OTTD_PRINTFHEX64, (int)t->index, tile, old_town_cargo_accepted[i].Get(tile), t->cargo_accepted.Get(tile));
+					break;
+				}
+			}
+		} else {
+			DEBUG(desync, 2, "town cargo_accepted area mismatch: town %i", (int)t->index);
+		}
 		i++;
+	}
+
+	if (old_town_cargoes_accepted != _town_cargoes_accepted) {
+		DEBUG(desync, 2, "_town_cargoes_accepted mismatch: old: " OTTD_PRINTFHEX64 ", new: " OTTD_PRINTFHEX64, old_town_cargoes_accepted, _town_cargoes_accepted);
 	}
 
 	/* Check company infrastructure cache. */
