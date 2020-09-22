@@ -191,8 +191,10 @@ static const SaveLoad _town_desc[] = {
 
 	SLE_CONDLST(Town, psa_list,            REF_STORAGE,                SLV_161, SL_MAX_VERSION),
 
-	SLE_CONDNULL(4, SLV_166, SLV_EXTEND_CARGOTYPES),  ///< cargo_produced, no longer in use
-	SLE_CONDNULL(8, SLV_EXTEND_CARGOTYPES, SLV_REMOVE_TOWN_CARGO_CACHE),  ///< cargo_produced, no longer in use
+	SLE_CONDVAR(Town, cargo_produced,        SLE_FILE_U32 | SLE_VAR_U64, SLV_166, SLV_EXTEND_CARGOTYPES),
+	SLE_CONDVAR(Town, cargo_produced,        SLE_UINT64,                 SLV_EXTEND_CARGOTYPES, SLV_REMOVE_TOWN_CARGO_CACHE),
+	SLE_CONDVAR(Town, cargo_produced,        SLE_UINT64,                 SLV_FIX_TOWN_ACCEPTANCE, SL_MAX_VERSION),
+
 	SLE_CONDNULL(30, SLV_2, SLV_REMOVE_TOWN_CARGO_CACHE), ///< old reserved space
 
 	SLE_END()
@@ -249,6 +251,14 @@ static void RealSave_Town(Town *t)
 	for (int i = TE_BEGIN; i < NUM_TE; i++) {
 		SlObject(&t->received[i], _town_received_desc);
 	}
+
+	if (IsSavegameVersionBefore(SLV_166)) return;
+
+	SlObject(&t->cargo_accepted, GetTileMatrixDesc());
+	if (t->cargo_accepted.area.w != 0) {
+		uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
+		SlArray(t->cargo_accepted.data, arr_len, SLE_UINT64);
+	}
 }
 
 static void Save_TOWN()
@@ -279,13 +289,21 @@ static void Load_TOWN()
 			SlErrorCorrupt("Invalid town name generator");
 		}
 
-		if (!IsSavegameVersionBefore(SLV_166) && IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE)) {
-			/* Discard now unused acceptance matrix. */
-			AcceptanceMatrix dummy;
-			SlObject(&dummy, GetTileMatrixDesc());
-			if (dummy.area.w != 0) {
-				uint arr_len = dummy.area.w / AcceptanceMatrix::GRID * dummy.area.h / AcceptanceMatrix::GRID;
-				SlSkipBytes(4 * arr_len);
+		if (IsSavegameVersionBefore(SLV_166)) continue;
+
+		if (IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE) || !IsSavegameVersionUntil(SLV_REMOVE_TOWN_CARGO_CACHE)) SlObject(&t->cargo_accepted, GetTileMatrixDesc());
+		if (t->cargo_accepted.area.w != 0) {
+			uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
+			t->cargo_accepted.data = MallocT<CargoTypes>(arr_len);
+			if (IsSavegameVersionBefore(SLV_FIX_TOWN_ACCEPTANCE)) {
+				if (IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE)) SlSkipBytes(4 * arr_len);
+				UpdateTownCargoes(t);
+			} else {
+				SlArray(t->cargo_accepted.data, arr_len, SLE_UINT64);
+
+				/* Rebuild total cargo acceptance. */
+				UpdateTownCargoTotal(t);
+
 			}
 		}
 	}

@@ -328,27 +328,20 @@ bool FindSubsidyTownCargoRoute()
 	const Town *src_town = Town::GetRandom();
 	if (src_town->cache.population < SUBSIDY_CARGO_MIN_POPULATION) return false;
 
-	CargoArray town_cargo_produced = GetProductionAroundTiles(src_town->xy, 1, 1, SUBSIDY_TOWN_CARGO_RADIUS);
+	CargoTypes town_cargo_produced = src_town->cargo_produced;
 
 	/* Passenger subsidies are not handled here. */
-	town_cargo_produced[CT_PASSENGERS] = 0;
-
-	uint8 cargo_count = 0;
-	for (CargoID i = 0; i < NUM_CARGO; i++) {
-		if (town_cargo_produced[i] > 0) cargo_count++;
-	}
+	ClrBit(town_cargo_produced, CT_PASSENGERS);
 
 	/* No cargo produced at all? */
-	if (cargo_count == 0) return false;
+	if (town_cargo_produced == 0) return false;
 
 	/* Choose a random cargo that is produced in the town. */
-	uint8 cargo_number = RandomRange(cargo_count);
+	uint8 cargo_number = RandomRange(CountBits(town_cargo_produced));
 	CargoID cid;
-	for (cid = 0; cid < NUM_CARGO; cid++) {
-		if (town_cargo_produced[cid] > 0) {
-			if (cargo_number == 0) break;
-			cargo_number--;
-		}
+	FOR_EACH_SET_CARGO_ID(cid, town_cargo_produced) {
+		if (cargo_number == 0) break;
+		cargo_number--;
 	}
 
 	/* Avoid using invalid NewGRF cargoes. */
@@ -423,18 +416,17 @@ bool FindSubsidyIndustryCargoRoute()
  */
 bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src)
 {
-	/* Choose a random destination. */
-	SourceType dst_type = Chance16(1, 2) ? ST_TOWN : ST_INDUSTRY;
+	/* Choose a random destination. Only consider towns if they can accept the cargo. */
+	SourceType dst_type = (HasBit(_town_cargoes_accepted, cid) && Chance16(1, 2)) ? ST_TOWN : ST_INDUSTRY;
 
 	SourceID dst;
 	switch (dst_type) {
 		case ST_TOWN: {
 			/* Select a random town. */
 			const Town *dst_town = Town::GetRandom();
-			CargoArray town_cargo_accepted = GetAcceptanceAroundTiles(dst_town->xy, 1, 1, SUBSIDY_TOWN_CARGO_RADIUS);
 
 			/* Check if the town can accept this cargo. */
-			if (town_cargo_accepted[cid] < 8) return false;
+			if (!HasBit(dst_town->cargo_accepted_total, cid)) return false;
 
 			dst = dst_town->index;
 			break;
