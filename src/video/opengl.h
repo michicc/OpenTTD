@@ -18,6 +18,7 @@
 typedef void (*OGLProc)();
 
 bool IsOpenGLVersionAtLeast(byte major, byte minor);
+const char *FindStringInExtensionList(const char *string, const char *substring);
 OGLProc GetOGLProcAddress(const char *proc);
 
 /** Platform-independent back-end class for OpenGL video drivers. */
