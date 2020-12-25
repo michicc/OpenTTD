@@ -87,6 +87,15 @@ public:
 	}
 
 	/**
+	 * Has this video driver an efficient code path for palette animated 8-bpp sprites?
+	 * @return True if the driver has an efficient code path for 8-bpp.
+	 */
+	virtual bool HasEfficient8Bpp() const
+	{
+		return false;
+	}
+
+	/**
 	 * Does this video driver support a separate animation buffer in addition to the colour buffer?
 	 * @return True if a separate animation buffer is supported.
 	 */
