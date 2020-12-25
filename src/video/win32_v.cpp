@@ -1389,6 +1389,7 @@ void VideoDriver_Win32GDI::Paint(HWND hWnd, bool in_sizemove)
 #endif
 
 static PFNWGLCREATECONTEXTATTRIBSARBPROC _wglCreateContextAttribsARB = nullptr;
+static PFNWGLSWAPINTERVALEXTPROC _wglSwapIntervalEXT = nullptr;
 static bool _hasWGLARBCreateContextProfile = false; ///< Is WGL_ARB_create_context_profile supported?
 
 /**
@@ -1453,6 +1454,9 @@ static void LoadWGLExtensions()
 					_wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)wglGetProcAddress("wglCreateContextAttribsARB");
 				}
 				_hasWGLARBCreateContextProfile = FindStringInExtensionList(wgl_exts, "WGL_ARB_create_context_profile") != nullptr;
+				if (FindStringInExtensionList(wgl_exts, "WGL_EXT_swap_control") != nullptr) {
+					_wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)wglGetProcAddress("wglSwapIntervalEXT");
+				}
 			}
 
 			wglMakeCurrent(nullptr, nullptr);
@@ -1484,6 +1488,13 @@ const char *VideoDriver_Win32OpenGL::Start(const StringList &param)
 		this->Stop();
 		_cur_resolution = old_res;
 		return err;
+	}
+
+	/* Enable/disable Vsync if supported. */
+	if (_wglSwapIntervalEXT != nullptr) {
+		_wglSwapIntervalEXT(GetDriverParamBool(param, "vsync") ? 1 : 0);
+	} else if(GetDriverParamBool(param, "vsync")) {
+		DEBUG(driver, 0, "OpenGL: Vsync requested, but not supported by driver");
 	}
 
 	this->ClientSizeChanged(_wnd.width, _wnd.height);
