@@ -46,7 +46,6 @@ typedef BOOL (WINAPI *PFNTRACKMOUSEEVENT)(LPTRACKMOUSEEVENT lpEventTrack);
 static PFNTRACKMOUSEEVENT _pTrackMouseEvent = nullptr;
 
 static struct {
-	void *buffer_bits;    ///< Internal rendering buffer.
 	int width;            ///< Width in pixels of our display surface.
 	int height;           ///< Height in pixels of our display surface.
 	int width_org;        ///< Original monitor resolution width, before we changed it.
@@ -1049,7 +1048,7 @@ void VideoDriver_Win32Base::MainLoop()
 
 			if (_force_full_redraw) MarkWholeScreenDirty();
 
-			_screen.dst_ptr = _wnd.buffer_bits;
+			_screen.dst_ptr = this->GetVideoPointer();
 			UpdateWindows();
 			this->CheckPaletteAnim();
 		} else {
@@ -1061,7 +1060,7 @@ void VideoDriver_Win32Base::MainLoop()
 			Sleep(1);
 			if (_draw_threaded) draw_lock.lock();
 
-			_screen.dst_ptr = _wnd.buffer_bits;
+			_screen.dst_ptr = this->GetVideoPointer();
 			NetworkDrawChatMessage();
 			DrawMouseCursor();
 		}
@@ -1187,14 +1186,14 @@ bool VideoDriver_Win32GDI::AllocateBackingStore(int w, int h, bool force)
 	if (this->dib_sect) DeleteObject(this->dib_sect);
 
 	HDC dc = GetDC(0);
-	this->dib_sect = CreateDIBSection(dc, bi, DIB_RGB_COLORS, (VOID**)&_wnd.buffer_bits, nullptr, 0);
+	this->dib_sect = CreateDIBSection(dc, bi, DIB_RGB_COLORS, (VOID**)&this->buffer_bits, nullptr, 0);
 	if (this->dib_sect == nullptr) usererror("CreateDIBSection failed");
 	ReleaseDC(0, dc);
 
 	_screen.width = w;
 	_screen.pitch = (bpp == 8) ? Align(w, 4) : w;
 	_screen.height = h;
-	_screen.dst_ptr = _wnd.buffer_bits;
+	_screen.dst_ptr = this->GetVideoPointer();
 
 	return true;
 }
@@ -1346,10 +1345,10 @@ void VideoDriver_Win32GDI::Paint(HWND hWnd, bool in_sizemove)
 {
 	static int _fooctr;
 
-	_screen.dst_ptr = _wnd.buffer_bits;
-	UpdateWindows();
-
 	VideoDriver_Win32GDI *drv = static_cast<VideoDriver_Win32GDI *>(VideoDriver::GetInstance());
+
+	_screen.dst_ptr = drv->GetVideoPointer();
+	UpdateWindows();
 
 	HDC dc = GetDC(drv->main_wnd);
 	drv->PaintWindow(dc);
@@ -1486,9 +1485,12 @@ bool VideoDriver_Win32OpenGL::AllocateBackingStore(int w, int h, bool force)
 	h = max(h, 64);
 	MemSetT(&this->dirty_rect, 0);
 
-	bool res = OpenGLBackend::Get()->Resize(w, h);
-	_wnd.buffer_bits = OpenGLBackend::Get()->GetVideoBuffer();
-	return res;
+	return OpenGLBackend::Get()->Resize(w, h, force);
+}
+
+void *VideoDriver_Win32OpenGL::GetVideoPointer()
+{
+	return OpenGLBackend::Get()->GetVideoBuffer();
 }
 
 void VideoDriver_Win32OpenGL::PaletteChanged(HWND hWnd)
