@@ -125,7 +125,7 @@ public:
 /** The OpenGL video driver for windows. */
 class VideoDriver_Win32OpenGL : public VideoDriver_Win32Base {
 public:
-	VideoDriver_Win32OpenGL() : dc(NULL), gl_rc(NULL) {}
+	VideoDriver_Win32OpenGL() : dc(nullptr), gl_rc(nullptr), anim_buffer(nullptr) {}
 
 	const char *Start(const StringList &param) override;
 
@@ -148,12 +148,16 @@ public:
 
 	void ClearSystemSprites() override;
 
+	bool HasAnimBuffer() override { return true; }
+	uint8 *GetAnimBuffer() override { return this->anim_buffer; }
+
 	const char *GetName() const override { return "win32-opengl"; }
 
 protected:
 	HDC   dc;          ///< Window device context.
 	HGLRC gl_rc;       ///< OpenGL context.
 	Rect  dirty_rect;  ///< Rectangle encompassing the dirty area of the video buffer.
+	uint8 *anim_buffer;///< Animation buffer from OpenGL back-end.
 
 	uint8 GetFullscreenBpp() override { return 32; } // OpenGL is always 32 bpp.
 
