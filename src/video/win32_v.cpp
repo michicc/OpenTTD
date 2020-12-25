@@ -16,6 +16,8 @@
 #include "../network/network.h"
 #include "../core/math_func.hpp"
 #include "../core/random_func.hpp"
+#include "../core/mem_func.hpp"
+#include "../core/geometry_func.hpp"
 #include "../texteff.hpp"
 #include "../thread.h"
 #include "../progress.h"
@@ -1452,6 +1454,14 @@ const char *VideoDriver_Win32OpenGL::AllocateContext()
 	return OpenGLBackend::Create();
 }
 
+void VideoDriver_Win32OpenGL::MakeDirty(int left, int top, int width, int height)
+{
+	this->VideoDriver_Win32Base::MakeDirty(left, top, width, height);
+
+	Rect r = {left, top, left + width, top + height};
+	this->dirty_rect = BoundingRect(this->dirty_rect, r);
+}
+
 bool VideoDriver_Win32OpenGL::ToggleFullscreen(bool full_screen)
 {
 	this->DestroyContext();
@@ -1474,6 +1484,7 @@ bool VideoDriver_Win32OpenGL::AllocateBackingStore(int w, int h, bool force)
 
 	w = max(w, 64);
 	h = max(h, 64);
+	MemSetT(&this->dirty_rect, 0);
 
 	bool res = OpenGLBackend::Get()->Resize(w, h);
 	_wnd.buffer_bits = OpenGLBackend::Get()->GetVideoBuffer();
@@ -1512,8 +1523,9 @@ void VideoDriver_Win32OpenGL::Paint(HWND hWnd, bool in_sizemove)
 	GetUpdateRect(hWnd, &r, FALSE);
 	ValidateRect(hWnd, &r);
 
-	OpenGLBackend::Get()->Paint();
+	OpenGLBackend::Get()->Paint(this->dirty_rect);
 	SwapBuffers(this->dc);
+	MemSetT(&this->dirty_rect, 0);
 }
 
 #endif /* WITH_OPENGL */

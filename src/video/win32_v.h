@@ -109,6 +109,8 @@ public:
 
 	void Stop() override;
 
+	void MakeDirty(int left, int top, int width, int height) override;
+
 	bool ToggleFullscreen(bool fullscreen) override;
 
 	bool AfterBlitterChange() override;
@@ -118,6 +120,7 @@ public:
 protected:
 	HDC   dc;          ///< Window device context.
 	HGLRC gl_rc;       ///< OpenGL context.
+	Rect  dirty_rect;  ///< Rectangle encompassing the dirty area of the video buffer.
 
 	uint8 GetFullscreenBpp() override { return 32; } // OpenGL is always 32 bpp.
 
