@@ -35,6 +35,8 @@ add_files(
 add_files(
     40bpp_anim.cpp
     40bpp_anim.hpp
+    40bpp_opengl.cpp
+    40bpp_opengl.hpp
     CONDITION NOT OPTION_DEDICATED AND OPENGL_FOUND
 )
 
