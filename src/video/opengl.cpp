@@ -58,6 +58,7 @@ static PFNGLBINDBUFFERPROC _glBindBuffer;
 static PFNGLBUFFERDATAPROC _glBufferData;
 static PFNGLMAPBUFFERPROC _glMapBuffer;
 static PFNGLUNMAPBUFFERPROC _glUnmapBuffer;
+static PFNGLCLEARBUFFERSUBDATAPROC _glClearBufferSubData;
 
 static PFNGLBUFFERSTORAGEPROC _glBufferStorage;
 static PFNGLMAPBUFFERRANGEPROC _glMapBufferRange;
@@ -233,6 +234,12 @@ static bool BindVBOExtension()
 		_glBufferData = (PFNGLBUFFERDATAPROC)GetOGLProcAddress("glBufferDataARB");
 		_glMapBuffer = (PFNGLMAPBUFFERPROC)GetOGLProcAddress("glMapBufferARB");
 		_glUnmapBuffer = (PFNGLUNMAPBUFFERPROC)GetOGLProcAddress("glUnmapBufferARB");
+	}
+
+	if (IsOpenGLVersionAtLeast(4, 3) || IsOpenGLExtensionSupported("GL_ARB_clear_buffer_object")) {
+		_glClearBufferSubData = (PFNGLCLEARBUFFERSUBDATAPROC)GetOGLProcAddress("glClearBufferSubData");
+	} else {
+		_glClearBufferSubData = nullptr;
 	}
 
 	return _glGenBuffers != nullptr && _glDeleteBuffers != nullptr && _glBindBuffer != nullptr && _glBufferData != nullptr && _glMapBuffer != nullptr && _glUnmapBuffer != nullptr;
@@ -774,22 +781,26 @@ bool OpenGLBackend::Resize(int w, int h, bool force)
 		_glGenBuffers(1, &this->vid_pbo);
 		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->vid_pbo);
 		_glBufferStorage(GL_PIXEL_UNPACK_BUFFER, pitch * h * bpp / 8, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-		this->vid_buffer = _glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, pitch * h * bpp / 8, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-		assert(this->vid_buffer != nullptr);
 	} else {
 		/* Re-allocate video buffer texture and backing store. */
 		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->vid_pbo);
 		_glBufferData(GL_PIXEL_UNPACK_BUFFER, pitch * h * bpp / 8, nullptr, GL_DYNAMIC_DRAW);
 	}
+	this->vid_buffer = nullptr;
 
 	if (bpp == 32) {
 		/* Initialize backing store alpha to opaque for 32bpp modes. */
 		Colour black(0, 0, 0);
-		uint32 *buf = this->persistent_mapping_supported ? (uint32 *)this->vid_buffer : (uint32 *)_glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
-		for (int i = 0; i < pitch * h; i++) {
-			*buf++ = black.data;
+		if (_glClearBufferSubData != nullptr) {
+			_glClearBufferSubData(GL_PIXEL_UNPACK_BUFFER, GL_RGBA8, 0, pitch * h * bpp / 8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, &black.data);
+		} else {
+			uint32 *buf = (uint32 *)_glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);;
+			assert(buf != nullptr);
+			for (int i = 0; i < pitch * h; i++) {
+				*buf++ = black.data;
+			}
+			_glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 		}
-		if (!this->persistent_mapping_supported) _glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
 	}
 	_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
 
@@ -812,13 +823,12 @@ bool OpenGLBackend::Resize(int w, int h, bool force)
 			_glGenBuffers(1, &this->anim_pbo);
 			_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->anim_pbo);
 			_glBufferStorage(GL_PIXEL_UNPACK_BUFFER, pitch * h, nullptr, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-			this->anim_buffer = _glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, pitch * h, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-			assert(this->anim_buffer != nullptr);
 		} else {
 			_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->anim_pbo);
 			_glBufferData(GL_PIXEL_UNPACK_BUFFER, pitch * h, nullptr, GL_DYNAMIC_DRAW);
 		}
 		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+		this->anim_buffer = nullptr;
 
 		glBindTexture(GL_TEXTURE_2D, this->anim_texture);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, w, h, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
@@ -844,6 +854,7 @@ bool OpenGLBackend::Resize(int w, int h, bool force)
 	_screen.width = w;
 	_screen.pitch = pitch;
 	_screen.dst_ptr = this->GetVideoBuffer();
+	if (BlitterFactory::GetCurrentBlitter()->NeedsAnimationBuffer()) (void)this->GetAnimBuffer();
 	assert(_screen.dst_ptr != nullptr);
 
 	/* Update screen size in remap shader program. */
@@ -947,6 +958,9 @@ void *OpenGLBackend::GetVideoBuffer()
 	if (!this->persistent_mapping_supported) {
 		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->vid_pbo);
 		this->vid_buffer = _glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
+	} else if (this->vid_buffer == nullptr) {
+		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->vid_pbo);
+		this->vid_buffer = _glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, _screen.pitch * _screen.height * BlitterFactory::GetCurrentBlitter()->GetScreenDepth() / 8, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 	}
 
 	return this->vid_buffer;
@@ -967,6 +981,9 @@ uint8 *OpenGLBackend::GetAnimBuffer()
 	if (!this->persistent_mapping_supported) {
 		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->anim_pbo);
 		this->anim_buffer = _glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
+	} else if (this->anim_buffer == nullptr) {
+		_glBindBuffer(GL_PIXEL_UNPACK_BUFFER, this->anim_pbo);
+		this->anim_buffer = _glMapBufferRange(GL_PIXEL_UNPACK_BUFFER, 0, _screen.pitch * _screen.height, GL_MAP_READ_BIT | GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
 	}
 
 	return (uint8 *)this->anim_buffer;
