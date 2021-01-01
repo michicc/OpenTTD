@@ -737,7 +737,11 @@ static void DeleteEntryFromSpriteCache(uint item)
 	MemBlock *s = (MemBlock*)GetSpriteCache(item)->ptr - 1;
 	assert(!(s->size & S_FREE_MASK));
 	s->size |= S_FREE_MASK;
-	GetSpriteCache(item)->ptr = nullptr;
+
+	/* Give the blitter a chance to free any associated data. */
+	SpriteCache *i = GetSpriteCache(item);
+	if (i->ptr != nullptr && (i->type == ST_NORMAL || i->type == ST_FONT)) BlitterFactory::GetCurrentBlitter()->SpriteEvicted(static_cast<Sprite *>(i->ptr));
+	i->ptr = nullptr;
 
 	/* And coalesce adjacent free blocks */
 	for (s = _spritecache_ptr; s->size != 0; s = NextBlock(s)) {
@@ -957,6 +961,7 @@ static void GfxInitSpriteCache()
 
 void GfxInitSpriteMem()
 {
+	if (BlitterFactory::GetCurrentBlitter()->HasSpriteEviction()) GfxClearSpriteCache();
 	GfxInitSpriteCache();
 
 	/* Reset the spritecache 'pool' */

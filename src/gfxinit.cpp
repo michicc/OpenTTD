@@ -295,6 +295,8 @@ static bool SwitchNewGRFBlitter()
 
 	VideoDriver::GetInstance()->AcquireBlitterLock();
 
+	if (BlitterFactory::GetCurrentBlitter()->HasSpriteEviction()) GfxClearSpriteCache();
+
 	for (uint i = 0; i < lengthof(replacement_blitters); i++) {
 		if (animation_wanted && (replacement_blitters[i].animation == 0)) continue;
 		if (!animation_wanted && (replacement_blitters[i].animation == 1)) continue;

@@ -102,5 +102,18 @@ public:
 	{
 		return 0;
 	}
+
+	/**
+	 * A sprite will be evicted from the sprite cache and all associated
+	 * sprite should be freed or deallocated.
+	 * @param data Sprite data being freed.
+	 * @note Default implementation does nothing.
+	 */
+	virtual void SpriteEvicted(Sprite *data) {}
+
+	/**
+	 * Is #SpriteEvicted doing something?
+	 */
+	virtual bool HasSpriteEviction() const { return false; }
 };
 #endif /* SPRITELOADER_HPP */
