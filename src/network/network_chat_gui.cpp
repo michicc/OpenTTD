@@ -55,7 +55,7 @@ static uint MAX_CHAT_MESSAGES = 0;        ///< The limit of chat messages to sho
  * the left and pixels from the bottom. The height is the maximum height.
  */
 static PointDimension _chatmsg_box;
-static uint8 *_chatmessage_backup = nullptr; ///< Backup in case text is moved.
+static ReusableBuffer<uint8> _chatmessage_backup; ///< Backup in case text is moved.
 
 /**
  * Count the chat messages.
@@ -107,7 +107,6 @@ void NetworkReInitChatBoxSize()
 {
 	_chatmsg_box.y       = 3 * FONT_HEIGHT_NORMAL;
 	_chatmsg_box.height  = MAX_CHAT_MESSAGES * (FONT_HEIGHT_NORMAL + NETWORK_CHAT_LINE_SPACING) + 4;
-	_chatmessage_backup  = ReallocT(_chatmessage_backup, _chatmsg_box.width * _chatmsg_box.height * BlitterFactory::GetCurrentBlitter()->GetBytesPerPixel());
 }
 
 /** Initialize all buffers of the chat visualisation. */
@@ -164,7 +163,7 @@ void NetworkUndrawChatMessage()
 
 		_chatmessage_visible = false;
 		/* Put our 'shot' back to the screen */
-		blitter->CopyFromBuffer(blitter->MoveTo(_screen.dst_ptr, x, y), _chatmessage_backup, width, height);
+		blitter->CopyFromBuffer(blitter->MoveTo(_screen.dst_ptr, x, y), _chatmessage_backup.GetBuffer(), width, height);
 		/* And make sure it is updated next time */
 		VideoDriver::GetInstance()->MakeDirty(x, y, width, height);
 
@@ -222,10 +221,9 @@ void NetworkDrawChatMessage()
 	}
 	if (width <= 0 || height <= 0) return;
 
-	assert(blitter->BufferSize(width, height) <= (int)(_chatmsg_box.width * _chatmsg_box.height * blitter->GetBytesPerPixel()));
-
 	/* Make a copy of the screen as it is before painting (for undraw) */
-	blitter->CopyToBuffer(blitter->MoveTo(_screen.dst_ptr, x, y), _chatmessage_backup, width, height);
+	uint8 *buffer = _chatmessage_backup.Allocate(BlitterFactory::GetCurrentBlitter()->BufferSize(width, height));
+	blitter->CopyToBuffer(blitter->MoveTo(_screen.dst_ptr, x, y), buffer, width, height);
 
 	_cur_dpi = &_screen; // switch to _screen painting
 
