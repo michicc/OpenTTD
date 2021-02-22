@@ -23,6 +23,13 @@ public:
 		uint8 b;  ///< Blue-channel
 		uint8 a;  ///< Alpha-channel
 		uint8 m;  ///< Remap-channel
+
+		bool operator ==(const CommonPixel &rhs) const {
+			return this->r == rhs.r && this->g == rhs.g && this->b == rhs.b && this->a == rhs.a && this->m == rhs.m;
+		}
+		bool operator !=(const CommonPixel &rhs) const {
+			return !(*this == rhs);
+		}
 	};
 
 	/**

@@ -188,7 +188,7 @@ uint GetMaxSpriteID()
 	return _spritecache_items;
 }
 
-static bool ResizeSpriteIn(SpriteLoader::Sprite *sprite, ZoomLevel src, ZoomLevel tgt)
+static bool ResizeSpriteIn(SpriteLoader::Sprite *sprite, ZoomLevel src, ZoomLevel tgt, bool smooth)
 {
 	uint8 scaled_1 = ScaleByZoom(1, (ZoomLevel)(src - tgt));
 
@@ -203,11 +203,49 @@ static bool ResizeSpriteIn(SpriteLoader::Sprite *sprite, ZoomLevel src, ZoomLeve
 	sprite[tgt].AllocateData(tgt, sprite[tgt].width * sprite[tgt].height);
 
 	SpriteLoader::CommonPixel *dst = sprite[tgt].data;
-	for (int y = 0; y < sprite[tgt].height; y++) {
-		const SpriteLoader::CommonPixel *src_ln = &sprite[src].data[y / scaled_1 * sprite[src].width];
-		for (int x = 0; x < sprite[tgt].width; x++) {
-			*dst = src_ln[x / scaled_1];
-			dst++;
+	if (smooth && scaled_1 == 2) {
+		uint16 src_pitch = sprite[src].width;
+		uint16 dst_pitch = sprite[tgt].width;
+
+		for (int y = 0; y < sprite[src].height; y++) {
+			for (int x = 0; x < sprite[src].width; x++) {
+				/* This algorithm is a slightly modified version of EPX/AdvMAME2×
+				 * scaling. We add a term "A.a != 0" to the pixel tests to make sure
+				 * the edges especially of terrain ground still tile properly
+				 * without any gaps. This means we don't use a neighboring pixel
+				 * if it is fully transparent.
+				 *
+				 * Source image:  | A |
+				 *              --+---+--
+				 *              C | P | B
+				 *              --+---+--
+				 *                | D |
+				 *
+				 * In the scaled image, P will be replaced with:  1 | 2
+				 *                                                --+--
+				 *                                                3 | 4
+				 *
+				 * More at e.g. https://www.scale2x.it/scale2xandepx */
+
+				SpriteLoader::CommonPixel P = sprite[src].data[x + y * src_pitch];
+				SpriteLoader::CommonPixel A = y > 0                      ? sprite[src].data[x + 0 + (y - 1) * src_pitch] : P;
+				SpriteLoader::CommonPixel B = x < sprite[src].width - 1  ? sprite[src].data[x + 1 + (y + 0) * src_pitch] : P;
+				SpriteLoader::CommonPixel C = x > 0                      ? sprite[src].data[x - 1 + (y + 0) * src_pitch] : P;
+				SpriteLoader::CommonPixel D = y < sprite[src].height - 1 ? sprite[src].data[x + 0 + (y + 1) * src_pitch] : P;
+
+				dst[x * 2 + 0 + (y * 2 + 0) * dst_pitch] = A.a != 0 && C == A && C != D && A != B ? A : P; // 1
+				dst[x * 2 + 1 + (y * 2 + 0) * dst_pitch] = B.a != 0 && A == B && A != C && B != D ? B : P; // 2
+				dst[x * 2 + 0 + (y * 2 + 1) * dst_pitch] = C.a != 0 && D == C && D != B && C != A ? C : P; // 3
+				dst[x * 2 + 1 + (y * 2 + 1) * dst_pitch] = D.a != 0 && B == D && B != A && D != C ? D : P; // 4
+			}
+		}
+	} else {
+		for (int y = 0; y < sprite[tgt].height; y++) {
+			const SpriteLoader::CommonPixel *src_ln = &sprite[src].data[y / scaled_1 * sprite[src].width];
+			for (int x = 0; x < sprite[tgt].width; x++) {
+				*dst = src_ln[x / scaled_1];
+				dst++;
+			}
 		}
 	}
 
@@ -340,8 +378,12 @@ static bool ResizeSprites(SpriteLoader::Sprite *sprite, uint8 sprite_avail, uint
 {
 	/* Create a fully zoomed image if it does not exist */
 	ZoomLevel first_avail = static_cast<ZoomLevel>(FIND_FIRST_BIT(sprite_avail));
+	if (first_avail >= ZOOM_LVL_OUT_2X) {
+		if (!ResizeSpriteIn(sprite, first_avail, ZOOM_LVL_OUT_2X)) return false;
+		SetBit(sprite_avail, ZOOM_LVL_OUT_2X);
+	}
 	if (first_avail != ZOOM_LVL_NORMAL) {
-		if (!ResizeSpriteIn(sprite, first_avail, ZOOM_LVL_NORMAL)) return false;
+		if (!ResizeSpriteIn(sprite, ZOOM_LVL_OUT_2X, ZOOM_LVL_NORMAL)) return false;
 		SetBit(sprite_avail, ZOOM_LVL_NORMAL);
 	}
 
