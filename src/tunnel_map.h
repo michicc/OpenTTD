@@ -55,9 +55,9 @@ static inline void MakeRoadTunnel(TileIndex t, Owner o, DiagDirection d, RoadTyp
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
 	_m[t].m5 = TRANSPORT_ROAD << 2 | d;
-	SB(_me[t].m6, 2, 4, 0);
-	_me[t].m7 = 0;
-	_me[t].m8 = 0;
+	SB(_m[t].m6, 2, 4, 0);
+	_m[t].m7 = 0;
+	_m[t].m8 = 0;
 	SetRoadOwner(t, RTT_ROAD, o);
 	if (o != OWNER_TOWN) SetRoadOwner(t, RTT_TRAM, o);
 	SetRoadTypes(t, road_rt, tram_rt);
@@ -78,9 +78,9 @@ static inline void MakeRailTunnel(TileIndex t, Owner o, DiagDirection d, RailTyp
 	_m[t].m3 = 0;
 	_m[t].m4 = 0;
 	_m[t].m5 = TRANSPORT_RAIL << 2 | d;
-	SB(_me[t].m6, 2, 4, 0);
-	_me[t].m7 = 0;
-	_me[t].m8 = 0;
+	SB(_m[t].m6, 2, 4, 0);
+	_m[t].m7 = 0;
+	_m[t].m8 = 0;
 	SetRailType(t, r);
 	SetRoadTypes(t, INVALID_ROADTYPE, INVALID_ROADTYPE);
 }
