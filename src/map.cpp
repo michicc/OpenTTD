@@ -10,8 +10,11 @@
 #include "stdafx.h"
 #include "debug.h"
 #include "core/alloc_func.hpp"
+#include "core/mem_func.hpp"
+#include "tile_map.h"
 #include "water_map.h"
 #include "string_func.h"
+#include <algorithm>
 
 #include "safeguards.h"
 
@@ -27,7 +30,7 @@ uint _map_size_y;    ///< Size of the map along the Y
 uint _map_size;      ///< The number of tiles on the map
 uint _map_tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
-Tile *_m = nullptr;          ///< Tiles of the map
+Map _m;              ///< The map
 
 
 /**
@@ -35,7 +38,7 @@ Tile *_m = nullptr;          ///< Tiles of the map
  * @param size_x the width of the map along the NE/SW edge
  * @param size_y the 'height' of the map along the SE/NW edge
  */
-void AllocateMap(uint size_x, uint size_y)
+void Map::Allocate(uint size_x, uint size_y)
 {
 	/* Make sure that the map size is within the limits and that
 	 * size of both axes is a power of 2. */
@@ -55,9 +58,25 @@ void AllocateMap(uint size_x, uint size_y)
 	_map_size = size_x * size_y;
 	_map_tile_mask = _map_size - 1;
 
-	free(_m);
+	this->size_x = size_x;
+	this->size_y = size_y;
 
-	_m = CallocT<Tile>(_map_size);
+	/* Allocate tiles */
+	this->tiles.clear();
+	this->tiles.resize(size_y, std::vector<Tile>(size_x));
+
+	/* Allocate offset array for each map line. */
+	this->offset.resize(size_x * size_y);
+	for (uint i = 0; i < size_x * size_y; i++) {
+		this->offset[i] = i & (size_x - 1);
+	}
+}
+
+void Map::Clear()
+{
+	for (auto &i : this->tiles) {
+		std::fill(i.begin(), i.end(), Tile());
+	}
 }
 
 

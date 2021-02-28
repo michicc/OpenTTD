@@ -15,6 +15,8 @@
 #include "map_type.h"
 #include "direction_func.h"
 
+#include <vector>
+
 extern uint _map_tile_mask;
 
 /**
@@ -25,18 +27,6 @@ extern uint _map_tile_mask;
 
 #define TILE_MASK(x) ((x) & _map_tile_mask)
 
-/**
- * Pointer to the tile-array.
- *
- * This variable points to the tile-array which contains the tiles of
- * the map.
- */
-extern Tile *_m;
-
-/**
- * Allocate a new map with the given size.
- */
-void AllocateMap(uint size_x, uint size_y);
 
 /**
  * Logarithm of the map size along the X side.
@@ -211,6 +201,53 @@ static inline uint TileY(TileIndex tile)
 {
 	return tile.value >> MapLogX();
 }
+
+
+/** Class encapsulating the map array.
+ *
+ * The map is stored in an array of tile lines and an offset
+ * array indicating the position of each tile in the tile line.
+ */
+class Map {
+private:
+	std::vector<std::vector<Tile>> tiles;
+	std::vector<uint16>            offset;
+
+	uint size_x, size_y;
+
+public:
+	Map() : size_x(0), size_y(0) {}
+
+	/** Allocate a new map with the given size. */
+	void Allocate(uint size_x, uint size_y);
+
+	/** Valid map array allocated? */
+	inline bool IsValid() const { return !this->tiles.empty(); }
+
+	/** Clear map contents. */
+	void Clear();
+
+	/** Get the #Tile for the given tile index. */
+	inline Tile &operator[](TileIndex tile)
+	{
+		return this->tiles[TileY(tile)].at(this->offset[tile]);
+	}
+
+	/** Convert tile index to tile pointer. */
+	inline Tile *ToTile(TileIndex tile)
+	{
+		return &this->operator[](tile);
+	}
+};
+
+/**
+ * Pointer to the tile array.
+ *
+ * This variable points to the tile array which contains the tiles of
+ * the map.
+ */
+extern Map _m;
+
 
 /**
  * Return the offset between two tiles from a TileIndexDiffC struct.
