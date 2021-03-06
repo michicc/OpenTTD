@@ -215,6 +215,7 @@ private:
 
 	uint size_x, size_y;
 
+	friend struct MAPRChunkHandler;
 public:
 	Map() : size_x(0), size_y(0) {}
 
@@ -227,6 +228,9 @@ public:
 	/** Clear map contents. */
 	void Clear();
 
+	/** Get raw tile count. */
+	size_t GetTileCount() const;
+
 	/** Get the #Tile for the given tile index. */
 	inline Tile &operator[](TileIndex tile)
 	{
@@ -238,6 +242,43 @@ public:
 	{
 		return &this->operator[](tile);
 	}
+
+	/** Helper class for iterating over all tiles in the map. */
+	struct Iterator {
+		typedef Tile value_type;
+		typedef Tile *pointer;
+		typedef Tile &reference;
+		typedef size_t difference_type;
+		typedef std::forward_iterator_tag iterator_category;
+
+		Tile &operator *() { return *tile; }
+		Tile *operator ->() { return &(*tile); }
+
+		bool operator ==(const Iterator &rhs) const { return this->tile == rhs.tile; }
+		bool operator !=(const Iterator &rhs) const { return !(*this == rhs); }
+
+		/** Prefix increment operator. */
+		Iterator &operator ++();
+		/** Postfix increment operator. */
+		Iterator operator ++(int);
+
+	private:
+		std::vector<Tile>::iterator tile;
+		uint y_pos;
+
+		Iterator(std::vector<Tile>::iterator &tile, uint y_pos) : tile(tile), y_pos(y_pos) {}
+
+		friend class Map;
+	};
+
+	struct IterateWrapper {
+		Iterator begin();
+		Iterator end();
+		bool empty() { return this->begin() == this->end(); }
+	};
+
+	/** Returns an iterable ensemble of all map tiles. */
+	static IterateWrapper Iterate() { return IterateWrapper(); }
 };
 
 /**
@@ -248,6 +289,8 @@ public:
  */
 extern Map _m;
 
+inline Map::Iterator Map::IterateWrapper::begin() { return Iterator(_m.tiles.front().begin(), 0); }
+inline Map::Iterator Map::IterateWrapper::end() { return Iterator(_m.tiles.back().end(), _m.size_y - 1); }
 
 /**
  * Return the offset between two tiles from a TileIndexDiffC struct.
