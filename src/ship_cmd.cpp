@@ -618,15 +618,14 @@ bool IsShipDestinationTile(TileIndex tile, StationID station)
 	return false;
 }
 
-static void ShipController(Ship *v)
+void ShipController(Ship *v)
 {
 	uint32 r;
 	const byte *b;
 	Track track;
 	TrackBits tracks;
 
-	v->tick_counter++;
-	v->current_order_time++;
+	PerformanceAccumulator framerate(PFE_GL_SHIPS);
 
 	if (v->HandleBreakdown()) return;
 
@@ -795,17 +794,6 @@ reverse_direction:
 	v->cur_speed = 0;
 	v->path.clear();
 	goto getout;
-}
-
-bool Ship::Tick()
-{
-	PerformanceAccumulator framerate(PFE_GL_SHIPS);
-
-	if (!(this->vehstatus & VS_STOPPED)) this->running_ticks++;
-
-	ShipController(this);
-
-	return true;
 }
 
 void Ship::SetDestTile(TileIndex tile)

@@ -468,6 +468,8 @@ void Aircraft::OnNewDay()
 
 static void HelicopterTickHandler(Aircraft *v)
 {
+	PerformanceAccumulator framerate(PFE_GL_AIRCRAFT);
+
 	Aircraft *u = v->Next()->Next();
 
 	if (u->vehstatus & VS_HIDDEN) return;
@@ -2057,8 +2059,10 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 	}
 }
 
-static bool AircraftEventHandler(Aircraft *v, int loop)
+bool AircraftEventHandler(Aircraft *v, int loop)
 {
+	PerformanceAccumulator framerate(PFE_GL_AIRCRAFT);
+
 	if (v->vehstatus & VS_CRASHED) {
 		return HandleCrashedAircraft(v);
 	}
@@ -2097,20 +2101,9 @@ bool Aircraft::Tick()
 {
 	if (!this->IsNormalAircraft()) return true;
 
-	PerformanceAccumulator framerate(PFE_GL_AIRCRAFT);
-
-	this->tick_counter++;
-
-	if (!(this->vehstatus & VS_STOPPED)) this->running_ticks++;
+	if (!SpecializedVehicle::Tick()) return false;
 
 	if (this->subtype == AIR_HELICOPTER) HelicopterTickHandler(this);
-
-	this->current_order_time++;
-
-	for (uint i = 0; i != 2; i++) {
-		/* stop if the aircraft was deleted */
-		if (!AircraftEventHandler(this, i)) return false;
-	}
 
 	return true;
 }

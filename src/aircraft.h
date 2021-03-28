@@ -54,6 +54,7 @@ void GetAircraftSpriteSize(EngineID engine, uint &width, uint &height, int &xoff
 void UpdateAirplanesOnNewStation(const Station *st);
 void UpdateAircraftCache(Aircraft *v, bool update_range = false);
 
+bool AircraftEventHandler(Aircraft *v, int loop);
 void AircraftLeaveHangar(Aircraft *v, Direction exit_dir);
 void AircraftNextAirportPos_and_Order(Aircraft *v);
 void SetAircraftPosition(Aircraft *v, int x, int y, int z);

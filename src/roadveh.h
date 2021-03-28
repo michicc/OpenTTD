@@ -81,6 +81,7 @@ static const byte RV_OVERTAKE_TIMEOUT = 35;
 
 void RoadVehUpdateCache(RoadVehicle *v, bool same_length = false);
 void GetRoadVehSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
+bool RoadVehController(RoadVehicle *v);
 
 struct RoadVehPathCache {
 	std::deque<Trackdir> td;
@@ -134,7 +135,6 @@ struct RoadVehicle FINAL : public GroundVehicle<RoadVehicle, VEH_ROAD> {
 	Money GetRunningCost() const;
 	int GetDisplayImageWidth(Point *offset = nullptr) const;
 	bool IsInDepot() const { return this->state == RVSB_IN_DEPOT; }
-	bool Tick();
 	void OnNewDay();
 	uint Crash(bool flooded = false);
 	Trackdir GetVehicleTrackdir() const;

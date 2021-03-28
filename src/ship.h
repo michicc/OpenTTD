@@ -17,6 +17,7 @@
 
 void GetShipSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 WaterClass GetEffectiveWaterClass(TileIndex tile);
+void ShipController(struct Ship *v);
 
 typedef std::deque<Trackdir> ShipPathCache;
 
@@ -46,7 +47,6 @@ struct Ship FINAL : public SpecializedVehicle<Ship, VEH_SHIP> {
 	int GetCurrentMaxSpeed() const { return std::min<int>(this->vcache.cached_max_speed, this->current_order.GetMaxSpeed() * 2); }
 	Money GetRunningCost() const;
 	bool IsInDepot() const { return this->state == TRACK_BIT_DEPOT; }
-	bool Tick();
 	void OnNewDay();
 	Trackdir GetVehicleTrackdir() const;
 	TileIndex GetOrderStationLocation(StationID station);
