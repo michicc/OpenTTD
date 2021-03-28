@@ -51,6 +51,7 @@
 #include "linkgraph/linkgraph.h"
 #include "linkgraph/refresh.h"
 #include "framerate_type.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -861,6 +862,11 @@ void Vehicle::PreDestructor()
 	StopGlobalFollowVehicle(this);
 
 	ReleaseDisastersTargetingVehicle(this->index);
+
+	if (this->IsPrimaryVehicle()) {
+		delete this->GetConsist();
+		this->SetConsist(nullptr);
+	}
 }
 
 Vehicle::~Vehicle()

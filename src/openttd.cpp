@@ -65,6 +65,7 @@
 #include "viewport_sprite_sorter.h"
 #include "framerate_type.h"
 #include "industry.h"
+#include "consist_base.h"
 
 #include "linkgraph/linkgraphschedule.h"
 
@@ -1277,6 +1278,13 @@ static void CheckCaches()
 		memcpy(buff, &v->cargo, sizeof(VehicleCargoList));
 		v->cargo.InvalidateCache();
 		assert(memcmp(&v->cargo, buff, sizeof(VehicleCargoList)) == 0);
+	}
+
+	/* Check for back-links from vehicles to consists. */
+	for (Consist *cs : Consist::Iterate()) {
+		for (Vehicle *v = cs->Front(); v != nullptr; v = v->Next()) {
+			assert(v->GetConsist() == cs);
+		}
 	}
 
 	/* Backup stations_near */

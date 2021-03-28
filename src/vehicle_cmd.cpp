@@ -30,6 +30,7 @@
 #include "newgrf.h"
 #include "company_base.h"
 #include "core/random_func.hpp"
+#include "consist_base.h"
 #include <sstream>
 #include <iomanip>
 
@@ -126,6 +127,7 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 	 * and (train) wagons don't have an unit number in any scenario. */
 	UnitID unit_num = (flags & DC_AUTOREPLACE || (type == VEH_TRAIN && e->u.rail.railveh_type == RAILVEH_WAGON)) ? 0 : GetFreeUnitNumber(type);
 	if (unit_num == UINT16_MAX) return_cmd_error(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME);
+	if (unit_num != 0 && !Consist::CanAllocateItem()) return_cmd_error(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME);
 
 	/* If we are refitting we need to temporarily purchase the vehicle to be able to
 	 * test it. */
@@ -150,6 +152,14 @@ CommandCost CmdBuildVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint
 		if (subflags & DC_EXEC) {
 			v->unitnumber = unit_num;
 			v->value      = value.GetCost();
+
+			if (unit_num != 0) {
+				/* CmdBuildRailVehicle may have already created a consist for us. */
+				if (v->GetConsist() == nullptr) {
+					Consist *cs = new Consist(type);
+					cs->SetFront(v);
+				}
+			}
 		}
 
 		if (refitting) {
@@ -236,7 +246,11 @@ CommandCost CmdSellVehicle(TileIndex tile, DoCommandFlag flags, uint32 p1, uint3
 		ret = CommandCost(EXPENSES_NEW_VEHICLES, -front->value);
 
 		if (flags & DC_EXEC) {
-			if (front->IsPrimaryVehicle() && p1 & MAKE_ORDER_BACKUP_FLAG) OrderBackup::Backup(front, p2);
+			if (front->IsPrimaryVehicle()) {
+				if (p1 & MAKE_ORDER_BACKUP_FLAG) OrderBackup::Backup(front, p2);
+				delete front->GetConsist();
+				front->SetConsist(nullptr);
+			}
 			delete front;
 		}
 	}
