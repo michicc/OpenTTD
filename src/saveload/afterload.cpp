@@ -2592,7 +2592,7 @@ bool AfterLoadGame()
 			if (!HasBit(t->flags, 5)) continue;
 
 			ClrBit(t->flags, 5);
-			SetBit(t->vehicle_flags, VF_PATHFINDER_LOST);
+			SetBit(t->consist_flags, CF_PATHFINDER_LOST);
 		}
 
 		/* Introduced terraform/clear limits. */

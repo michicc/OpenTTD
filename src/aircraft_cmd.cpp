@@ -347,7 +347,7 @@ CommandCost CmdBuildAircraft(TileIndex tile, DoCommandFlag flags, const Engine *
 		v->random_bits = VehicleRandomBits();
 		u->random_bits = VehicleRandomBits();
 
-		v->vehicle_flags = 0;
+		v->vehicle_flags = (VehicleFlags)0;
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
 		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 

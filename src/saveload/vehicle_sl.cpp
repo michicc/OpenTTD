@@ -200,6 +200,21 @@ void UpdateOldAircraft()
 	}
 }
 
+/** Extract consist flags from old vehicle flags. */
+ConsistFlags ConvertToConsistFlags(uint16 old_flags)
+{
+	ConsistFlags consist_flags{};
+
+	if (HasBit(old_flags, 3)) SetBit(consist_flags, CF_TIMETABLE_STARTED);
+	if (HasBit(old_flags, 4)) SetBit(consist_flags, CF_AUTOFILL_TIMETABLE);
+	if (HasBit(old_flags, 5)) SetBit(consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+	if (HasBit(old_flags, 7)) SetBit(consist_flags, CF_PATHFINDER_LOST);
+	if (HasBit(old_flags, 8)) SetBit(consist_flags, CF_SERVINT_IS_CUSTOM);
+	if (HasBit(old_flags, 9)) SetBit(consist_flags, CF_SERVINT_IS_PERCENT);
+
+	return consist_flags;
+}
+
 /**
  * Check all vehicles to ensure their engine type is valid
  * for the currently loaded NewGRFs (that includes none...)
@@ -961,6 +976,11 @@ void Load_VEHS()
 				Consist *c = new Consist(v->type);
 				c->front = v;
 			}
+
+			/* Split old vehicle flags into consist flags and new vehicle flags. */
+			v->consist_flags = ConvertToConsistFlags(v->vehicle_flags);
+			SB(v->vehicle_flags, VF_STOP_LOADING, 1, (uint)HasBit(v->vehicle_flags, 6));
+			v->vehicle_flags = (VehicleFlags)((uint16)v->vehicle_flags & 0x0F);
 		}
 	}
 }
