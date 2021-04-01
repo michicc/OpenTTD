@@ -16,6 +16,7 @@
 #include "vehicle_base.h"
 #include "window_func.h"
 #include "station_map.h"
+#include "consist_base.h"
 
 #include "safeguards.h"
 
@@ -36,12 +37,14 @@ OrderBackup::~OrderBackup()
 }
 
 /**
- * Create an order backup for the given vehicle.
- * @param v    The vehicle to make a backup of.
+ * Create an order backup for the given consist.
+ * @param cs   The consist to make a backup of.
  * @param user The user that is requesting the backup.
  */
-OrderBackup::OrderBackup(const Vehicle *v, uint32 user)
+OrderBackup::OrderBackup(const Consist *cs, uint32 user)
 {
+	Vehicle *v = cs->Front();
+
 	this->user             = user;
 	this->tile             = v->tile;
 	this->group            = v->group_id;
@@ -66,11 +69,13 @@ OrderBackup::OrderBackup(const Vehicle *v, uint32 user)
 }
 
 /**
- * Restore the data of this order to the given vehicle.
- * @param v The vehicle to restore to.
+ * Restore the data of this order to the given consist.
+ * @param cs The consist to restore to.
  */
-void OrderBackup::DoRestore(Vehicle *v)
+void OrderBackup::DoRestore(Consist *cs)
 {
+	Vehicle *v = cs->Front();
+
 	/* If we had shared orders, recover that */
 	if (this->clone != nullptr) {
 		DoCommand(0, v->index | CO_SHARE << 30, this->clone->index, DC_EXEC, CMD_CLONE_ORDER);
@@ -92,12 +97,12 @@ void OrderBackup::DoRestore(Vehicle *v)
 }
 
 /**
- * Create an order backup for the given vehicle.
- * @param v    The vehicle to make a backup of.
+ * Create an order backup for the given consist.
+ * @param cs   The consist to make a backup of.
  * @param user The user that is requesting the backup.
  * @note Will automatically remove any previous backups of this user.
  */
-/* static */ void OrderBackup::Backup(const Vehicle *v, uint32 user)
+/* static */ void OrderBackup::Backup(const Consist *cs, uint32 user)
 {
 	/* Don't use reset as that broadcasts over the network to reset the variable,
 	 * which is what we are doing at the moment. */
@@ -105,22 +110,22 @@ void OrderBackup::DoRestore(Vehicle *v)
 		if (ob->user == user) delete ob;
 	}
 	if (OrderBackup::CanAllocateItem()) {
-		new OrderBackup(v, user);
+		new OrderBackup(cs, user);
 	}
 }
 
 /**
- * Restore the data of this order to the given vehicle.
- * @param v    The vehicle to restore to.
- * @param user The user that built the vehicle, thus wants to restore.
+ * Restore the data of this order to the given consist.
+ * @param cs   The consist to restore to.
+ * @param user The user that built the consist, thus wants to restore.
  * @note After restoration the backup will automatically be removed.
  */
-/* static */ void OrderBackup::Restore(Vehicle *v, uint32 user)
+/* static */ void OrderBackup::Restore(Consist *cs, uint32 user)
 {
 	for (OrderBackup *ob : OrderBackup::Iterate()) {
-		if (v->tile != ob->tile || ob->user != user) continue;
+		if (cs->Front()->tile != ob->tile || ob->user != user) continue;
 
-		ob->DoRestore(v);
+		ob->DoRestore(cs);
 		delete ob;
 	}
 }
@@ -219,15 +224,16 @@ CommandCost CmdClearOrderBackup(TileIndex tile, DoCommandFlag flags, uint32 p1, 
 }
 
 /**
- * Clear/update the (clone) vehicle from an order backup.
- * @param v The vehicle to clear.
- * @pre v != nullptr
+ * Clear/update the (clone) consist from an order backup.
+ * @param cs The consist to clear.
+ * @pre cs != nullptr
  * @note If it is not possible to set another vehicle as clone
  *       "example", then this backed up order will be removed.
  */
-/* static */ void OrderBackup::ClearVehicle(const Vehicle *v)
+/* static */ void OrderBackup::ClearConsist(const Consist *cs)
 {
-	assert(v != nullptr);
+	assert(cs != nullptr);
+	Vehicle *v = cs->Front();
 	for (OrderBackup *ob : OrderBackup::Iterate()) {
 		if (ob->clone == v) {
 			/* Get another item in the shared list. */

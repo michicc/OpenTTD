@@ -13,6 +13,7 @@
 #include "vehicle_base.h"
 #include "framerate_type.h"
 #include "aircraft.h"
+#include "order_backup.h"
 #include "roadveh.h"
 #include "ship.h"
 #include "train.h"
@@ -22,6 +23,13 @@
 /** The pool with all our consists. */
 ConsistPool _consist_pool("Consist");
 INSTANTIATE_POOL_METHODS(Consist)
+
+void Consist::PreDestructor()
+{
+	if (CleaningPool()) return;
+
+	OrderBackup::ClearConsist(this);
+}
 
 /**
  * Sets a new front vehicle pointer. This also updates the consist pointer of the vehicle chain.
