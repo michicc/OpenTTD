@@ -34,6 +34,7 @@
 #include "framerate_type.h"
 #include "industry.h"
 #include "industry_map.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -291,7 +292,7 @@ TileIndex Ship::GetOrderStationLocation(StationID station)
 	if (CanVehicleUseStation(this, st)) {
 		return st->xy;
 	} else {
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return 0;
 	}
 }
@@ -685,7 +686,7 @@ void ShipController(Ship *v)
 						/* We got within 3 tiles of our target buoy, so let's skip to our
 						 * next order */
 						UpdateVehicleTimetable(v, true);
-						v->IncrementRealOrderIndex();
+						v->GetConsist()->IncrementRealOrderIndex();
 						v->current_order.MakeDummy();
 					} else if (v->current_order.IsType(OT_GOTO_DEPOT) &&
 						v->dest_tile == gp.new_tile) {
@@ -704,7 +705,7 @@ void ShipController(Ship *v)
 								v->BeginLoading();
 							} else { // leave stations without docks right away
 								v->current_order.MakeLeaveStation();
-								v->IncrementRealOrderIndex();
+								v->GetConsist()->IncrementRealOrderIndex();
 							}
 						}
 					}
@@ -851,7 +852,6 @@ CommandCost CmdBuildShip(TileIndex tile, DoCommandFlag flags, const Engine *e, u
 
 		v->state = TRACK_BIT_DEPOT;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_ships);
 		v->date_of_last_service = _date;
 		v->build_year = _cur_year;
 		v->sprite_cache.sprite_seq.Set(SPR_IMG_QUERY);
@@ -860,7 +860,6 @@ CommandCost CmdBuildShip(TileIndex tile, DoCommandFlag flags, const Engine *e, u
 		v->UpdateCache();
 
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();
 

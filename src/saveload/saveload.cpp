@@ -43,6 +43,7 @@
 #include "../string_func.h"
 #include "../fios.h"
 #include "../error.h"
+#include "../consist_base.h"
 #include <atomic>
 #include <string>
 #ifdef __EMSCRIPTEN__
@@ -248,6 +249,7 @@ extern const ChunkHandler _linkgraph_chunk_handlers[];
 extern const ChunkHandler _airport_chunk_handlers[];
 extern const ChunkHandler _object_chunk_handlers[];
 extern const ChunkHandler _persistent_storage_chunk_handlers[];
+extern const ChunkHandler _consist_chunk_handlers[];
 
 /** Array of all chunks in a savegame, \c nullptr terminated. */
 static const ChunkHandler * const _chunk_handlers[] = {
@@ -284,6 +286,7 @@ static const ChunkHandler * const _chunk_handlers[] = {
 	_airport_chunk_handlers,
 	_object_chunk_handlers,
 	_persistent_storage_chunk_handlers,
+	_consist_chunk_handlers,
 	nullptr,
 };
 
@@ -1122,6 +1125,7 @@ static size_t ReferenceToInt(const void *obj, SLRefType rt)
 		case REF_STORAGE:        return ((const PersistentStorage*)obj)->index + 1;
 		case REF_LINK_GRAPH:     return ((const         LinkGraph*)obj)->index + 1;
 		case REF_LINK_GRAPH_JOB: return ((const      LinkGraphJob*)obj)->index + 1;
+		case REF_CONSIST:        return ((const           Consist *)obj)->index + 1;
 		default: NOT_REACHED();
 	}
 }
@@ -1202,6 +1206,10 @@ static void *IntToReference(size_t index, SLRefType rt)
 		case REF_LINK_GRAPH_JOB:
 			if (LinkGraphJob::IsValidID(index)) return LinkGraphJob::Get(index);
 			SlErrorCorrupt("Referencing invalid LinkGraphJob");
+
+		case REF_CONSIST:
+			if (Consist::IsValidID(index)) return Consist::Get(index);
+			SlErrorCorrupt("Referencing invalid Consist");
 
 		default: NOT_REACHED();
 	}

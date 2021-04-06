@@ -401,6 +401,7 @@ enum SLRefType {
 	REF_STORAGE        =  9, ///< Load/save a reference to a persistent storage.
 	REF_LINK_GRAPH     = 10, ///< Load/save a reference to a link graph.
 	REF_LINK_GRAPH_JOB = 11, ///< Load/save a reference to a link graph job.
+	REF_CONSIST        = 12, ///< Load/save a reference to a consist.
 };
 
 /** Flags of a chunk. */

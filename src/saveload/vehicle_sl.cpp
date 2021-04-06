@@ -373,8 +373,9 @@ void AfterLoadVehicles(bool part_of_load)
 				const Company *c = Company::Get(v->owner);
 				int interval = CompanyServiceInterval(c, v->type);
 
-				v->SetServiceIntervalIsCustom(v->GetServiceInterval() != interval);
-				v->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
+				Consist *cs = v->GetConsist();
+				cs->SetServiceIntervalIsCustom(cs->GetServiceInterval() != interval);
+				cs->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
 			}
 		}
 
@@ -594,6 +595,14 @@ static uint16 _cargo_paid_for;
 static Money  _cargo_feeder_share;
 static uint32 _cargo_loaded_at_xy;
 
+static std::string    _veh_name;
+static uint32         _veh_current_order_time;
+static int32          _veh_lateness_counter;
+static Date           _veh_timetable_start;
+static uint16         _veh_service_interval;
+static VehicleOrderID _veh_cur_real_order_index;
+static VehicleOrderID _veh_cur_implicit_order_index;
+
 /**
  * Make it possible to make the saveload tables "friends" of other classes.
  * @param vt the vehicle type. Can be VEH_END for the common vehicle description data
@@ -606,8 +615,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		     SLE_VAR(Vehicle, subtype,               SLE_UINT8),
 
 		     SLE_REF(Vehicle, next,                  REF_VEHICLE_OLD),
-		 SLE_CONDVAR(Vehicle, name,                  SLE_NAME,                     SL_MIN_VERSION,  SLV_84),
-		SLE_CONDSSTR(Vehicle, name,                  SLE_STR | SLF_ALLOW_CONTROL,  SLV_84, SL_MAX_VERSION),
+		SLEG_CONDVAR(         _veh_name,             SLE_NAME,                     SL_MIN_VERSION,   SLV_84),
+		SLEG_CONDSSTR(        _veh_name,             SLE_STR | SLF_ALLOW_CONTROL,  SLV_84, SLV_CONSISTS),
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_FILE_U8  | SLE_VAR_U16,   SL_MIN_VERSION,   SLV_8),
 		 SLE_CONDVAR(Vehicle, unitnumber,            SLE_UINT16,                   SLV_8, SL_MAX_VERSION),
 		     SLE_VAR(Vehicle, owner,                 SLE_UINT8),
@@ -658,8 +667,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		     SLE_VAR(Vehicle, tick_counter,          SLE_UINT8),
 		 SLE_CONDVAR(Vehicle, running_ticks,         SLE_UINT8,                   SLV_88, SL_MAX_VERSION),
 
-		     SLE_VAR(Vehicle, cur_implicit_order_index,  SLE_UINT8),
-		 SLE_CONDVAR(Vehicle, cur_real_order_index,  SLE_UINT8,                  SLV_158, SL_MAX_VERSION),
+		SLEG_CONDVAR(_veh_cur_implicit_order_index,  SLE_UINT8,                    SL_MIN_VERSION, SLV_CONSISTS),
+		SLEG_CONDVAR(_veh_cur_real_order_index,      SLE_UINT8,                    SLV_158, SLV_CONSISTS),
 		/* num_orders is now part of OrderList and is not saved but counted */
 		SLE_CONDNULL(1,                                                            SL_MIN_VERSION, SLV_105),
 
@@ -682,7 +691,7 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, current_order.wait_time,     SLE_UINT16,            SLV_67, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.travel_time,   SLE_UINT16,            SLV_67, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, current_order.max_speed,     SLE_UINT16,           SLV_174, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, timetable_start,       SLE_INT32,                  SLV_129, SL_MAX_VERSION),
+		SLEG_CONDVAR(_veh_timetable_start,           SLE_INT32,                  SLV_129, SLV_CONSISTS),
 
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDER,                    SL_MIN_VERSION, SLV_105),
 		 SLE_CONDREF(Vehicle, orders,                REF_ORDERLIST,              SLV_105, SL_MAX_VERSION),
@@ -693,9 +702,9 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 		 SLE_CONDVAR(Vehicle, max_age,               SLE_INT32,                   SLV_31, SL_MAX_VERSION),
 		 SLE_CONDVAR(Vehicle, date_of_last_service,  SLE_FILE_U16 | SLE_VAR_I32,   SL_MIN_VERSION,  SLV_31),
 		 SLE_CONDVAR(Vehicle, date_of_last_service,  SLE_INT32,                   SLV_31, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_UINT16,                   SL_MIN_VERSION,  SLV_31),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_FILE_U32 | SLE_VAR_U16,  SLV_31, SLV_180),
-		 SLE_CONDVAR(Vehicle, service_interval,      SLE_UINT16,                 SLV_180, SL_MAX_VERSION),
+		SLEG_CONDVAR(_veh_service_interval,          SLE_UINT16,                   SL_MIN_VERSION,  SLV_31),
+		SLEG_CONDVAR(_veh_service_interval,          SLE_FILE_U32 | SLE_VAR_U16,  SLV_31, SLV_180),
+		SLEG_CONDVAR(_veh_service_interval,          SLE_UINT16,                  SLV_180, SLV_CONSISTS),
 		     SLE_VAR(Vehicle, reliability,           SLE_UINT16),
 		     SLE_VAR(Vehicle, reliability_spd_dec,   SLE_UINT16),
 		     SLE_VAR(Vehicle, breakdown_ctr,         SLE_UINT8),
@@ -729,8 +738,8 @@ const SaveLoad *GetVehicleDescription(VehicleType vt)
 
 		 SLE_CONDVAR(Vehicle, group_id,              SLE_UINT16,                  SLV_60, SL_MAX_VERSION),
 
-		 SLE_CONDVAR(Vehicle, current_order_time,    SLE_UINT32,                  SLV_67, SL_MAX_VERSION),
-		 SLE_CONDVAR(Vehicle, lateness_counter,      SLE_INT32,                   SLV_67, SL_MAX_VERSION),
+		SLEG_CONDVAR(_veh_current_order_time,        SLE_UINT32,                  SLV_67, SLV_CONSISTS),
+		SLEG_CONDVAR(_veh_lateness_counter,          SLE_INT32,                   SLV_67, SLV_CONSISTS),
 
 		SLE_CONDNULL(10,                                                           SLV_2, SLV_144), // old reserved space
 
@@ -933,6 +942,13 @@ void Load_VEHS()
 			default: SlErrorCorrupt("Invalid vehicle type");
 		}
 
+		/* Clear stuff that is conditionally read from the save. */
+		_veh_name.clear();
+		_veh_current_order_time = 0;
+		_veh_lateness_counter = 0;
+		_veh_timetable_start = 0;
+		_veh_cur_real_order_index = 0;
+
 		SlObject(v, GetVehicleDescription(vtype));
 
 		if (_cargo_count != 0 && IsCompanyBuildableVehicleType(v) && CargoPacket::CanAllocateItem()) {
@@ -975,12 +991,20 @@ void Load_VEHS()
 				assert(Consist::CanAllocateItem());
 				Consist *c = new Consist(v->type);
 				c->front = v;
-			}
 
-			/* Split old vehicle flags into consist flags and new vehicle flags. */
-			v->consist_flags = ConvertToConsistFlags(v->vehicle_flags);
-			SB(v->vehicle_flags, VF_STOP_LOADING, 1, (uint)HasBit(v->vehicle_flags, 6));
-			v->vehicle_flags = (VehicleFlags)((uint16)v->vehicle_flags & 0x0F);
+				/* Split old vehicle flags into consist flags and new vehicle flags. */
+				c->consist_flags = ConvertToConsistFlags(v->vehicle_flags);
+				SB(v->vehicle_flags, VF_STOP_LOADING, 1, (uint)HasBit(v->vehicle_flags, 6));
+				v->vehicle_flags = (VehicleFlags)((uint16)v->vehicle_flags & 0x0F);
+
+				c->name = _veh_name;
+				c->current_order_time = _veh_current_order_time;
+				c->lateness_counter = _veh_lateness_counter;
+				c->timetable_start = _veh_timetable_start;
+				c->service_interval = _veh_service_interval;
+				c->cur_real_order_index = _veh_cur_real_order_index;
+				c->cur_implicit_order_index = _veh_cur_implicit_order_index;
+			}
 		}
 	}
 }

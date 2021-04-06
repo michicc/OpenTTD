@@ -56,6 +56,7 @@
 #include "../disaster_vehicle.h"
 #include "../ship.h"
 #include "../water.h"
+#include "../consist_base.h"
 
 
 #include "saveload_internal.h"
@@ -2592,7 +2593,7 @@ bool AfterLoadGame()
 			if (!HasBit(t->flags, 5)) continue;
 
 			ClrBit(t->flags, 5);
-			SetBit(t->consist_flags, CF_PATHFINDER_LOST);
+			if (t->IsPrimaryVehicle()) SetBit(t->GetConsist()->consist_flags, CF_PATHFINDER_LOST);
 		}
 
 		/* Introduced terraform/clear limits. */
@@ -2686,15 +2687,15 @@ bool AfterLoadGame()
 			assert(v->tile != TileVirtXY(v->x_pos, v->y_pos) || v->z_pos == GetSlopePixelZ(v->x_pos, v->y_pos));
 		}
 
-		/* Fill Vehicle::cur_real_order_index */
-		for (Vehicle *v : Vehicle::Iterate()) {
-			if (!v->IsPrimaryVehicle()) continue;
+		/* Fill Consist::cur_real_order_index */
+		for (Consist *cs : Consist::Iterate()) {
+			assert(cs->Front() != nullptr);
 
 			/* Older versions are less strict with indices being in range and fix them on the fly */
-			if (v->cur_implicit_order_index >= v->GetNumOrders()) v->cur_implicit_order_index = 0;
+			if (cs->cur_implicit_order_index >= cs->Front()->GetNumOrders()) cs->cur_implicit_order_index = 0;
 
-			v->cur_real_order_index = v->cur_implicit_order_index;
-			v->UpdateRealOrderIndex();
+			cs->cur_real_order_index = cs->cur_implicit_order_index;
+			cs->UpdateRealOrderIndex();
 		}
 	}
 

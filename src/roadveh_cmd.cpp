@@ -34,6 +34,7 @@
 #include "newgrf.h"
 #include "zoom_func.h"
 #include "framerate_type.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -296,8 +297,6 @@ CommandCost CmdBuildRoadVehicle(TileIndex tile, DoCommandFlag flags, const Engin
 		v->max_age = e->GetLifeLengthInDays();
 		_new_vehicle_id = v->index;
 
-		v->SetServiceInterval(Company::Get(v->owner)->settings.vehicle.servint_roadveh);
-
 		v->date_of_last_service = _date;
 		v->build_year = _cur_year;
 
@@ -310,7 +309,6 @@ CommandCost CmdBuildRoadVehicle(TileIndex tile, DoCommandFlag flags, const Engin
 		v->gcache.cached_veh_length = VEHICLE_LENGTH;
 
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		AddArticulatedParts(v);
 		v->InvalidateNewGRFCacheOfChain();
@@ -584,7 +582,7 @@ TileIndex RoadVehicle::GetOrderStationLocation(StationID station)
 	const Station *st = Station::Get(station);
 	if (!CanVehicleUseStation(this, st)) {
 		/* There is no stop left at the station, so don't even TRY to go there */
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return 0;
 	}
 

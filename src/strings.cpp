@@ -34,6 +34,7 @@
 #include "debug.h"
 #include "game/game_text.hpp"
 #include "network/network_content_gui.h"
+#include "consist_base.h"
 #include <stack>
 
 #include "table/strings.h"
@@ -1477,9 +1478,10 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 			case SCC_VEHICLE_NAME: { // {VEHICLE}
 				const Vehicle *v = Vehicle::GetIfValid(args->GetInt32(SCC_VEHICLE_NAME));
 				if (v == nullptr) break;
+				const Consist *cs = v->GetConsist();
 
-				if (!v->name.empty()) {
-					int64 args_array[] = {(int64)(size_t)v->name.c_str()};
+				if (!cs->name.empty()) {
+					int64 args_array[] = {(int64)(size_t)cs->name.c_str()};
 					StringParameters tmp_params(args_array);
 					buff = GetStringWithArgs(buff, STR_JUST_RAW_STRING, &tmp_params, last);
 				} else if (v->group_id != DEFAULT_GROUP) {
