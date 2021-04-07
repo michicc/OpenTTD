@@ -628,10 +628,6 @@ void ShipController(Ship *v)
 
 	PerformanceAccumulator framerate(PFE_GL_SHIPS);
 
-	if (v->HandleBreakdown()) return;
-
-	if (v->vehstatus & VS_STOPPED) return;
-
 	ProcessOrders(v);
 	v->HandleLoading();
 
