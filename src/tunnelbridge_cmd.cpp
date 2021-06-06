@@ -1756,7 +1756,7 @@ static void GetTileDesc_TunnelBridge(TileIndex tile, TileDesc *td)
 }
 
 
-static void TileLoop_TunnelBridge(TileIndex tile)
+static bool TileLoop_TunnelBridge(TileIndex tile, Tile *&tptr)
 {
 	bool snow_or_desert = HasTunnelBridgeSnowOrDesert(tile);
 	switch (_settings_game.game_creation.landscape) {
@@ -1782,6 +1782,7 @@ static void TileLoop_TunnelBridge(TileIndex tile)
 		default:
 			break;
 	}
+	return true;
 }
 
 static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)

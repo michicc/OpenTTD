@@ -817,24 +817,24 @@ static void TileLoopIndustry_BubbleGenerator(TileIndex tile)
 	if (v != nullptr) v->animation_substate = dir;
 }
 
-static void TileLoop_Industry(TileIndex tile)
+static bool TileLoop_Industry(TileIndex tile, Tile *&tptr)
 {
-	if (IsTileOnWater(tile)) TileLoop_Water(tile);
+	if (IsTileOnWater(tile)) TileLoop_Water(tile, tptr);
 
 	/* Normally this doesn't happen, but if an industry NewGRF is removed
 	 * an industry that was previously build on water can now be flooded.
 	 * If this happens the tile is no longer an industry tile after
 	 * returning from TileLoop_Water. */
-	if (!IsTileType(tile, MP_INDUSTRY)) return;
+	if (!IsTileType(tile, MP_INDUSTRY)) return true;
 
 	TriggerIndustryTile(tile, INDTILE_TRIGGER_TILE_LOOP);
 
 	if (!IsIndustryCompleted(tile)) {
 		MakeIndustryTileBigger(tile);
-		return;
+		return true;
 	}
 
-	if (_game_mode == GM_EDITOR) return;
+	if (_game_mode == GM_EDITOR) return true;
 
 	if (TransportIndustryGoods(tile) && !StartStopIndustryTileAnimation(Industry::GetByTile(tile), IAT_INDUSTRY_DISTRIBUTES_CARGO)) {
 		uint newgfx = GetIndustryTileSpec(GetIndustryGfx(tile))->anim_production;
@@ -844,18 +844,18 @@ static void TileLoop_Industry(TileIndex tile)
 			SetIndustryCompleted(tile);
 			SetIndustryGfx(tile, newgfx);
 			MarkTileDirtyByTile(tile);
-			return;
+			return true;
 		}
 	}
 
-	if (StartStopIndustryTileAnimation(tile, IAT_TILELOOP)) return;
+	if (StartStopIndustryTileAnimation(tile, IAT_TILELOOP)) return true;
 
 	IndustryGfx newgfx = GetIndustryTileSpec(GetIndustryGfx(tile))->anim_next;
 	if (newgfx != INDUSTRYTILE_NOANIM) {
 		ResetIndustryConstructionStage(tile);
 		SetIndustryGfx(tile, newgfx);
 		MarkTileDirtyByTile(tile);
-		return;
+		return true;
 	}
 
 	IndustryGfx gfx = GetIndustryGfx(tile);
@@ -933,6 +933,7 @@ static void TileLoop_Industry(TileIndex tile)
 		if (Chance16(1, 3)) AddAnimatedTile(tile);
 		break;
 	}
+	return true;
 }
 
 static bool ClickTile_Industry(TileIndex tile)

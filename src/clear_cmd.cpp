@@ -246,7 +246,7 @@ static void TileLoopClearDesert(TileIndex tile)
 	MarkTileDirtyByTile(tile);
 }
 
-static void TileLoop_Clear(TileIndex tile)
+static bool TileLoop_Clear(TileIndex tile, Tile *&tptr)
 {
 	/* If the tile is at any edge flood it to prevent maps without water. */
 	if (_settings_game.construction.freeform_edges && DistanceFromEdge(tile) == 1) {
@@ -254,7 +254,7 @@ static void TileLoop_Clear(TileIndex tile)
 		if (IsTileFlat(tile, &z) && z == 0) {
 			DoFloodTile(tile);
 			MarkTileDirtyByTile(tile);
-			return;
+			return true;
 		}
 	}
 	AmbientSoundEffect(tile);
@@ -266,12 +266,12 @@ static void TileLoop_Clear(TileIndex tile)
 
 	switch (GetClearGround(tile)) {
 		case CLEAR_GRASS:
-			if (GetClearDensity(tile) == 3) return;
+			if (GetClearDensity(tile) == 3) return true;
 
 			if (_game_mode != GM_EDITOR) {
 				if (GetClearCounter(tile) < 7) {
 					AddClearCounter(tile, 1);
-					return;
+					return true;
 				} else {
 					SetClearCounter(tile, 0);
 					AddClearDensity(tile, 1);
@@ -284,11 +284,11 @@ static void TileLoop_Clear(TileIndex tile)
 		case CLEAR_FIELDS:
 			UpdateFences(tile);
 
-			if (_game_mode == GM_EDITOR) return;
+			if (_game_mode == GM_EDITOR) return true;
 
 			if (GetClearCounter(tile) < 7) {
 				AddClearCounter(tile, 1);
-				return;
+				return true;
 			} else {
 				SetClearCounter(tile, 0);
 			}
@@ -304,10 +304,11 @@ static void TileLoop_Clear(TileIndex tile)
 			break;
 
 		default:
-			return;
+			return true;
 	}
 
 	MarkTileDirtyByTile(tile);
+	return true;
 }
 
 void GenerateClearTile()
