@@ -80,6 +80,69 @@ void Map::Clear()
 	}
 }
 
+/**
+ * Insert a new tile after an existing tile.
+ * @param tile The new tile is inserted after this tile.
+ * @param type TileType of the new tile.
+ * @param raw_alloc Don't set any tile flags. Used by save/load code.
+ * @param after Insert the new tile directly after this tile. Used by save/load code.
+ * @return Pointer to the new tile. The tile is zeroed.
+ */
+Tile *Map::NewTile(TileIndex tile, TileType type, bool raw_alloc, Tile *after)
+{
+	auto &row = this->tiles[TileY(tile)];
+	assert(after == nullptr || (after >= row.data() && after < row.data() + row.size()));
+
+	/* Find insertion point. */
+	if (after == nullptr) {
+		after = this->ToTile(tile);
+		while (HasAssociatedTile(after)) after++;
+	}
+
+	bool has_next = HasAssociatedTile(after);
+	if (!raw_alloc) SetAssociatedTileFlag(after, true);
+
+	/* Fix up tile offsets. */
+	uint count = this->size_x - TileX(tile);
+	for (uint i = 1; i < count; i++) {
+		this->offset[tile + i]++;
+	}
+
+	auto after_itr = row.begin() + (after - row.data());
+	Tile *new_tile = &(*row.emplace(after_itr + 1));
+
+	if (!raw_alloc) {
+		SetTileType(new_tile, type);
+		if (has_next) SetAssociatedTileFlag(new_tile, true);
+	}
+
+	return new_tile;
+}
+
+/**
+ * Remove a tile from the map.
+ * @param tile The tile to remove
+ */
+void Map::RemoveTile(TileIndex index, Tile *tile)
+{
+	for (Tile *cur_tile = this->ToTile(index); HasAssociatedTile(cur_tile); cur_tile++) {
+		if (cur_tile + 1 != tile) continue;
+
+		SetAssociatedTileFlag(cur_tile, HasAssociatedTile(tile));
+		this->tiles[TileY(index)].erase(this->tiles[TileY(index)].begin() + (tile - this->tiles[TileY(index)].data()));
+
+		/* Fix up tile offsets. */
+		uint count = this->size_x - TileX(index);
+		for (uint i = 1; i < count; i++) {
+			this->offset[index + i]--;
+		}
+
+		return;
+	}
+
+	NOT_REACHED();
+}
+
 size_t Map::GetTileCount() const
 {
 	return std::accumulate(this->tiles.begin(), this->tiles.end(), size_t{0}, [](size_t s, const std::vector<Tile> &t) { return s + t.size(); });
