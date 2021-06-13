@@ -817,7 +817,7 @@ static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_ow
 	}
 }
 
-static CommandCost TerraformTile_Object(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Object(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	ObjectType type = GetObjectType(tile);
 
@@ -849,7 +849,7 @@ static CommandCost TerraformTile_Object(TileIndex tile, DoCommandFlag flags, int
 		}
 	}
 
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 extern const TileTypeProcs _tile_type_object_procs = {

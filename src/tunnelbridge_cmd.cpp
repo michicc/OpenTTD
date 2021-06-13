@@ -2009,7 +2009,7 @@ static VehicleEnterTileStatus VehicleEnter_TunnelBridge(Vehicle *v, TileIndex ti
 	return VETSB_CONTINUE;
 }
 
-static CommandCost TerraformTile_TunnelBridge(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_TunnelBridge(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	if (_settings_game.construction.build_on_slopes && AutoslopeEnabled() && IsBridge(tile) && GetTunnelBridgeTransportType(tile) != TRANSPORT_WATER) {
 		DiagDirection direction = GetTunnelBridgeDirection(tile);
@@ -2031,7 +2031,7 @@ static CommandCost TerraformTile_TunnelBridge(TileIndex tile, DoCommandFlag flag
 		if (res.Succeeded() && (z_old == z_new) && (tileh_old == tileh_new)) return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
 	}
 
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 extern const TileTypeProcs _tile_type_tunnelbridge_procs = {

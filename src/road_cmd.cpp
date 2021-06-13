@@ -2223,7 +2223,7 @@ static void ChangeTileOwner_Road(TileIndex tile, Owner old_owner, Owner new_owne
 	}
 }
 
-static CommandCost TerraformTile_Road(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Road(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	if (_settings_game.construction.build_on_slopes && AutoslopeEnabled()) {
 		switch (GetRoadTileType(tile)) {
@@ -2260,7 +2260,7 @@ static CommandCost TerraformTile_Road(TileIndex tile, DoCommandFlag flags, int z
 		}
 	}
 
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 /** Update power of road vehicle under which is the roadtype being converted */

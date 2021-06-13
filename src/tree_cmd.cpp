@@ -880,9 +880,9 @@ void InitializeTrees()
 	_trees_tick_ctr = 0;
 }
 
-static CommandCost TerraformTile_Trees(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Trees(TileIndex tile, Tile *tptr, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 

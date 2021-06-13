@@ -3025,7 +3025,7 @@ static Vehicle *EnsureNoShipProc(Vehicle *v, void *data)
 	return v->type == VEH_SHIP ? v : nullptr;
 }
 
-static CommandCost TerraformTile_Track(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Track(TileIndex tile, Tile *rail_tile, DoCommandFlag flags, int z_new, Slope tileh_new)
 {
 	int z_old;
 	Slope tileh_old = GetTileSlope(tile, &z_old);
@@ -3070,7 +3070,7 @@ static CommandCost TerraformTile_Track(TileIndex tile, DoCommandFlag flags, int 
 			AutoslopeCheckForEntranceEdge(tile, z_new, tileh_new, GetRailDepotDirection(tile))) {
 		return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
 	}
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 
