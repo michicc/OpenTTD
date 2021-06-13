@@ -3093,9 +3093,10 @@ static Foundation GetFoundation_Station(TileIndex tile, Slope tileh)
 	return FlatteningFoundation(tileh);
 }
 
-static void GetTileDesc_Station(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Station(TileIndex tile, Tile *tptr, TileDesc *td)
 {
 	td->owner[0] = GetTileOwner(tile);
+	if (td->owner[0] != OWNER_NONE) td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 
 	if (IsRoadStopTile(tile)) {
 		RoadType road_rt = GetRoadTypeRoad(tile);

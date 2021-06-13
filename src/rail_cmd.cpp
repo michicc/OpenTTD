@@ -2764,12 +2764,13 @@ static bool ClickTile_Track(TileIndex tile)
 	return true;
 }
 
-static void GetTileDesc_Track(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Track(TileIndex tile, Tile *rail_tile, TileDesc *td)
 {
 	const RailtypeInfo *rti = GetRailTypeInfo(GetRailType(tile));
 	td->rail_speed = rti->max_speed;
 	td->railtype = rti->strings.name;
 	td->owner[0] = GetTileOwner(tile);
+	td->owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER;
 	switch (GetRailTileType(tile)) {
 		case RAIL_TILE_NORMAL:
 			td->str = STR_LAI_RAIL_DESCRIPTION_TRACK;

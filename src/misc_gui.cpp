@@ -118,17 +118,23 @@ public:
 #else
 #	define LANDINFOD_LEVEL 1
 #endif
+		static const char *const ttype_to_str[] = { "MP_CLEAR", "MP_RAILWAY", "MP_ROAD", "MP_HOUSE", "MP_TREES", "MP_STATION", "MP_WATER", "MP_VOID", "MP_INDUSTRY", "MP_TUNNELBRIDGE", "MP_OBJECT" };
+
+		const Tile *tptr = _m.ToTile(tile);
 		Debug(misc, LANDINFOD_LEVEL, "TILE: {:#x} ({},{})", tile, TileX(tile), TileY(tile));
-		Debug(misc, LANDINFOD_LEVEL, "type   = {:#x}", _m[tile].type);
-		Debug(misc, LANDINFOD_LEVEL, "height = {:#x}", _m[tile].height);
-		Debug(misc, LANDINFOD_LEVEL, "m1     = {:#x}", _m[tile].m1);
-		Debug(misc, LANDINFOD_LEVEL, "m2     = {:#x}", _m[tile].m2);
-		Debug(misc, LANDINFOD_LEVEL, "m3     = {:#x}", _m[tile].m3);
-		Debug(misc, LANDINFOD_LEVEL, "m4     = {:#x}", _m[tile].m4);
-		Debug(misc, LANDINFOD_LEVEL, "m5     = {:#x}", _m[tile].m5);
-		Debug(misc, LANDINFOD_LEVEL, "m6     = {:#x}", _m[tile].m6);
-		Debug(misc, LANDINFOD_LEVEL, "m7     = {:#x}", _m[tile].m7);
-		Debug(misc, LANDINFOD_LEVEL, "m8     = {:#x}", _m[tile].m8);
+		do {
+			Debug(misc, LANDINFOD_LEVEL, "type   = {:#x} ({})", tptr->type, GetTileType(tptr) < lengthof(ttype_to_str) ? ttype_to_str[GetTileType(tptr)] : "invalid");
+			Debug(misc, LANDINFOD_LEVEL, "height = {:#x}", tptr->height);
+			Debug(misc, LANDINFOD_LEVEL, "m1     = {:#x}", tptr->m1);
+			Debug(misc, LANDINFOD_LEVEL, "m2     = {:#x}", tptr->m2);
+			Debug(misc, LANDINFOD_LEVEL, "m3     = {:#x}", tptr->m3);
+			Debug(misc, LANDINFOD_LEVEL, "m4     = {:#x}", tptr->m4);
+			Debug(misc, LANDINFOD_LEVEL, "m5     = {:#x}", tptr->m5);
+			Debug(misc, LANDINFOD_LEVEL, "m6     = {:#x}", tptr->m6);
+			Debug(misc, LANDINFOD_LEVEL, "m7     = {:#x}", tptr->m7);
+			Debug(misc, LANDINFOD_LEVEL, "m8     = {:#x}", tptr->m8);
+		} while (HasAssociatedTile(tptr++));
+		Debug(misc, LANDINFOD_LEVEL, " ");
 #undef LANDINFOD_LEVEL
 	}
 
@@ -136,55 +142,87 @@ public:
 	{
 		Town *t = ClosestTownFromTile(tile, _settings_game.economy.dist_local_authority);
 
-		/* Because build_date is not set yet in every TileDesc, we make sure it is empty */
-		TileDesc td;
+		/* Query tile descriptions for all tiles at this tile index. */
+		std::vector<TileDesc> tds;
+		Tile *tptr = _m.ToTile(tile);
+		do {
+			tds.emplace_back();
+			TileDesc &td = tds.back();
 
-		td.build_date = INVALID_DATE;
+			/* Because build_date is not set yet in every TileDesc, we make sure it is empty */
+			td.build_date = INVALID_DATE;
 
-		/* Most tiles have only one owner, but
-		 *  - drivethrough roadstops can be build on town owned roads (up to 2 owners) and
-		 *  - roads can have up to four owners (railroad, road, tram, 3rd-roadtype "highway").
-		 */
-		td.owner_type[0] = STR_LAND_AREA_INFORMATION_OWNER; // At least one owner is displayed, though it might be "N/A".
-		td.owner_type[1] = STR_NULL;       // STR_NULL results in skipping the owner
-		td.owner_type[2] = STR_NULL;
-		td.owner_type[3] = STR_NULL;
-		td.owner[0] = OWNER_NONE;
-		td.owner[1] = OWNER_NONE;
-		td.owner[2] = OWNER_NONE;
-		td.owner[3] = OWNER_NONE;
+			/* Most tiles have only one owner, but
+			 *  - drivethrough roadstops can be build on town owned roads (up to 2 owners) and
+			 *  - roads can have up to four owners (railroad, road, tram, 3rd-roadtype "highway").
+			 */
+			td.owner_type[0] = STR_NULL;       // STR_NULL results in skipping the owner
+			td.owner_type[1] = STR_NULL;
+			td.owner_type[2] = STR_NULL;
+			td.owner_type[3] = STR_NULL;
+			td.owner[0] = OWNER_NONE;
+			td.owner[1] = OWNER_NONE;
+			td.owner[2] = OWNER_NONE;
+			td.owner[3] = OWNER_NONE;
 
-		td.station_class = STR_NULL;
-		td.station_name = STR_NULL;
-		td.airport_class = STR_NULL;
-		td.airport_name = STR_NULL;
-		td.airport_tile_name = STR_NULL;
-		td.railtype = STR_NULL;
-		td.rail_speed = 0;
-		td.roadtype = STR_NULL;
-		td.road_speed = 0;
-		td.tramtype = STR_NULL;
-		td.tram_speed = 0;
+			td.station_class = STR_NULL;
+			td.station_name = STR_NULL;
+			td.airport_class = STR_NULL;
+			td.airport_name = STR_NULL;
+			td.airport_tile_name = STR_NULL;
+			td.railtype = STR_NULL;
+			td.rail_speed = 0;
+			td.roadtype = STR_NULL;
+			td.road_speed = 0;
+			td.tramtype = STR_NULL;
+			td.tram_speed = 0;
 
-		td.grf = nullptr;
+			td.grf = nullptr;
+
+			GetTileDesc(tile, tptr, &td);
+		} while (HasAssociatedTile(tptr++));
 
 		CargoArray acceptance;
 		AddAcceptedCargo(tile, acceptance, nullptr);
-		GetTileDesc(tile, &td);
 
 		this->landinfo_data.clear();
 
 		/* Tiletype */
-		SetDParam(0, td.dparam[0]);
-		this->landinfo_data.push_back(GetString(td.str));
+		std::ostringstream tt_str;
+		StringID prev_str = INVALID_STRING_ID;
+		uint64 prev_param = 0;
+		for (const TileDesc &td : tds) {
+			if (td.str == prev_str && td.dparam[0] == prev_param) continue;
 
-		/* Up to four owners */
-		for (uint i = 0; i < 4; i++) {
-			if (td.owner_type[i] == STR_NULL) continue;
+			/* Add a comma between each item. */
+			if (tt_str.tellp() > 0) tt_str << ", ";
 
+			prev_str = td.str;
+			prev_param = td.dparam[0];
+			SetDParam(0, td.dparam[0]);
+			tt_str << GetString(td.str);
+		}
+		if (tt_str.tellp() > 0) this->landinfo_data.push_back(tt_str.str());
+
+		/* Owners */
+		bool has_owner = false;
+		Owner prev_owner = INVALID_OWNER;
+		for (const TileDesc &td : tds) {
+			for (uint i = 0; i < 4; i++) {
+				if (td.owner_type[i] == STR_NULL) continue;
+				if (td.owner[i] == prev_owner) continue;
+				prev_owner = td.owner[i];
+
+				SetDParam(0, STR_LAND_AREA_INFORMATION_OWNER_N_A);
+				if (td.owner[i] != OWNER_NONE && td.owner[i] != OWNER_WATER) GetNameOfOwner(td.owner[i], tile);
+				this->landinfo_data.push_back(GetString(td.owner_type[i]));
+				has_owner = true;
+			}
+		}
+		if (!has_owner) {
+			/* No real owner of the tile. */
 			SetDParam(0, STR_LAND_AREA_INFORMATION_OWNER_N_A);
-			if (td.owner[i] != OWNER_NONE && td.owner[i] != OWNER_WATER) GetNameOfOwner(td.owner[i], tile);
-			this->landinfo_data.push_back(GetString(td.owner_type[i]));
+			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_OWNER));
 		}
 
 		/* Cost to clear/revenue when cleared */
@@ -225,82 +263,84 @@ public:
 		}
 		this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_LOCAL_AUTHORITY));
 
-		/* Build date */
-		if (td.build_date != INVALID_DATE) {
-			SetDParam(0, td.build_date);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_BUILD_DATE));
-		}
+		for (const TileDesc &td : tds) {
+			/* Build date */
+			if (td.build_date != INVALID_DATE) {
+				SetDParam(0, td.build_date);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_BUILD_DATE));
+			}
 
-		/* Station class */
-		if (td.station_class != STR_NULL) {
-			SetDParam(0, td.station_class);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_STATION_CLASS));
-		}
+			/* Station class */
+			if (td.station_class != STR_NULL) {
+				SetDParam(0, td.station_class);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_STATION_CLASS));
+			}
 
-		/* Station type name */
-		if (td.station_name != STR_NULL) {
-			SetDParam(0, td.station_name);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_STATION_TYPE));
-		}
+			/* Station type name */
+			if (td.station_name != STR_NULL) {
+				SetDParam(0, td.station_name);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_STATION_TYPE));
+			}
 
-		/* Airport class */
-		if (td.airport_class != STR_NULL) {
-			SetDParam(0, td.airport_class);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORT_CLASS));
-		}
+			/* Airport class */
+			if (td.airport_class != STR_NULL) {
+				SetDParam(0, td.airport_class);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORT_CLASS));
+			}
 
-		/* Airport name */
-		if (td.airport_name != STR_NULL) {
-			SetDParam(0, td.airport_name);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORT_NAME));
-		}
+			/* Airport name */
+			if (td.airport_name != STR_NULL) {
+				SetDParam(0, td.airport_name);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORT_NAME));
+			}
 
-		/* Airport tile name */
-		if (td.airport_tile_name != STR_NULL) {
-			SetDParam(0, td.airport_tile_name);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME));
-		}
+			/* Airport tile name */
+			if (td.airport_tile_name != STR_NULL) {
+				SetDParam(0, td.airport_tile_name);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_AIRPORTTILE_NAME));
+			}
 
-		/* Rail type name */
-		if (td.railtype != STR_NULL) {
-			SetDParam(0, td.railtype);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_RAIL_TYPE));
-		}
+			/* Rail type name */
+			if (td.railtype != STR_NULL) {
+				SetDParam(0, td.railtype);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_RAIL_TYPE));
+			}
 
-		/* Rail speed limit */
-		if (td.rail_speed != 0) {
-			SetDParam(0, td.rail_speed);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT));
-		}
+			/* Rail speed limit */
+			if (td.rail_speed != 0) {
+				SetDParam(0, td.rail_speed);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_RAIL_SPEED_LIMIT));
+			}
 
-		/* Road type name */
-		if (td.roadtype != STR_NULL) {
-			SetDParam(0, td.roadtype);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_ROAD_TYPE));
-		}
+			/* Road type name */
+			if (td.roadtype != STR_NULL) {
+				SetDParam(0, td.roadtype);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_ROAD_TYPE));
+			}
 
-		/* Road speed limit */
-		if (td.road_speed != 0) {
-			SetDParam(0, td.road_speed);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT));
-		}
+			/* Road speed limit */
+			if (td.road_speed != 0) {
+				SetDParam(0, td.road_speed);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_ROAD_SPEED_LIMIT));
+			}
 
-		/* Tram type name */
-		if (td.tramtype != STR_NULL) {
-			SetDParam(0, td.tramtype);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_TRAM_TYPE));
-		}
+			/* Tram type name */
+			if (td.tramtype != STR_NULL) {
+				SetDParam(0, td.tramtype);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_TRAM_TYPE));
+			}
 
-		/* Tram speed limit */
-		if (td.tram_speed != 0) {
-			SetDParam(0, td.tram_speed);
-			this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_TRAM_SPEED_LIMIT));
-		}
+			/* Tram speed limit */
+			if (td.tram_speed != 0) {
+				SetDParam(0, td.tram_speed);
+				this->landinfo_data.push_back(GetString(STR_LANG_AREA_INFORMATION_TRAM_SPEED_LIMIT));
+				}
 
-		/* NewGRF name */
-		if (td.grf != nullptr) {
-			SetDParamStr(0, td.grf);
-			this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_NEWGRF_NAME));
+			/* NewGRF name */
+			if (td.grf != nullptr) {
+				SetDParamStr(0, td.grf);
+				this->landinfo_data.push_back(GetString(STR_LAND_AREA_INFORMATION_NEWGRF_NAME));
+			}
 		}
 
 		/* Cargo acceptance is displayed in a extra multiline */
