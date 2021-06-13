@@ -2844,9 +2844,9 @@ static void GetTileDesc_Track(TileIndex tile, Tile *rail_tile, TileDesc *td)
 	}
 }
 
-static void ChangeTileOwner_Track(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Track(TileIndex tile, Tile *rail_tile, Owner old_owner, Owner new_owner)
 {
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return true;
 
 	if (new_owner != INVALID_OWNER) {
 		/* Update company infrastructure counts. No need to dirty windows here, we'll redraw the whole screen anyway. */
@@ -2868,8 +2868,11 @@ static void ChangeTileOwner_Track(TileIndex tile, Owner old_owner, Owner new_own
 
 		SetTileOwner(tile, new_owner);
 	} else {
-		Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC | DC_BANKRUPT, tile);
+		bool deleted;
+		ClearTile_Track(tile, rail_tile, DC_EXEC | DC_BANKRUPT, deleted);
+		return !deleted;
 	}
+	return true;
 }
 
 static const byte _fractcoords_behind[4] = { 0x8F, 0x8, 0x80, 0xF8 };

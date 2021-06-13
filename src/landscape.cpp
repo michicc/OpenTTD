@@ -629,7 +629,17 @@ TrackStatus GetTileTrackStatus(TileIndex tile, TransportType mode, uint sub_mode
  */
 void ChangeTileOwner(TileIndex tile, Owner old_owner, Owner new_owner)
 {
-	_tile_type_procs[GetTileType(tile)]->change_tile_owner_proc(tile, old_owner, new_owner);
+	Tile *tptr = _m.ToTile(tile);
+	bool has_next;
+	do {
+		/* Query associated tile state first in case the current tile is deleted. */
+		has_next = HasAssociatedTile(tptr);
+		if (_tile_type_procs[GetTileType(tptr)]->change_tile_owner_proc(tile, tptr, old_owner, new_owner)) {
+			/* Current tile wasn't deleted, but the next tile could be.
+			 * Requery associated tile state and move to next. */
+			has_next = HasAssociatedTile(tptr++);
+		}
+	} while (has_next);
 }
 
 void GetTileDesc(TileIndex tile, Tile *tptr, TileDesc *td)
