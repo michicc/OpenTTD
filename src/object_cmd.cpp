@@ -641,7 +641,7 @@ static TrackStatus GetTileTrackStatus_Object(TileIndex tile, TransportType mode,
 	return 0;
 }
 
-static bool ClickTile_Object(TileIndex tile)
+static bool ClickTile_Object(TileIndex tile, Tile *tptr)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return false;
 

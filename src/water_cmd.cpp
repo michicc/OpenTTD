@@ -1325,7 +1325,7 @@ static TrackStatus GetTileTrackStatus_Water(TileIndex tile, TransportType mode, 
 	return CombineTrackStatus(TrackBitsToTrackdirBits(ts), TRACKDIR_BIT_NONE);
 }
 
-static bool ClickTile_Water(TileIndex tile)
+static bool ClickTile_Water(TileIndex tile, Tile *tptr)
 {
 	if (GetWaterTileType(tile) == WATER_TILE_DEPOT) {
 		ShowDepotWindow(GetShipDepotNorthTile(tile), VEH_SHIP);

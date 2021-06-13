@@ -3279,7 +3279,7 @@ static void AnimateTile_Station(TileIndex tile)
 }
 
 
-static bool ClickTile_Station(TileIndex tile)
+static bool ClickTile_Station(TileIndex tile, Tile *tptr)
 {
 	const BaseStation *bst = BaseStation::GetByTile(tile);
 
