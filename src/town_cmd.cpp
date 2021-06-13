@@ -306,11 +306,6 @@ static void DrawTile_Town(TileInfo *ti)
 	}
 }
 
-static int GetSlopePixelZ_Town(TileIndex tile, uint x, uint y)
-{
-	return GetTileMaxPixelZ(tile);
-}
-
 /** Tile callback routine */
 static Foundation GetFoundation_Town(TileIndex tile, Slope tileh)
 {
@@ -3775,7 +3770,6 @@ static CommandCost TerraformTile_Town(TileIndex tile, Tile *tptr, DoCommandFlag 
 /** Tile callback functions for a town */
 extern const TileTypeProcs _tile_type_town_procs = {
 	DrawTile_Town,           // draw_tile_proc
-	GetSlopePixelZ_Town,     // get_slope_z_proc
 	ClearTile_Town,          // clear_tile_proc
 	AddAcceptedCargo_Town,   // add_accepted_cargo_proc
 	GetTileDesc_Town,        // get_tile_desc_proc
