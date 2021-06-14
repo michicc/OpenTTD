@@ -18,12 +18,12 @@
 
 #include "safeguards.h"
 
-static void DrawTile_Void(TileInfo *ti)
+static void DrawTile_Void(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	DrawGroundSprite(SPR_FLAT_BARE_LAND + SlopeToSpriteOffset(ti->tileh), PALETTE_ALL_BLACK);
 }
 
-static Foundation GetFoundation_Void(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Void(TileIndex tile, Tile *tptr, Slope tileh)
 {
 	return FOUNDATION_NONE;
 }

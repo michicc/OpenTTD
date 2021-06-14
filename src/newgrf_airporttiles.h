@@ -14,6 +14,7 @@
 #include "station_map.h"
 #include "newgrf_animation_type.h"
 #include "newgrf_commons.h"
+#include "newgrf_callbacks.h"
 #include "newgrf_spritegroup.h"
 #include "station_base.h"
 
@@ -83,6 +84,7 @@ private:
 };
 
 StationGfx GetTranslatedAirportTileID(StationGfx gfx);
+uint16 GetAirportTileCallback(CallbackID callback, uint32 param1, uint32 param2, const AirportTileSpec *ats, Station *st, TileIndex tile, int extra_data = 0);
 void AnimateAirportTile(TileIndex tile);
 void AirportTileAnimationTrigger(Station *st, TileIndex tile, AirpAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
 void AirportAnimationTrigger(Station *st, AirpAnimationTrigger trigger, CargoID cargo_type = CT_INVALID);
