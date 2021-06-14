@@ -686,7 +686,7 @@ static CommandCost ClearTile_Town(TileIndex tile, Tile *tptr, DoCommandFlag flag
 	return cost;
 }
 
-static void AddProducedCargo_Town(TileIndex tile, CargoArray &produced)
+static void AddProducedCargo_Town(TileIndex tile, Tile *house_tile, CargoArray &produced)
 {
 	HouseID house_id = GetHouseType(tile);
 	const HouseSpec *hs = HouseSpec::Get(house_id);
@@ -720,7 +720,7 @@ static inline void AddAcceptedCargoSetMask(CargoID cargo, uint amount, CargoArra
 	SetBit(*always_accepted, cargo);
 }
 
-static void AddAcceptedCargo_Town(TileIndex tile, CargoArray &acceptance, CargoTypes *always_accepted)
+static void AddAcceptedCargo_Town(TileIndex tile, Tile *house_tile, CargoArray &acceptance, CargoTypes *always_accepted)
 {
 	const HouseSpec *hs = HouseSpec::Get(GetHouseType(tile));
 	CargoID accepts[lengthof(hs->accepts_cargo)];

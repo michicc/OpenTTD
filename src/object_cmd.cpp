@@ -537,7 +537,7 @@ static CommandCost ClearTile_Object(TileIndex tile, Tile *tptr, DoCommandFlag fl
 	return cost;
 }
 
-static void AddAcceptedCargo_Object(TileIndex tile, CargoArray &acceptance, CargoTypes *always_accepted)
+static void AddAcceptedCargo_Object(TileIndex tile, Tile *tptr, CargoArray &acceptance, CargoTypes *always_accepted)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return;
 
@@ -560,7 +560,7 @@ static void AddAcceptedCargo_Object(TileIndex tile, CargoArray &acceptance, Carg
 	SetBit(*always_accepted, CT_MAIL);
 }
 
-static void AddProducedCargo_Object(TileIndex tile, CargoArray &produced)
+static void AddProducedCargo_Object(TileIndex tile, Tile *tptr, CargoArray &produced)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return;
 
