@@ -1362,7 +1362,7 @@ static bool ChangeTileOwner_Water(TileIndex tile, Tile *tptr, Owner old_owner, O
 	return true;
 }
 
-static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *v, TileIndex tile, Tile *water_tile, int x, int y)
 {
 	return VETSB_CONTINUE;
 }

@@ -1754,7 +1754,15 @@ Direction GetDirectionTowards(const Vehicle *v, int x, int y)
  */
 VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, TileIndex tile, int x, int y)
 {
-	return _tile_type_procs[GetTileType(tile)]->vehicle_enter_tile_proc(v, tile, x, y);
+	VehicleEnterTileStatus vets = VETSB_CONTINUE;
+	Tile *tptr = _m.ToTile(tile);
+	/* Loop through all associated tiles until we get a non-continue result. */
+	do {
+		if (_tile_type_procs[GetTileType(tptr)]->vehicle_enter_tile_proc != nullptr) {
+			vets |= _tile_type_procs[GetTileType(tptr)]->vehicle_enter_tile_proc(v, tile, tptr, x, y);
+		}
+	} while (vets == VETSB_CONTINUE && HasAssociatedTile(tptr++));
+	return vets;
 }
 
 /**

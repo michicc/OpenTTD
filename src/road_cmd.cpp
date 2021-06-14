@@ -2126,7 +2126,7 @@ static const byte _roadveh_enter_depot_dir[4] = {
 	TRACKDIR_X_SW, TRACKDIR_Y_NW, TRACKDIR_X_NE, TRACKDIR_Y_SE
 };
 
-static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, Tile *road_tile, int x, int y)
 {
 	switch (GetRoadTileType(tile)) {
 		case ROAD_TILE_DEPOT: {
