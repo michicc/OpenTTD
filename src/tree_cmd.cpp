@@ -176,7 +176,7 @@ static void PlaceTree(TileIndex tile, uint32 r)
 		}
 
 		/* Set the counter to a random start value */
-		SetTreeCounter(tile, (TreeGround)GB(r, 24, 4));
+		SetTreeCounter(_m.ToTile(tile), (TreeGround)GB(r, 24, 4));
 	}
 }
 
@@ -324,9 +324,10 @@ uint PlaceTreeGroupAroundTile(TileIndex tile, TreeType treetype, uint radius, ui
 		const int32 yofs = mkcoord();
 		const TileIndex tile_to_plant = TileAddWrap(tile, xofs, yofs);
 		if (tile_to_plant != INVALID_TILE) {
-			if (IsTileType(tile_to_plant, MP_TREES) && GetTreeCount(tile_to_plant) < 4) {
-				AddTreeCount(tile_to_plant, 1);
-				SetTreeGrowth(tile_to_plant, 0);
+			Tile *tree_tile = GetTileByType(tile_to_plant, MP_TREES);
+			if (tree_tile != nullptr && GetTreeCount(tree_tile) < 4) {
+				AddTreeCount(tree_tile, 1);
+				SetTreeGrowth(tree_tile, 0);
 				MarkTileDirtyByTile(tile_to_plant, 0);
 				planted++;
 			} else if (CanPlantTreesOnTile(tile_to_plant, allow_desert)) {
@@ -400,29 +401,33 @@ CommandCost CmdPlantTree(DoCommandFlag flags, TileIndex tile, TileIndex start_ti
 
 	TileArea ta(tile, start_tile);
 	for (TileIndex current_tile : ta) {
-		switch (GetTileType(current_tile)) {
-			case MP_TREES:
-				/* no more space for trees? */
-				if (GetTreeCount(current_tile) == 4) {
-					msg = STR_ERROR_TREE_ALREADY_HERE;
-					continue;
-				}
+		if (HasTileByType(current_tile, MP_TREES)) {
+			Tile *tree_tile = GetTileByType(current_tile, MP_TREES);
 
-				/* Test tree limit. */
-				if (--limit < 1) {
-					msg = STR_ERROR_TREE_PLANT_LIMIT_REACHED;
-					break;
-				}
+			/* No more space for trees? */
+			if (GetTreeCount(tree_tile) == 4) {
+				msg = STR_ERROR_TREE_ALREADY_HERE;
+				continue;
+			}
 
-				if (flags & DC_EXEC) {
-					AddTreeCount(current_tile, 1);
-					MarkTileDirtyByTile(current_tile);
-					if (c != nullptr) c->tree_limit -= 1 << 16;
-				}
-				/* 2x as expensive to add more trees to an existing tile */
-				cost.AddCost(_price[PR_BUILD_TREES] * 2);
+			/* Test tree limit. */
+			if (--limit < 1) {
+				msg = STR_ERROR_TREE_PLANT_LIMIT_REACHED;
 				break;
+			}
 
+			if (flags & DC_EXEC) {
+				AddTreeCount(tree_tile, 1);
+				MarkTileDirtyByTile(current_tile);
+				if (c != nullptr) c->tree_limit -= 1 << 16;
+			}
+			/* 2x as expensive to add more trees to an existing tile */
+			cost.AddCost(_price[PR_BUILD_TREES] * 2);
+
+			continue;
+		}
+
+		switch (GetTileType(current_tile)) {
 			case MP_WATER:
 				if (!IsCoast(current_tile) || IsSlopeWithOneCornerRaised(GetTileSlope(current_tile))) {
 					msg = STR_ERROR_CAN_T_BUILD_ON_WATER;
@@ -528,7 +533,7 @@ static void DrawTile_Trees(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 	if (IsInvisibilitySet(TO_TREES)) return;
 
 	uint tmp = CountBits(static_cast<uint32>(ti->tile + ti->x + ti->y));
-	uint index = GB(tmp, 0, 2) + (GetTreeType(ti->tile) << 2);
+	uint index = GB(tmp, 0, 2) + (GetTreeType(ti->tptr) << 2);
 
 	/* different tree styles above one of the grounds */
 	if ((GetTreeGround(ti->tile) == TREE_GROUND_SNOW_DESERT || GetTreeGround(ti->tile) == TREE_GROUND_ROUGH_SNOW) &&
@@ -548,10 +553,10 @@ static void DrawTile_Trees(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 	TreeListEnt te[4];
 
 	/* put the trees to draw in a list */
-	uint trees = GetTreeCount(ti->tile);
+	uint trees = GetTreeCount(ti->tptr);
 
 	for (uint i = 0; i < trees; i++) {
-		SpriteID sprite = s[0].sprite + (i == trees - 1 ? GetTreeGrowth(ti->tile) : 3);
+		SpriteID sprite = s[0].sprite + (i == trees - 1 ? GetTreeGrowth(ti->tptr) : 3);
 		PaletteID pal = s[0].pal;
 
 		te[i].sprite = sprite;
@@ -600,8 +605,8 @@ static CommandCost ClearTile_Trees(TileIndex tile, Tile *tptr, DoCommandFlag fla
 		if (t != nullptr) ChangeTownRating(t, RATING_TREE_DOWN_STEP, RATING_TREE_MINIMUM, flags);
 	}
 
-	num = GetTreeCount(tile);
-	if (IsInsideMM(GetTreeType(tile), TREE_RAINFOREST, TREE_CACTUS)) num *= 4;
+	num = GetTreeCount(tptr);
+	if (IsInsideMM(GetTreeType(tptr), TREE_RAINFOREST, TREE_CACTUS)) num *= 4;
 
 	if (flags & DC_EXEC) DoClearSquare(tile);
 
@@ -610,7 +615,7 @@ static CommandCost ClearTile_Trees(TileIndex tile, Tile *tptr, DoCommandFlag fla
 
 static void GetTileDesc_Trees(TileIndex tile, Tile *tptr, TileDesc *td)
 {
-	TreeType tt = GetTreeType(tile);
+	TreeType tt = GetTreeType(tptr);
 
 	if (IsInsideMM(tt, TREE_RAINFOREST, TREE_CACTUS)) {
 		td->str = STR_LAI_TREE_NAME_RAINFOREST;
@@ -699,7 +704,7 @@ static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 
 	AmbientSoundEffect(tile);
 
-	uint treeCounter = GetTreeCounter(tile);
+	uint treeCounter = GetTreeCounter(tree_tile);
 
 	/* Handle growth of grass (under trees/on MP_TREES tiles) at every 8th processings, like it's done for grass on MP_CLEAR tiles. */
 	if ((treeCounter & 7) == 7 && GetTreeGround(tile) == TREE_GROUND_GRASS) {
@@ -712,28 +717,28 @@ static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 
 	if (_settings_game.construction.extra_tree_placement == ETP_NO_GROWTH_NO_SPREAD) return true;
 
-	if (GetTreeCounter(tile) < 15) {
-		AddTreeCounter(tile, 1);
+	if (GetTreeCounter(tree_tile) < 15) {
+		AddTreeCounter(tree_tile, 1);
 		return true;
 	}
-	SetTreeCounter(tile, 0);
+	SetTreeCounter(tree_tile, 0);
 
-	switch (GetTreeGrowth(tile)) {
+	switch (GetTreeGrowth(tree_tile)) {
 		case 3: // regular sized tree
 			if (_settings_game.game_creation.landscape == LT_TROPIC &&
-					GetTreeType(tile) != TREE_CACTUS &&
+					GetTreeType(tree_tile) != TREE_CACTUS &&
 					GetTropicZone(tile) == TROPICZONE_DESERT) {
-				AddTreeGrowth(tile, 1);
+				AddTreeGrowth(tree_tile, 1);
 			} else {
 				switch (GB(Random(), 0, 3)) {
 					case 0: // start destructing
-						AddTreeGrowth(tile, 1);
+						AddTreeGrowth(tree_tile, 1);
 						break;
 
 					case 1: // add a tree
-						if (GetTreeCount(tile) < 4 && CanPlantExtraTrees(tile)) {
-							AddTreeCount(tile, 1);
-							SetTreeGrowth(tile, 0);
+						if (GetTreeCount(tree_tile) < 4 && CanPlantExtraTrees(tile)) {
+							AddTreeCount(tree_tile, 1);
+							SetTreeGrowth(tree_tile, 0);
 							break;
 						}
 						FALLTHROUGH;
@@ -741,7 +746,7 @@ static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 					case 2: { // add a neighbouring tree
 						if (!CanPlantExtraTrees(tile)) break;
 
-						TreeType treetype = GetTreeType(tile);
+						TreeType treetype = GetTreeType(tree_tile);
 
 						tile += TileOffsByDir((Direction)(Random() & 7));
 
@@ -765,11 +770,11 @@ static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 		case 6: // final stage of tree destruction
 			if (!CanPlantExtraTrees(tile)) {
 				/* if trees can't spread just plant a new one to prevent deforestation */
-				SetTreeGrowth(tile, 0);
-			} else if (GetTreeCount(tile) > 1) {
+				SetTreeGrowth(tree_tile, 0);
+			} else if (GetTreeCount(tree_tile) > 1) {
 				/* more than one tree, delete it */
-				AddTreeCount(tile, -1);
-				SetTreeGrowth(tile, 3);
+				AddTreeCount(tree_tile, -1);
+				SetTreeGrowth(tree_tile, 3);
 			} else {
 				/* just one tree, change type into MP_CLEAR */
 				switch (GetTreeGround(tile)) {
@@ -796,7 +801,7 @@ static bool TileLoop_Trees(TileIndex tile, Tile *&tree_tile)
 			break;
 
 		default:
-			AddTreeGrowth(tile, 1);
+			AddTreeGrowth(tree_tile, 1);
 			break;
 	}
 
