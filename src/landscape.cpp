@@ -647,6 +647,8 @@ void DrawTile(TileInfo *ti)
 			_tile_type_procs[tt]->draw_tile_proc(ti, true, halftile_corner);
 		} while (ti->tptr != nullptr && HasAssociatedTile(ti->tptr++));
 	}
+
+	if (ti->tile != INVALID_TILE) DrawBridgeMiddle(ti);
 }
 
 
