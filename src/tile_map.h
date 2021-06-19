@@ -209,16 +209,50 @@ static inline bool IsValidTile(TileIndex tile)
  *
  * @param tile The tile to check
  * @return The owner of the tile
+ * @pre The type of the tile must not be MP_HOUSE and MP_INDUSTRY
+ */
+static inline Owner GetTileOwner(const Tile *tile)
+{
+	assert(!IsTileType(tile, MP_HOUSE));
+	assert(!IsTileType(tile, MP_INDUSTRY));
+
+	return (Owner)GB(tile->m1, 0, 5);
+}
+
+/**
+ * Returns the owner of a tile
+ *
+ * This function returns the owner of a tile. This cannot used
+ * for tiles which type is one of MP_HOUSE, MP_VOID and MP_INDUSTRY
+ * as no company owned any of these buildings.
+ *
+ * @param tile The tile to check
+ * @return The owner of the tile
  * @pre IsValidTile(tile)
  * @pre The type of the tile must not be MP_HOUSE and MP_INDUSTRY
  */
 static inline Owner GetTileOwner(TileIndex tile)
 {
 	assert(IsValidTile(tile));
+	return GetTileOwner(_m.ToTile(tile));
+}
+
+/**
+ * Sets the owner of a tile
+ *
+ * This function sets the owner status of a tile. Note that you cannot
+ * set a owner for tiles of type MP_HOUSE, MP_VOID and MP_INDUSTRY.
+ *
+ * @param tile The tile to change the owner status.
+ * @param owner The new owner.
+ * @pre The type of the tile must not be MP_HOUSE and MP_INDUSTRY
+ */
+static inline void SetTileOwner(Tile *tile, Owner owner)
+{
 	assert(!IsTileType(tile, MP_HOUSE));
 	assert(!IsTileType(tile, MP_INDUSTRY));
 
-	return (Owner)GB(_m[tile].m1, 0, 5);
+	SB(tile->m1, 0, 5, owner);
 }
 
 /**
@@ -235,10 +269,19 @@ static inline Owner GetTileOwner(TileIndex tile)
 static inline void SetTileOwner(TileIndex tile, Owner owner)
 {
 	assert(IsValidTile(tile));
-	assert(!IsTileType(tile, MP_HOUSE));
-	assert(!IsTileType(tile, MP_INDUSTRY));
+	SetTileOwner(_m.ToTile(tile), owner);
+}
 
-	SB(_m[tile].m1, 0, 5, owner);
+/**
+ * Checks if a tile belongs to the given owner
+ *
+ * @param tile The tile to check
+ * @param owner The owner to check against
+ * @return True if a tile belongs the the given owner
+ */
+static inline bool IsTileOwner(const Tile *tile, Owner owner)
+{
+	return GetTileOwner(tile) == owner;
 }
 
 /**

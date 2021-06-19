@@ -125,8 +125,9 @@ void SetWaterClassDependingOnSurroundings(TileIndex t, bool include_invalid_wate
 				break;
 
 			case MP_TREES:
-				/* trees on shore */
-				has_water |= (GB(_m[neighbour].m2, 4, 2) == TREE_GROUND_SHORE);
+				/* This function is only called for old savegames which
+				 * still have trees on shore as MP_TREES tiles. */
+				has_water |= (GB(_m[neighbour].m2, 4, 2) == 3 /*TREE_GROUND_SHORE*/);
 				break;
 
 			default: break;
@@ -209,6 +210,48 @@ static void UpdateVoidTiles()
 static inline RailType UpdateRailType(RailType rt, RailType min)
 {
 	return rt >= min ? (RailType)(rt + 1): rt;
+}
+
+/* Decompose the tile into ground and additional tiles. */
+static void DecomposeTile(TileIndex tile)
+{
+	switch (GetTileType(tile)) {
+		case MP_TREES: {
+			Tile *new_tile = _m.NewTile(tile, MP_TREES, true);
+
+			/* Copy old tile to the new tile. */
+			*new_tile = *(new_tile - 1);
+
+			/* Make new ground tile. */
+			uint ground_type = GB(new_tile->m2, 6, 3);
+			uint density = GB(new_tile->m2, 4, 2);
+			switch (ground_type) {
+				case 0: // Clear land
+				case 1: // Rough land
+					MakeClear(tile, (ClearGround)ground_type, density);
+					break;
+				case 2: // Snow or desert
+					MakeClear(tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, density);
+					if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(tile, density);
+					break;
+				case 3: // Shore tile
+					MakeShore(tile);
+					break;
+				case 4: // Rough snow
+					MakeClear(tile, CLEAR_ROUGH, 3);
+					MakeSnow(tile, density);
+					break;
+				default:
+					SlErrorCorrupt("Invalid ground type for tree tile");
+			}
+
+			SetAssociatedTileFlag(new_tile - 1, true);
+			break;
+		}
+
+		default:
+			break;
+	}
 }
 
 /**
@@ -1710,8 +1753,8 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(SLV_81)) {
 		for (TileIndex t = 0; t < map_size; t++) {
 			if (GetTileType(t) == MP_TREES) {
-				TreeGround groundType = (TreeGround)GB(_m[t].m2, 4, 2);
-				if (groundType != TREE_GROUND_SNOW_DESERT) SB(_m[t].m2, 6, 2, 3);
+				uint groundType = GB(_m[t].m2, 4, 2);
+				if (groundType != 2 /*TREE_GROUND_SNOW_DESERT*/) SB(_m[t].m2, 6, 2, 3);
 			}
 		}
 	}
@@ -3085,13 +3128,6 @@ bool AfterLoadGame()
 		for (Industry *ind : Industry::Iterate()) if (ind->neutral_station != nullptr) ind->neutral_station->industry = ind;
 	}
 
-	if (IsSavegameVersionBefore(SLV_TREES_WATER_CLASS)) {
-		/* Update water class for trees. */
-		for (TileIndex t = 0; t < map_size; t++) {
-			if (IsTileType(t, MP_TREES)) SetWaterClass(t, GetTreeGround(t) == TREE_GROUND_SHORE ? WATER_CLASS_SEA : WATER_CLASS_INVALID);
-		}
-	}
-
 	/* Update structures for multitile docks */
 	if (IsSavegameVersionBefore(SLV_MULTITILE_DOCKS)) {
 		for (TileIndex t = 0; t < map_size; t++) {
@@ -3146,6 +3182,11 @@ bool AfterLoadGame()
 			}
 			if (HasBit(wagon_removal, g->owner)) SetBit(g->flags, GroupFlags::GF_REPLACE_WAGON_REMOVAL);
 		}
+	}
+
+	/* Decompose all tiles into their base tile components. */
+	for (TileIndex t = 0; t < map_size; t++) {
+		DecomposeTile(t);
 	}
 
 	/* Compute station catchment areas. This is needed here in case UpdateStationAcceptance is called below. */
