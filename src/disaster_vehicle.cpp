@@ -58,18 +58,20 @@ static void DisasterClearSquare(TileIndex tile)
 {
 	if (EnsureNoVehicleOnGround(tile).Failed()) return;
 
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		if (Company::IsHumanID(GetTileOwner(tile)) && !IsRailDepot(rail_tile)) {
+			Backup<CompanyID> cur_company(_current_company, OWNER_WATER, FILE_LINE);
+			Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile);
+			cur_company.Restore();
+
+			/* update signals in buffer */
+			UpdateSignalsInBuffer();
+		}
+		return;
+	}
+
 	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			if (Company::IsHumanID(GetTileOwner(tile)) && !IsRailDepot(tile)) {
-				Backup<CompanyID> cur_company(_current_company, OWNER_WATER, FILE_LINE);
-				Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile);
-				cur_company.Restore();
-
-				/* update signals in buffer */
-				UpdateSignalsInBuffer();
-			}
-			break;
-
 		case MP_HOUSE: {
 			Backup<CompanyID> cur_company(_current_company, OWNER_NONE, FILE_LINE);
 			Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile);

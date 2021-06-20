@@ -88,7 +88,7 @@ static TrackBits GetRailTrackBitsUniversal(TileIndex t, byte *override)
 	switch (GetTileType(t)) {
 		case MP_RAILWAY:
 			if (!HasRailCatenary(GetRailType(t))) return TRACK_BIT_NONE;
-			switch (GetRailTileType(t)) {
+			switch (GetRailTileType(_m.ToTile(t))) {
 				case RAIL_TILE_NORMAL: case RAIL_TILE_SIGNALS:
 					return GetTrackBits(t);
 				default:
@@ -539,7 +539,7 @@ void DrawRailCatenary(const TileInfo *ti, bool draw_halftile, Corner halftile_co
 {
 	switch (GetTileType(ti->tile)) {
 		case MP_RAILWAY:
-			if (IsRailDepot(ti->tile)) {
+			if (IsRailDepot(ti->tptr)) {
 				const SortableSpriteStruct *sss = &RailCatenarySpriteData_Depot[GetRailDepotDirection(ti->tile)];
 
 				SpriteID wire_base = GetWireBase(ti->tile);

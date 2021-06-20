@@ -1064,7 +1064,7 @@ bool AfterLoadGame()
 		for (TileIndex t = 0; t < map_size; t++) {
 			switch (GetTileType(t)) {
 				case MP_RAILWAY:
-					if (IsPlainRail(t)) {
+					if (IsPlainRail(_m.ToTile(t))) {
 						/* Swap ground type and signal type for plain rail tiles, so the
 						 * ground type uses the same bits as for depots and waypoints. */
 						uint tmp = GB(_m[t].m4, 0, 4);
@@ -1417,7 +1417,7 @@ bool AfterLoadGame()
 					}
 
 					/* Clear PBS reservation on track */
-					if (!IsRailDepotTile(t)) {
+					if (!IsRailDepotTile(_m.ToTile(t))) {
 						SB(_m[t].m4, 4, 4, 0);
 					} else {
 						ClrBit(_m[t].m3, 6);
@@ -1998,7 +1998,7 @@ bool AfterLoadGame()
 					}
 
 					/* Clear PBS reservation on track */
-					if (IsRailDepot(t)) {
+					if (IsRailDepot(_m.ToTile(t))) {
 						SetDepotReservation(t, false);
 					} else {
 						SetTrackReservation(t, TRACK_BIT_NONE);

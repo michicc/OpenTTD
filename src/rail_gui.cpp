@@ -114,8 +114,10 @@ static void GenericPlaceRail(TileIndex tile, Track track)
  */
 static void PlaceExtraDepotRail(TileIndex tile, DiagDirection dir, Track track)
 {
-	if (GetRailTileType(tile) == RAIL_TILE_DEPOT) return;
-	if (GetRailTileType(tile) == RAIL_TILE_SIGNALS && !_settings_client.gui.auto_remove_signals) return;
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	if (rail_tile == nullptr) return;
+	if (GetRailTileType(rail_tile) == RAIL_TILE_DEPOT) return;
+	if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && !_settings_client.gui.auto_remove_signals) return;
 	if ((GetTrackBits(tile) & DiagdirReachesTracks(dir)) == 0) return;
 
 	Command<CMD_BUILD_SINGLE_RAIL>::Post(tile, _cur_railtype, track, _settings_client.gui.auto_remove_signals);
@@ -144,11 +146,9 @@ void CcRailDepot(Commands cmd, const CommandCost &result, TileIndex tile, RailTy
 
 	tile += TileOffsByDiagDir(dir);
 
-	if (IsTileType(tile, MP_RAILWAY)) {
-		PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir], _place_depot_extra_track[dir]);
-		PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir + 4], _place_depot_extra_track[dir + 4]);
-		PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir + 8], _place_depot_extra_track[dir + 8]);
-	}
+	PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir], _place_depot_extra_track[dir]);
+	PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir + 4], _place_depot_extra_track[dir + 4]);
+	PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir + 8], _place_depot_extra_track[dir + 8]);
 }
 
 /**

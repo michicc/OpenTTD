@@ -35,7 +35,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_RAILWAY) && !::IsRailDepot(tile)) ||
+	return (::HasTileByType(tile, MP_RAILWAY) && !::IsRailDepot(::GetTileByType(tile, MP_RAILWAY))) ||
 			(::HasStationTileRail(tile) && !::IsStationTileBlocked(tile)) || ::IsLevelCrossingTile(tile);
 }
 

@@ -33,10 +33,10 @@ enum RailTileType {
  * @pre IsTileType(t, MP_RAILWAY)
  * @return the RailTileType
  */
-static inline RailTileType GetRailTileType(TileIndex t)
+static inline RailTileType GetRailTileType(const Tile *t)
 {
 	assert(IsTileType(t, MP_RAILWAY));
-	return (RailTileType)GB(_m[t].m5, 6, 2);
+	return (RailTileType)GB(t->m5, 6, 2);
 }
 
 /**
@@ -46,10 +46,20 @@ static inline RailTileType GetRailTileType(TileIndex t)
  * @pre IsTileType(t, MP_RAILWAY)
  * @return true if and only if the tile is normal rail (with or without signals)
  */
-static inline bool IsPlainRail(TileIndex t)
+static inline bool IsPlainRail(const Tile *t)
 {
 	RailTileType rtt = GetRailTileType(t);
 	return rtt == RAIL_TILE_NORMAL || rtt == RAIL_TILE_SIGNALS;
+}
+
+/**
+ * Checks whether the tile is a rail tile or rail tile with signals.
+ * @param t the tile pointer to get the information from
+ * @return true if and only if the tile is normal rail (with or without signals)
+ */
+static inline bool IsPlainRailTile(const Tile *t)
+{
+	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
 }
 
 /**
@@ -59,7 +69,7 @@ static inline bool IsPlainRail(TileIndex t)
  */
 static inline bool IsPlainRailTile(TileIndex t)
 {
-	return IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
+	return IsPlainRailTile(GetTileByType(t, MP_RAILWAY));
 }
 
 
@@ -71,7 +81,7 @@ static inline bool IsPlainRailTile(TileIndex t)
  */
 static inline bool HasSignals(TileIndex t)
 {
-	return GetRailTileType(t) == RAIL_TILE_SIGNALS;
+	return GetRailTileType(_m.ToTile(t)) == RAIL_TILE_SIGNALS;
 }
 
 /**
@@ -92,7 +102,7 @@ static inline void SetHasSignals(TileIndex tile, bool signals)
  * @pre IsTileType(t, MP_RAILWAY)
  * @return true if and only if the tile is a rail depot
  */
-static inline bool IsRailDepot(TileIndex t)
+static inline bool IsRailDepot(const Tile *t)
 {
 	return GetRailTileType(t) == RAIL_TILE_DEPOT;
 }
@@ -102,9 +112,19 @@ static inline bool IsRailDepot(TileIndex t)
  * @param t the tile to get the information from
  * @return true if and only if the tile is a rail depot
  */
+static inline bool IsRailDepotTile(const Tile *t)
+{
+	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsRailDepot(t);
+}
+
+/**
+ * Is this tile rail tile and a rail depot?
+ * @param t the tile to get the information from
+ * @return true if and only if the tile is a rail depot
+ */
 static inline bool IsRailDepotTile(TileIndex t)
 {
-	return IsTileType(t, MP_RAILWAY) && IsRailDepot(t);
+	return IsRailDepotTile(GetTileByType(t, MP_RAILWAY));
 }
 
 /**
@@ -257,7 +277,7 @@ static inline void UnreserveTrack(TileIndex tile, Track t)
  */
 static inline bool HasDepotReservation(TileIndex t)
 {
-	assert(IsRailDepot(t));
+	assert(IsRailDepotTile(t));
 	return HasBit(_m[t].m5, 4);
 }
 
@@ -269,7 +289,7 @@ static inline bool HasDepotReservation(TileIndex t)
  */
 static inline void SetDepotReservation(TileIndex t, bool b)
 {
-	assert(IsRailDepot(t));
+	assert(IsRailDepotTile(t));
 	SB(_m[t].m5, 4, 1, (byte)b);
 }
 
@@ -292,14 +312,14 @@ static inline bool IsPbsSignal(SignalType s)
 
 static inline SignalType GetSignalType(TileIndex t, Track track)
 {
-	assert(GetRailTileType(t) == RAIL_TILE_SIGNALS);
+	assert(HasSignals(t));
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 4 : 0;
 	return (SignalType)GB(_m[t].m2, pos, 3);
 }
 
 static inline void SetSignalType(TileIndex t, Track track, SignalType s)
 {
-	assert(GetRailTileType(t) == RAIL_TILE_SIGNALS);
+	assert(HasSignals(t));
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 4 : 0;
 	SB(_m[t].m2, pos, 3, s);
 	if (track == INVALID_TRACK) SB(_m[t].m2, 4, 3, s);
@@ -413,7 +433,7 @@ static inline bool IsSignalPresent(TileIndex t, byte signalbit)
 static inline bool HasSignalOnTrack(TileIndex tile, Track track)
 {
 	assert(IsValidTrack(track));
-	return GetRailTileType(tile) == RAIL_TILE_SIGNALS && (GetPresentSignals(tile) & SignalOnTrack(track)) != 0;
+	return HasSignals(tile) && (GetPresentSignals(tile) & SignalOnTrack(track)) != 0;
 }
 
 /**
@@ -426,7 +446,7 @@ static inline bool HasSignalOnTrack(TileIndex tile, Track track)
 static inline bool HasSignalOnTrackdir(TileIndex tile, Trackdir trackdir)
 {
 	assert (IsValidTrackdir(trackdir));
-	return GetRailTileType(tile) == RAIL_TILE_SIGNALS && GetPresentSignals(tile) & SignalAlongTrackdir(trackdir);
+	return HasSignals(tile) && GetPresentSignals(tile) & SignalAlongTrackdir(trackdir);
 }
 
 /**

@@ -56,7 +56,7 @@ ScriptVehicleList_Depot::ScriptVehicleList_Depot(TileIndex tile)
 			break;
 
 		case MP_RAILWAY:
-			if (!IsRailDepot(tile)) return;
+			if (!IsRailDepot(_m.ToTile(tile))) return;
 			type = VEH_TRAIN;
 			dest = GetDepotIndex(tile);
 			break;
