@@ -79,9 +79,9 @@ static inline bool IsPlainRailTile(TileIndex t)
  * @pre IsTileType(t, MP_RAILWAY)
  * @return true if and only if the tile has signals
  */
-static inline bool HasSignals(TileIndex t)
+static inline bool HasSignals(const Tile *t)
 {
-	return GetRailTileType(_m.ToTile(t)) == RAIL_TILE_SIGNALS;
+	return GetRailTileType(t) == RAIL_TILE_SIGNALS;
 }
 
 /**
@@ -90,10 +90,10 @@ static inline bool HasSignals(TileIndex t)
  * @param signals whether the rail tile should have signals or not
  * @pre IsPlainRailTile(tile)
  */
-static inline void SetHasSignals(TileIndex tile, bool signals)
+static inline void SetHasSignals(Tile *tile, bool signals)
 {
 	assert(IsPlainRailTile(tile));
-	SB(_m[tile].m5, 6, 1, signals);
+	SB(tile->m5, 6, 1, signals);
 }
 
 /**
@@ -310,58 +310,58 @@ static inline bool IsPbsSignal(SignalType s)
 	return s == SIGTYPE_PBS || s == SIGTYPE_PBS_ONEWAY;
 }
 
-static inline SignalType GetSignalType(TileIndex t, Track track)
+static inline SignalType GetSignalType(const Tile *t, Track track)
 {
 	assert(HasSignals(t));
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 4 : 0;
-	return (SignalType)GB(_m[t].m2, pos, 3);
+	return (SignalType)GB(t->m2, pos, 3);
 }
 
-static inline void SetSignalType(TileIndex t, Track track, SignalType s)
+static inline void SetSignalType(Tile *t, Track track, SignalType s)
 {
 	assert(HasSignals(t));
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 4 : 0;
-	SB(_m[t].m2, pos, 3, s);
-	if (track == INVALID_TRACK) SB(_m[t].m2, 4, 3, s);
+	SB(t->m2, pos, 3, s);
+	if (track == INVALID_TRACK) SB(t->m2, 4, 3, s);
 }
 
-static inline bool IsPresignalEntry(TileIndex t, Track track)
+static inline bool IsPresignalEntry(const Tile *t, Track track)
 {
 	return GetSignalType(t, track) == SIGTYPE_ENTRY || GetSignalType(t, track) == SIGTYPE_COMBO;
 }
 
-static inline bool IsPresignalExit(TileIndex t, Track track)
+static inline bool IsPresignalExit(const Tile *t, Track track)
 {
 	return GetSignalType(t, track) == SIGTYPE_EXIT || GetSignalType(t, track) == SIGTYPE_COMBO;
 }
 
 /** One-way signals can't be passed the 'wrong' way. */
-static inline bool IsOnewaySignal(TileIndex t, Track track)
+static inline bool IsOnewaySignal(const Tile *t, Track track)
 {
 	return GetSignalType(t, track) != SIGTYPE_PBS;
 }
 
-static inline void CycleSignalSide(TileIndex t, Track track)
+static inline void CycleSignalSide(Tile *t, Track track)
 {
 	byte sig;
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 4 : 6;
 
-	sig = GB(_m[t].m3, pos, 2);
+	sig = GB(t->m3, pos, 2);
 	if (--sig == 0) sig = IsPbsSignal(GetSignalType(t, track)) ? 2 : 3;
-	SB(_m[t].m3, pos, 2, sig);
+	SB(t->m3, pos, 2, sig);
 }
 
-static inline SignalVariant GetSignalVariant(TileIndex t, Track track)
+static inline SignalVariant GetSignalVariant(const Tile *t, Track track)
 {
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 7 : 3;
-	return (SignalVariant)GB(_m[t].m2, pos, 1);
+	return (SignalVariant)GB(t->m2, pos, 1);
 }
 
-static inline void SetSignalVariant(TileIndex t, Track track, SignalVariant v)
+static inline void SetSignalVariant(Tile *t, Track track, SignalVariant v)
 {
 	byte pos = (track == TRACK_LOWER || track == TRACK_RIGHT) ? 7 : 3;
-	SB(_m[t].m2, pos, 1, v);
-	if (track == INVALID_TRACK) SB(_m[t].m2, 7, 1, v);
+	SB(t->m2, pos, 1, v);
+	if (track == INVALID_TRACK) SB(t->m2, 7, 1, v);
 }
 
 /**
@@ -369,9 +369,9 @@ static inline void SetSignalVariant(TileIndex t, Track track, SignalVariant v)
  * @param tile  the tile to set the states for
  * @param state the new state
  */
-static inline void SetSignalStates(TileIndex tile, uint state)
+static inline void SetSignalStates(Tile *tile, uint state)
 {
-	SB(_m[tile].m4, 4, 4, state);
+	SB(tile->m4, 4, 4, state);
 }
 
 /**
@@ -379,9 +379,9 @@ static inline void SetSignalStates(TileIndex tile, uint state)
  * @param tile  the tile to set the states for
  * @return the state of the signals
  */
-static inline uint GetSignalStates(TileIndex tile)
+static inline uint GetSignalStates(const Tile *tile)
 {
-	return GB(_m[tile].m4, 4, 4);
+	return GB(tile->m4, 4, 4);
 }
 
 /**
@@ -390,7 +390,7 @@ static inline uint GetSignalStates(TileIndex tile)
  * @param signalbit the signal
  * @return the state of the signal
  */
-static inline SignalState GetSingleSignalState(TileIndex t, byte signalbit)
+static inline SignalState GetSingleSignalState(const Tile *t, byte signalbit)
 {
 	return (SignalState)HasBit(GetSignalStates(t), signalbit);
 }
@@ -400,9 +400,9 @@ static inline SignalState GetSingleSignalState(TileIndex t, byte signalbit)
  * @param tile    the tile to set the present signals for
  * @param signals the signals that have to be present
  */
-static inline void SetPresentSignals(TileIndex tile, uint signals)
+static inline void SetPresentSignals(Tile *tile, uint signals)
 {
-	SB(_m[tile].m3, 4, 4, signals);
+	SB(tile->m3, 4, 4, signals);
 }
 
 /**
@@ -410,9 +410,9 @@ static inline void SetPresentSignals(TileIndex tile, uint signals)
  * @param tile the tile to get the present signals for
  * @return the signals that are present
  */
-static inline uint GetPresentSignals(TileIndex tile)
+static inline uint GetPresentSignals(const Tile *tile)
 {
-	return GB(_m[tile].m3, 4, 4);
+	return GB(tile->m3, 4, 4);
 }
 
 /**
@@ -421,7 +421,7 @@ static inline uint GetPresentSignals(TileIndex tile)
  * @param signalbit the signal
  * @return true if and only if the signal is present
  */
-static inline bool IsSignalPresent(TileIndex t, byte signalbit)
+static inline bool IsSignalPresent(const Tile *t, byte signalbit)
 {
 	return HasBit(GetPresentSignals(t), signalbit);
 }
@@ -430,7 +430,7 @@ static inline bool IsSignalPresent(TileIndex t, byte signalbit)
  * Checks for the presence of signals (either way) on the given track on the
  * given rail tile.
  */
-static inline bool HasSignalOnTrack(TileIndex tile, Track track)
+static inline bool HasSignalOnTrack(const Tile *tile, Track track)
 {
 	assert(IsValidTrack(track));
 	return HasSignals(tile) && (GetPresentSignals(tile) & SignalOnTrack(track)) != 0;
@@ -443,7 +443,7 @@ static inline bool HasSignalOnTrack(TileIndex tile, Track track)
  * Along meaning if you are currently driving on the given trackdir, this is
  * the signal that is facing us (for which we stop when it's red).
  */
-static inline bool HasSignalOnTrackdir(TileIndex tile, Trackdir trackdir)
+static inline bool HasSignalOnTrackdir(const Tile *tile, Trackdir trackdir)
 {
 	assert (IsValidTrackdir(trackdir));
 	return HasSignals(tile) && GetPresentSignals(tile) & SignalAlongTrackdir(trackdir);
@@ -455,7 +455,7 @@ static inline bool HasSignalOnTrackdir(TileIndex tile, Trackdir trackdir)
  * Along meaning if you are currently driving on the given trackdir, this is
  * the signal that is facing us (for which we stop when it's red).
  */
-static inline SignalState GetSignalStateByTrackdir(TileIndex tile, Trackdir trackdir)
+static inline SignalState GetSignalStateByTrackdir(const Tile *tile, Trackdir trackdir)
 {
 	assert(IsValidTrackdir(trackdir));
 	assert(HasSignalOnTrack(tile, TrackdirToTrack(trackdir)));
@@ -466,7 +466,7 @@ static inline SignalState GetSignalStateByTrackdir(TileIndex tile, Trackdir trac
 /**
  * Sets the state of the signal along the given trackdir.
  */
-static inline void SetSignalStateByTrackdir(TileIndex tile, Trackdir trackdir, SignalState state)
+static inline void SetSignalStateByTrackdir(Tile *tile, Trackdir trackdir, SignalState state)
 {
 	if (state == SIGNAL_STATE_GREEN) { // set 1
 		SetSignalStates(tile, GetSignalStates(tile) | SignalAlongTrackdir(trackdir));
@@ -482,8 +482,9 @@ static inline void SetSignalStateByTrackdir(TileIndex tile, Trackdir trackdir, S
  */
 static inline bool HasPbsSignalOnTrackdir(TileIndex tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
-			IsPbsSignal(GetSignalType(tile, TrackdirToTrack(td)));
+	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, td) &&
+			IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)));
 }
 
 /**
@@ -494,8 +495,9 @@ static inline bool HasPbsSignalOnTrackdir(TileIndex tile, Trackdir td)
  */
 static inline bool HasOnewaySignalBlockingTrackdir(TileIndex tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, ReverseTrackdir(td)) &&
-			!HasSignalOnTrackdir(tile, td) && IsOnewaySignal(tile, TrackdirToTrack(td));
+	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td)) &&
+			!HasSignalOnTrackdir(rail_tile, td) && IsOnewaySignal(rail_tile, TrackdirToTrack(td));
 }
 
 /**
@@ -505,7 +507,8 @@ static inline bool HasOnewaySignalBlockingTrackdir(TileIndex tile, Trackdir td)
  */
 static inline bool HasBlockSignalOnTrackdir(TileIndex tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, ReverseTrackdir(td)) &&
+	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, td) &&
 			!IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)));
 }
 

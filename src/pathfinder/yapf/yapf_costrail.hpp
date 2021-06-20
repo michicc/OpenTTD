@@ -28,6 +28,7 @@ protected:
 	/* Structure used inside PfCalcCost() to keep basic tile information. */
 	struct TILE {
 		TileIndex   tile;
+		Tile       *rail_tile;
 		Trackdir    td;
 		TileType    tile_type;
 		RailType    rail_type;
@@ -35,6 +36,7 @@ protected:
 		TILE()
 		{
 			tile = INVALID_TILE;
+			rail_tile = nullptr;
 			td = INVALID_TRACKDIR;
 			tile_type = MP_VOID;
 			rail_type = INVALID_RAILTYPE;
@@ -43,6 +45,7 @@ protected:
 		TILE(TileIndex tile, Trackdir td)
 		{
 			this->tile = tile;
+			this->rail_tile = GetTileByType(tile, MP_RAILWAY);
 			this->td = td;
 			this->tile_type = GetTileType(tile);
 			this->rail_type = GetTileRailType(tile);
@@ -167,20 +170,20 @@ public:
 		return 0;
 	}
 
-	int SignalCost(Node &n, TileIndex tile, Trackdir trackdir)
+	int SignalCost(Node &n, const TILE &tile)
 	{
 		int cost = 0;
 		/* if there is one-way signal in the opposite direction, then it is not our way */
-		if (IsTileType(tile, MP_RAILWAY)) {
-			bool has_signal_against = HasSignalOnTrackdir(tile, ReverseTrackdir(trackdir));
-			bool has_signal_along = HasSignalOnTrackdir(tile, trackdir);
-			if (has_signal_against && !has_signal_along && IsOnewaySignal(tile, TrackdirToTrack(trackdir))) {
+		if (tile.rail_tile != nullptr) {
+			bool has_signal_against = HasSignalOnTrackdir(tile.rail_tile, ReverseTrackdir(tile.td));
+			bool has_signal_along = HasSignalOnTrackdir(tile.rail_tile, tile.td);
+			if (has_signal_against && !has_signal_along && IsOnewaySignal(tile.rail_tile, TrackdirToTrack(tile.td))) {
 				/* one-way signal in opposite direction */
 				n.m_segment->m_end_segment_reason |= ESRB_DEAD_END;
 			} else {
 				if (has_signal_along) {
-					SignalState sig_state = GetSignalStateByTrackdir(tile, trackdir);
-					SignalType sig_type = GetSignalType(tile, TrackdirToTrack(trackdir));
+					SignalState sig_state = GetSignalStateByTrackdir(tile.rail_tile, tile.td);
+					SignalType sig_type = GetSignalType(tile.rail_tile, TrackdirToTrack(tile.td));
 
 					n.m_last_signal_type = sig_type;
 
@@ -226,11 +229,11 @@ public:
 					}
 
 					n.m_num_signals_passed++;
-					n.m_segment->m_last_signal_tile = tile;
-					n.m_segment->m_last_signal_td = trackdir;
+					n.m_segment->m_last_signal_tile = tile.tile;
+					n.m_segment->m_last_signal_td = tile.td;
 				}
 
-				if (has_signal_against && IsPbsSignal(GetSignalType(tile, TrackdirToTrack(trackdir)))) {
+				if (has_signal_against && IsPbsSignal(GetSignalType(tile.rail_tile, TrackdirToTrack(tile.td)))) {
 					cost += n.m_num_signals_passed < Yapf().PfGetSettings().rail_look_ahead_max_signals ? Yapf().PfGetSettings().rail_pbs_signal_back_penalty : 0;
 				}
 			}
@@ -351,12 +354,13 @@ public:
 					end_segment_reason = segment.m_end_segment_reason;
 					/* We will need also some information about the last signal (if it was red). */
 					if (segment.m_last_signal_tile != INVALID_TILE) {
-						assert(HasSignalOnTrackdir(segment.m_last_signal_tile, segment.m_last_signal_td));
-						SignalState sig_state = GetSignalStateByTrackdir(segment.m_last_signal_tile, segment.m_last_signal_td);
+						Tile *rail_tile = GetTileByType(segment.m_last_signal_tile, MP_RAILWAY);
+						assert(rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, segment.m_last_signal_td));
+						SignalState sig_state = GetSignalStateByTrackdir(rail_tile, segment.m_last_signal_td);
 						bool is_red = (sig_state == SIGNAL_STATE_RED);
 						n.flags_u.flags_s.m_last_signal_was_red = is_red;
 						if (is_red) {
-							n.m_last_red_signal_type = GetSignalType(segment.m_last_signal_tile, TrackdirToTrack(segment.m_last_signal_td));
+							n.m_last_red_signal_type = GetSignalType(rail_tile, TrackdirToTrack(segment.m_last_signal_td));
 						}
 					}
 					/* No further calculation needed. */
@@ -380,7 +384,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			segment_cost += Yapf().SlopeCost(cur.tile, cur.td);
 
 			/* Signal cost (routine can modify segment data). */
-			segment_cost += Yapf().SignalCost(n, cur.tile, cur.td);
+			segment_cost += Yapf().SignalCost(n, cur);
 
 			/* Reserved tiles. */
 			segment_cost += Yapf().ReservationCost(n, cur.tile, cur.td, tf->m_tiles_skipped);
@@ -450,9 +454,9 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 				/* We will end in this pass (station is possible target) */
 				end_segment_reason |= ESRB_STATION;
 
-			} else if (TrackFollower::DoTrackMasking() && cur.tile_type == MP_RAILWAY) {
+			} else if (TrackFollower::DoTrackMasking() && cur.rail_tile != nullptr) {
 				/* Searching for a safe tile? */
-				if (HasSignalOnTrackdir(cur.tile, cur.td) && !IsPbsSignal(GetSignalType(cur.tile, TrackdirToTrack(cur.td)))) {
+				if (HasSignalOnTrackdir(cur.rail_tile, cur.td) && !IsPbsSignal(GetSignalType(cur.rail_tile, TrackdirToTrack(cur.td)))) {
 					end_segment_reason |= ESRB_SAFE_TILE;
 				}
 			}
@@ -507,11 +511,11 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			/* Gather the next tile/trackdir/tile_type/rail_type. */
 			TILE next(tf_local.m_new_tile, (Trackdir)FindFirstBit2x64(tf_local.m_new_td_bits));
 
-			if (TrackFollower::DoTrackMasking() && IsTileType(next.tile, MP_RAILWAY)) {
-				if (HasSignalOnTrackdir(next.tile, next.td) && IsPbsSignal(GetSignalType(next.tile, TrackdirToTrack(next.td)))) {
+			if (TrackFollower::DoTrackMasking() && next.rail_tile != nullptr) {
+				if (HasSignalOnTrackdir(next.rail_tile, next.td) && IsPbsSignal(GetSignalType(next.rail_tile, TrackdirToTrack(next.td)))) {
 					/* Possible safe tile. */
 					end_segment_reason |= ESRB_SAFE_TILE;
-				} else if (HasSignalOnTrackdir(next.tile, ReverseTrackdir(next.td)) && GetSignalType(next.tile, TrackdirToTrack(next.td)) == SIGTYPE_PBS_ONEWAY) {
+				} else if (HasSignalOnTrackdir(next.rail_tile, ReverseTrackdir(next.td)) && GetSignalType(next.rail_tile, TrackdirToTrack(next.td)) == SIGTYPE_PBS_ONEWAY) {
 					/* Possible safe tile, but not so good as it's the back of a signal... */
 					end_segment_reason |= ESRB_SAFE_TILE | ESRB_DEAD_END;
 					extra_cost += Yapf().PfGetSettings().rail_lastred_exit_penalty;

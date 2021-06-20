@@ -471,11 +471,12 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	/* Determine extra costs */
 
 	/* Check for signals */
-	if (IsTileType(tile, MP_RAILWAY)) {
-		if (HasSignalOnTrackdir(tile, trackdir)) {
-			SignalType sigtype = GetSignalType(tile, TrackdirToTrack(trackdir));
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+		if (HasSignalOnTrackdir(rail_tile, trackdir)) {
+			SignalType sigtype = GetSignalType(rail_tile, TrackdirToTrack(trackdir));
 			/* Ordinary track with signals */
-			if (GetSignalStateByTrackdir(tile, trackdir) == SIGNAL_STATE_RED) {
+			if (GetSignalStateByTrackdir(rail_tile, trackdir) == SIGNAL_STATE_RED) {
 				/* Signal facing us is red */
 				if (!NPFGetFlag(current, NPF_FLAG_SEEN_SIGNAL)) {
 					/* Penalize the first signal we
@@ -968,8 +969,8 @@ static void NPFFollowTrack(AyStar *aystar, OpenListNode *current)
 		/* Tile with signals? */
 		if (HasTileByType(dst_tile, MP_RAILWAY)) {
 			Tile *rail_tile = GetTileByType(dst_tile, MP_RAILWAY);
-			if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && HasSignalOnTrackdir(dst_tile, ReverseTrackdir(dst_trackdir)) &&
-					!HasSignalOnTrackdir(dst_tile, dst_trackdir) && IsOnewaySignal(dst_tile, TrackdirToTrack(dst_trackdir))) {
+			if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(dst_trackdir)) &&
+					!HasSignalOnTrackdir(rail_tile, dst_trackdir) && IsOnewaySignal(rail_tile, TrackdirToTrack(dst_trackdir))) {
 				/* If there's a one-way signal not pointing towards us, stop going in this direction. */
 				break;
 			}
