@@ -123,7 +123,7 @@
 {
 	if (!IsRailDepotTile(depot)) return INVALID_TILE;
 
-	return depot + ::TileOffsByDiagDir(::GetRailDepotDirection(depot));
+	return depot + ::TileOffsByDiagDir(::GetRailDepotDirection(::GetRailDepotTile(depot)));
 }
 
 /* static */ ScriptRail::RailTrack ScriptRail::GetRailStationDirection(TileIndex tile)

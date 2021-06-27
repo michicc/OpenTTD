@@ -324,11 +324,13 @@ CommandCost CheckOwnership(Owner owner, TileIndex tile)
  * the given tile.  If that isn't the case an
  * appropriate error will be given.
  * @param tile the tile to check.
+ * @param tptr the actual associated tile to check.
  * @return A succeeded command iff it's owned by the current company, else a failed command.
  */
-CommandCost CheckTileOwnership(TileIndex tile)
+CommandCost CheckTileOwnership(TileIndex tile, const Tile *tptr)
 {
-	Owner owner = GetTileOwner(tile);
+	if (tptr == nullptr) tptr = _m.ToTile(tile);
+	Owner owner = GetTileOwner(tptr);
 
 	assert(owner < OWNER_END);
 
