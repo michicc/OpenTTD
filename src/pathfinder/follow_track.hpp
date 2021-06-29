@@ -234,7 +234,7 @@ protected:
 	inline bool QueryNewTileTrackStatus()
 	{
 		if (IsRailTT() && IsPlainRailTile(m_new_tile)) {
-			m_new_td_bits = (TrackdirBits)(GetTrackBits(m_new_tile) * 0x101);
+			m_new_td_bits = (TrackdirBits)(GetTrackBits(GetTileByType(m_new_tile, MP_RAILWAY)) * 0x101);
 		} else if (IsRoadTT()) {
 			m_new_td_bits = GetTrackdirBitsForRoad(m_new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
 		} else {
@@ -450,7 +450,7 @@ public:
 		}
 		/* Check for speed limit imposed by railtype */
 		if (IsRailTT()) {
-			uint16 rail_speed = GetRailTypeInfo(GetRailType(m_old_tile))->max_speed;
+			uint16 rail_speed = GetRailTypeInfo(GetTileRailType(m_old_tile))->max_speed;
 			if (rail_speed > 0) max_speed = std::min<int>(max_speed, rail_speed);
 		}
 		if (IsRoadTT()) {

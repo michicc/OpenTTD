@@ -557,7 +557,7 @@ static inline void MakeStation(TileIndex t, Owner o, StationID sid, StationType 
 static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
 {
 	MakeStation(t, o, sid, STATION_RAIL, section + a);
-	SetRailType(t, rt);
+	SetRailType(_m.ToTile(t), rt);
 	SetRailStationReservation(t, false);
 }
 
@@ -573,7 +573,7 @@ static inline void MakeRailStation(TileIndex t, Owner o, StationID sid, Axis a, 
 static inline void MakeRailWaypoint(TileIndex t, Owner o, StationID sid, Axis a, byte section, RailType rt)
 {
 	MakeStation(t, o, sid, STATION_WAYPOINT, section + a);
-	SetRailType(t, rt);
+	SetRailType(_m.ToTile(t), rt);
 	SetRailStationReservation(t, false);
 }
 

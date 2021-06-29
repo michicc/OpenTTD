@@ -118,7 +118,7 @@ static void PlaceExtraDepotRail(TileIndex tile, DiagDirection dir, Track track)
 	if (rail_tile == nullptr) return;
 	if (GetRailTileType(rail_tile) == RAIL_TILE_DEPOT) return;
 	if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && !_settings_client.gui.auto_remove_signals) return;
-	if ((GetTrackBits(tile) & DiagdirReachesTracks(dir)) == 0) return;
+	if ((GetTrackBits(rail_tile) & DiagdirReachesTracks(dir)) == 0) return;
 
 	Command<CMD_BUILD_SINGLE_RAIL>::Post(tile, _cur_railtype, track, _settings_client.gui.auto_remove_signals);
 }

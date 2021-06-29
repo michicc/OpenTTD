@@ -294,7 +294,7 @@ static SigFlags ExploreSegment(Owner owner)
 				}
 
 				assert(IsValidDiagDirection(enterdir));
-				TrackBits tracks = GetTrackBits(tile); // trackbits of tile
+				TrackBits tracks = GetTrackBits(rail_tile); // trackbits of tile
 				TrackBits tracks_masked = (TrackBits)(tracks & _enterdir_to_trackbits[enterdir]); // only incidating trackbits
 
 				if (tracks == TRACK_BIT_HORZ || tracks == TRACK_BIT_VERT) { // there is exactly one incidating track, no need to check

@@ -508,7 +508,7 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 				if (HasTileByType(tile, MP_RAILWAY)) {
 					Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 					if (!IsTileOwner(rail_tile, new_owner) || !HasSignals(rail_tile)) continue;
-					TrackBits tracks = GetTrackBits(tile);
+					TrackBits tracks = GetTrackBits(rail_tile);
 					do { // there may be two tracks with signals for TRACK_BIT_HORZ and TRACK_BIT_VERT
 						Track track = RemoveFirstTrack(&tracks);
 						if (HasSignalOnTrack(rail_tile, track)) AddTrackToSignalBuffer(tile, track, new_owner);

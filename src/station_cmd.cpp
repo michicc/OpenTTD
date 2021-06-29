@@ -914,20 +914,20 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 			Tile *rail_tile = GetTileByType(tile_cur, MP_RAILWAY);
 			if (rt != INVALID_RAILTYPE &&
 					IsPlainRailTile(rail_tile) && !HasSignals(rail_tile) &&
-					HasPowerOnRail(GetRailType(tile_cur), rt)) {
+					HasPowerOnRail(GetRailType(rail_tile), rt)) {
 				/* Allow overbuilding if the tile:
 				 *  - has rail, but no signals
 				 *  - it has exactly one track
 				 *  - the track is in line with the station
 				 *  - the current rail type has power on the to-be-built type (e.g. convert normal rail to el rail)
 				 */
-				TrackBits tracks = GetTrackBits(tile_cur);
+				TrackBits tracks = GetTrackBits(rail_tile);
 				Track track = RemoveFirstTrack(&tracks);
 				Track expected_track = HasBit(invalid_dirs, DIAGDIR_NE) ? TRACK_X : TRACK_Y;
 
 				if (tracks == TRACK_BIT_NONE && track == expected_track) {
 					/* Check for trains having a reservation for this tile. */
-					if (HasBit(GetRailReservationTrackBits(tile_cur), track)) {
+					if (HasBit(GetRailReservationTrackBits(rail_tile), track)) {
 						Train *v = GetTrainForReservation(tile_cur, track);
 						if (v != nullptr) {
 							affected_vehicles.push_back(v);

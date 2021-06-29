@@ -112,8 +112,8 @@ public:
 	inline int SwitchCost(TileIndex tile1, TileIndex tile2, DiagDirection exitdir)
 	{
 		if (IsPlainRailTile(tile1) && IsPlainRailTile(tile2)) {
-			bool t1 = KillFirstBit(GetTrackBits(tile1) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
-			bool t2 = KillFirstBit(GetTrackBits(tile2) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
+			bool t1 = KillFirstBit(GetTrackBits(GetTileByType(tile1, MP_RAILWAY)) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
+			bool t2 = KillFirstBit(GetTrackBits(GetTileByType(tile2, MP_RAILWAY)) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
 			if (t1 && t2) return Yapf().PfGetSettings().rail_doubleslip_penalty;
 		}
 		return 0;
@@ -538,7 +538,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			if (segment_cost > s_max_segment_cost) {
 				/* Potentially in the infinite loop (or only very long segment?). We should
 				 * not force it to finish prematurely unless we are on a regular tile. */
-				if (IsTileType(tf->m_new_tile, MP_RAILWAY)) {
+				if (HasTileByType(tf->m_new_tile, MP_RAILWAY)) {
 					end_segment_reason |= ESRB_SEGMENT_TOO_LONG;
 					break;
 				}

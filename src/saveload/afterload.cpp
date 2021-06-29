@@ -1197,26 +1197,27 @@ bool AfterLoadGame()
 	/* Railtype moved from m3 to m8 in version SLV_EXTEND_RAILTYPES. */
 	if (IsSavegameVersionBefore(SLV_EXTEND_RAILTYPES)) {
 		for (TileIndex t = 0; t < map_size; t++) {
+			Tile *tptr = _m.ToTile(t);
 			switch (GetTileType(t)) {
 				case MP_RAILWAY:
-					SetRailType(t, (RailType)GB(_m[t].m3, 0, 4));
+					SetRailType(tptr, (RailType)GB(tptr->m3, 0, 4));
 					break;
 
 				case MP_ROAD:
 					if (IsLevelCrossing(t)) {
-						SetRailType(t, (RailType)GB(_m[t].m3, 0, 4));
+						SetRailType(tptr, (RailType)GB(tptr->m3, 0, 4));
 					}
 					break;
 
 				case MP_STATION:
 					if (HasStationRail(t)) {
-						SetRailType(t, (RailType)GB(_m[t].m3, 0, 4));
+						SetRailType(tptr, (RailType)GB(tptr->m3, 0, 4));
 					}
 					break;
 
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) {
-						SetRailType(t, (RailType)GB(_m[t].m3, 0, 4));
+						SetRailType(tptr, (RailType)GB(tptr->m3, 0, 4));
 					}
 					break;
 
@@ -1239,7 +1240,7 @@ bool AfterLoadGame()
 								t,
 								GetTileOwner(t),
 								axis == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X,
-								GetRailType(t)
+								GetRailType(_m.ToTile(t))
 							);
 						} else {
 							TownID town = IsTileOwner(t, OWNER_TOWN) ? ClosestTownFromTile(t, UINT_MAX)->index : 0;
@@ -1349,26 +1350,27 @@ bool AfterLoadGame()
 
 		/* .. so we convert the entire map from normal to elrail (so maintain "fairness") */
 		for (TileIndex t = 0; t < map_size; t++) {
+			Tile *tptr = _m.ToTile(t);
 			switch (GetTileType(t)) {
 				case MP_RAILWAY:
-					SetRailType(t, UpdateRailType(GetRailType(t), min_rail));
+					SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					break;
 
 				case MP_ROAD:
 					if (IsLevelCrossing(t)) {
-						SetRailType(t, UpdateRailType(GetRailType(t), min_rail));
+						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
 
 				case MP_STATION:
 					if (HasStationRail(t)) {
-						SetRailType(t, UpdateRailType(GetRailType(t), min_rail));
+						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
 
 				case MP_TUNNELBRIDGE:
 					if (GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL) {
-						SetRailType(t, UpdateRailType(GetRailType(t), min_rail));
+						SetRailType(tptr, UpdateRailType(GetRailType(tptr), min_rail));
 					}
 					break;
 
@@ -2003,7 +2005,7 @@ bool AfterLoadGame()
 					if (IsRailDepot(tile)) {
 						SetDepotReservation(tile, false);
 					} else {
-						SetTrackReservation(t, TRACK_BIT_NONE);
+						SetTrackReservation(tile, TRACK_BIT_NONE);
 					}
 					break;
 

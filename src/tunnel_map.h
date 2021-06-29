@@ -81,7 +81,7 @@ static inline void MakeRailTunnel(TileIndex t, Owner o, DiagDirection d, RailTyp
 	SB(_m[t].m6, 2, 4, 0);
 	_m[t].m7 = 0;
 	_m[t].m8 = 0;
-	SetRailType(t, r);
+	SetRailType(_m.ToTile(t), r);
 	SetRoadTypes(t, INVALID_ROADTYPE, INVALID_ROADTYPE);
 }
 

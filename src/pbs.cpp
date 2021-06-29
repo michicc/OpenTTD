@@ -27,7 +27,7 @@ TrackBits GetReservedTrackbits(TileIndex t)
 		case MP_RAILWAY: {
 			Tile *rail_tile = _m.ToTile(t);
 			if (IsRailDepot(rail_tile)) return GetDepotReservationTrackBits(rail_tile);
-			if (IsPlainRail(rail_tile)) return GetRailReservationTrackBits(t);
+			if (IsPlainRail(rail_tile)) return GetRailReservationTrackBits(rail_tile);
 			break;
 		}
 
@@ -95,7 +95,7 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 	switch (GetTileType(tile)) {
 		case MP_RAILWAY: {
 			Tile *rail_tile = _m.ToTile(tile);
-			if (IsPlainRail(rail_tile)) return TryReserveTrack(tile, t);
+			if (IsPlainRail(rail_tile)) return TryReserveTrack(rail_tile, t);
 			if (IsRailDepot(rail_tile)) {
 				if (!HasDepotReservation(rail_tile)) {
 					SetDepotReservation(rail_tile, true);
@@ -162,7 +162,7 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 				MarkTileDirtyByTile(tile);
 				break;
 			}
-			if (IsPlainRail(rail_tile)) UnreserveTrack(tile, t);
+			if (IsPlainRail(rail_tile)) UnreserveTrack(rail_tile, t);
 			break;
 		}
 
