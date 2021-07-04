@@ -1152,7 +1152,7 @@ static bool CanRoadContinueIntoNextTile(const Town *t, const TileIndex tile, con
 
 	/* If the next tile is a railroad track, check if towns are allowed to build level crossings.
 	 * If level crossing are not allowed, reject the construction. Else allow DoCommand to determine if the rail track is buildable. */
-	if (IsTileType(next_tile, MP_RAILWAY) && !_settings_game.economy.allow_town_level_crossings) return false;
+	if (HasTileByType(next_tile, MP_RAILWAY) && !_settings_game.economy.allow_town_level_crossings) return false;
 
 	/* If a road tile can be built, the construction is allowed. */
 	return Command<CMD_BUILD_ROAD>::Do(DC_AUTO | DC_NO_WATER, next_tile, rcmd, rt, DRD_NONE, t->index).Succeeded();
@@ -1364,7 +1364,7 @@ static void GrowTownInTile(TileIndex *tile_ptr, RoadBits cur_rb, DiagDirection t
 		_grow_town_result = GROWTH_SEARCH_STOPPED;
 
 		if (!_settings_game.economy.allow_town_roads && !_generating_world) return;
-		if (!_settings_game.economy.allow_town_level_crossings && IsTileType(tile, MP_RAILWAY)) return;
+		if (!_settings_game.economy.allow_town_level_crossings && HasTileByType(tile, MP_RAILWAY)) return;
 
 		/* Remove hills etc */
 		if (!_settings_game.construction.build_on_slopes || Chance16(1, 6)) LevelTownLand(tile);
@@ -1901,7 +1901,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile)
 	}
 
 	/* Can only build on clear flat areas, possibly with trees. */
-	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile)) {
+	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile) || HasTileByType(tile, MP_RAILWAY)) {
 		return_cmd_error(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -2098,10 +2098,11 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
 	SpotData *sp = (SpotData*)user_data;
 	uint dist = GetClosestWaterDistance(tile, true);
 
-	if (IsTileType(tile, MP_CLEAR) &&
+	if (dist > sp->max_dist &&
+			IsTileType(tile, MP_CLEAR) &&
 			IsTileFlat(tile) &&
 			IsTileAlignedToGrid(tile, sp->layout) &&
-			dist > sp->max_dist) {
+			!HasTileByType(tile, MP_RAILWAY)) {
 		sp->tile = tile;
 		sp->max_dist = dist;
 	}
@@ -2117,7 +2118,7 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
  */
 static bool FindNearestEmptyLand(TileIndex tile, void *user_data)
 {
-	return IsTileType(tile, MP_CLEAR);
+	return IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY);
 }
 
 /**
@@ -3116,7 +3117,7 @@ static bool SearchTileForStatue(TileIndex tile, void *user_data)
 	if (IsBridgeAbove(tile)) return false;
 
 	/* A clear-able open space is always preferred. */
-	if (IsTileType(tile, MP_CLEAR) && TryClearTile(tile)) {
+	if (IsTileType(tile, MP_CLEAR) && !HasTileByType(tile, MP_RAILWAY) && TryClearTile(tile)) {
 		statue_data->best_position = tile;
 		return true;
 	}

@@ -460,14 +460,14 @@ CommandCost CmdBuildBridge(DoCommandFlag flags, TileIndex tile_end, TileIndex ti
 			}
 
 			if (HasTileByType(tile, MP_TREES)) goto not_valid_below;
+			if (HasTileByType(tile, MP_RAILWAY)) {
+				if (!IsPlainRail(GetTileByType(tile, MP_RAILWAY))) goto not_valid_below;
+				goto do_exec;
+			}
 
 			switch (GetTileType(tile)) {
 				case MP_WATER:
 					if (!IsWater(tile) && !IsCoast(tile)) goto not_valid_below;
-					break;
-
-				case MP_RAILWAY:
-					if (!IsPlainRailTile(tile)) goto not_valid_below;
 					break;
 
 				case MP_ROAD:
@@ -519,6 +519,7 @@ CommandCost CmdBuildBridge(DoCommandFlag flags, TileIndex tile_end, TileIndex ti
 	}
 
 	/* do the drill? */
+do_exec:;
 	if (flags & DC_EXEC) {
 		DiagDirection dir = AxisToDiagDir(direction);
 

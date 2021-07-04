@@ -124,6 +124,7 @@ void MoveWaypointsToBaseStations()
 		new_wp->owner      = wp.owner;
 		new_wp->string_id  = STR_SV_STNAME_WAYPOINT;
 
+		/* MP_RAILWAY wasn't split from the base tile in the affected savegame versions yet. */
 		/* The tile might've been reserved! */
 		bool reserved = !IsSavegameVersionBefore(SLV_100) && HasBit(_m[t].m5, 4);
 

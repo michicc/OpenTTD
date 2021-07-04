@@ -464,8 +464,9 @@ static inline uint32 GetSmallMapRoutesPixels(TileIndex tile, TileType t)
 			}
 
 		case MP_RAILWAY: {
+			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 			AndOr andor = {
-				MKCOLOUR_0XX0(GetRailTypeInfo(GetRailType(GetTileByType(tile, MP_RAILWAY)))->map_colour),
+				MKCOLOUR_0XX0(GetRailTypeInfo(GetRailType(rail_tile != nullptr ? rail_tile : _m.ToTile(tile)))->map_colour),
 				_smallmap_contours_andor[t].mand
 			};
 
@@ -571,11 +572,17 @@ static inline uint32 GetSmallMapOwnerPixels(TileIndex tile, TileType t)
 	switch (t) {
 		case MP_INDUSTRY: return MKCOLOUR_XXXX(PC_DARK_GREY);
 		case MP_HOUSE:    return MKCOLOUR_XXXX(PC_DARK_RED);
-		default:          o = GetTileOwner(tile); break;
-		/* FIXME: For MP_ROAD there are multiple owners.
-		 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
-		 * even if there are no ROADTYPE_ROAD bits on the tile.
-		 */
+		default:
+			if (HasTileByType(tile, MP_RAILWAY)) {
+				o = GetTileOwner(GetTileByType(tile, MP_RAILWAY));
+			} else {
+				/* FIXME: For MP_ROAD there are multiple owners.
+				 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
+				 * even if there are no ROADTYPE_ROAD bits on the tile.
+				 */
+				o = GetTileOwner(tile);
+			}
+			break;
 	}
 
 	if ((o < MAX_COMPANIES && !_legend_land_owners[_company_to_list_pos[o]].show_on_map) || o == OWNER_NONE || o == OWNER_WATER) {
@@ -758,6 +765,7 @@ inline uint32 SmallMapWindow::GetTileColours(const TileArea &ta) const
 		TileType ttype = GetTileType(ti);
 
 		if (HasTileByType(ti, MP_TREES)) ttype = MP_TREES;
+		if (HasTileByType(ti, MP_RAILWAY)) ttype = MP_RAILWAY;
 
 		switch (ttype) {
 			case MP_TUNNELBRIDGE: {

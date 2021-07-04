@@ -1870,7 +1870,8 @@ void ReverseTrainDirection(Train *v)
 	/* VehicleExitDir does not always produce the desired dir for depots and
 	 * tunnels/bridges that is needed for UpdateSignalsOnSegment. */
 	DiagDirection dir = VehicleExitDir(v->direction, v->track);
-	if (IsRailDepotTile(v->tile) || IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
+	if (IsRailDepotTile(v->tile)) dir = GetRailDepotDirection(GetRailDepotTile(v->tile));
+	if (IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
 
 	if (UpdateSignalsOnSegment(v->tile, dir, v->owner) == SIGSEG_PBS || _settings_game.pf.reserve_paths) {
 		/* If we are currently on a tile with conventional signals, we can't treat the
@@ -2855,7 +2856,8 @@ static void TrainEnterStation(Train *v, StationID station)
 /* Check if the vehicle is compatible with the specified tile */
 static inline bool CheckCompatibleRail(const Train *v, TileIndex tile)
 {
-	return IsTileOwner(tile, v->owner) &&
+	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	return IsTileOwner(rail_tile != nullptr ? rail_tile : _m.ToTile(tile), v->owner) &&
 			(!v->IsFrontEngine() || HasBit(v->compatible_railtypes, GetTileRailType(tile)));
 }
 
