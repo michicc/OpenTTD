@@ -44,6 +44,30 @@ static inline bool IsDepotTile(TileIndex tile)
 }
 
 /**
+ * Get the owner of a depot tile.
+ * @param tile Tile to get the owner of.
+ * @return The depot owner.
+ */
+static inline Owner GetDepotOwner(TileIndex tile)
+{
+	if (IsRailDepotTile(tile)) {
+		return GetTileOwner(GetRailDepotTile(tile));
+	}
+	return GetTileOwner(tile);
+}
+
+/**
+ * Check if a depot belongs to a given owner.
+ * @param tile The tile to check.
+ * @param owner The owner to check against.
+ * @return True if the depot belongs the the given owner.
+ */
+static inline bool IsDepotOwner(TileIndex tile, Owner o)
+{
+	return GetDepotOwner(tile) == o;
+}
+
+/**
  * Get the index of which depot is attached to the tile.
  * @param t the tile
  * @return DepotID

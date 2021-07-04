@@ -87,7 +87,7 @@ const StringID _send_to_depot_msg_table[] = {
 std::tuple<CommandCost, VehicleID, uint, uint16> CmdBuildVehicle(DoCommandFlag flags, TileIndex tile, EngineID eid, bool use_free_vehicles, CargoID cargo, ClientID client_id)
 {
 	/* Elementary check for valid location. */
-	if (!IsDepotTile(tile) || !IsTileOwner(tile, _current_company)) return { CMD_ERROR, INVALID_VEHICLE, 0, 0 };
+	if (!IsDepotTile(tile) || !IsDepotOwner(tile, _current_company)) return { CMD_ERROR, INVALID_VEHICLE, 0, 0 };
 
 	VehicleType type = GetDepotVehicleType(tile);
 
@@ -700,7 +700,7 @@ CommandCost CmdDepotMassAutoReplace(DoCommandFlag flags, TileIndex tile, Vehicle
 	CommandCost cost = CommandCost(EXPENSES_NEW_VEHICLES);
 
 	if (!IsCompanyBuildableVehicleType(vehicle_type)) return CMD_ERROR;
-	if (!IsDepotTile(tile) || !IsTileOwner(tile, _current_company)) return CMD_ERROR;
+	if (!IsDepotTile(tile) || !IsDepotOwner(tile, _current_company)) return CMD_ERROR;
 
 	/* Get the list of vehicles in the depot */
 	BuildDepotVehicleList(vehicle_type, tile, &list, &list, true);
