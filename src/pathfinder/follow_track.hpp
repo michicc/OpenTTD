@@ -309,26 +309,29 @@ protected:
 				return false;
 			}
 		}
-		if (IsRailTT() && IsDepotTypeTile(m_new_tile, TT())) {
-			DiagDirection exitdir = GetRailDepotDirection(GetRailDepotTile(m_new_tile));
-			if (ReverseDiagDir(exitdir) != m_exitdir) {
+		if (IsRailTT()) {
+			Tile *rail_tile = GetTileByType(m_new_tile, MP_RAILWAY);
+			if (rail_tile == nullptr) rail_tile = _m.ToTile(m_new_tile);
+
+			if (IsRailDepotTile(rail_tile)) {
+				DiagDirection exitdir = GetRailDepotDirection(rail_tile);
+				if (ReverseDiagDir(exitdir) != m_exitdir) {
+					m_err = EC_NO_WAY;
+					return false;
+				}
+			}
+
+			/* Rail transport is possible only on tiles with the same owner as vehicle. */
+			if (GetTileOwner(rail_tile) != m_veh_owner) {
+				/* Different owner. */
 				m_err = EC_NO_WAY;
 				return false;
 			}
-		}
 
-		/* rail transport is possible only on tiles with the same owner as vehicle */
-		if (IsRailTT() && GetTileOwner(m_new_tile) != m_veh_owner) {
-			/* different owner */
-			m_err = EC_NO_WAY;
-			return false;
-		}
-
-		/* rail transport is possible only on compatible rail types */
-		if (IsRailTT()) {
-			RailType rail_type = GetTileRailType(m_new_tile);
+			/* Rail transport is possible only on compatible rail types. */
+			RailType rail_type = GetRailType(rail_tile);
 			if (!HasBit(m_railtypes, rail_type)) {
-				/* incompatible rail type */
+				/* Incompatible rail type. */
 				m_err = EC_RAIL_ROAD_TYPE;
 				return false;
 			}
