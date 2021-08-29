@@ -26,6 +26,33 @@ enum RailTileType {
 	RAIL_TILE_DEPOT    = 3, ///< Depot (one entrance)
 };
 
+/** Iterator to iterate rail tiles at a tile index. */
+struct RailTileIterator {
+	struct Iterator {
+		Iterator(Tile *ptr) : ptr(ptr) {}
+		Tile *operator*() { return ptr; }
+		bool operator!=(const Iterator &other) { return ptr != other.ptr; }
+		bool operator==(const Iterator &other) { return ptr == other.ptr; }
+		Iterator &operator++() { ptr = GetNextTileByType(ptr, MP_RAILWAY); return *this; }
+	private:
+		Tile *ptr;
+	};
+
+	Iterator begin() { return Iterator(GetTileByType(tile, MP_RAILWAY)); }
+	Iterator end() { return Iterator(nullptr); }
+
+	/**
+	 * Iterate over all rail tiles associated with a tile index.
+	 * @param tile Tile index to iterate on.
+	 * @return An iterable ensemble of all rail tiles at the tile index.
+	 */
+	static RailTileIterator Iterate(TileIndex tile) { return RailTileIterator(tile); }
+
+private:
+	TileIndex tile;
+	RailTileIterator(TileIndex tile) : tile(tile) {}
+};
+
 /**
  * Returns the RailTileType (normal with or without signals,
  * waypoint or depot).
@@ -223,6 +250,55 @@ static inline Tile *GetRailDepotTile(TileIndex tile)
 {
 	assert(IsRailDepotTile(tile));
 	return GetTileByType(tile, MP_RAILWAY);
+}
+
+
+/**
+ * Get all trackdirs of a rail tile reachable from a given side.
+ * @param t The tile to get the tracks from.
+ * @param diagdir The tile is entered from this direction.
+ * @return The reachable trackdirs.
+ */
+static inline TrackdirBits GetRailTrackdirBits(const Tile *t, DiagDirection diagdir)
+{
+	assert(IsTileType(t, MP_RAILWAY));
+	if (IsRailDepot(t)) {
+		DiagDirection dir = ReverseDiagDir(GetRailDepotDirection(t));
+		return dir == diagdir ? TrackdirToTrackdirBits(DiagDirToDiagTrackdir(dir)) : TRACKDIR_BIT_NONE;
+	}
+	return TrackBitsToTrackdirBits(GetTrackBits(t)) & DiagdirReachesTrackdirs(diagdir);
+}
+
+/**
+ * Find a rail tile at a specific tile index that has tracks reachable from a given side.
+ * @param tile The tile index to check.
+ * @param diagdir The tile is entered from this direction.
+ * @return Pointer to a matching rail tile or nullptr if no such tile exists.
+ */
+static inline Tile *GetRailTileFromDiagDir(TileIndex tile, DiagDirection diagdir)
+{
+	for (Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		if (GetRailTrackdirBits(rail_tile, diagdir) != TRACKDIR_BIT_NONE) return rail_tile;
+	}
+	return nullptr;
+}
+
+/**
+ * Find a rail tile at a specific tile index that has a specific track.
+ * @param tile The tile index to check.
+ * @param track The track to search for.
+ * @return Pointer to a matching rail tile or nullptr if no such tile exists.
+ */
+static inline Tile *GetRailTileFromTrack(TileIndex tile, Track track)
+{
+	for (Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		if (IsRailDepot(rail_tile)) {
+			if (GetRailDepotTrack(rail_tile) == track) return rail_tile;
+		} else if (HasTrack(rail_tile, track)) {
+			return rail_tile;
+		}
+	}
+	return nullptr;
 }
 
 
