@@ -575,7 +575,7 @@ static uint32 VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *object,
 		case 0x4A:
 			switch (v->type) {
 				case VEH_TRAIN: {
-					RailType rt = GetTileRailType(v->tile);
+					RailType rt = GetTileRailType(v->tile, TrackdirToTrack(v->GetVehicleTrackdir()));
 					const RailtypeInfo *rti = GetRailTypeInfo(rt);
 					return ((rti->flags & RTFB_CATENARY) ? 0x200 : 0) |
 						(HasPowerOnRail(Train::From(v)->railtype, rt) ? 0x100 : 0) |
@@ -687,7 +687,7 @@ static uint32 VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *object,
 				case VEH_TRAIN: {
 					RailType param_type = GetRailTypeTranslation(parameter, object->ro.grffile);
 					if (param_type == INVALID_RAILTYPE) return 0x00;
-					RailType tile_type = GetTileRailType(v->tile);
+					RailType tile_type = GetTileRailType(v->tile, TrackdirToTrack(v->GetVehicleTrackdir()));
 					if (tile_type == param_type) return 0x0F;
 					return (HasPowerOnRail(param_type, tile_type) ? 0x04 : 0x00) |
 							(IsCompatibleRail(param_type, tile_type) ? 0x02 : 0x00) |
@@ -713,7 +713,7 @@ static uint32 VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *object,
 				const Train *t = Train::From(v);
 				bool is_powered_wagon = HasBit(t->flags, VRF_POWEREDWAGON);
 				const Train *u = is_powered_wagon ? t->First() : t; // for powered wagons the engine defines the type of engine (i.e. railtype)
-				RailType railtype = GetTileRailType(v->tile);
+				RailType railtype = GetTileRailType(v->tile, TrackdirToTrack(v->GetVehicleTrackdir()));
 				bool powered = t->IsEngine() || is_powered_wagon;
 				bool has_power = HasPowerOnRail(u->railtype, railtype);
 

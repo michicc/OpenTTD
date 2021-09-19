@@ -35,3 +35,17 @@ GSCompany.ChangeBankBalance <- function(company, delta, expenses_type)
 {
 	return GSCompany._ChangeBankBalance(company, delta, expenses_type, GSMap.TILE_INVALID);
 }
+
+GSRail._GetRailType <- GSRail.GetRailType;
+GSRail.GetRailType <- function(tile)
+{
+	local tile_x = GSMap.GetTileX(tile);
+	local tile_y = GSMap.GetTileY(tile);
+	local dirs = [[-1, 0], [0, -1], [1, 0], [0, 1]];
+
+	foreach (d in dirs) {
+		local rt = GSRail._GetRailType(tile, GSMap.GetTileIndex(tile_x + d[0], tile_y + d[1]));
+		if (rt != GSRail.RAILTYPE_INVALID) return rt;
+	}
+	return GSRail.RAILTYPE_INVALID;
+}

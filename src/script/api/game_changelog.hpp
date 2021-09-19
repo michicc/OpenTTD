@@ -33,6 +33,9 @@
  * \li GSObjectTypeList
  * \li GSObjectType
  *
+ * Other changes:
+ * \li GSRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
+ *
  * \b 1.11.0
  *
  * API additions:

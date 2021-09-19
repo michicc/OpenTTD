@@ -803,7 +803,7 @@ static bool CanEnterTile(TileIndex tile, DiagDirection dir, AyStarUserData *user
 	/* check correct rail type (mono, maglev, etc) */
 	switch (user->type) {
 		case TRANSPORT_RAIL: {
-			RailType rail_type = GetTileRailType(tile);
+			RailType rail_type = GetTileRailType(tile, dir);
 			if (!HasBit(user->railtypes, rail_type)) return false;
 			break;
 		}
@@ -862,7 +862,7 @@ static TrackdirBits GetDriveableTrackdirBits(TileIndex dst_tile, TileIndex src_t
 	trackdirbits &= TrackdirReachesTrackdirs(src_trackdir);
 
 	/* Filter out trackdirs that would make 90 deg turns for trains */
-	if (type == TRANSPORT_RAIL && Rail90DegTurnDisallowed(GetTileRailType(src_tile), GetTileRailType(dst_tile))) {
+	if (type == TRANSPORT_RAIL && Rail90DegTurnDisallowed(GetTileRailType(src_tile, TrackdirToTrack(src_trackdir)), GetTileRailType(dst_tile, TrackdirToExitdir(src_trackdir)))) {
 		trackdirbits &= ~TrackdirCrossesTrackdirs(src_trackdir);
 	}
 

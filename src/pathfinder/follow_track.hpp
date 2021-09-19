@@ -156,7 +156,7 @@ struct CFollowTrackT
 
 			return false;
 		}
-		if ((!IsRailTT() && !Allow90degTurns()) || (IsRailTT() && Rail90DegTurnDisallowed(GetTileRailType(m_old_tile), GetTileRailType(m_new_tile), !Allow90degTurns()))) {
+		if ((!IsRailTT() && !Allow90degTurns()) || (IsRailTT() && Rail90DegTurnDisallowed(GetTileRailType(m_old_tile, TrackdirToTrack(m_old_td)), GetTileRailType(m_new_tile, m_exitdir), !Allow90degTurns()))) {
 			m_new_td_bits &= (TrackdirBits)~(int)TrackdirCrossesTrackdirs(m_old_td);
 			if (m_new_td_bits == TRACKDIR_BIT_NONE) {
 				m_err = EC_90DEG;
@@ -453,7 +453,7 @@ public:
 		}
 		/* Check for speed limit imposed by railtype */
 		if (IsRailTT()) {
-			uint16 rail_speed = GetRailTypeInfo(GetTileRailType(m_old_tile))->max_speed;
+			uint16 rail_speed = GetRailTypeInfo(GetTileRailType(m_old_tile, TrackdirToTrack(m_old_td)))->max_speed;
 			if (rail_speed > 0) max_speed = std::min<int>(max_speed, rail_speed);
 		}
 		if (IsRoadTT()) {
