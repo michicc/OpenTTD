@@ -254,6 +254,30 @@ static inline Tile *GetRailDepotTile(TileIndex tile)
 
 
 /**
+ * Get the track bits of any rail tile.
+ * @param t The tile
+ * @return The track bits of the tile
+ */
+static inline TrackBits GetRailTrackBits(const Tile *t)
+{
+	return IsRailDepot(t) ? TrackToTrackBits(GetRailDepotTrack(t)) : GetTrackBits(t);
+}
+
+/**
+ * Get all tracks on a given tile.
+ * @param tile The tile to get the tracks for.
+ * @return All present tracks.
+ */
+static inline TrackBits GetAllTrackBits(TileIndex tile)
+{
+	TrackBits bits = TRACK_BIT_NONE;
+	for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		bits |= GetRailTrackBits(rail_tile);
+	}
+	return bits;
+}
+
+/**
  * Get all trackdirs of a rail tile reachable from a given side.
  * @param t The tile to get the tracks from.
  * @param diagdir The tile is entered from this direction.
@@ -399,6 +423,18 @@ static inline void SetDepotReservation(Tile *t, bool b)
 static inline TrackBits GetDepotReservationTrackBits(const Tile *t)
 {
 	return HasDepotReservation(t) ? TrackToTrackBits(GetRailDepotTrack(t)) : TRACK_BIT_NONE;
+}
+
+/**
+ * Get the reserved track bits for a rail tile
+ * @pre IsTileType(t, MP_RAILWAY)
+ * @param t the tile
+ * @return reserved track bits
+ */
+static inline TrackBits GetReservedRailTracks(const Tile *t)
+{
+	assert(IsTileType(t, MP_RAILWAY));
+	return IsRailDepot(t) ? GetDepotReservationTrackBits(t) : GetRailReservationTrackBits(t);
 }
 
 
@@ -579,9 +615,12 @@ static inline void SetSignalStateByTrackdir(Tile *tile, Trackdir trackdir, Signa
  */
 static inline bool HasPbsSignalOnTrackdir(TileIndex tile, Trackdir td)
 {
-	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, td) &&
-			IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)));
+	for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		if (HasSignalOnTrackdir(rail_tile, td) && IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)))) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -592,9 +631,12 @@ static inline bool HasPbsSignalOnTrackdir(TileIndex tile, Trackdir td)
  */
 static inline bool HasOnewaySignalBlockingTrackdir(TileIndex tile, Trackdir td)
 {
-	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td)) &&
-			!HasSignalOnTrackdir(rail_tile, td) && IsOnewaySignal(rail_tile, TrackdirToTrack(td));
+	for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		if (HasSignalOnTrackdir(rail_tile, ReverseTrackdir(td)) && !HasSignalOnTrackdir(rail_tile, td) && IsOnewaySignal(rail_tile, TrackdirToTrack(td))) {
+			return true;
+		}
+	}
+	return false;
 }
 
 /**
@@ -604,9 +646,12 @@ static inline bool HasOnewaySignalBlockingTrackdir(TileIndex tile, Trackdir td)
  */
 static inline bool HasBlockSignalOnTrackdir(TileIndex tile, Trackdir td)
 {
-	const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-	return rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, td) &&
-			!IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)));
+	for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+		if (HasSignalOnTrackdir(rail_tile, td) && !IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)))) {
+			return true;
+		}
+	}
+	return false;
 }
 
 

@@ -42,10 +42,10 @@ protected:
 			rail_type = INVALID_RAILTYPE;
 		}
 
-		TILE(TileIndex tile, Trackdir td)
+		TILE(TileIndex tile, Trackdir td, Tile *rail = nullptr)
 		{
 			this->tile = tile;
-			this->rail_tile = GetTileByType(tile, MP_RAILWAY);
+			this->rail_tile = rail != nullptr ? rail : GetRailTileFromTrack(tile, TrackdirToTrack(td));
 			this->td = td;
 			this->tile_type = GetTileType(tile);
 			this->rail_type = this->rail_tile != nullptr ? GetRailType(this->rail_tile) : GetTileRailType(tile, TrackdirToTrack(td));
@@ -111,9 +111,11 @@ public:
 
 	inline int SwitchCost(TileIndex tile1, TileIndex tile2, DiagDirection exitdir)
 	{
-		if (IsPlainRailTile(tile1) && IsPlainRailTile(tile2)) {
-			bool t1 = KillFirstBit(GetTrackBits(GetTileByType(tile1, MP_RAILWAY)) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
-			bool t2 = KillFirstBit(GetTrackBits(GetTileByType(tile2, MP_RAILWAY)) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
+		const Tile *p1 = GetRailTileFromDiagDir(tile1, ReverseDiagDir(exitdir));
+		const Tile *p2 = GetRailTileFromDiagDir(tile2, exitdir);
+		if (IsPlainRailTile(p1) && IsPlainRailTile(p2)) {
+			bool t1 = KillFirstBit(GetTrackBits(p1) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
+			bool t2 = KillFirstBit(GetTrackBits(p2) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
 			if (t1 && t2) return Yapf().PfGetSettings().rail_doubleslip_penalty;
 		}
 		return 0;
@@ -354,7 +356,7 @@ public:
 					end_segment_reason = segment.m_end_segment_reason;
 					/* We will need also some information about the last signal (if it was red). */
 					if (segment.m_last_signal_tile != INVALID_TILE) {
-						Tile *rail_tile = GetTileByType(segment.m_last_signal_tile, MP_RAILWAY);
+						Tile *rail_tile = GetRailTileFromTrack(segment.m_last_signal_tile, TrackdirToTrack(segment.m_last_signal_td));
 						assert(rail_tile != nullptr && HasSignalOnTrackdir(rail_tile, segment.m_last_signal_td));
 						SignalState sig_state = GetSignalStateByTrackdir(rail_tile, segment.m_last_signal_td);
 						bool is_red = (sig_state == SIGNAL_STATE_RED);
@@ -509,7 +511,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			}
 
 			/* Gather the next tile/trackdir/tile_type/rail_type. */
-			TILE next(tf_local.m_new_tile, (Trackdir)FindFirstBit2x64(tf_local.m_new_td_bits));
+			TILE next(tf_local.m_new_tile, (Trackdir)FindFirstBit2x64(tf_local.m_new_td_bits), tf_local.m_new_rail_tile);
 
 			if (TrackFollower::DoTrackMasking() && next.rail_tile != nullptr) {
 				if (HasSignalOnTrackdir(next.rail_tile, next.td) && IsPbsSignal(GetSignalType(next.rail_tile, TrackdirToTrack(next.td)))) {

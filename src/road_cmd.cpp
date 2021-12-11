@@ -652,8 +652,6 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 	bool need_to_clear = false;
 
 	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-
 		if (IsSteepSlope(tileh)) {
 			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
@@ -662,30 +660,30 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 		if (!HasBit(VALID_LEVEL_CROSSING_SLOPES, tileh)) {
 			return_cmd_error(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
-
-		if (GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) goto do_clear;
-
 		if (RoadNoLevelCrossing(rt)) {
 			return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_ROAD);
 		}
 
-		if (RailNoLevelCrossings(GetRailType(rail_tile))) {
-			return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_RAIL);
-		}
-
 		Axis roaddir;
-		switch (GetTrackBits(rail_tile)) {
-			case TRACK_BIT_X:
-				if (pieces & ROAD_X) goto do_clear;
-				roaddir = AXIS_Y;
-				break;
+		for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+			if (GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) goto do_clear;
+			if (RailNoLevelCrossings(GetRailType(rail_tile))) {
+				return_cmd_error(STR_ERROR_CROSSING_DISALLOWED_RAIL);
+			}
 
-			case TRACK_BIT_Y:
-				if (pieces & ROAD_Y) goto do_clear;
-				roaddir = AXIS_X;
-				break;
+			switch (GetTrackBits(rail_tile)) {
+				case TRACK_BIT_X:
+					if (pieces & ROAD_X) goto do_clear;
+					roaddir = AXIS_Y;
+					break;
 
-			default: goto do_clear;
+				case TRACK_BIT_Y:
+					if (pieces & ROAD_Y) goto do_clear;
+					roaddir = AXIS_X;
+					break;
+
+				default: goto do_clear;
+			}
 		}
 
 		CommandCost ret = EnsureNoVehicleOnGround(tile);
@@ -693,6 +691,8 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 
 		if (flags & DC_EXEC) {
 			Track railtrack = AxisToTrack(OtherAxis(roaddir));
+			/* If there is more than one associated rail tile, the previous checks never succeed. */
+			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 			bool reserved = HasBit(GetRailReservationTrackBits(rail_tile), railtrack);
 			RailType rail_type = GetRailType(rail_tile);
 			Owner rail_o = GetTileOwner(rail_tile);

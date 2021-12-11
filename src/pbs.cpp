@@ -24,10 +24,11 @@
 TrackBits GetReservedTrackbits(TileIndex t)
 {
 	if (HasTileByType(t, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(t, MP_RAILWAY);
-		if (IsRailDepot(rail_tile)) return GetDepotReservationTrackBits(rail_tile);
-		if (IsPlainRail(rail_tile)) return GetRailReservationTrackBits(rail_tile);
-		return TRACK_BIT_NONE;
+		TrackBits bits = TRACK_BIT_NONE;
+		for (const Tile *rail_tile : RailTileIterator::Iterate(t)) {
+			bits |= GetReservedRailTracks(rail_tile);
+		}
+		return bits;
 	}
 
 	switch (GetTileType(t)) {
@@ -92,8 +93,8 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 		}
 	}
 
-	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = GetRailTileFromTrack(tile, t);
+	if (rail_tile != nullptr) {
 		if (IsPlainRail(rail_tile)) return TryReserveTrack(rail_tile, t);
 		if (IsRailDepot(rail_tile)) {
 			if (!HasDepotReservation(rail_tile)) {
@@ -154,8 +155,8 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 		}
 	}
 
-	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = GetRailTileFromTrack(tile, t);
+	if (rail_tile != nullptr) {
 		if (IsRailDepot(rail_tile)) {
 			SetDepotReservation(rail_tile, false);
 			MarkTileDirtyByTile(tile);
@@ -340,7 +341,7 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
 	assert(HasReservedTracks(tile, TrackToTrackBits(track)));
 	Trackdir  trackdir = TrackToTrackdir(track);
 
-	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
+	Tile *rail_tile = GetRailTileFromTrack(tile, track);
 	if (rail_tile == nullptr) rail_tile = _m.ToTile(tile);
 	RailTypes rts = GetRailTypeInfo(GetRailType(rail_tile))->compatible_railtypes;
 

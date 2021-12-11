@@ -53,14 +53,12 @@ void AfterLoadLabelMaps()
 		}
 
 		for (TileIndex t = 0; t < MapSize(); t++) {
-			Tile *tptr = GetTileByType(t, MP_RAILWAY);
-			if (tptr == nullptr) tptr = _m.ToTile(t);
+			for (Tile *rail_tile : RailTileIterator::Iterate(t)) {
+				SetRailType(rail_tile, railtype_conversion_map[GetRailType(rail_tile)]);
+			}
 
+			Tile *tptr = _m.ToTile(t);
 			switch (GetTileType(tptr)) {
-				case MP_RAILWAY:
-					SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
-					break;
-
 				case MP_ROAD:
 					if (IsLevelCrossing(t)) {
 						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);

@@ -459,9 +459,8 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	/* Determine extra costs */
 
 	/* Check for rail */
-	if (HasTileByType(tile, MP_RAILWAY)) {
-		Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-
+	Tile *rail_tile = GetRailTileFromTrack(tile, TrackdirToTrack(trackdir));
+	if (rail_tile != nullptr) {
 		/* Base length */
 		cost = _trackdir_length[trackdir]; // Should be different for diagonal tracks
 
@@ -686,7 +685,10 @@ static void NPFSaveTargetData(AyStar *as, OpenListNode *current)
  */
 static bool CanEnterTileOwnerCheck(Owner owner, TileIndex tile, DiagDirection enterdir)
 {
-	if (HasTileByType(tile, MP_RAILWAY)) return IsTileOwner(GetTileByType(tile, MP_RAILWAY), owner);
+	if (HasTileByType(tile, MP_RAILWAY)) {
+		Tile *rail_tile = GetRailTileFromDiagDir(tile, enterdir);
+		return rail_tile != nullptr ? IsTileOwner(rail_tile, owner) : true;
+	}
 	if (HasStationTileRail(tile) ||         // Rail station tile/waypoint
 			IsRoadDepotTile(tile) ||        // Road depot tile
 			IsStandardRoadStopTile(tile)) { // Road station tile (but not drive-through stops)
@@ -959,8 +961,8 @@ static void NPFFollowTrack(AyStar *aystar, OpenListNode *current)
 		Debug(npf, 5, "Expanded into trackdir: {}, remaining trackdirs: 0x{:X}", dst_trackdir, trackdirbits);
 
 		/* Tile with signals? */
-		if (HasTileByType(dst_tile, MP_RAILWAY)) {
-			Tile *rail_tile = GetTileByType(dst_tile, MP_RAILWAY);
+		Tile *rail_tile = GetRailTileFromTrack(dst_tile, TrackdirToTrack(dst_trackdir));
+		if (rail_tile != nullptr) {
 			if (GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS && HasSignalOnTrackdir(rail_tile, ReverseTrackdir(dst_trackdir)) &&
 					!HasSignalOnTrackdir(rail_tile, dst_trackdir) && IsOnewaySignal(rail_tile, TrackdirToTrack(dst_trackdir))) {
 				/* If there's a one-way signal not pointing towards us, stop going in this direction. */

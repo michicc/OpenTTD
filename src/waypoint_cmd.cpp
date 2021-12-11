@@ -100,7 +100,8 @@ Axis GetAxisForNewWaypoint(TileIndex tile)
 	/* The axis for rail waypoints is easy. */
 	if (IsRailWaypointTile(tile)) return GetRailStationAxis(tile);
 
-	/* Non-plain rail type, no valid axis for waypoints. */
+	/* Non-plain rail type, no valid axis for waypoints. No need to check
+	 * for more associated rail tiles as the trackbits wouldn't match anyway. */
 	Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 	if (rail_tile == nullptr || GetRailTileType(rail_tile) != RAIL_TILE_NORMAL) return INVALID_AXIS;
 
@@ -140,6 +141,7 @@ static CommandCost IsValidTileForWaypoint(TileIndex tile, Axis axis, StationID *
 
 	if (GetAxisForNewWaypoint(tile) != axis) return_cmd_error(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK);
 
+	/* Can't have more than one rail tile when getting to here. */
 	Owner owner = GetTileOwner(HasTileByType(tile, MP_RAILWAY) ? GetTileByType(tile, MP_RAILWAY) : _m.ToTile(tile));
 	CommandCost ret = CheckOwnership(owner);
 	if (ret.Succeeded()) ret = EnsureNoVehicleOnGround(tile);
@@ -237,6 +239,7 @@ CommandCost CmdBuildRailWaypoint(DoCommandFlag flags, TileIndex start_tile, Axis
 			/* Move existing (recently deleted) waypoint to the new location */
 			wp->xy = start_tile;
 		}
+		/* Only one rail tile present or we would have errored out earlier. */
 		wp->owner = GetTileOwner(HasTileByType(start_tile, MP_RAILWAY) ? GetTileByType(start_tile, MP_RAILWAY) : _m.ToTile(start_tile));
 
 		wp->rect.BeforeAddRect(start_tile, width, height, StationRect::ADD_TRY);
@@ -267,6 +270,8 @@ CommandCost CmdBuildRailWaypoint(DoCommandFlag flags, TileIndex start_tile, Axis
 			TileIndex tile = start_tile + i * offset;
 			byte old_specindex = HasStationTileRail(tile) ? GetCustomStationSpecIndex(tile) : 0;
 			if (!HasStationTileRail(tile)) c->infrastructure.station++;
+
+			/* At most one rail tile is possible. */
 			Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
 			bool reserved = rail_tile != nullptr ?
 					HasBit(GetRailReservationTrackBits(rail_tile), AxisToTrack(axis)) :

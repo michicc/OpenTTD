@@ -59,8 +59,13 @@ static void DisasterClearSquare(TileIndex tile)
 	if (EnsureNoVehicleOnGround(tile).Failed()) return;
 
 	if (HasTileByType(tile, MP_RAILWAY)) {
-		const Tile *rail_tile = GetTileByType(tile, MP_RAILWAY);
-		if (Company::IsHumanID(GetTileOwner(tile)) && !IsRailDepot(rail_tile)) {
+		/* Clear the square if all rail is owned by a human player. */
+		bool only_human = true;
+		for (const Tile *rail_tile : RailTileIterator::Iterate(tile)) {
+			only_human &= Company::IsHumanID(GetTileOwner(rail_tile)) && !IsRailDepot(rail_tile);
+		}
+
+		if (only_human) {
 			Backup<CompanyID> cur_company(_current_company, OWNER_WATER, FILE_LINE);
 			Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile);
 			cur_company.Restore();

@@ -912,8 +912,9 @@ static CommandCost CheckFlatLandRailStation(TileArea tile_area, DoCommandFlag fl
 			/* Rail type is only valid when building a railway station; if station to
 			 * build isn't a rail station it's INVALID_RAILTYPE. */
 			Tile *rail_tile = GetTileByType(tile_cur, MP_RAILWAY);
-			if (rt != INVALID_RAILTYPE &&
-					IsPlainRailTile(rail_tile) && !HasSignals(rail_tile) &&
+			if (rt != INVALID_RAILTYPE && rail_tile != nullptr &&
+					GetNextTileByType(rail_tile, MP_RAILWAY) == nullptr && // More than one associated tile will always have wrong tracks
+					IsPlainRail(rail_tile) && !HasSignals(rail_tile) &&
 					HasPowerOnRail(GetRailType(rail_tile), rt)) {
 				/* Allow overbuilding if the tile:
 				 *  - has rail, but no signals
