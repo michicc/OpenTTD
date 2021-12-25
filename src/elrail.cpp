@@ -89,11 +89,6 @@ static TrackBits GetRailTrackBitsUniversalHelper(TileIndex t, byte *override)
 			}
 			return DiagDirToDiagTrackBits(GetTunnelBridgeDirection(t));
 
-		case MP_ROAD:
-			if (!IsLevelCrossing(t)) return TRACK_BIT_NONE;
-			if (!HasRailCatenary(GetRailType(t))) return TRACK_BIT_NONE;
-			return GetCrossingRailBits(t);
-
 		case MP_STATION:
 			if (!HasStationRail(t)) return TRACK_BIT_NONE;
 			if (!HasRailCatenary(GetRailType(t))) return TRACK_BIT_NONE;
@@ -114,7 +109,7 @@ static TrackBits GetRailTrackBitsUniversalHelper(TileIndex t, byte *override)
 static TrackBits GetSingleRailTrackBitsUniversal(TileIndex t, Tile *rail_tile, byte *override)
 {
 	if (IsTileType(rail_tile, MP_RAILWAY)) {
-		if (!IsPlainRail(rail_tile) || !HasRailCatenary(GetRailType(rail_tile))) return TRACK_BIT_NONE;
+		if (!IsNormalRail(rail_tile) || !HasRailCatenary(GetRailType(rail_tile))) return TRACK_BIT_NONE;
 		return GetTrackBits(rail_tile);
 	}
 
@@ -133,7 +128,7 @@ static TrackBits GetRailTrackBitsUniversal(TileIndex t, byte *override)
 		/* Gather the electrified tracks of all associated tiles. */
 		TrackBits tracks = TRACK_BIT_NONE;
 		for (const Tile *rail_tile : RailTileIterator::Iterate(t)) {
-			if (IsPlainRail(rail_tile) && HasRailCatenary(GetRailType(rail_tile))) tracks |= GetTrackBits(rail_tile);
+			if (IsNormalRail(rail_tile) && HasRailCatenary(GetRailType(rail_tile))) tracks |= GetTrackBits(rail_tile);
 		}
 		return tracks;
 	}
@@ -578,7 +573,6 @@ void DrawRailCatenary(const TileInfo *ti, bool draw_halftile, Corner halftile_co
 			break;
 
 		case MP_TUNNELBRIDGE:
-		case MP_ROAD:
 		case MP_STATION:
 			break;
 

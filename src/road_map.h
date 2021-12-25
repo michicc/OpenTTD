@@ -20,9 +20,8 @@
 
 /** The different types of road tiles. */
 enum RoadTileType {
-	ROAD_TILE_NORMAL,   ///< Normal road
-	ROAD_TILE_CROSSING, ///< Level crossing
-	ROAD_TILE_DEPOT,    ///< Depot (one entrance)
+	ROAD_TILE_NORMAL = 0, ///< Normal road
+	ROAD_TILE_DEPOT  = 2, ///< Depot (one entrance)
 };
 
 /**
@@ -74,27 +73,6 @@ static inline bool IsNormalRoad(TileIndex t)
 static inline bool IsNormalRoadTile(TileIndex t)
 {
 	return IsTileType(t, MP_ROAD) && IsNormalRoad(t);
-}
-
-/**
- * Return whether a tile is a level crossing.
- * @param t Tile to query.
- * @pre IsTileType(t, MP_ROAD)
- * @return True if level crossing.
- */
-static inline bool IsLevelCrossing(TileIndex t)
-{
-	return GetRoadTileType(t) == ROAD_TILE_CROSSING;
-}
-
-/**
- * Return whether a tile is a level crossing tile.
- * @param t Tile to query.
- * @return True if level crossing tile.
- */
-static inline bool IsLevelCrossingTile(TileIndex t)
-{
-	return IsTileType(t, MP_ROAD) && IsLevelCrossing(t);
 }
 
 /**
@@ -316,139 +294,6 @@ static inline void SetDisallowedRoadDirections(TileIndex t, DisallowedRoadDirect
 	SB(_m[t].m5, 4, 2, drd);
 }
 
-/**
- * Get the road axis of a level crossing.
- * @param t The tile to query.
- * @pre IsLevelCrossing(t)
- * @return The axis of the road.
- */
-static inline Axis GetCrossingRoadAxis(TileIndex t)
-{
-	assert(IsLevelCrossing(t));
-	return (Axis)GB(_m[t].m5, 0, 1);
-}
-
-/**
- * Get the rail axis of a level crossing.
- * @param t The tile to query.
- * @pre IsLevelCrossing(t)
- * @return The axis of the rail.
- */
-static inline Axis GetCrossingRailAxis(TileIndex t)
-{
-	assert(IsLevelCrossing(t));
-	return OtherAxis((Axis)GetCrossingRoadAxis(t));
-}
-
-/**
- * Get the road bits of a level crossing.
- * @param tile The tile to query.
- * @return The present road bits.
- */
-static inline RoadBits GetCrossingRoadBits(TileIndex tile)
-{
-	return GetCrossingRoadAxis(tile) == AXIS_X ? ROAD_X : ROAD_Y;
-}
-
-/**
- * Get the rail track of a level crossing.
- * @param tile The tile to query.
- * @return The rail track.
- */
-static inline Track GetCrossingRailTrack(TileIndex tile)
-{
-	return AxisToTrack(GetCrossingRailAxis(tile));
-}
-
-/**
- * Get the rail track bits of a level crossing.
- * @param tile The tile to query.
- * @return The rail track bits.
- */
-static inline TrackBits GetCrossingRailBits(TileIndex tile)
-{
-	return AxisToTrackBits(GetCrossingRailAxis(tile));
-}
-
-
-/**
- * Get the reservation state of the rail crossing
- * @param t the crossing tile
- * @return reservation state
- * @pre IsLevelCrossingTile(t)
- */
-static inline bool HasCrossingReservation(TileIndex t)
-{
-	assert(IsLevelCrossingTile(t));
-	return HasBit(_m[t].m5, 4);
-}
-
-/**
- * Set the reservation state of the rail crossing
- * @note Works for both waypoints and rail depots
- * @param t the crossing tile
- * @param b the reservation state
- * @pre IsLevelCrossingTile(t)
- */
-static inline void SetCrossingReservation(TileIndex t, bool b)
-{
-	assert(IsLevelCrossingTile(t));
-	SB(_m[t].m5, 4, 1, b ? 1 : 0);
-}
-
-/**
- * Get the reserved track bits for a rail crossing
- * @param t the tile
- * @pre IsLevelCrossingTile(t)
- * @return reserved track bits
- */
-static inline TrackBits GetCrossingReservationTrackBits(TileIndex t)
-{
-	return HasCrossingReservation(t) ? GetCrossingRailBits(t) : TRACK_BIT_NONE;
-}
-
-/**
- * Check if the level crossing is barred.
- * @param t The tile to query.
- * @pre IsLevelCrossing(t)
- * @return True if the level crossing is barred.
- */
-static inline bool IsCrossingBarred(TileIndex t)
-{
-	assert(IsLevelCrossing(t));
-	return HasBit(_m[t].m5, 5);
-}
-
-/**
- * Set the bar state of a level crossing.
- * @param t The tile to modify.
- * @param barred True if the crossing should be barred, false otherwise.
- * @pre IsLevelCrossing(t)
- */
-static inline void SetCrossingBarred(TileIndex t, bool barred)
-{
-	assert(IsLevelCrossing(t));
-	SB(_m[t].m5, 5, 1, barred ? 1 : 0);
-}
-
-/**
- * Unbar a level crossing.
- * @param t The tile to change.
- */
-static inline void UnbarCrossing(TileIndex t)
-{
-	SetCrossingBarred(t, false);
-}
-
-/**
- * Bar a level crossing.
- * @param t The tile to change.
- */
-static inline void BarCrossing(TileIndex t)
-{
-	SetCrossingBarred(t, true);
-}
-
 /** Check if a road tile has snow/desert. */
 #define IsOnDesert IsOnSnow
 /**
@@ -634,6 +479,8 @@ static inline void SetRoadTypes(TileIndex t, RoadType road_rt, RoadType tram_rt)
  */
 static inline void MakeRoadNormal(TileIndex t, RoadBits bits, RoadType road_rt, RoadType tram_rt, TownID town, Owner road, Owner tram)
 {
+	if (!MayHaveAssociatedTile(_m.ToTile(t))) ClrBit(_m[t].m6, 0);
+
 	SetTileType(t, MP_ROAD);
 	SetTileOwner(t, road);
 	_m[t].m2 = town;
@@ -646,35 +493,8 @@ static inline void MakeRoadNormal(TileIndex t, RoadBits bits, RoadType road_rt, 
 }
 
 /**
- * Make a level crossing.
- * @param t       Tile to make a level crossing.
- * @param road    New owner of road.
- * @param tram    New owner of tram tracks.
- * @param rail    New owner of the rail track.
- * @param roaddir Axis of the road.
- * @param rat     New rail type.
- * @param road_rt The road roadtype to set for the tile.
- * @param tram_rt The tram roadtype to set for the tile.
- * @param town    Town ID if the road is a town-owned road.
- */
-static inline void MakeRoadCrossing(TileIndex t, Owner road, Owner tram, Owner rail, Axis roaddir, RailType rat, RoadType road_rt, RoadType tram_rt, uint town)
-{
-	SetTileType(t, MP_ROAD);
-	SetTileOwner(t, rail);
-	_m[t].m2 = town;
-	_m[t].m3 = 0;
-	_m[t].m4 = INVALID_ROADTYPE;
-	_m[t].m5 = ROAD_TILE_CROSSING << 6 | roaddir;
-	SB(_m[t].m6, 2, 4, 0);
-	_m[t].m7 = road;
-	_m[t].m8 = INVALID_ROADTYPE << 6 | rat;
-	SetRoadTypes(t, road_rt, tram_rt);
-	SetRoadOwner(t, RTT_TRAM, tram);
-}
-
-/**
  * Make a road depot.
- * @param t     Tile to make a level crossing.
+ * @param t     Tile to make a road depot.
  * @param owner New owner of the depot.
  * @param did   New depot ID.
  * @param dir   Direction of the depot exit.*

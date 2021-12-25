@@ -59,12 +59,6 @@ void AfterLoadLabelMaps()
 
 			Tile *tptr = _m.ToTile(t);
 			switch (GetTileType(tptr)) {
-				case MP_ROAD:
-					if (IsLevelCrossing(t)) {
-						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);
-					}
-					break;
-
 				case MP_STATION:
 					if (HasStationRail(t)) {
 						SetRailType(tptr, railtype_conversion_map[GetRailType(tptr)]);

@@ -242,7 +242,6 @@
 	if (!IsRailTile(tile)) return RAILTRACK_INVALID;
 
 	if (IsRailStationTile(tile) || IsRailWaypointTile(tile)) return ::TrackToTrackBits(::GetRailStationTrack(tile));
-	if (IsLevelCrossingTile(tile)) return ::GetCrossingRailBits(tile);
 	if (IsRailDepotTile(tile)) return ::TRACK_BIT_NONE;
 	return ::GetAllTrackBits(tile);
 }
@@ -263,7 +262,7 @@
 {
 	EnforcePrecondition(false, ScriptObject::GetCompany() != OWNER_DEITY);
 	EnforcePrecondition(false, ::IsValidTile(tile));
-	EnforcePrecondition(false, ::IsPlainRailTile(tile) || ::IsLevelCrossingTile(tile));
+	EnforcePrecondition(false, ::IsNormalRailTile(tile));
 	EnforcePrecondition(false, GetRailTracks(tile) & rail_track);
 	EnforcePrecondition(false, KillFirstBit((uint)rail_track) == 0);
 

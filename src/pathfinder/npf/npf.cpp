@@ -347,7 +347,7 @@ static int32 NPFRoadPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 		case MP_ROAD:
 			cost = NPF_TILE_LENGTH;
 			/* Increase the cost for level crossings */
-			if (IsLevelCrossing(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
+			if (IsLevelCrossingTile(tile)) cost += _settings_game.pf.npf.npf_crossing_penalty;
 			break;
 
 		case MP_STATION: {
@@ -404,10 +404,6 @@ static int32 NPFRailPathCost(AyStar *as, AyStarNode *current, OpenListNode *pare
 	switch (GetTileType(tile)) {
 		case MP_TUNNELBRIDGE:
 			cost = IsTunnel(tile) ? NPFTunnelCost(current) : NPFBridgeCost(current);
-			break;
-
-		case MP_ROAD: // Railway crossing
-			cost = NPF_TILE_LENGTH;
 			break;
 
 		case MP_STATION:
@@ -696,14 +692,6 @@ static bool CanEnterTileOwnerCheck(Owner owner, TileIndex tile, DiagDirection en
 	}
 
 	switch (GetTileType(tile)) {
-		case MP_ROAD:
-			/* rail-road crossing : are we looking at the railway part? */
-			if (IsLevelCrossing(tile) &&
-					DiagDirToAxis(enterdir) != GetCrossingRoadAxis(tile)) {
-				return IsTileOwner(tile, owner); // Railway needs owner check, while the street is public
-			}
-			break;
-
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) {
 				return IsTileOwner(tile, owner);

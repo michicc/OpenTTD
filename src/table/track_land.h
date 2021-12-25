@@ -8,6 +8,7 @@
 /** @file track_land.h Sprites to use and how to display them for train depot tiles. */
 
 #define TILE_SEQ_LINE(img, dx, dy, sx, sy) { dx, dy, 0, sx, sy, 23, {img, PAL_NONE} },
+#define TILE_SEQ_LINE2(img, dx, dy, sx, sy) { dx, dy, 0, sx, sy, 20, {img, PAL_NONE} }, // For level crossing
 #define TILE_SEQ_END() { (int8)0x80, 0, 0, 0, 0, 0, {0, 0} }
 
 
@@ -47,6 +48,21 @@ static const DrawTileSprites _depot_invisible_gfx_table[] = {
 	{ {SPR_RAIL_TRACK_Y, PAL_NONE}, _depot_gfx_NW }
 };
 
+/* Sprite layout for level crossings. The SpriteIDs are actually offsets
+ * from the base SpriteID returned from the NewGRF sprite resolver. */
+static const DrawTileSeqStruct _crossing_layout_ALL[] = {
+	TILE_SEQ_LINE2(2,  0,  0, 3, 3)
+	TILE_SEQ_LINE2(4,  0, 13, 3, 3)
+	TILE_SEQ_LINE2(6, 13,  0, 3, 3)
+	TILE_SEQ_LINE2(8, 13, 13, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout = {
+	{0, PAL_NONE}, _crossing_layout_ALL
+};
+
 #undef TILE_SEQ_LINE
+#undef TILE_SEQ_LINE2
 #undef TILE_SEQ_END
 
