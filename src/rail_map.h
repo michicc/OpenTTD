@@ -28,31 +28,7 @@ enum RailTileType {
 };
 
 /** Iterator to iterate rail tiles at a tile index. */
-struct RailTileIterator {
-	struct Iterator {
-		Iterator(Tile *ptr) : ptr(ptr) {}
-		Tile *operator*() { return ptr; }
-		bool operator!=(const Iterator &other) { return ptr != other.ptr; }
-		bool operator==(const Iterator &other) { return ptr == other.ptr; }
-		Iterator &operator++() { ptr = GetNextTileByType(ptr, MP_RAILWAY); return *this; }
-	private:
-		Tile *ptr;
-	};
-
-	Iterator begin() { return Iterator(GetTileByType(tile, MP_RAILWAY)); }
-	Iterator end() { return Iterator(nullptr); }
-
-	/**
-	 * Iterate over all rail tiles associated with a tile index.
-	 * @param tile Tile index to iterate on.
-	 * @return An iterable ensemble of all rail tiles at the tile index.
-	 */
-	static RailTileIterator Iterate(TileIndex tile) { return RailTileIterator(tile); }
-
-private:
-	TileIndex tile;
-	RailTileIterator(TileIndex tile) : tile(tile) {}
-};
+typedef TileTypeIterator<MP_RAILWAY> RailTileIterator;
 
 /**
  * Check if a tile pointer points to a valid rail tile.

@@ -493,4 +493,36 @@ static inline uint TileHash2Bit(uint x, uint y)
 	return GB(TileHash(x, y), 0, 2);
 }
 
+
+/**
+ * Iterator struct to iterate all tiles of a specific type at a tile index.
+ * @tparam Ttt Tile type to iterate over.
+ */
+template <TileType Ttt>
+struct TileTypeIterator {
+	struct Iterator {
+		Iterator(Tile *ptr) : ptr(ptr) {}
+		Tile *operator*() { return ptr; }
+		bool operator!=(const Iterator &other) { return ptr != other.ptr; }
+		bool operator==(const Iterator &other) { return ptr == other.ptr; }
+		Iterator &operator++() { ptr = GetNextTileByType(ptr, Ttt); return *this; }
+	private:
+		Tile *ptr;
+	};
+
+	Iterator begin() { return Iterator(GetTileByType(tile, Ttt)); }
+	Iterator end() { return Iterator(nullptr); }
+
+	/**
+	 * Iterate over all tiles of type \c Ttt associated with a tile index.
+	 * @param tile Tile index to iterate on.
+	 * @return An iterable ensemble of all tiles of type \c Ttt at the tile index.
+	 */
+	static TileTypeIterator Iterate(TileIndex tile) { return TileTypeIterator(tile); }
+
+private:
+	TileIndex tile;
+	TileTypeIterator(TileIndex tile) : tile(tile) {}
+};
+
 #endif /* TILE_MAP_H */
