@@ -1005,7 +1005,7 @@ static TileHighlightType GetTileHighlightType(TileIndex t)
 
 	if (_viewport_highlight_town != nullptr) {
 		if (IsTileType(t, MP_HOUSE)) {
-			if (GetTownIndex(t) == _viewport_highlight_town->index) {
+			if (GetTownIndex(_m.ToTile(t)) == _viewport_highlight_town->index) {
 				TileHighlightType type = THT_RED;
 				for (const Station *st : _viewport_highlight_town->stations_near) {
 					if (st->owner != _current_company) continue;

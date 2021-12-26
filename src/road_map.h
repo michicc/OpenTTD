@@ -48,6 +48,18 @@ static inline bool MayHaveRoad(TileIndex t)
  * @pre IsTileType(t, MP_ROAD)
  * @return The road tile type.
  */
+static inline RoadTileType GetRoadTileType(const Tile *t)
+{
+	assert(IsTileType(t, MP_ROAD));
+	return (RoadTileType)GB(t->m5, 6, 2);
+}
+
+/**
+ * Get the type of the road tile.
+ * @param t Tile to query.
+ * @pre IsTileType(t, MP_ROAD)
+ * @return The road tile type.
+ */
 static inline RoadTileType GetRoadTileType(TileIndex t)
 {
 	assert(IsTileType(t, MP_ROAD));
@@ -73,6 +85,17 @@ static inline bool IsNormalRoad(TileIndex t)
 static inline bool IsNormalRoadTile(TileIndex t)
 {
 	return IsTileType(t, MP_ROAD) && IsNormalRoad(t);
+}
+
+/**
+ * Return whether a tile is a road depot.
+ * @param t Tile to query.
+ * @pre IsTileType(t, MP_ROAD)
+ * @return True if road depot.
+ */
+static inline bool IsRoadDepot(const Tile *t)
+{
+	return GetRoadTileType(t) == ROAD_TILE_DEPOT;
 }
 
 /**

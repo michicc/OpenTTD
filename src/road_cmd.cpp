@@ -416,6 +416,7 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 		return cost;
 	}
 
+	Tile *road_tile = GetTileByType(tile, MP_ROAD);
 	if (IsNormalRoad(tile)) {
 		Slope tileh = GetTileSlope(tile);
 
@@ -488,7 +489,7 @@ static CommandCost RemoveRoad(TileIndex tile, DoCommandFlag flags, RoadBits piec
 					if (rtt == RTT_ROAD && IsRoadOwner(tile, rtt, OWNER_TOWN)) {
 						/* Update nearest-town index */
 						const Town *town = CalcClosestTownFromTile(tile);
-						SetTownIndex(tile, town == nullptr ? INVALID_TOWN : town->index);
+						SetTownIndex(road_tile, town == nullptr ? INVALID_TOWN : town->index);
 					}
 					SetRoadBits(tile, ROAD_NONE, rtt);
 					SetRoadType(tile, rtt, INVALID_ROADTYPE);
@@ -672,10 +673,11 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 
 			if (IsTileType(tile, MP_ROAD)) {
 				/* Already a level crossing, just add the new road type. */
+				Tile *road_tile = _m.ToTile(tile);
 				SetRoadType(tile, rtt, rt);
 				SetRoadOwner(tile, rtt, company);
 				SetRoadBits(tile, pieces, rtt);
-				if (rtt == RTT_ROAD) SetTownIndex(tile, town_id);
+				if (rtt == RTT_ROAD) SetTownIndex(road_tile, town_id);
 			} else {
 				MakeRoadNormal(tile, pieces, (rtt == RTT_ROAD) ? rt : INVALID_ROADTYPE, (rtt == RTT_TRAM) ? rt : INVALID_ROADTYPE, town_id, company, company);
 
@@ -862,10 +864,11 @@ do_clear:;
 	if (flags & DC_EXEC) {
 		switch (GetTileType(tile)) {
 			case MP_ROAD: {
+				Tile *road_tile = _m.ToTile(tile);
 				if (existing == ROAD_NONE) {
 					SetRoadType(tile, rtt, rt);
 					SetRoadOwner(tile, rtt, company);
-					if (rtt == RTT_ROAD) SetTownIndex(tile, town_id);
+					if (rtt == RTT_ROAD) SetTownIndex(road_tile, town_id);
 				}
 				SetRoadBits(tile, existing | pieces, rtt);
 				break;
@@ -1707,7 +1710,7 @@ void UpdateNearestTownForRoadTiles(bool invalidate)
 				const Town *town = CalcClosestTownFromTile(t);
 				if (town != nullptr) tid = town->index;
 			}
-			SetTownIndex(t, tid);
+			SetTownIndex(_m.ToTile(t), tid);
 		}
 	}
 }

@@ -419,7 +419,7 @@ bool Station::CatchmentCoversTown(TownID t) const
 {
 	BitmapTileIterator it(this->catchment_tiles);
 	for (TileIndex tile = it; tile != INVALID_TILE; tile = ++it) {
-		if (IsTileType(tile, MP_HOUSE) && GetTownIndex(tile) == t) return true;
+		if (IsTileType(tile, MP_HOUSE) && GetTownIndex(_m.ToTile(tile)) == t) return true;
 	}
 	return false;
 }

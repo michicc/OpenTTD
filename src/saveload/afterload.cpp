@@ -283,6 +283,7 @@ static void DecomposeTile(TileIndex tile)
 		}
 
 		case MP_ROAD: {
+			Tile *old_tile = _m.ToTile(tile);
 			if (GetRoadTileType(tile) == 1 /* ROAD_TILE_CROSSING */) {
 				/* Level crossing, extract info. */
 				Axis road_axis = (Axis)GB(_m[tile].m5, 0, 1);
@@ -296,7 +297,7 @@ static void DecomposeTile(TileIndex tile)
 				/* Change road tile to normal road. */
 				RoadType rt_road = GetRoadTypeRoad(tile);
 				RoadType rt_tram = GetRoadTypeTram(tile);
-				TownID town = GetTownIndex(tile);
+				TownID town = GetTownIndex(old_tile);
 				MakeRoadNormal(tile, road_axis == AXIS_X ? ROAD_X : ROAD_Y, rt_road, rt_tram, town, GetRoadOwner(tile, RTT_ROAD), rt_tram != INVALID_ROADTYPE ? GetRoadOwner(tile, RTT_TRAM) : OWNER_NONE);
 			}
 
@@ -1064,15 +1065,15 @@ bool AfterLoadGame()
 			switch (GetTileType(t)) {
 				case MP_HOUSE:
 					_m[t].m4 = _m[t].m2;
-					SetTownIndex(t, CalcClosestTownFromTile(t)->index);
+					SetTownIndex(_m.ToTile(t), CalcClosestTownFromTile(t)->index);
 					break;
 
 				case MP_ROAD:
 					_m[t].m4 |= (_m[t].m2 << 4);
 					if ((GB(_m[t].m5, 4, 2) == 1 /* ROAD_TILE_CROSSING */ ? (Owner)_m[t].m3 : GetTileOwner(t)) == OWNER_TOWN) {
-						SetTownIndex(t, CalcClosestTownFromTile(t)->index);
+						SetTownIndex(_m.ToTile(t), CalcClosestTownFromTile(t)->index);
 					} else {
-						SetTownIndex(t, 0);
+						SetTownIndex(_m.ToTile(t), 0);
 					}
 					break;
 
@@ -1213,7 +1214,7 @@ bool AfterLoadGame()
 					}
 					if (!IsRoadDepot(t) && !HasTownOwnedRoad(t)) {
 						const Town *town = CalcClosestTownFromTile(t);
-						if (town != nullptr) SetTownIndex(t, town->index);
+						if (town != nullptr) SetTownIndex(_m.ToTile(t), town->index);
 					}
 					_m[t].m4 = 0;
 					break;
