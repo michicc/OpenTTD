@@ -55,6 +55,16 @@ private:
 };
 
 /**
+ * Check if a tile pointer points to a valid rail tile.
+ * @param t Tile pointer to check.
+ * @return True if the tile points to a rail tile.
+ */
+static inline bool IsRailTile(const Tile *t)
+{
+	return t != nullptr && IsTileType(t, MP_RAILWAY);
+}
+
+/**
  * Returns the RailTileType (normal with or without signals,
  * waypoint or depot).
  * @param t the tile to get the information from
@@ -87,7 +97,7 @@ static inline bool IsPlainRail(const Tile *t)
  */
 static inline bool IsPlainRailTile(const Tile *t)
 {
-	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
+	return IsRailTile(t) && IsPlainRail(t);
 }
 
 /**
@@ -117,7 +127,7 @@ static inline bool IsNormalRail(const Tile *t)
  */
 static inline bool IsNormalRailTile(const Tile *t)
 {
-	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsNormalRail(t);
+	return IsRailTile(t) && IsNormalRail(t);
 }
 
 /**
@@ -171,7 +181,7 @@ static inline bool IsRailDepot(const Tile *t)
  */
 static inline bool IsRailDepotTile(const Tile *t)
 {
-	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsRailDepot(t);
+	return IsRailTile(t) && IsRailDepot(t);
 }
 
 /**
@@ -201,7 +211,7 @@ static inline bool IsLevelCrossing(const Tile *t)
  */
 static inline bool IsLevelCrossingTile(const Tile *t)
 {
-	return t != nullptr && IsTileType(t, MP_RAILWAY) && IsLevelCrossing(t);
+	return IsRailTile(t) && IsLevelCrossing(t);
 }
 
 /**

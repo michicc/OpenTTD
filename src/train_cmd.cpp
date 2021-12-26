@@ -2271,23 +2271,23 @@ void FreeTrainTrackReservation(const Train *v)
 
 		if (!IsValidTrackdir(td)) break;
 
-		if (ft.m_new_rail_tile != nullptr) {
-			if (HasSignalOnTrackdir(ft.m_new_rail_tile, td)) {
-				if (!IsPbsSignal(GetSignalType(ft.m_new_rail_tile, TrackdirToTrack(td)))) {
+		if (IsRailTile(ft.m_new_tile_ptr)) {
+			if (HasSignalOnTrackdir(ft.m_new_tile_ptr, td)) {
+				if (!IsPbsSignal(GetSignalType(ft.m_new_tile_ptr, TrackdirToTrack(td)))) {
 					/* Conventional signal along trackdir: remove reservation and stop. */
-					UnreserveTrack(ft.m_new_rail_tile, TrackdirToTrack(td));
+					UnreserveTrack(ft.m_new_tile_ptr, TrackdirToTrack(td));
 					break;
 				} else {
-					if (GetSignalStateByTrackdir(ft.m_new_rail_tile, td) == SIGNAL_STATE_RED) {
+					if (GetSignalStateByTrackdir(ft.m_new_tile_ptr, td) == SIGNAL_STATE_RED) {
 						/* Red PBS signal? Can't be our reservation, would be green then. */
 						break;
 					} else {
 						/* Turn the signal back to red. */
-						SetSignalStateByTrackdir(ft.m_new_rail_tile, td, SIGNAL_STATE_RED);
+						SetSignalStateByTrackdir(ft.m_new_tile_ptr, td, SIGNAL_STATE_RED);
 						MarkTileDirtyByTile(tile);
 					}
 				}
-			} else if (HasSignalOnTrackdir(ft.m_new_rail_tile, ReverseTrackdir(td)) && IsOnewaySignal(ft.m_new_rail_tile, TrackdirToTrack(td))) {
+			} else if (HasSignalOnTrackdir(ft.m_new_tile_ptr, ReverseTrackdir(td)) && IsOnewaySignal(ft.m_new_tile_ptr, TrackdirToTrack(td))) {
 				break;
 			}
 		}
@@ -2355,7 +2355,7 @@ static PBSTileInfo ExtendTrainReservation(const Train *v, TrackBits *new_tracks,
 		}
 
 		/* Station, depot or waypoint are a possible target. */
-		bool target_seen = ft.m_is_station || (ft.m_new_rail_tile != nullptr && !IsNormalRail(ft.m_new_rail_tile));
+		bool target_seen = ft.m_is_station || (ft.m_new_tile_ptr != nullptr && !IsNormalRailTile(ft.m_new_tile_ptr));
 		if (target_seen || KillFirstBit(ft.m_new_td_bits) != TRACKDIR_BIT_NONE) {
 			/* Choice found or possible target encountered.
 			 * On finding a possible target, we need to stop and let the pathfinder handle the
