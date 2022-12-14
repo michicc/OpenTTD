@@ -16,6 +16,7 @@
 #include "subsidy_type.h"
 #include "newgrf_storage.h"
 #include "cargotype.h"
+#include "cargodest_base.h"
 
 template <typename T>
 struct BuildingCounts {
@@ -47,7 +48,7 @@ struct TownCache {
 };
 
 /** Town data structure. */
-struct Town : TownPool::PoolItem<&_town_pool> {
+struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	TileIndex xy;                  ///< town center tile
 
 	TownCache cache; ///< Container for all cacheable data.
@@ -138,6 +139,21 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 
 	static Town *GetRandom();
 	static void PostDestructor(size_t index);
+
+	SourceType GetType() const override
+	{
+		return SourceType::Town;
+	}
+
+	SourceID GetID() const override
+	{
+		return this->index;
+	}
+
+	TileIndex GetXY() const override
+	{
+		return this->xy;
+	}
 
 private:
 	void FillCachedName() const;

@@ -17,6 +17,7 @@
 #include "tilearea_type.h"
 #include "station_base.h"
 #include "timer/timer_game_calendar.h"
+#include "cargodest_base.h"
 
 
 typedef Pool<Industry, IndustryID, 64, 64000> IndustryPool;
@@ -64,7 +65,7 @@ static const int LAST_MONTH = 1;
 /**
  * Defines the internal data of a functional industry.
  */
-struct Industry : IndustryPool::PoolItem<&_industry_pool> {
+struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 	struct ProducedHistory {
 		uint16_t production; ///< Total produced
 		uint16_t transported; ///< Total transported
@@ -254,6 +255,21 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	{
 		if (this->cached_name.empty()) this->FillCachedName();
 		return this->cached_name;
+	}
+
+	SourceType GetType() const override
+	{
+		return SourceType::Industry;
+	}
+
+	SourceID GetID() const override
+	{
+		return this->index;
+	}
+
+	TileIndex GetXY() const override
+	{
+		return this->location.tile;
 	}
 
 private:
