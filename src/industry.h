@@ -16,6 +16,7 @@
 #include "industrytype.h"
 #include "tilearea_type.h"
 #include "station_base.h"
+#include "cargodest_base.h"
 
 
 typedef Pool<Industry, IndustryID, 64, 64000> IndustryPool;
@@ -56,7 +57,7 @@ DECLARE_ENUM_AS_BIT_SET(IndustryControlFlags);
 /**
  * Defines the internal data of a functional industry.
  */
-struct Industry : IndustryPool::PoolItem<&_industry_pool> {
+struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 	TileArea location;                                     ///< Location of the industry
 	Town *town;                                            ///< Nearest town
 	Station *neutral_station;                              ///< Associated neutral station
@@ -185,6 +186,21 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 	{
 		if (this->cached_name.empty()) this->FillCachedName();
 		return this->cached_name.c_str();
+	}
+
+	SourceType GetType() const override
+	{
+		return ST_INDUSTRY;
+	}
+
+	SourceID GetID() const override
+	{
+		return this->index;
+	}
+
+	TileIndex GetXY() const override
+	{
+		return this->location.tile;
 	}
 
 private:
