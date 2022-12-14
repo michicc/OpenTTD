@@ -72,6 +72,7 @@ add_files(
     cargo_type.h
     cargoaction.cpp
     cargoaction.h
+    cargodest_base.h
     cargomonitor.cpp
     cargomonitor.h
     cargopacket.cpp
