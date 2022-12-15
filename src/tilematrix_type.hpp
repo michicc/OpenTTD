@@ -12,14 +12,13 @@
 
 #include "core/alloc_func.hpp"
 #include "tilearea_type.h"
+#include <vector>
 
 /**
  * A simple matrix that stores one value per N*N square of the map.
  * Storage is only allocated for the part of the map that has values
  * assigned.
  *
- * @note No constructor is called for newly allocated values, you
- *       have to do this yourself if needed.
  * @tparam T The type of the stored items.
  * @tparam N Grid size.
  */
@@ -44,7 +43,7 @@ class TileMatrix {
 		this->area.Add(TileXY(grid_x + N - 1, grid_y + N - 1));
 
 		/* Allocate new storage. */
-		T *new_data = CallocT<T>(this->area.w / N * this->area.h / N);
+		std::vector<T> new_data(this->area.w / N * this->area.h / N);
 
 		if (old_w > 0) {
 			/* Copy old data if present. */
@@ -52,27 +51,18 @@ class TileMatrix {
 			uint offs_y = old_top  - TileY(this->area.tile) / N;
 
 			for (uint row = 0; row < old_h; row++) {
-				MemCpyT(&new_data[(row + offs_y) * this->area.w / N + offs_x], &this->data[row * old_w], old_w);
+				std::copy_n(std::make_move_iterator(this->data.begin() + row * old_w), old_w, new_data.begin() + (row + offs_y) * this->area.w / N + offs_x);
 			}
 		}
 
-		free(this->data);
-		this->data = new_data;
+		this->data = std::move(new_data);
 	}
 
 public:
 	static const uint GRID = N;
 
-	TileArea area; ///< Area covered by the matrix.
-
-	T *data; ///< Pointer to data array.
-
-	TileMatrix() : area(INVALID_TILE, 0, 0), data(nullptr) {}
-
-	~TileMatrix()
-	{
-		free(this->data);
-	}
+	TileArea area{};     ///< Area covered by the matrix.
+	std::vector<T> data; ///< Data array.
 
 	/**
 	 * Get the total covered area.
