@@ -14,6 +14,7 @@
 
 #include "../industry.h"
 #include "newgrf_sl.h"
+#include "cargodest_sl.hpp"
 
 #include "../safeguards.h"
 
@@ -192,6 +193,8 @@ static const SaveLoad _industry_desc[] = {
 
 	SLEG_CONDSTRUCTLIST("accepted", SlIndustryAccepted,                          SLV_INDUSTRY_CARGO_REORGANISE, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("produced", SlIndustryProduced,                          SLV_INDUSTRY_CARGO_REORGANISE, SL_MAX_VERSION),
+
+	SLEG_STRUCTLIST("cargo_source_sink", SlCargoSourceSink<Industry>),
 };
 
 struct INDYChunkHandler : ChunkHandler {
