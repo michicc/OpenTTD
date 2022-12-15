@@ -19,6 +19,7 @@
 #include "../subsidy_func.h"
 #include "../strings_func.h"
 #include "../tilematrix_type.hpp"
+#include "cargodest_sl.hpp"
 
 #include "../safeguards.h"
 
@@ -270,6 +271,8 @@ static const SaveLoad _town_desc[] = {
 	SLEG_CONDSTRUCTLIST("supplied", SlTownSupplied,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("received", SlTownReceived,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("acceptance_matrix", SlTownAcceptanceMatrix,   SLV_166, SLV_REMOVE_TOWN_CARGO_CACHE),
+
+	SLEG_STRUCTLIST("cargo_source_sink", SlCargoSourceSink<Town>),
 };
 
 struct HIDSChunkHandler : NewGRFMappingChunkHandler {
