@@ -9,9 +9,29 @@
 
 #include "stdafx.h"
 #include "cargodest_base.h"
+#include "industry.h"
+#include "town.h"
+#include <algorithm>
 
 #include "safeguards.h"
 
+
+/* virtual */ CargoSourceSink::~CargoSourceSink()
+{
+	if (Town::CleaningPool() || Industry::CleaningPool()) return;
+
+	/* Remove all demand links having us as a destination. */
+	for (Town *t : Town::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			t->cargo_links[cid].erase(std::remove(t->cargo_links[cid].begin(), t->cargo_links[cid].end(), this), t->cargo_links[cid].end());
+		}
+	}
+	for (Industry *ind : Industry::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			ind->cargo_links[cid].erase(std::remove(ind->cargo_links[cid].begin(), ind->cargo_links[cid].end(), this), ind->cargo_links[cid].end());
+		}
+	}
+}
 
 void CargoSourceSink::UpdateLinkWeightSums()
 {
