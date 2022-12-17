@@ -24,6 +24,8 @@
  */
 template <typename T, uint N>
 class TileMatrix {
+	TileArea area{};     ///< Area covered by the matrix.
+	std::vector<T> data; ///< Data array.
 
 	/** Allocates space for a new tile in the matrix.
 	 * @param tile Tile to add.
@@ -58,11 +60,10 @@ class TileMatrix {
 		this->data = std::move(new_data);
 	}
 
+	friend class SlTownAcceptanceMatrix;
+
 public:
 	static const uint GRID = N;
-
-	TileArea area{};     ///< Area covered by the matrix.
-	std::vector<T> data; ///< Data array.
 
 	/**
 	 * Get the total covered area.
@@ -83,18 +84,35 @@ public:
 	{
 		uint tile_x = (TileX(tile) / N) * N;
 		uint tile_y = (TileY(tile) / N) * N;
-		uint w = N, h = N;
 
-		w += std::min(extend * N, tile_x);
-		h += std::min(extend * N, tile_y);
+		return TileArea(TileXY(tile_x, tile_y), N, N).Expanded(extend * N);
+	}
 
-		tile_x -= std::min(extend * N, tile_x);
-		tile_y -= std::min(extend * N, tile_y);
+	/**
+	 * Get the area of the matrix square that contains a specific tile area.
+	 * @param area The tile area to get the map area for.
+	 * @param extend Extend the area by this many squares on all sides.
+	 * @return Tile area containing the area.
+	 */
+	static TileArea GetAreaForTiles(const TileArea &area, uint extend = 0)
+	{
+		uint tile_x = (TileX(area.tile) / N) * N;
+		uint tile_y = (TileY(area.tile) / N) * N;
 
-		w += std::min(extend * N, Map::SizeX() - tile_x - w);
-		h += std::min(extend * N, Map::SizeY() - tile_y - h);
+		uint tile_x_2 = ((TileX(area.tile) + area.w - 1) / N) * N + N - 1;
+		uint tile_y_2 = ((TileY(area.tile) + area.h - 1) / N) * N + N - 1;
 
-		return TileArea(TileXY(tile_x, tile_y), w, h);
+		return TileArea(TileXY(tile_x, tile_y), TileXY(tile_x_2, tile_y_2)).Expanded(extend * N);
+	}
+
+	/**
+	 * Check if a tile is the primary tile for a grid square.
+	 * @param Tile to check.
+	 * @return True if the tile is the origin of a grid square.
+	 */
+	static inline bool IsOnGrid(TileIndex tile)
+	{
+		return TileX(tile) % GRID == 0 && TileY(tile) % GRID == 0;
 	}
 
 	/**
@@ -105,6 +123,18 @@ public:
 	{
 		if (!this->area.Contains(tile)) {
 			this->AllocateStorage(tile);
+		}
+	}
+
+	/**
+	 * Extend the coverage area to include a tile area.
+	 * @param area The area to include.
+	 */
+	void Add(const TileArea &area)
+	{
+		if (!this->area.Contains(area)) {
+			this->Add(area.tile);
+			this->Add(TILE_ADDXY(area.tile, area.w, area.h));
 		}
 	}
 

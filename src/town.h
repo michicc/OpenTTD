@@ -17,6 +17,7 @@
 #include "newgrf_storage.h"
 #include "cargotype.h"
 #include "cargodest_base.h"
+#include "tilematrix_type.hpp"
 
 template <typename T>
 struct BuildingCounts {
@@ -36,6 +37,10 @@ static const uint16_t MAX_TOWN_GROWTH_TICKS = 930; ///< Max amount of original t
 
 typedef Pool<Town, TownID, 64, 64000> TownPool;
 extern TownPool _town_pool;
+
+extern CargoTypes _town_cargoes_accepted;
+
+typedef TileMatrix<CargoTypes, 4> AcceptanceMatrix;
 
 /** Data structure with cached data of towns. */
 struct TownCache {
@@ -97,6 +102,11 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	bool show_zone;                  ///< NOSAVE: mark town to show the local authority zone in the viewports
 
 	std::list<PersistentStorage *> psa_list;
+
+	/* Cargo production and acceptance stats. */
+	CargoTypes cargo_produced;       ///< Bitmap of all cargoes produced by houses in this town.
+	AcceptanceMatrix cargo_accepted; ///< Bitmap of cargoes accepted by houses for each 4*4 map square of the town.
+	CargoTypes cargo_accepted_total; ///< NOSAVE: Bitmap of all cargoes accepted by houses in this town.
 
 	/**
 	 * Creates a new town.
@@ -241,6 +251,9 @@ DECLARE_ENUM_AS_BIT_SET(TownActions)
 void ClearTownHouse(Town *t, TileIndex tile);
 void UpdateTownMaxPass(Town *t);
 void UpdateTownRadius(Town *t);
+void UpdateTownCargoes(Town *t);
+void UpdateTownCargoTotal(Town *t);
+void UpdateTownCargoBitmap();
 CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlag flags);
 Town *ClosestTownFromTile(TileIndex tile, uint threshold);
 void ChangeTownRating(Town *t, int add, int max, DoCommandFlag flags);

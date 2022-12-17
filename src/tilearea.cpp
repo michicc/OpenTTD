@@ -116,12 +116,38 @@ bool OrthogonalTileArea::Contains(TileIndex tile) const
 }
 
 /**
+ * Does this tile area contain another tile area?
+ * @param ta Tile area to test for.
+ * @return True if the other tile area is inside the area.
+ */
+bool OrthogonalTileArea::Contains(const OrthogonalTileArea &ta) const
+{
+	if (ta.w == 0 || this->w == 0) return false;
+
+	assert(ta.w != 0 && ta.h != 0 && this->w != 0 && this->h != 0);
+
+	uint left1   = TileX(this->tile);
+	uint top1    = TileY(this->tile);
+	uint right1  = left1 + this->w - 1;
+	uint bottom1 = top1  + this->h - 1;
+
+	uint left2   = TileX(ta.tile);
+	uint top2    = TileY(ta.tile);
+	uint right2  = left2 + ta.w - 1;
+	uint bottom2 = top2  + ta.h - 1;
+
+	return left2 >= left1 && right2 <= right1 && top2 >= top1 && bottom2 <= bottom1;
+}
+
+/**
  * Expand a tile area by rad tiles in each direction, keeping within map bounds.
  * @param rad Number of tiles to expand
  * @return The OrthogonalTileArea.
  */
 OrthogonalTileArea &OrthogonalTileArea::Expand(int rad)
 {
+	if (rad == 0) return *this;
+
 	int x = TileX(this->tile);
 	int y = TileY(this->tile);
 

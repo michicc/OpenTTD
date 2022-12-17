@@ -98,6 +98,17 @@ struct CargoArray : std::array<uint, NUM_CARGO> {
 	{
 		return std::count_if(this->begin(), this->end(), [](uint amount) { return amount != 0; });
 	}
+
+	/**
+	 * Combine another cargo array with this one.
+	 * @param other Array to combine.
+	 */
+	inline void operator +=(const CargoArray &other)
+	{
+		for (size_t i = 0; i < this->size(); i++) {
+			this->at(i) += other[i];
+		}
+	}
 };
 
 

@@ -47,8 +47,16 @@ struct OrthogonalTileArea {
 	bool Intersects(const OrthogonalTileArea &ta) const;
 
 	bool Contains(TileIndex tile) const;
+	bool Contains(const OrthogonalTileArea &ta) const;
 
 	OrthogonalTileArea &Expand(int rad);
+
+	OrthogonalTileArea Expanded(int rad) const
+	{
+		OrthogonalTileArea a(*this);
+		a.Expand(rad);
+		return a;
+	}
 
 	void ClampToMap();
 
@@ -202,9 +210,8 @@ public:
 	 * @param corner1 Tile from where to begin iterating.
 	 * @param corner2 Tile where to end the iterating.
 	 */
-	OrthogonalTileIterator(TileIndex corner1, TileIndex corner2)
+	OrthogonalTileIterator(TileIndex corner1, TileIndex corner2) : OrthogonalTileIterator(OrthogonalTileArea(corner1, corner2))
 	{
-		*this = OrthogonalTileIterator(OrthogonalTileArea(corner1, corner2));
 	}
 
 	/**
