@@ -131,6 +131,7 @@ static void _GenerateWorld()
 					HandleGeneratingWorldAbortion();
 					return;
 				}
+				UpdateTownCargoBitmap();
 				GenerateIndustries();
 				GenerateObjects();
 				GenerateTrees();

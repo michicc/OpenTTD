@@ -23,8 +23,6 @@
 
 #include "../safeguards.h"
 
-typedef TileMatrix<CargoTypes, 4> AcceptanceMatrix;
-
 /**
  * Rebuild all the cached variables of towns.
  */
@@ -193,12 +191,32 @@ public:
 
 	void Load(Town *t) const override
 	{
-		/* Discard now unused acceptance matrix. */
-		AcceptanceMatrix dummy;
-		SlObject(&dummy, this->GetLoadDescription());
-		if (dummy.area.w != 0) {
-			uint arr_len = dummy.area.w / AcceptanceMatrix::GRID * dummy.area.h / AcceptanceMatrix::GRID;
-			SlSkipBytes(4 * arr_len);
+		SlObject(&t->cargo_accepted, this->GetLoadDescription());
+		if (t->cargo_accepted.area.w != 0) {
+			uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
+			t->cargo_accepted.data.resize(arr_len);
+			if (IsSavegameVersionBefore(SLV_REMOVE_TOWN_CARGO_CACHE)) {
+				/* In 11ab3c4e the number of cargo types was changed from 32 to 64. The save/load
+				 * of Town::cargo_accepted was not updated, such that only half of the data
+				 * structure is saved/loaded in savegame versions 199 to 218. Version 219 does
+				 * not save the data at all.
+				 * We choose to just drop the old data and regenerate it in AfterLoadGame. */
+				SlSkipBytes(4 * arr_len);
+			} else {
+				SlCopy(t->cargo_accepted.data.data(), arr_len, SLE_UINT64);
+
+				/* Rebuild total cargo acceptance. */
+				UpdateTownCargoTotal(t);
+			}
+		}
+	}
+
+	void Save(Town *t) const override
+	{
+		SlObject(&t->cargo_accepted, this->GetDescription());
+		if (t->cargo_accepted.area.w != 0) {
+			uint arr_len = t->cargo_accepted.area.w / AcceptanceMatrix::GRID * t->cargo_accepted.area.h / AcceptanceMatrix::GRID;
+			SlCopy(t->cargo_accepted.data.data(), arr_len, SLE_UINT64);
 		}
 	}
 };
@@ -268,9 +286,14 @@ static const SaveLoad _town_desc[] = {
 
 	SLE_CONDREFLIST(Town, psa_list,          REF_STORAGE,              SLV_161, SL_MAX_VERSION),
 
+	SLE_CONDVAR(Town, cargo_produced,        SLE_FILE_U32 | SLE_VAR_U64, SLV_166, SLV_EXTEND_CARGOTYPES),
+	SLE_CONDVAR(Town, cargo_produced,        SLE_UINT64,                 SLV_EXTEND_CARGOTYPES, SLV_REMOVE_TOWN_CARGO_CACHE),
+	SLE_CONDVAR(Town, cargo_produced,        SLE_UINT64,                 SLV_RESTORE_TOWN_CARGO_CACHE, SL_MAX_VERSION),
+
 	SLEG_CONDSTRUCTLIST("supplied", SlTownSupplied,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("received", SlTownReceived,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("acceptance_matrix", SlTownAcceptanceMatrix,   SLV_166, SLV_REMOVE_TOWN_CARGO_CACHE),
+	SLEG_CONDSTRUCTLIST("acceptance_matrix", SlTownAcceptanceMatrix,   SLV_RESTORE_TOWN_CARGO_CACHE, SL_MAX_VERSION),
 
 	SLEG_STRUCTLIST("cargo_source_sink", SlCargoSourceSink<Town>),
 };
