@@ -140,6 +140,17 @@ public:
 		}
 		return count;
 	}
+
+	/**
+	 * Combine another cargo array with this one.
+	 * @param other Array to combine.
+	 */
+	inline void operator +=(const CargoArray &other)
+	{
+		for (size_t i = 0; i < lengthof(this->amount); i++) {
+			this->amount[i] += other.amount[i];
+		}
+	}
 };
 
 
