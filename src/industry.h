@@ -100,6 +100,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	AcceptedCargoArray accepted; ///< INDUSTRY_NUM_INPUTS input cargo slots
 	byte prod_level;                                       ///< general production level
 	uint16_t counter;                                        ///< used for animation and/or production (if available cargo)
+	CargoTypes produced_accepted_mask;                     ///< Bit mask of all cargoes that are always accepted and also produced
 
 	IndustryType type;             ///< type of industry.
 	Owner owner;                   ///< owner of the industry.  Which SHOULD always be (imho) OWNER_NONE
@@ -128,6 +129,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	~Industry();
 
 	void RecomputeProductionMultipliers();
+	void UpdateAcceptance();
 
 	/**
 	 * Check if a given tile belongs to this industry.
