@@ -67,6 +67,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	byte production_rate[INDUSTRY_NUM_OUTPUTS];            ///< production rate for each cargo
 	byte prod_level;                                       ///< general production level
 	CargoID accepts_cargo[INDUSTRY_NUM_INPUTS];            ///< 16 input cargo slots
+	CargoTypes produced_accepted_mask;                     ///< Bit mask of all cargoes that are always accepted and also produced
 	uint16 this_month_production[INDUSTRY_NUM_OUTPUTS];    ///< stats of this month's production per cargo
 	uint16 this_month_transported[INDUSTRY_NUM_OUTPUTS];   ///< stats of this month's transport per cargo
 	byte last_month_pct_transported[INDUSTRY_NUM_OUTPUTS]; ///< percentage transported per cargo in the last full month
@@ -102,6 +103,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	~Industry();
 
 	void RecomputeProductionMultipliers();
+	void UpdateAcceptance();
 
 	/**
 	 * Check if a given tile belongs to this industry.

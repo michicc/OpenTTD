@@ -3257,6 +3257,11 @@ bool AfterLoadGame()
 		for (Town *town : Town::Iterate()) {
 			UpdateTownCargoes(town);
 		}
+
+		/* Update cargo acceptance of industries. */
+		for (Industry *ind : Industry::Iterate()) {
+			ind->UpdateAcceptance();
+		}
 	}
 
 	/* Compute station catchment areas. This is needed here in case UpdateStationAcceptance is called below. */
