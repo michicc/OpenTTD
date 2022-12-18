@@ -42,6 +42,7 @@
 #include "industry_cmd.h"
 #include "querystring_gui.h"
 #include "stringfilter_type.h"
+#include "cargodest_gui.h"
 
 #include "table/strings.h"
 
@@ -817,8 +818,11 @@ class IndustryViewWindow : public Window
 	int info_height;          ///< Height needed for the #WID_IV_INFO panel
 	int cheat_line_height;    ///< Height of each line for the #WID_IV_INFO panel
 
+	Scrollbar *vscroll;             ///< Scrollbar associated with the destinations list.
+	CargoDestinationList dest_list; ///< Sorted list of demand destinations.
+
 public:
-	IndustryViewWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc)
+	IndustryViewWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc), dest_list(Industry::Get(window_number))
 	{
 		this->flags |= WF_DISABLE_VP_SCROLL;
 		this->editbox_line = IL_NONE;
@@ -829,6 +833,9 @@ public:
 		this->InitNested(window_number);
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_IV_VIEWPORT);
 		nvp->InitializeViewport(this, Industry::Get(window_number)->location.GetCenterTile(), ScaleZoomGUI(ZOOM_LVL_INDUSTRY));
+
+		this->vscroll = this->GetScrollbar(WID_IV_DESTS_SCROLL);
+		this->vscroll->SetCapacity((this->GetWidget<NWidgetBase>(WID_IV_DESTS)->current_y - WidgetDimensions::scaled.framerect.Vertical()) / FONT_HEIGHT_NORMAL);
 
 		this->InvalidateData();
 	}
@@ -841,6 +848,7 @@ public:
 
 	void OnPaint() override
 	{
+		this->vscroll->SetCount(this->dest_list.GetLineCount());
 		this->DrawWidgets();
 
 		if (this->IsShaded()) return; // Don't draw anything when the window is shaded.
@@ -851,6 +859,13 @@ public:
 			this->info_height = expected - r.top + 1;
 			this->ReInit();
 			return;
+		}
+	}
+
+	void DrawWidget(const Rect &r, int widget) const override
+	{
+		if (widget == WID_IV_DESTS) {
+			this->dest_list.DrawList(r, this->vscroll->GetPosition());
 		}
 	}
 
@@ -993,7 +1008,16 @@ public:
 
 	void UpdateWidgetSize(int widget, Dimension *size, const Dimension &padding, Dimension *fill, Dimension *resize) override
 	{
-		if (widget == WID_IV_INFO) size->height = this->info_height;
+		switch (widget) {
+			case WID_IV_INFO:
+				size->height = this->info_height;
+				break;
+
+			case WID_IV_DESTS:
+				*size = this->dest_list.GetListSize(false);
+				resize->height = FONT_HEIGHT_NORMAL;
+				break;
+		}
 	}
 
 	void OnClick(Point pt, int widget, int click_count) override
@@ -1083,6 +1107,10 @@ public:
 				break;
 			}
 
+			case WID_IV_DESTS:
+				this->dest_list.OnClick(this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_IV_DESTS, WidgetDimensions::scaled.framerect.top));
+				break;
+
 			case WID_IV_GOTO: {
 				Industry *i = Industry::Get(this->window_number);
 				if (_ctrl_pressed) {
@@ -1147,12 +1175,28 @@ public:
 	void OnInvalidateData(int data = 0, bool gui_scope = true) override
 	{
 		if (!gui_scope) return;
-		const Industry *i = Industry::Get(this->window_number);
-		if (IsProductionAlterable(i)) {
-			const IndustrySpec *ind = GetIndustrySpec(i->type);
-			this->editable = ind->UsesOriginalEconomy() ? EA_MULTIPLIER : EA_RATE;
-		} else {
-			this->editable = EA_NONE;
+
+		switch (data) {
+			case -1:
+				this->dest_list.InvalidateData();
+				this->SetDirty();
+				break;
+
+			case -2:
+				this->dest_list.Resort();
+				this->SetDirty();
+				break;
+
+			default: {
+				const Industry *i = Industry::Get(this->window_number);
+				if (IsProductionAlterable(i)) {
+					const IndustrySpec *ind = GetIndustrySpec(i->type);
+					this->editable = ind->UsesOriginalEconomy() ? EA_MULTIPLIER : EA_RATE;
+				} else {
+					this->editable = EA_NONE;
+				}
+				break;
+			}
 		}
 	}
 
@@ -1196,6 +1240,10 @@ static const NWidgetPart _nested_industry_view_widgets[] = {
 		EndContainer(),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_CREAM, WID_IV_INFO), SetMinimalSize(260, 0), SetMinimalTextLines(2, WidgetDimensions::unscaled.framerect.Vertical()), SetResize(1, 0),
+	EndContainer(),
+	NWidget(NWID_HORIZONTAL),
+		NWidget(WWT_PANEL, COLOUR_CREAM, WID_IV_DESTS), SetMinimalSize(248, 52), SetResize(1, 1), SetDataTip(0x0, STR_VIEW_CARGO_TOOLTIP), SetScrollbar(WID_IV_DESTS_SCROLL), EndContainer(),
+		NWidget(NWID_VSCROLLBAR, COLOUR_CREAM, WID_IV_DESTS_SCROLL),
 	EndContainer(),
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_CREAM, WID_IV_DISPLAY), SetFill(1, 0), SetResize(1, 0), SetDataTip(STR_INDUSTRY_DISPLAY_CHAIN, STR_INDUSTRY_DISPLAY_CHAIN_TOOLTIP),

@@ -11,6 +11,7 @@
 #include "cargodest_base.h"
 #include "industry.h"
 #include "town.h"
+#include "window_func.h"
 #include <algorithm>
 
 #include "safeguards.h"
@@ -23,12 +24,16 @@
 	/* Remove all demand links having us as a destination. */
 	for (Town *t : Town::Iterate()) {
 		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
-			t->cargo_links[cid].erase(std::remove(t->cargo_links[cid].begin(), t->cargo_links[cid].end(), this), t->cargo_links[cid].end());
+			auto to_remove = std::remove(t->cargo_links[cid].begin(), t->cargo_links[cid].end(), this);
+			if (to_remove != t->cargo_links[cid].end()) InvalidateWindowData(WC_TOWN_VIEW, t->index, -1);
+			t->cargo_links[cid].erase(to_remove, t->cargo_links[cid].end());
 		}
 	}
 	for (Industry *ind : Industry::Iterate()) {
 		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
-			ind->cargo_links[cid].erase(std::remove(ind->cargo_links[cid].begin(), ind->cargo_links[cid].end(), this), ind->cargo_links[cid].end());
+			auto to_remove = std::remove(ind->cargo_links[cid].begin(), ind->cargo_links[cid].end(), this);
+			if (to_remove != ind->cargo_links[cid].end()) InvalidateWindowData(WC_INDUSTRY_VIEW, ind->index, -1);
+			ind->cargo_links[cid].erase(to_remove, ind->cargo_links[cid].end());
 		}
 	}
 }
