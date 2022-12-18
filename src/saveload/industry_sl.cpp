@@ -97,6 +97,7 @@ public:
 	inline static const SaveLoad description[] = {
 		 SLE_VAR(Industry::ProducedCargo, cargo, SLE_UINT8),
 		 SLE_VAR(Industry::ProducedCargo, waiting, SLE_UINT16),
+		 SLE_VAR(Industry::ProducedCargo, average, SLE_UINT16),
 		 SLE_VAR(Industry::ProducedCargo, rate, SLE_UINT8),
 		SLEG_STRUCTLIST("history", SlIndustryProducedHistory),
 	};

@@ -3249,6 +3249,10 @@ bool AfterLoadGame()
 		/* Update cargo acceptance of industries. */
 		for (Industry *ind : Industry::Iterate()) {
 			ind->UpdateAcceptance();
+
+			for (auto &p : ind->produced) {
+				p.average = p.history[LAST_MONTH].production;
+			}
 		}
 	}
 

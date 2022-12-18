@@ -2474,6 +2474,9 @@ static void UpdateIndustryStatistics(Industry *i)
 			std::rotate(std::rbegin(p.history), std::rbegin(p.history) + 1, std::rend(p.history));
 			p.history[THIS_MONTH].production = 0;
 			p.history[THIS_MONTH].transported = 0;
+
+			/* Average production over the last eight months. */
+			p.average = (p.average * 7 + p.history[LAST_MONTH].production) / 8;
 		}
 	}
 }

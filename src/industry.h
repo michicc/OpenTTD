@@ -80,6 +80,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	struct ProducedCargo {
 		CargoID cargo; ///< Cargo type
 		uint16_t waiting; ///< Amount of cargo produced
+		uint16_t average; ///< Average production during the last eight months
 		uint8_t rate; ///< Production rate
 		std::array<ProducedHistory, 2> history; ///< History of cargo produced and transported
 	};
