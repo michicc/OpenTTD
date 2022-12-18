@@ -38,6 +38,7 @@
 #include "timer/timer_game_calendar.h"
 #include "timer/timer_window.h"
 #include "zoom_func.h"
+#include "cargodest_gui.h"
 
 #include "widgets/town_widget.h"
 
@@ -344,16 +345,20 @@ struct TownViewWindow : Window {
 private:
 	Town *town; ///< Town displayed by the window.
 
+	Scrollbar *vscroll;             ///< Scrollbar associated with the destinations list.
+	CargoDestinationList dest_list; ///< Sorted list of demand destinations.
+
 public:
 	static const int WID_TV_HEIGHT_NORMAL = 150;
 
-	TownViewWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc)
+	TownViewWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc), dest_list(Town::Get(window_number))
 	{
 		this->CreateNestedTree();
 
 		this->town = Town::Get(window_number);
 		if (this->town->larger_town) this->GetWidget<NWidgetCore>(WID_TV_CAPTION)->widget_data = STR_TOWN_VIEW_CITY_CAPTION;
 
+		this->vscroll = this->GetScrollbar(WID_TV_DESTS_SCROLL);
 		this->FinishInitNested(window_number);
 
 		this->flags |= WF_DISABLE_VP_SCROLL;
@@ -377,6 +382,8 @@ public:
 
 	void OnPaint() override
 	{
+		this->vscroll->SetCount(this->dest_list.GetLineCount());
+
 		extern const Town *_viewport_highlight_town;
 		this->SetWidgetLoweredState(WID_TV_CATCHMENT, _viewport_highlight_town == this->town);
 
@@ -385,6 +392,10 @@ public:
 
 	void DrawWidget(const Rect &r, int widget) const override
 	{
+		if (widget == WID_TV_DESTS) {
+			this->dest_list.DrawList(r, this->vscroll->GetPosition());
+		}
+
 		if (widget != WID_TV_INFO) return;
 
 		Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
@@ -486,6 +497,10 @@ public:
 				}
 				break;
 
+			case WID_TV_DESTS:
+				this->dest_list.OnClick(this->vscroll->GetScrolledRowFromWidget(pt.y, this, WID_TV_DESTS, WidgetDimensions::scaled.framerect.top));
+				break;
+
 			case WID_TV_SHOW_AUTHORITY: // town authority
 				ShowTownAuthorityWindow(this->window_number);
 				break;
@@ -515,6 +530,11 @@ public:
 		switch (widget) {
 			case WID_TV_INFO:
 				size->height = GetDesiredInfoHeight(size->width) + padding.height;
+				break;
+
+			case WID_TV_DESTS:
+				*size = this->dest_list.GetListSize(true);
+				resize->height = GetCharacterHeight(FS_NORMAL);
 				break;
 		}
 	}
@@ -562,6 +582,8 @@ public:
 
 	void OnResize() override
 	{
+		this->vscroll->SetCapacity((this->GetWidget<NWidgetBase>(WID_TV_DESTS)->current_y - WidgetDimensions::scaled.framerect.Vertical()) / GetCharacterHeight(FS_NORMAL));
+
 		if (this->viewport != nullptr) {
 			NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_TV_VIEWPORT);
 			nvp->UpdateViewportCoordinates(this);
@@ -578,9 +600,23 @@ public:
 	void OnInvalidateData([[maybe_unused]] int data = 0, [[maybe_unused]] bool gui_scope = true) override
 	{
 		if (!gui_scope) return;
-		/* Called when setting station noise or required cargoes have changed, in order to resize the window */
-		this->SetDirty(); // refresh display for current size. This will allow to avoid glitches when downgrading
-		this->ResizeWindowAsNeeded();
+
+		switch (data) {
+			case -1:
+				this->dest_list.InvalidateData();
+				this->SetDirty();
+				break;
+
+			case -2:
+				this->dest_list.Resort();
+				FALLTHROUGH;
+
+			default:
+				/* Called when setting station noise or required cargoes have changed, in order to resize the window */
+				this->SetDirty(); // refresh display for current size. This will allow to avoid glitches when downgrading
+				this->ResizeWindowAsNeeded();
+				break;
+		}
 	}
 
 	void OnQueryTextFinished(char *str) override
@@ -612,6 +648,10 @@ static const NWidgetPart _nested_town_game_view_widgets[] = {
 		EndContainer(),
 	EndContainer(),
 	NWidget(WWT_PANEL, COLOUR_BROWN, WID_TV_INFO), SetMinimalSize(260, 32), SetResize(1, 0), SetFill(1, 0), EndContainer(),
+	NWidget(NWID_HORIZONTAL),
+		NWidget(WWT_PANEL, COLOUR_BROWN, WID_TV_DESTS), SetMinimalSize(248, 52), SetResize(1, 1), SetDataTip(0x0, STR_VIEW_CARGO_TOOLTIP), SetScrollbar(WID_TV_DESTS_SCROLL), EndContainer(),
+		NWidget(NWID_VSCROLLBAR, COLOUR_BROWN, WID_TV_DESTS_SCROLL),
+	EndContainer(),
 	NWidget(NWID_HORIZONTAL, NC_EQUALSIZE),
 		NWidget(WWT_PUSHTXTBTN, COLOUR_BROWN, WID_TV_SHOW_AUTHORITY), SetMinimalSize(80, 12), SetFill(1, 1), SetResize(1, 0), SetDataTip(STR_TOWN_VIEW_LOCAL_AUTHORITY_BUTTON, STR_TOWN_VIEW_LOCAL_AUTHORITY_TOOLTIP),
 		NWidget(WWT_TEXTBTN, COLOUR_BROWN, WID_TV_CATCHMENT), SetMinimalSize(40, 12), SetFill(1, 1), SetResize(1, 0), SetDataTip(STR_BUTTON_CATCHMENT, STR_TOOLTIP_CATCHMENT),
