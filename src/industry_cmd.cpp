@@ -1948,6 +1948,7 @@ static void DoCreateNewIndustry(Industry *i, TileIndex tile, IndustryType type, 
 	}
 	InvalidateWindowData(WC_INDUSTRY_DIRECTORY, 0, IDIWD_FORCE_REBUILD);
 
+	i->UpdateAcceptance();
 	if (!_generating_world) PopulateStationsNearby(i);
 }
 
@@ -2453,6 +2454,30 @@ void Industry::RecomputeProductionMultipliers()
 	for (size_t i = 0; i < lengthof(this->production_rate); i++) {
 		this->production_rate[i] = std::min(CeilDiv(indspec->production_rate[i] * this->prod_level, PRODLEVEL_DEFAULT), 0xFFu);
 	}
+}
+
+/**
+ * Update the mask of always accepted cargoes that are also produced.
+ */
+void Industry::UpdateAcceptance()
+{
+	CargoArray accepted;
+	CargoTypes always_accepted = 0;
+
+	/* Gather always accepted cargoes for all tiles of this industry. */
+	for (TileIndex tile : this->location) {
+		if (IsTileType(tile, MP_INDUSTRY) && GetIndustryIndex(tile) == this->index) {
+			AddAcceptedCargo_Industry(tile, accepted, &always_accepted);
+		}
+	}
+
+	/* Create mask of produced cargoes. */
+	CargoTypes produced = 0;
+	for (uint i = 0; i < lengthof(this->produced_cargo); i++) {
+		if (this->produced_cargo[i] != CT_INVALID) SetBit(produced, this->produced_cargo[i]);
+	}
+
+	this->produced_accepted_mask = always_accepted & produced;
 }
 
 void Industry::FillCachedName() const
@@ -2999,6 +3024,7 @@ static IntervalTimer<TimerGameCalendar> _industries_monthly({TimerGameCalendar::
 
 	for (Industry *i : Industry::Iterate()) {
 		UpdateIndustryStatistics(i);
+		i->UpdateAcceptance();
 		if (i->prod_level == PRODLEVEL_CLOSURE) {
 			delete i;
 		} else {
