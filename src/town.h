@@ -150,6 +150,23 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	static Town *GetRandom();
 	static void PostDestructor(size_t index);
 
+	template <typename T>
+	static Town *GetRandom(T enum_proc)
+	{
+		uint16 num_items = 0;
+		for (auto ind : Pool::IterateWrapperFiltered<Town, T>(0, enum_proc)) {
+			num_items++;
+		}
+		if (num_items == 0) return nullptr;
+
+		int num = RandomRange(num_items);
+		for (Town *t : Pool::IterateWrapperFiltered<Town, T>(0, enum_proc)) {
+			if (num <= 0) return t;
+			num--;
+		}
+		NOT_REACHED();
+	}
+
 	SourceType GetType() const override
 	{
 		return ST_TOWN;

@@ -146,6 +146,23 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	static Industry *GetRandom();
 	static void PostDestructor(size_t index);
 
+	template <typename T>
+	static Industry *GetRandom(T enum_proc)
+	{
+		uint16 num_items = 0;
+		for (auto ind : Pool::IterateWrapperFiltered<Industry, T>(0, enum_proc)) {
+			num_items++;
+		}
+		if (num_items == 0) return nullptr;
+
+		int num = RandomRange(num_items);
+		for (Industry *ind : Pool::IterateWrapperFiltered<Industry, T>(0, enum_proc)) {
+			if (num <= 0) return ind;
+			num--;
+		}
+		NOT_REACHED();
+	}
+
 	/**
 	 * Increment the count of industries for this type.
 	 * @param type IndustryType to increment
