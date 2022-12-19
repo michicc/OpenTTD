@@ -51,6 +51,11 @@ struct CargoSourceSink {
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
 
+	/** Is this cargo accepted? */
+	virtual bool AcceptsCargo(CargoID cid) const = 0;
+	/** Is this cargo produced? */
+	virtual bool SuppliesCargo(CargoID cid) const = 0;
+
 	/** Get the type of this entity. */
 	virtual SourceType GetType() const = 0;
 	/** Get the source ID corresponding with this entity. */
