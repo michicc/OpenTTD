@@ -192,14 +192,14 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	 * @param cargo Cargo type to test.
 	 * @return true iff the industry accepts the given cargo type.
 	 */
-	bool IsCargoAccepted(CargoID cargo) const { return std::any_of(std::begin(this->accepted), std::end(this->accepted), [&cargo](const auto &a) { return a.cargo == cargo; }); }
+	bool IsCargoAccepted(CargoID cargo) const override { return std::any_of(std::begin(this->accepted), std::end(this->accepted), [&cargo](const auto &a) { return a.cargo == cargo; }); }
 
 	/**
 	 * Test if this industry produces a specific cargo.
 	 * @param cargo Cargo type to test.
 	 * @return true iff the industry produces the given cargo types.
 	 */
-	bool IsCargoProduced(CargoID cargo) const { return std::any_of(std::begin(this->produced), std::end(this->produced), [&cargo](const auto &p) { return p.cargo == cargo; }); }
+	bool IsCargoProduced(CargoID cargo) const override { return std::any_of(std::begin(this->produced), std::end(this->produced), [&cargo](const auto &p) { return p.cargo == cargo; }); }
 
 	/**
 	 * Get the industry of the given tile
