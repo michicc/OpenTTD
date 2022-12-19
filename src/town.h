@@ -167,6 +167,16 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		NOT_REACHED();
 	}
 
+	bool AcceptsCargo(CargoID cid) const override
+	{
+		return HasBit(this->cargo_accepted_total, cid);
+	}
+
+	bool SuppliesCargo(CargoID cid) const override
+	{
+		return HasBit(this->cargo_produced, cid);
+	}
+
 	SourceType GetType() const override
 	{
 		return ST_TOWN;

@@ -208,6 +208,17 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 		return this->cached_name.c_str();
 	}
 
+	bool AcceptsCargo(CargoID cid) const override
+	{
+		if (HasBit(this->produced_accepted_mask, cid)) return true;
+		return GetCargoAcceptedIndex(cid) >= 0;
+	}
+
+	bool SuppliesCargo(CargoID cid) const override
+	{
+		return GetCargoProducedIndex(cid) >= 0;
+	}
+
 	SourceType GetType() const override
 	{
 		return ST_INDUSTRY;
