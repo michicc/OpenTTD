@@ -258,11 +258,11 @@ void DemandCalculator::CalcDemand(LinkGraphJob &job, Tscaler scaler)
 DemandCalculator::DemandCalculator(LinkGraphJob &job) :
 	max_distance(DistanceMaxPlusManhattan(TileXY(0,0), TileXY(Map::MaxX(), Map::MaxY())))
 {
-	const LinkGraphSettings &settings = job.Settings();
+	const CargoSettings &settings = job.Settings();
 	CargoID cargo = job.Cargo();
 
-	this->accuracy = settings.accuracy;
-	this->mod_dist = settings.demand_distance;
+	this->accuracy = settings.linkgraph.accuracy;
+	this->mod_dist = settings.linkgraph.demand_distance;
 	if (this->mod_dist > 100) {
 		/* Increase effect of mod_dist > 100 */
 		int over100 = this->mod_dist - 100;
@@ -271,7 +271,7 @@ DemandCalculator::DemandCalculator(LinkGraphJob &job) :
 
 	switch (settings.GetDistributionType(cargo)) {
 		case DT_SYMMETRIC:
-			this->CalcDemand<SymmetricScaler>(job, SymmetricScaler(settings.demand_size));
+			this->CalcDemand<SymmetricScaler>(job, SymmetricScaler(settings.linkgraph.demand_size));
 			break;
 		case DT_ASYMMETRIC:
 			this->CalcDemand<AsymmetricScaler>(job, AsymmetricScaler());

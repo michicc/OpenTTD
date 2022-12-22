@@ -2021,6 +2021,7 @@ STR_CONFIG_SETTING_ENVIRONMENT_AUTHORITIES                      :{ORANGE}Authori
 STR_CONFIG_SETTING_ENVIRONMENT_TOWNS                            :{ORANGE}Towns
 STR_CONFIG_SETTING_ENVIRONMENT_INDUSTRIES                       :{ORANGE}Industries
 STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST                        :{ORANGE}Cargo distribution
+STR_CONFIG_SETTING_ENVIRONMENT_LINKGRAPH                        :{ORANGE}Cargo link graph
 STR_CONFIG_SETTING_AI                                           :{ORANGE}Competitors
 STR_CONFIG_SETTING_AI_NPC                                       :{ORANGE}Computer players
 STR_CONFIG_SETTING_NETWORK                                      :{ORANGE}Network

@@ -189,7 +189,7 @@ SaveLoadTable GetLinkGraphJobDesc()
 
 	/* The member offset arithmetic below is only valid if the types in question
 	 * are standard layout types. Otherwise, it would be undefined behaviour. */
-	static_assert(std::is_standard_layout<LinkGraphSettings>::value, "LinkGraphSettings needs to be a standard layout type");
+	static_assert(std::is_standard_layout<CargoSettings>::value, "CargoSettings needs to be a standard layout type");
 
 	/* We store the offset of each member of the #LinkGraphSettings in the
 	 * extra data of the saveload struct. Use it together with the address
