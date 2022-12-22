@@ -336,7 +336,7 @@ bool FindSubsidyTownCargoRoute()
 
 	/* Avoid using invalid NewGRF cargoes. */
 	if (!CargoSpec::Get(*cid)->IsValid() ||
-			_settings_game.linkgraph.GetDistributionType(*cid) != DT_MANUAL) {
+			_settings_game.cargo.GetDistributionType(*cid) != DT_MANUAL) {
 		return false;
 	}
 
@@ -388,7 +388,7 @@ bool FindSubsidyIndustryCargoRoute()
 	 * or if the cargo is automatically distributed */
 	if (total == 0 || trans > SUBSIDY_MAX_PCT_TRANSPORTED ||
 			cid == CT_INVALID ||
-			_settings_game.linkgraph.GetDistributionType(cid) != DT_MANUAL) {
+			_settings_game.cargo.GetDistributionType(cid) != DT_MANUAL) {
 		return false;
 	}
 
@@ -482,10 +482,10 @@ static IntervalTimer<TimerGameCalendar> _subsidies_monthly({TimerGameCalendar::M
 	} else if (_settings_game.difficulty.subsidy_duration == 0) {
 		/* If subsidy duration is set to 0, subsidies are disabled, so bail out. */
 		return;
-	} else if (_settings_game.linkgraph.distribution_pax != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_mail != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_armoured != DT_MANUAL &&
-			   _settings_game.linkgraph.distribution_default != DT_MANUAL) {
+	} else if (_settings_game.cargo.distribution_pax != DT_MANUAL &&
+			   _settings_game.cargo.distribution_mail != DT_MANUAL &&
+			   _settings_game.cargo.distribution_armoured != DT_MANUAL &&
+			   _settings_game.cargo.distribution_default != DT_MANUAL) {
 		/* Return early if there are no manually distributed cargoes and if we
 		 * don't need to invalidate the subsidies window. */
 		return;
@@ -497,7 +497,7 @@ static IntervalTimer<TimerGameCalendar> _subsidies_monthly({TimerGameCalendar::M
 
 	int random_chance = RandomRange(16);
 
-	if (random_chance < 2 && _settings_game.linkgraph.distribution_pax == DT_MANUAL) {
+	if (random_chance < 2 && _settings_game.cargo.distribution_pax == DT_MANUAL) {
 		/* There is a 1/8 chance each month of generating a passenger subsidy. */
 		int n = 1000;
 

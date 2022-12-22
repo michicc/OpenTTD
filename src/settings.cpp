@@ -1238,8 +1238,8 @@ void LoadFromConfig(bool startup)
 		}
 
 		if (generic_version < IFV_LINKGRAPH_SECONDS) {
-			_settings_newgame.linkgraph.recalc_interval *= SECONDS_PER_DAY;
-			_settings_newgame.linkgraph.recalc_time     *= SECONDS_PER_DAY;
+			_settings_newgame.cargo.linkgraph.recalc_interval *= SECONDS_PER_DAY;
+			_settings_newgame.cargo.linkgraph.recalc_time     *= SECONDS_PER_DAY;
 		}
 
 		_grfconfig_newgame = GRFLoadConfig(generic_ini, "newgrf", false);

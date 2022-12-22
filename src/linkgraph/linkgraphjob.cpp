@@ -36,8 +36,8 @@ LinkGraphJob::LinkGraphJob(const LinkGraph &orig) :
 		/* Copying the link graph here also copies its index member.
 		 * This is on purpose. */
 		link_graph(orig),
-		settings(_settings_game.linkgraph),
-		join_date(_date + (_settings_game.linkgraph.recalc_time / SECONDS_PER_DAY)),
+		settings(_settings_game.cargo),
+		join_date(_date + (_settings_game.cargo.linkgraph.recalc_time / SECONDS_PER_DAY)),
 		job_completed(false),
 		job_aborted(false)
 {
@@ -151,7 +151,7 @@ LinkGraphJob::~LinkGraphJob()
 		for (FlowStatMap::iterator it(ge.flows.begin()); it != ge.flows.end();) {
 			FlowStatMap::iterator new_it = flows.find(it->first);
 			if (new_it == flows.end()) {
-				if (_settings_game.linkgraph.GetDistributionType(this->Cargo()) != DT_MANUAL) {
+				if (_settings_game.cargo.GetDistributionType(this->Cargo()) != DT_MANUAL) {
 					it->second.Invalidate();
 					++it;
 				} else {

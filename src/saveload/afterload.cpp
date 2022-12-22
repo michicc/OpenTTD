@@ -790,10 +790,10 @@ bool AfterLoadGame()
 	}
 	if (IsSavegameVersionBefore(SLV_166))  _settings_game.economy.infrastructure_maintenance = false;
 	if (IsSavegameVersionBefore(SLV_183)) {
-		_settings_game.linkgraph.distribution_pax = DT_MANUAL;
-		_settings_game.linkgraph.distribution_mail = DT_MANUAL;
-		_settings_game.linkgraph.distribution_armoured = DT_MANUAL;
-		_settings_game.linkgraph.distribution_default = DT_MANUAL;
+		_settings_game.cargo.distribution_pax = DT_MANUAL;
+		_settings_game.cargo.distribution_mail = DT_MANUAL;
+		_settings_game.cargo.distribution_armoured = DT_MANUAL;
+		_settings_game.cargo.distribution_default = DT_MANUAL;
 	}
 
 	if (IsSavegameVersionBefore(SLV_ENDING_YEAR)) {
@@ -802,8 +802,8 @@ bool AfterLoadGame()
 
 	/* Convert linkgraph update settings from days to seconds. */
 	if (IsSavegameVersionBefore(SLV_LINKGRAPH_SECONDS)) {
-		_settings_game.linkgraph.recalc_interval *= SECONDS_PER_DAY;
-		_settings_game.linkgraph.recalc_time     *= SECONDS_PER_DAY;
+		_settings_game.cargo.linkgraph.recalc_interval *= SECONDS_PER_DAY;
+		_settings_game.cargo.linkgraph.recalc_time     *= SECONDS_PER_DAY;
 	}
 
 	/* Load the sprites */

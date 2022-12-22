@@ -501,7 +501,7 @@ MCF1stPass::MCF1stPass(LinkGraphJob &job) : MultiCommodityFlow(job)
 {
 	PathVector paths;
 	uint16 size = job.Size();
-	uint accuracy = job.Settings().accuracy;
+	uint accuracy = job.Settings().linkgraph.accuracy;
 	bool more_loops;
 	std::vector<bool> finished_sources(size);
 
@@ -550,7 +550,7 @@ MCF2ndPass::MCF2ndPass(LinkGraphJob &job) : MultiCommodityFlow(job)
 	this->max_saturation = UINT_MAX; // disable artificial cap on saturation
 	PathVector paths;
 	uint16 size = job.Size();
-	uint accuracy = job.Settings().accuracy;
+	uint accuracy = job.Settings().linkgraph.accuracy;
 	bool demand_left = true;
 	std::vector<bool> finished_sources(size);
 	while (demand_left && !job.IsJobAborted()) {

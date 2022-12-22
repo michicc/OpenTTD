@@ -18,7 +18,7 @@ protected:
 	 * @param job Link graph job being executed.
 	 */
 	MultiCommodityFlow(LinkGraphJob &job) : job(job),
-			max_saturation(job.Settings().short_path_saturation)
+			max_saturation(job.Settings().linkgraph.short_path_saturation)
 	{}
 
 	template<class Tannotation, class Tedge_iterator>
