@@ -2052,6 +2052,7 @@ STR_CONFIG_SETTING_ENVIRONMENT_AUTHORITIES                      :Authorities
 STR_CONFIG_SETTING_ENVIRONMENT_TOWNS                            :Towns
 STR_CONFIG_SETTING_ENVIRONMENT_INDUSTRIES                       :Industries
 STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST                        :Cargo distribution
+STR_CONFIG_SETTING_ENVIRONMENT_LINKGRAPH                        :{ORANGE}Cargo link graph
 STR_CONFIG_SETTING_AI                                           :Competitors
 STR_CONFIG_SETTING_AI_NPC                                       :Computer players
 STR_CONFIG_SETTING_NETWORK                                      :Network

@@ -161,7 +161,7 @@ private:
 
 protected:
 	const LinkGraph link_graph;        ///< Link graph to by analyzed. Is copied when job is started and mustn't be modified later.
-	const LinkGraphSettings settings;  ///< Copy of _settings_game.linkgraph at spawn time.
+	const CargoSettings settings;      ///< Copy of _settings_game.cargo at spawn time.
 	std::thread thread;                ///< Thread the job is running in or a default-constructed thread if it's running in the main thread.
 	TimerGameCalendar::Date join_date; ///< Date when the job is to be joined.
 	NodeAnnotationVector nodes;        ///< Extra node data necessary for link graph calculation.
@@ -177,7 +177,7 @@ public:
 	 * Bare constructor, only for save/load. link_graph, join_date and actually
 	 * settings have to be brutally const-casted in order to populate them.
 	 */
-	LinkGraphJob() : settings(_settings_game.linkgraph),
+	LinkGraphJob() : settings(_settings_game.cargo),
 			join_date(CalendarTime::INVALID_DATE), job_completed(false), job_aborted(false) {}
 
 	LinkGraphJob(const LinkGraph &orig);
@@ -229,7 +229,7 @@ public:
 	 * Get the link graph settings for this component.
 	 * @return Settings.
 	 */
-	inline const LinkGraphSettings &Settings() const { return this->settings; }
+	inline const CargoSettings &Settings() const { return this->settings; }
 
 	/**
 	 * Get a node abstraction with the specified id.

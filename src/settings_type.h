@@ -554,14 +554,19 @@ struct EconomySettings {
 struct LinkGraphSettings {
 	uint16_t recalc_time;                     ///< time (in days) for recalculating each link graph component.
 	uint16_t recalc_interval;                 ///< time (in days) between subsequent checks for link graphs to be calculated.
-	DistributionType distribution_pax;      ///< distribution type for passengers
-	DistributionType distribution_mail;     ///< distribution type for mail
-	DistributionType distribution_armoured; ///< distribution type for armoured cargo class
-	DistributionType distribution_default;  ///< distribution type for all other goods
 	uint8_t accuracy;                         ///< accuracy when calculating things on the link graph. low accuracy => low running time
 	uint8_t demand_size;                      ///< influence of supply ("station size") on the demand function
 	uint8_t demand_distance;                  ///< influence of distance between stations on the demand function
 	uint8_t short_path_saturation;            ///< percentage up to which short paths are saturated before saturating most capacious paths
+};
+
+struct CargoSettings {
+	DistributionType distribution_pax;      ///< distribution type for passengers
+	DistributionType distribution_mail;     ///< distribution type for mail
+	DistributionType distribution_armoured; ///< distribution type for armoured cargo class
+	DistributionType distribution_default;  ///< distribution type for all other goods
+
+	LinkGraphSettings linkgraph;            ///< settings for link graph calculations
 
 	inline DistributionType GetDistributionType(CargoID cargo) const
 	{
@@ -613,7 +618,7 @@ struct GameSettings {
 	OrderSettings        order;              ///< settings related to orders
 	VehicleSettings      vehicle;            ///< options for vehicles
 	EconomySettings      economy;            ///< settings to change the economy
-	LinkGraphSettings    linkgraph;          ///< settings for link graph calculations
+	CargoSettings        cargo;              ///< settings for cargo distribution
 	StationSettings      station;            ///< settings related to station management
 	LocaleSettings       locale;             ///< settings related to used currency/unit system in the current game
 };

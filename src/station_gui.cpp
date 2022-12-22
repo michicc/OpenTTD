@@ -1348,7 +1348,7 @@ struct StationViewWindow : public Window {
 	void ShowCargo(CargoDataEntry *data, CargoID cargo, StationID source, StationID next, StationID dest, uint count)
 	{
 		if (count == 0) return;
-		bool auto_distributed = _settings_game.linkgraph.GetDistributionType(cargo) != DT_MANUAL;
+		bool auto_distributed = _settings_game.cargo.GetDistributionType(cargo) != DT_MANUAL;
 		const CargoDataEntry *expand = &this->expanded_rows;
 		for (int i = 0; i < NUM_COLUMNS && expand != nullptr; ++i) {
 			switch (groupings[i]) {
@@ -1759,7 +1759,7 @@ struct StationViewWindow : public Window {
 
 			Grouping grouping = this->groupings[column];
 			if (grouping == GR_CARGO) cargo = cd->GetCargo();
-			bool auto_distributed = _settings_game.linkgraph.GetDistributionType(cargo) != DT_MANUAL;
+			bool auto_distributed = _settings_game.cargo.GetDistributionType(cargo) != DT_MANUAL;
 
 			if (pos > -maxrows && pos <= 0) {
 				StringID str = STR_EMPTY;

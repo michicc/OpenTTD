@@ -1944,18 +1944,22 @@ static SettingsContainer &GetSettingsTree()
 				industries->Add(new SettingEntry("station.serve_neutral_industries"));
 			}
 
-			SettingsPage *cdist = environment->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST));
+			SettingsPage *cargo = environment->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_CARGODIST));
 			{
-				cdist->Add(new SettingEntry("linkgraph.recalc_time"));
-				cdist->Add(new SettingEntry("linkgraph.recalc_interval"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_pax"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_mail"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_armoured"));
-				cdist->Add(new SettingEntry("linkgraph.distribution_default"));
-				cdist->Add(new SettingEntry("linkgraph.accuracy"));
-				cdist->Add(new SettingEntry("linkgraph.demand_distance"));
-				cdist->Add(new SettingEntry("linkgraph.demand_size"));
-				cdist->Add(new SettingEntry("linkgraph.short_path_saturation"));
+				cargo->Add(new SettingEntry("distribution_pax"));
+				cargo->Add(new SettingEntry("distribution_mail"));
+				cargo->Add(new SettingEntry("distribution_armoured"));
+				cargo->Add(new SettingEntry("distribution_default"));
+
+				SettingsPage *cdist = cargo->Add(new SettingsPage(STR_CONFIG_SETTING_ENVIRONMENT_LINKGRAPH));
+				{
+					cdist->Add(new SettingEntry("linkgraph.recalc_time"));
+					cdist->Add(new SettingEntry("linkgraph.recalc_interval"));
+					cdist->Add(new SettingEntry("linkgraph.accuracy"));
+					cdist->Add(new SettingEntry("linkgraph.demand_distance"));
+					cdist->Add(new SettingEntry("linkgraph.demand_size"));
+					cdist->Add(new SettingEntry("linkgraph.short_path_saturation"));
+				}
 			}
 
 			environment->Add(new SettingEntry("station.modified_catchment"));
