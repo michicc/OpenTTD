@@ -15,14 +15,24 @@
 #include "timer/timer.h"
 #include "timer/timer_game_calendar.h"
 #include <algorithm>
+#include <tuple>
+#include <array>
 
 #include "safeguards.h"
 
 /* Possible link weight modifiers. */
-static const byte LWM_ANYWHERE = 1;    ///< Weight modifier for undetermined destinations.
-static const byte LWM_INTOWN = 8;      ///< Weight modifier for in-town links.
+static const byte LWM_ANYWHERE    = 1; ///< Weight modifier for undetermined destinations.
+static const byte LWM_TOWN_ANY    = 2; ///< Default weight modifier for towns.
+static const byte LWM_TOWN_BIG    = 3; ///< Weight modifier for big towns.
+static const byte LWM_TOWN_CITY   = 4; ///< Weight modifier for cities.
+static const byte LWM_TOWN_NEARBY = 5; ///< Weight modifier for nearby towns.
+static const byte LWM_INTOWN      = 8; ///< Weight modifier for in-town links.
 
 static const uint MAX_EXTRA_LINKS = 2; ///< Number of extra links allowed.
+static const uint CITY_TOWN_LINKS = 5; ///< Additional number of links for cities.
+
+/** Population/cargo amount scale divisor for pax/non-pax cargoes for normal tows and big towns. */
+static const std::array<uint16_t, 4> POP_SCALE_TOWN{ 200, 100, 1000, 180 };
 
 /** Are fixed cargo destinations enabled for any cargo type? */
 static bool AnyFixedCargoDestinations()
@@ -78,7 +88,17 @@ static void UpdateExpectedLinks(Town* t)
 		if (_settings_game.cargo.GetDistributionType(cid) == DT_FIXED) {
 			t->CreateSpecialLinks(cid);
 
+			bool pax = IsCargoInClass(cid, CC_PASSENGERS);
+			uint max_amt = pax ? t->supplied[CT_PASSENGERS].old_max : t->supplied[CT_MAIL].old_max;
+			uint big_amt = _settings_game.cargo.yacd.big_town_pop[pax ? 0 : 1];
+
 			uint num_links = _settings_game.cargo.yacd.base_town_links[IsSymmetricCargo(cid) ? 0 : 1];
+			/* Add links based on the available cargo amount. */
+			num_links += std::min(max_amt, big_amt) / POP_SCALE_TOWN[pax ? 0 : 1];
+			if (max_amt > big_amt) num_links += (max_amt - big_amt) / POP_SCALE_TOWN[pax ? 2 : 3];
+			/* Ensure a city has at least CITY_TOWN_LINKS more than the base value. This improves
+			 * the link distribution at the beginning of a game when the towns are still small. */
+			if (t->larger_town) num_links = std::max(num_links, _settings_game.cargo.yacd.base_town_links[IsSymmetricCargo(cid) ? 0 : 1] + CITY_TOWN_LINKS);
 
 			/* Account for the two special links. */
 			if (t->cargo_links[cid].size() > 1 && t->cargo_links[cid][1].dest == t) num_links++;
@@ -150,16 +170,57 @@ static bool EnumAnyDest(const CargoSourceSink *source, const CargoSourceSink *de
 	return true;
 }
 
-/** Find a town as a destination. */
-static CargoSourceSink *FindTownDestination(CargoSourceSink *source, CargoID cid)
+/** Filter for selecting nearby towns. */
+static bool EnumNearbyTown(const CargoSourceSink *source, const Town *t, CargoID)
 {
-	TownID self = source->GetType() == SourceType::Town ? (TownID)source->GetID() : INVALID_TOWN;
+	return DistanceSquare(t->xy, source->GetXY()) < Map::ScaleBySize1D(_settings_game.cargo.yacd.town_nearby_dist);
+}
 
-	return Town::GetRandom([=] (size_t index) {
-			const Town *t = Town::Get(index);
-			if (t->index == self) return false;
-			return EnumAnyDest(source, t, cid, IsSymmetricCargo(cid));
-		});
+/** Filter for selecting cities. */
+static bool EnumCity(const CargoSourceSink *, const Town *t, CargoID)
+{
+	return t->larger_town;
+}
+
+/** Filter for selecting larger towns. */
+static bool EnumBigTown(const CargoSourceSink *, const Town *t, CargoID cid)
+{
+	return IsCargoInClass(cid, CC_PASSENGERS) ? t->supplied[CT_PASSENGERS].old_max > _settings_game.cargo.yacd.big_town_pop[0] : t->supplied[CT_MAIL].old_max > _settings_game.cargo.yacd.big_town_pop[1];
+}
+
+/** Find a town as a destination. */
+static std::tuple<CargoSourceSink *, byte> FindTownDestination(CargoSourceSink *source, CargoID cid, bool prefer_local)
+{
+	/* Enum functions for: nearby town, city, big town, and any town. */
+	typedef bool (*EnumProc)(const CargoSourceSink *, const Town *, CargoID);
+	static const EnumProc destclass_enum[] = {
+		&EnumNearbyTown, &EnumCity, &EnumBigTown, nullptr
+	};
+	static const byte destclass_weight[] = { LWM_TOWN_NEARBY, LWM_TOWN_CITY, LWM_TOWN_BIG, LWM_TOWN_ANY };
+	static_assert(lengthof(destclass_enum) == lengthof(destclass_weight));
+
+	TownID self = source->GetType() == SourceType::Town ? (TownID)source->GetID() : INVALID_TOWN;
+	bool try_local = prefer_local || Chance16(7, 10);
+
+	/* Try each destination class in order until we find a match. */
+	Town *dest = nullptr;
+	byte dest_weight = LWM_TOWN_ANY;
+	for (int i = try_local ? 0 : 1; dest == nullptr && i < lengthof(destclass_enum); i++) {
+		dest_weight = destclass_weight[i];
+
+		dest = Town::GetRandom([=] (size_t index) {
+				const Town *t = Town::Get(index);
+				if (t->index == self) return false;
+				if (!EnumAnyDest(source, t, cid, IsSymmetricCargo(cid))) return false;
+
+				/* Apply filter. */
+				if (destclass_enum[i] != nullptr && !destclass_enum[i](source, t, cid)) return false;
+
+				return true;
+			});
+	}
+
+	return { dest, dest_weight };
 }
 
 /** Find an industry as a destination. */
@@ -180,8 +241,9 @@ static CargoSourceSink *FindIndustryDestination(CargoSourceSink *source, CargoID
  * @param cid Cargo type to create the link for.
  * @param chance_a The nominator of the chance for town destinations.
  * @param chance_b The denominator of the chance for town destinations.
+ * @param prefer_local Prefer creating local links first, e.g. for small towns.
  */
-static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, uint chance_b)
+static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, uint chance_b, bool prefer_local)
 {
 	uint num_links = source->num_links_expected[cid];
 
@@ -193,14 +255,15 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 	/* Add new links until the expected link count is reached. */
 	while (source->cargo_links[cid].size() < num_links) {
 		CargoSourceSink *dest = nullptr;
+		byte dest_weight = LWM_ANYWHERE;
 
 		/* Chance for town first is chance_a/chance_b, otherwise try industry first. */
 		if (Chance16(chance_a, chance_b)) {
-			dest = FindTownDestination(source, cid);
+			std::tie(dest, dest_weight) = FindTownDestination(source, cid, prefer_local);
 			if (dest == nullptr) dest = FindIndustryDestination(source, cid);
 		} else {
 			dest = FindIndustryDestination(source, cid);
-			if (dest == nullptr) dest = FindTownDestination(source, cid);
+			if (dest == nullptr) std::tie(dest, dest_weight) = FindTownDestination(source, cid, prefer_local);
 		}
 
 		/* If we didn't find a destination, break out of the loop because no
@@ -209,12 +272,12 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 
 		/* If this is a symmetric cargo and we accept it as well, create a back link. */
 		if (IsSymmetricCargo(cid) && dest->IsCargoProduced(cid) && source->IsCargoAccepted(cid) && !HasLinkTo(dest, source, cid)) {
-			dest->cargo_links[cid].emplace_back(source, LWM_ANYWHERE);
+			dest->cargo_links[cid].emplace_back(source, dest_weight);
 			source->num_incoming_links[cid]++;
 		}
 
 		dest->num_incoming_links[cid]++;
-		source->cargo_links[cid].emplace_back(dest, LWM_ANYWHERE);
+		source->cargo_links[cid].emplace_back(dest, dest_weight);
 	}
 }
 
@@ -225,7 +288,7 @@ static void UpdateCargoLinks(Town *t)
 		if (_settings_game.cargo.GetDistributionType(cid) == DT_FIXED) {
 			/* If this is a town cargo, 95% chance for town/industry destination
 			 * and 5% for industry/town. The reverse chance otherwise. */
-			CreateNewLinks(t, cid, IsTownCargo(cid) ? 19 : 1, 20);
+			CreateNewLinks(t, cid, IsTownCargo(cid) ? 19 : 1, 20, !t->larger_town);
 		}
 	}
 }
@@ -239,7 +302,7 @@ static void UpdateCargoLinks(Industry *ind)
 		if (_settings_game.cargo.GetDistributionType(p.cargo) == DT_FIXED) {
 			/* If this is a town cargo, 75% chance for town/industry destination
 			 * and 25% for industry/town. The reverse chance otherwise. */
-			CreateNewLinks(ind, p.cargo, IsTownCargo(p.cargo) ? 3 : 1, 4);
+			CreateNewLinks(ind, p.cargo, IsTownCargo(p.cargo) ? 3 : 1, 4, true);
 		}
 	}
 }
