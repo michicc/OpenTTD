@@ -506,6 +506,7 @@ static void CargodestModeChanged(int32 new_value)
 	}
 
 	/* Update remaining links. */
+	RebuildCargoLinkCounts();
 	UpdateCargoLinks();
 }
 

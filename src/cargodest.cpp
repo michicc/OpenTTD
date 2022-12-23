@@ -103,9 +103,11 @@ static void RemoveLowestLink(CargoSourceSink *source, CargoID cid)
 	if (min != source->cargo_links[cid].end()) {
 		/* If this is a symmetric cargo, also remove the reverse link. */
 		if (IsSymmetricCargo(cid) && HasLinkTo(min->dest, source, cid)) {
+			source->num_incoming_links[cid]--;
 			min->dest->cargo_links[cid].erase(std::remove(min->dest->cargo_links[cid].begin(), min->dest->cargo_links[cid].end(), source), min->dest->cargo_links[cid].end());
 		}
 
+		min->dest->num_incoming_links[cid]--;
 		source->cargo_links[cid].erase(min);
 	}
 }
@@ -183,8 +185,10 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 		/* If this is a symmetric cargo and we accept it as well, create a back link. */
 		if (IsSymmetricCargo(cid) && dest->SuppliesCargo(cid) && source->AcceptsCargo(cid) && !HasLinkTo(dest, source, cid)) {
 			dest->cargo_links[cid].emplace_back(source, LWM_ANYWHERE);
+			source->num_incoming_links[cid]++;
 		}
 
+		dest->num_incoming_links[cid]++;
 		source->cargo_links[cid].emplace_back(dest, LWM_ANYWHERE);
 	}
 }
@@ -274,6 +278,13 @@ static IntervalTimer<TimerGameCalendar> _cargodest_monthly({ TimerGameCalendar::
 			ind->cargo_links[cid].erase(to_remove, ind->cargo_links[cid].end());
 		}
 	}
+
+	/* Decrement incoming link count for all link destinations. */
+	for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+		for (auto &l : this->cargo_links[cid]) {
+			if (l.dest != nullptr) l.dest->num_incoming_links[cid]--;
+		}
+	}
 }
 
 void CargoSourceSink::UpdateLinkWeightSums()
@@ -306,9 +317,37 @@ void Town::CreateSpecialLinks(CargoID cid)
 		if (this->cargo_links[cid].size() < 2 || this->cargo_links[cid][1].dest != this) {
 			/* Insert link at second place. */
 			this->cargo_links[cid].emplace(this->cargo_links[cid].begin() + 1, this, LWM_INTOWN);
+			this->num_incoming_links[cid]++;
 		}
 	} else {
 		/* Remove link for town-local demand if present. */
-		if (this->cargo_links[cid].size() >= 2 && this->cargo_links[cid][1].dest == this) this->cargo_links[cid].erase(this->cargo_links[cid].begin() + 1);
+		if (this->cargo_links[cid].size() >= 2 && this->cargo_links[cid][1].dest == this) {
+			this->cargo_links[cid].erase(this->cargo_links[cid].begin() + 1);
+			this->num_incoming_links[cid]--;
+		}
+	}
+}
+
+/** Rebuild the cached count of incoming cargo links. */
+void RebuildCargoLinkCounts()
+{
+	/* Clear incoming link count of all towns and industries. */
+	for (Town *t : Town::Iterate()) MemSetT(t->num_incoming_links, 0, lengthof(t->num_incoming_links));
+	for (Industry *i : Industry::Iterate()) MemSetT(i->num_incoming_links, 0, lengthof(i->num_incoming_links));
+
+	/* Count all incoming links. */
+	for (Town *t : Town::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			for (auto &l : t->cargo_links[cid]) {
+				if (l.dest != nullptr) l.dest->num_incoming_links[cid]++;
+			}
+		}
+	}
+	for (Industry *i : Industry::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			for (auto &l : i->cargo_links[cid]) {
+				if (l.dest != nullptr) l.dest->num_incoming_links[cid]++;
+			}
+		}
 	}
 }
