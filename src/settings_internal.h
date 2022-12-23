@@ -148,13 +148,19 @@ struct IntSettingDesc : SettingDesc {
 	 * @param The new value for the setting.
 	 */
 	typedef void PostChangeCallback(int32 value);
+	/**
+	 * A callback to decide if a value should be shown in a GUI dropdown.
+	 * @param value Value to check.
+	 * @return True if the value shoud be shown.
+	 */
+	typedef bool DisplayValueCallback(int32 value);
 
 	IntSettingDesc(const SaveLoad &save, SettingFlag flags, bool startup, int32 def,
 			int32 min, uint32 max, int32 interval, StringID str, StringID str_help, StringID str_val,
-			SettingCategory cat, PreChangeCheck pre_check, PostChangeCallback post_callback) :
+			SettingCategory cat, PreChangeCheck pre_check, PostChangeCallback post_callback, DisplayValueCallback disp_cb = nullptr) :
 		SettingDesc(save, flags, startup), def(def), min(min), max(max), interval(interval),
 			str(str), str_help(str_help), str_val(str_val), cat(cat), pre_check(pre_check),
-			post_callback(post_callback) {}
+			post_callback(post_callback), disp_cb(disp_cb) {}
 	virtual ~IntSettingDesc() {}
 
 	int32 def;              ///< default value given when none is present
@@ -167,6 +173,7 @@ struct IntSettingDesc : SettingDesc {
 	SettingCategory cat;    ///< assigned categories of the setting
 	PreChangeCheck *pre_check;         ///< Callback to check for the validity of the setting.
 	PostChangeCallback *post_callback; ///< Callback when the setting has been changed.
+	DisplayValueCallback *disp_cb;     ///< Callback when a drop-down list is shown in the GUI.
 
 	/**
 	 * Check whether this setting is a boolean type setting.

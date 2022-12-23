@@ -2254,7 +2254,8 @@ struct GameSettingsWindow : Window {
 
 					DropDownList list;
 					for (int i = sd->min; i <= (int)sd->max; i++) {
-						list.emplace_back(new DropDownListStringItem(sd->str_val + i - sd->min, i, false));
+						bool masked = sd->disp_cb != nullptr ? !sd->disp_cb(i) : false;
+						list.emplace_back(new DropDownListStringItem(sd->str_val + i - sd->min, i, masked));
 					}
 
 					ShowDropDownListAt(this, std::move(list), value, -1, wi_rect, COLOUR_ORANGE);
