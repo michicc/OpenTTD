@@ -189,6 +189,7 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	}
 
 	void CreateSpecialLinks(CargoID cid) override;
+	uint GetDestinationWeight(CargoID cid, byte weight_mod) const override;
 
 private:
 	void FillCachedName() const;

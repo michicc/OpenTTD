@@ -288,6 +288,7 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 		return this->location.tile;
 	}
 
+	uint GetDestinationWeight(CargoID cid, byte weight_mod) const override;
 private:
 	void FillCachedName() const;
 
