@@ -48,6 +48,8 @@
 #include "void_map.h"
 #include "station_func.h"
 #include "station_base.h"
+#include "cargodest_base.h"
+#include "industry.h"
 
 #include "table/strings.h"
 #include "table/settings.h"
@@ -483,6 +485,24 @@ static void UpdateClientConfigValues()
 		NetworkServerSendConfigUpdate();
 		SetWindowClassesDirty(WC_CLIENT_LIST);
 	}
+}
+
+static void CargodestModeChanged(int32_t)
+{
+	/* Clear all links for cargoes that aren't routed anymore. */
+	for (Town *t : Town::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			if (_settings_game.cargo.GetDistributionType(cid) != DT_FIXED) t->cargo_links[cid].clear();
+		}
+	}
+	for (Industry *i : Industry::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			if (_settings_game.cargo.GetDistributionType(cid) != DT_FIXED) i->cargo_links[cid].clear();
+		}
+	}
+
+	/* Update remaining links. */
+	UpdateCargoLinks();
 }
 
 /* End - Callback Functions */

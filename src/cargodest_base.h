@@ -45,11 +45,16 @@ struct CargoSourceSink {
 	std::array<std::vector<CargoLink>, NUM_CARGO> cargo_links;
 	/** NOSAVE: Sum of the destination weights for each cargo type. */
 	std::array<uint, NUM_CARGO> cargo_links_weight;
+	/** NOSAVE: Desired link count for each cargo. */
+	std::array<uint16_t, NUM_CARGO> num_links_expected;
 
 	virtual ~CargoSourceSink();
 
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
+
+	/** Create the special cargo links for a cargo if not already present. */
+	virtual void CreateSpecialLinks(CargoID cid);
 
 	/** Is this cargo accepted? */
 	virtual bool IsCargoAccepted(CargoID cid) const = 0;
@@ -63,5 +68,8 @@ struct CargoSourceSink {
 	/** Get the base map coordinate of this entity. */
 	virtual TileIndex GetXY() const = 0;
 };
+
+
+void UpdateCargoLinks();
 
 #endif /* CARGODEST_BASE_H */

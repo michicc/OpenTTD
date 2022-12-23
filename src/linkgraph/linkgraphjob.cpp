@@ -151,7 +151,7 @@ LinkGraphJob::~LinkGraphJob()
 		for (FlowStatMap::iterator it(ge.flows.begin()); it != ge.flows.end();) {
 			FlowStatMap::iterator new_it = flows.find(it->first);
 			if (new_it == flows.end()) {
-				if (_settings_game.cargo.GetDistributionType(this->Cargo()) != DT_MANUAL) {
+				if (_settings_game.cargo.GetDistributionType(this->Cargo()) != DT_MANUAL && _settings_game.cargo.GetDistributionType(this->Cargo()) != DT_FIXED) {
 					it->second.Invalidate();
 					++it;
 				} else {

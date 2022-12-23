@@ -76,6 +76,7 @@ public:
 		SUBSIDY,
 		TOWN,
 		VEHICLE,
+		CARGODEST,
 	};
 
 	struct TPeriod {

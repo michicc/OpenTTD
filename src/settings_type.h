@@ -560,6 +560,11 @@ struct LinkGraphSettings {
 	uint8_t short_path_saturation;            ///< percentage up to which short paths are saturated before saturating most capacious paths
 };
 
+struct CargodestSettings {
+	uint8_t base_town_links[2];               ///< minimum number of town demand links for pax/mail and for all other cargoes
+	uint8_t base_ind_links[2];                ///< minimum number of industry demand links for cargoes with town effect and all other cargoes
+};
+
 struct CargoSettings {
 	DistributionType distribution_pax;      ///< distribution type for passengers
 	DistributionType distribution_mail;     ///< distribution type for mail
@@ -567,6 +572,7 @@ struct CargoSettings {
 	DistributionType distribution_default;  ///< distribution type for all other goods
 
 	LinkGraphSettings linkgraph;            ///< settings for link graph calculations
+	CargodestSettings yacd;                 ///< settings for fixed demand destinations
 
 	inline DistributionType GetDistributionType(CargoID cargo) const
 	{
