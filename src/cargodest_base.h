@@ -55,6 +55,9 @@ struct CargoSourceSink {
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();
 
+	/** Get the link weight for this as a destination for a specific cargo. */
+	virtual uint GetDestinationWeight(CargoID cid, byte weight_mod) const = 0;
+
 	/** Create the special cargo links for a cargo if not already present. */
 	virtual void CreateSpecialLinks(CargoID cid);
 

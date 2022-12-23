@@ -26,11 +26,15 @@ static const byte LWM_TOWN_CITY   = 4; ///< Weight modifier for cities.
 static const byte LWM_TOWN_NEARBY = 5; ///< Weight modifier for nearby towns.
 static const byte LWM_INTOWN      = 8; ///< Weight modifier for in-town links.
 
+static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
+
 static const uint MAX_EXTRA_LINKS = 2; ///< Number of extra links allowed.
 static const uint CITY_TOWN_LINKS = 5; ///< Additional number of links for cities.
 
 /** Population/cargo amount scale divisor for pax/non-pax cargoes for normal tows and big towns. */
 static const std::array<uint16, 4> POP_SCALE_TOWN{ 200, 100, 1000, 180 };
+/** Link weight scale divisor for pax/non-pax cargoes for normal tows and big towns. */
+static const std::array<uint, 4> WEIGHT_SCALE_TOWN{ 20, 10, 80, 40 };
 
 /** Are fixed cargo destinations enabled for any cargo type? */
 static bool AnyFixedCargoDestinations()
@@ -309,11 +313,28 @@ static void UpdateLinkWeights(CargoSourceSink *css)
 {
 	for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
 		css->cargo_links_weight[cid] = 0;
+		if (css->cargo_links[cid].empty()) continue;
 
+		uint weight_sum = 0;
 		for (auto &l : css->cargo_links[cid]) {
-			css->cargo_links_weight[cid] += l.weight;
+			if (l.dest == nullptr) continue; // Skip the special link for undetermined destinations.
+
+			l.weight = l.dest->GetDestinationWeight(cid, l.weight_mod);
+			weight_sum += l.weight;
+
 			l.amount.NewMonth();
 		}
+
+		/* Limit the weight of the in-town link to at most 1/3 of the total weight. */
+		if (css->cargo_links[cid].size() > 1 && css->cargo_links[cid][1].dest == css) {
+			uint new_weight = std::min<uint>(css->cargo_links[cid][1].weight, weight_sum / 3);
+			weight_sum -= css->cargo_links[cid][1].weight - new_weight;
+			css->cargo_links[cid][1].weight = new_weight;
+		}
+
+		/* Set weight for the undetermined destination link to random_dest_chance%. */
+		css->cargo_links[cid].front().weight = weight_sum == 0 ? 1 : (weight_sum * _settings_game.cargo.yacd.random_dest_chance) / (100 - _settings_game.cargo.yacd.random_dest_chance);
+		css->cargo_links_weight[cid] = weight_sum + css->cargo_links[cid].front().weight;
 	}
 }
 
@@ -410,6 +431,32 @@ void Town::CreateSpecialLinks(CargoID cid)
 			this->num_incoming_links[cid]--;
 		}
 	}
+}
+
+uint Town::GetDestinationWeight(CargoID cid, byte weight_mod) const
+{
+	/* Estimate town "size" by looking at either the supplied passengers
+	 * or the supplied mail. This gives an economic weight to the town that
+	 * is somewhat accurate for cargoes like goods that are accept-only. */
+	bool pax = IsCargoInClass(cid, CC_PASSENGERS);
+	uint max_amt = pax ? this->supplied[CT_PASSENGERS].old_max : this->supplied[CT_MAIL].old_max;
+	uint big_amt = _settings_game.cargo.yacd.big_town_pop[pax ? 0 : 1];
+
+	/* The link weight is calculated by a piecewise function. We start with a predefined
+	 * minimum weight and then add the weight for the cargo amount up to the big town
+	 * amount. If the amount is more than the big town amount, this is also added to the
+	 * weight with a different scale factor to make sure that big towns don't siphon the
+	 * cargo away too much from the smaller destinations. */
+	uint weight = LINK_MIN_WEIGHT;
+	weight += std::min(max_amt, big_amt) * weight_mod / WEIGHT_SCALE_TOWN[pax ? 0 : 1];
+	if (max_amt > big_amt) weight += (max_amt - big_amt) / WEIGHT_SCALE_TOWN[pax ? 2 : 3];
+
+	return weight;
+}
+
+uint Industry::GetDestinationWeight(CargoID cid, byte weight_mod) const
+{
+	return weight_mod;
 }
 
 /** Rebuild the cached count of incoming cargo links. */
