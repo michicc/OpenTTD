@@ -192,6 +192,8 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		return this->xy;
 	}
 
+	void CreateSpecialLinks(CargoID cid) override;
+
 private:
 	void FillCachedName() const;
 };
