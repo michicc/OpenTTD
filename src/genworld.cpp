@@ -135,6 +135,7 @@ static void _GenerateWorld()
 				GenerateIndustries();
 				GenerateObjects();
 				GenerateTrees();
+				UpdateCargoLinks();
 			}
 		}
 

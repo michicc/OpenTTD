@@ -1939,10 +1939,11 @@ STR_CONFIG_SETTING_DISTRIBUTION_ARMOURED                        :Distribution mo
 STR_CONFIG_SETTING_DISTRIBUTION_ARMOURED_HELPTEXT               :The ARMOURED cargo class contains valuables in the temperate, diamonds in the subtropical, or gold in the subarctic climate. NewGRFs may change that. "Symmetric" means that roughly the same amount of that cargo will be sent from a station A to a station B as from B to A. "Asymmetric" means that arbitrary amounts of that cargo can be sent in either direction. "Manual" means that no automatic distribution will take place for that cargo. It is recommended to set this to asymmetric or manual when playing subarctic or subtropic, as banks only receive cargo in these climates. For temperate you can also choose symmetric as banks will send valuables back to the origin bank.
 STR_CONFIG_SETTING_DISTRIBUTION_DEFAULT                         :Distribution mode for other cargo classes: {STRING2}
 STR_CONFIG_SETTING_DISTRIBUTION_DEFAULT_HELPTEXT                :"Asymmetric" means that arbitrary amounts of cargo can be sent in either direction. "Manual" means that no automatic distribution will take place for those cargoes.
-###length 3
+###length 4
 STR_CONFIG_SETTING_DISTRIBUTION_MANUAL                          :manual
 STR_CONFIG_SETTING_DISTRIBUTION_ASYMMETRIC                      :asymmetric
 STR_CONFIG_SETTING_DISTRIBUTION_SYMMETRIC                       :symmetric
+STR_CONFIG_SETTING_DISTRIBUTION_FIXED                           :fixed
 
 STR_CONFIG_SETTING_LINKGRAPH_ACCURACY                           :Distribution accuracy: {STRING2}
 STR_CONFIG_SETTING_LINKGRAPH_ACCURACY_HELPTEXT                  :The higher you set this the more CPU time the calculation of the link graph will take. If it takes too long you may notice lag. If you set it to a low value, however, the distribution will be inaccurate, and you may notice cargo not being sent to the places you expect it to go.

@@ -20,6 +20,7 @@
 #include "saveload/saveload.h"
 #include "newgrf_profiling.h"
 #include "widgets/statusbar_widget.h"
+#include "cargodest_base.h"
 
 #include "safeguards.h"
 
@@ -241,6 +242,7 @@ static void OnNewMonth()
 	IndustryMonthlyLoop();
 	SubsidyMonthlyLoop();
 	StationMonthlyLoop();
+	UpdateCargoLinks();
 	if (_network_server) NetworkServerMonthlyLoop();
 }
 
