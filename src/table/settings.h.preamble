@@ -76,11 +76,11 @@ static size_t ConvertLandscape(const char *value);
 
 /* Macros for various objects to go in the configuration file.
  * This section is for structures where their various members are saved */
-#define SDT_VAR(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, from, to, cat, extra, startup)\
-	NSD(Int, SLE_GENERAL(SL_VAR, base, var, type, 1, from, to, extra), flags, startup, def, min, max, interval, str, strhelp, strval, cat, pre_check, post_callback)
+#define SDT_VAR(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, from, to, cat, extra, startup, disp_cb)\
+	NSD(Int, SLE_GENERAL(SL_VAR, base, var, type, 1, from, to, extra), flags, startup, def, min, max, interval, str, strhelp, strval, cat, pre_check, post_callback, disp_cb)
 
-#define SDT_VAR_NAME(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, from, to, cat, extra, startup, name)\
-	NSD(Int, SLE_GENERAL_NAME(SL_VAR, name, base, var, type, 1, from, to, extra), flags, startup, def, min, max, interval, str, strhelp, strval, cat, pre_check, post_callback)
+#define SDT_VAR_NAME(base, var, type, flags, def, min, max, interval, str, strhelp, strval, pre_check, post_callback, from, to, cat, extra, startup, disp_cb, name)\
+	NSD(Int, SLE_GENERAL_NAME(SL_VAR, name, base, var, type, 1, from, to, extra), flags, startup, def, min, max, interval, str, strhelp, strval, cat, pre_check, post_callback, disp_cb)
 
 #define SDT_BOOL(base, var, flags, def, str, strhelp, strval, pre_check, post_callback, from, to, cat, extra, startup)\
 	NSD(Bool, SLE_GENERAL(SL_VAR, base, var, SLE_BOOL, 1, from, to, extra), flags, startup, def, str, strhelp, strval, cat, pre_check, post_callback)

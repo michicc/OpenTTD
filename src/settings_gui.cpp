@@ -2342,7 +2342,8 @@ struct GameSettingsWindow : Window {
 
 					DropDownList list;
 					for (int i = sd->min; i <= (int)sd->max; i++) {
-						list.push_back(std::make_unique<DropDownListStringItem>(sd->str_val + i - sd->min, i, false));
+						bool masked = sd->disp_cb != nullptr ? !sd->disp_cb(i) : false;
+						list.push_back(std::make_unique<DropDownListStringItem>(sd->str_val + i - sd->min, i, masked));
 					}
 
 					ShowDropDownListAt(this, std::move(list), value, WID_GS_SETTING_DROPDOWN, wi_rect, COLOUR_ORANGE);
