@@ -564,6 +564,7 @@ struct CargodestSettings {
 	uint8_t base_town_links[2];               ///< minimum number of town demand links for pax/mail and for all other cargoes
 	uint8_t base_ind_links[2];                ///< minimum number of industry demand links for cargoes with town effect and all other cargoes
 	uint32_t town_nearby_dist;                ///< squared distance (on a 256x256 map) inside which a town is considered nearby
+	uint32_t ind_nearby_dist;                 ///< squared distance (on a 256x256 map) inside which an industry is considered nearby
 	uint32_t big_town_pop[2];                 ///< passenger and mail amounts to count as a big town
 	uint8_t random_dest_chance;               ///< percentage of traffic for random destination
 };
