@@ -27,6 +27,7 @@ static const byte LWM_TOWN_BIG    = 3; ///< Weight modifier for big towns.
 static const byte LWM_TOWN_CITY   = 4; ///< Weight modifier for cities.
 static const byte LWM_TOWN_NEARBY = 5; ///< Weight modifier for nearby towns.
 static const byte LWM_INTOWN      = 8; ///< Weight modifier for in-town links.
+static const byte LWM_IND_ANY     = 2; ///< Default weight modifier for industries.
 
 static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
 
@@ -125,10 +126,69 @@ static void UpdateExpectedLinks(Industry* ind)
 	}
 }
 
+/** Find a supply for a cargo type. */
+static CargoSourceSink *FindSupplySource(Industry *dest, CargoID cid)
+{
+	CargoSourceSink *source = nullptr;
+
+	/* Search for industries before towns. Try for a nearby industry first, then for any industry. */
+	for (int i = 0; source == nullptr && i < 2; i++) {
+		source = Industry::GetRandom([=] (size_t index) {
+				const Industry *ind = Industry::Get(index);
+				if (ind == dest) return false;
+				if (!ind->SuppliesCargo(cid)) return false;
+
+				if (i == 0 && DistanceSquare(ind->GetXY(), dest->GetXY()) >= Map::ScaleBySize1D(_settings_game.cargo.yacd.ind_nearby_dist)) return false;
+
+				return true;
+			});
+	}
+
+	if (source == nullptr) {
+		/* Try a town. */
+		source = Town::GetRandom([=] (size_t index) {
+				const Town *t = Town::Get(index);
+				return t->SuppliesCargo(cid);
+			});
+	}
+
+	return source;
+}
+
 /** Is there a link to the given destination for a cargo? */
 static bool HasLinkTo(const CargoSourceSink *src, const CargoSourceSink *dest, CargoID cid)
 {
 	return std::find(src->cargo_links[cid].begin(), src->cargo_links[cid].end(), dest) != src->cargo_links[cid].end();
+}
+
+/** Make sure an industry has at least one incoming link for each accepted cargo. */
+static void AddMissingIndustryLinks(Industry *ind)
+{
+	for (CargoID cid : ind->accepts_cargo) {
+		if (!IsCargoIDValid(cid)) continue;
+
+		/* Do we already have at least one cargo source? */
+		if (ind->num_incoming_links[cid] > 0) continue;
+
+		CargoSourceSink *source = FindSupplySource(ind, cid);
+		if (source == nullptr) continue; // Too bad...
+
+		if (source->cargo_links[cid].size() >= source->num_links_expected[cid] + MAX_EXTRA_LINKS) {
+			/* Increase the expected link count if adding another link would
+			 * exceed the count, as otherwise this (or another) link would get
+			 * removed right again. */
+			source->num_links_expected[cid]++;
+		}
+
+		source->cargo_links[cid].emplace_back(ind, LWM_IND_ANY);
+		ind->num_incoming_links[cid]++;
+
+		/* If this is a symmetric cargo and we produce it as well, create a back link. */
+		if (IsSymmetricCargo(cid) && ind->SuppliesCargo(cid) && source->AcceptsCargo(cid) && !HasLinkTo(ind, source, cid)) {
+			ind->cargo_links[cid].emplace_back(source, LWM_IND_ANY);
+			source->num_incoming_links[cid]++;
+		}
+	}
 }
 
 /**
@@ -352,6 +412,9 @@ void UpdateCargoLinks()
 	/* Recalculate the number of expected links. */
 	for (Town *t : Town::Iterate()) UpdateExpectedLinks(t);
 	for (Industry *i : Industry::Iterate()) UpdateExpectedLinks(i);
+
+	/* Make sure each industry gets at at least some input cargo. */
+	for (Industry *i : Industry::Iterate()) AddMissingIndustryLinks(i);
 
 	/* Update the demand link list. */
 	for (Town *t : Town::Iterate()) UpdateCargoLinks(t);
