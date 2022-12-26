@@ -289,8 +289,17 @@ bool FindSubsidyPassengerRoute()
 		return false;
 	}
 
-	const Town *dst = Town::GetRandom();
-	if (dst->cache.population < SUBSIDY_PAX_MIN_POPULATION || src == dst) {
+	const Town *dst = nullptr;
+	if (_settings_game.cargo.GetDistributionType(CT_PASSENGERS) == DT_FIXED) {
+		/* Try to get a town from the demand destinations. */
+		const CargoLink *link = GetRandomCargoLink(src, CT_PASSENGERS, false, false, ST_TOWN);
+		if (link == nullptr) return false;
+		dst = static_cast<const Town *>(link->dest);
+	} else {
+		dst = Town::GetRandom();
+	}
+
+	if (dst == nullptr || dst->cache.population < SUBSIDY_PAX_MIN_POPULATION || src == dst) {
 		return false;
 	}
 
@@ -334,7 +343,7 @@ bool FindSubsidyTownCargoRoute()
 
 	/* Avoid using invalid NewGRF cargoes. */
 	if (!CargoSpec::Get(*cid)->IsValid() ||
-			_settings_game.cargo.GetDistributionType(*cid) != DT_MANUAL) {
+			(_settings_game.cargo.GetDistributionType(*cid) != DT_MANUAL && _settings_game.cargo.GetDistributionType(*cid) != DT_FIXED)) {
 		return false;
 	}
 
@@ -386,7 +395,7 @@ bool FindSubsidyIndustryCargoRoute()
 	 * or if the cargo is automatically distributed */
 	if (total == 0 || trans > SUBSIDY_MAX_PCT_TRANSPORTED ||
 			cid == CT_INVALID ||
-			_settings_game.cargo.GetDistributionType(cid) != DT_MANUAL) {
+			(_settings_game.cargo.GetDistributionType(cid) != DT_MANUAL && _settings_game.cargo.GetDistributionType(cid) != DT_FIXED)) {
 		return false;
 	}
 
@@ -408,32 +417,39 @@ bool FindSubsidyCargoDestination(CargoID cid, SourceType src_type, SourceID src)
 	SourceType dst_type = (HasBit(_town_cargoes_accepted, cid) && Chance16(1, 2)) ? ST_TOWN : ST_INDUSTRY;
 
 	SourceID dst;
-	switch (dst_type) {
-		case ST_TOWN: {
-			/* Select a random town. */
-			const Town *dst_town = Town::GetRandom();
+	if (_settings_game.cargo.GetDistributionType(cid) == DT_FIXED) {
+		const CargoSourceSink *css = CargoSourceSink::Get(src_type, src);
+		const CargoLink *l = GetRandomCargoLink(css, cid, false, false, dst_type);
+		if (l == nullptr) return false;
+		dst = l->dest->GetID();
+	} else {
+		switch (dst_type) {
+			case ST_TOWN: {
+				/* Select a random town. */
+				const Town *dst_town = Town::GetRandom();
 
-			/* Check if the town can accept this cargo. */
-			if (!HasBit(dst_town->cargo_accepted_total, cid)) return false;
+				/* Check if the town can accept this cargo. */
+				if (!HasBit(dst_town->cargo_accepted_total, cid)) return false;
 
-			dst = dst_town->index;
-			break;
+				dst = dst_town->index;
+				break;
+			}
+
+			case ST_INDUSTRY: {
+				/* Select a random industry. */
+				const Industry *dst_ind = Industry::GetRandom();
+				if (dst_ind == nullptr) return false;
+
+				/* The industry must accept the cargo */
+				bool valid = std::find(dst_ind->accepts_cargo, endof(dst_ind->accepts_cargo), cid) != endof(dst_ind->accepts_cargo);
+				if (!valid) return false;
+
+				dst = dst_ind->index;
+				break;
+			}
+
+			default: NOT_REACHED();
 		}
-
-		case ST_INDUSTRY: {
-			/* Select a random industry. */
-			const Industry *dst_ind = Industry::GetRandom();
-			if (dst_ind == nullptr) return false;
-
-			/* The industry must accept the cargo */
-			bool valid = std::find(dst_ind->accepts_cargo, endof(dst_ind->accepts_cargo), cid) != endof(dst_ind->accepts_cargo);
-			if (!valid) return false;
-
-			dst = dst_ind->index;
-			break;
-		}
-
-		default: NOT_REACHED();
 	}
 
 	/* Check that the source and the destination are not the same. */
@@ -480,10 +496,10 @@ void SubsidyMonthlyLoop()
 	} else if (_settings_game.difficulty.subsidy_duration == 0) {
 		/* If subsidy duration is set to 0, subsidies are disabled, so bail out. */
 		return;
-	} else if (_settings_game.cargo.distribution_pax != DT_MANUAL &&
-			   _settings_game.cargo.distribution_mail != DT_MANUAL &&
-			   _settings_game.cargo.distribution_armoured != DT_MANUAL &&
-			   _settings_game.cargo.distribution_default != DT_MANUAL) {
+	} else if (_settings_game.cargo.distribution_pax != DT_MANUAL && _settings_game.cargo.distribution_pax != DT_FIXED &&
+			   _settings_game.cargo.distribution_mail != DT_MANUAL && _settings_game.cargo.distribution_mail != DT_FIXED &&
+			   _settings_game.cargo.distribution_armoured != DT_MANUAL && _settings_game.cargo.distribution_armoured != DT_FIXED &&
+			   _settings_game.cargo.distribution_default != DT_MANUAL && _settings_game.cargo.distribution_default != DT_FIXED) {
 		/* Return early if there are no manually distributed cargoes and if we
 		 * don't need to invalidate the subsidies window. */
 		return;
@@ -495,7 +511,7 @@ void SubsidyMonthlyLoop()
 
 	int random_chance = RandomRange(16);
 
-	if (random_chance < 2 && _settings_game.cargo.distribution_pax == DT_MANUAL) {
+	if (random_chance < 2 && (_settings_game.cargo.distribution_pax == DT_MANUAL || _settings_game.cargo.distribution_pax == DT_FIXED)) {
 		/* There is a 1/8 chance each month of generating a passenger subsidy. */
 		int n = 1000;
 

@@ -72,10 +72,13 @@ struct CargoSourceSink {
 	virtual SourceID GetID() const = 0;
 	/** Get the base map coordinate of this entity. */
 	virtual TileIndex GetXY() const = 0;
+
+	static CargoSourceSink *Get(SourceType type, SourceID id);
 };
 
 
 void UpdateCargoLinks();
 void RebuildCargoLinkCounts();
+const CargoLink *GetRandomCargoLink(const CargoSourceSink *source, CargoID cid, bool allow_self, bool allow_random = false, SourceType dst_type = ST_UNDEFINED);
 
 #endif /* CARGODEST_BASE_H */

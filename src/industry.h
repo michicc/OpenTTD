@@ -132,6 +132,8 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 		return pos - this->accepts_cargo;
 	}
 
+	using IndustryPool::PoolItem<&_industry_pool>::Get;
+
 	/**
 	 * Get the industry of the given tile
 	 * @param tile the tile to get the industry from
