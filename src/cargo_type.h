@@ -114,9 +114,10 @@ struct CargoArray : std::array<uint, NUM_CARGO> {
 
 /** Types of cargo source and destination */
 enum class SourceType : byte {
-	Industry,     ///< Source/destination is an industry
-	Town,         ///< Source/destination is a town
-	Headquarters, ///< Source/destination are company headquarters
+	Industry,         ///< Source/destination is an industry
+	Town,             ///< Source/destination is a town
+	Headquarters,     ///< Source/destination are company headquarters
+	Undefined = 0xFF, ///< Type of source/destination is not defined
 };
 
 typedef uint16_t SourceID; ///< Contains either industry ID, town ID or company ID (or INVALID_SOURCE)

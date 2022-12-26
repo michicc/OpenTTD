@@ -164,6 +164,8 @@ struct Industry FINAL : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 		return std::find_if(std::begin(this->produced), std::end(this->produced), [&cargo](const auto &p) { return p.cargo == cargo; });
 	}
 
+	using IndustryPool::PoolItem<&_industry_pool>::Get;
+
 	/**
 	 * Get accepted cargo slot for a specific cargo type.
 	 * @param cargo CargoID to find.
