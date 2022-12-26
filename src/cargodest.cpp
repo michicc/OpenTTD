@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <tuple>
 #include <array>
+#include <numeric>
 
 #include "safeguards.h"
 
@@ -35,6 +36,7 @@ static const uint LINK_MIN_WEIGHT = 5; ///< Minimum link weight.
 
 static const uint MAX_EXTRA_LINKS = 2; ///< Number of extra links allowed.
 static const uint CITY_TOWN_LINKS = 5; ///< Additional number of links for cities.
+static const uint16 MAX_IND_STOCKPILE = 2048; ///< Maximum stockpile to consider for industry link weight.
 
 /** Population/cargo amount scale divisor for pax/non-pax cargoes for normal tows and big towns. */
 static const std::array<uint16, 4> POP_SCALE_TOWN{ 200, 100, 1000, 180 };
@@ -42,6 +44,8 @@ static const std::array<uint16, 4> POP_SCALE_TOWN{ 200, 100, 1000, 180 };
 static const std::array<uint, 4> WEIGHT_SCALE_TOWN{ 20, 10, 80, 40 };
 /** Cargo amount scale for town and normal cargoes. */
 static const std::array<uint16, 2> CARGO_SCALE_IND{ 250, 200 };
+/** Link weight scale divisor for produced and accepted cargo. */
+static const std::array<uint16, 2> WEIGHT_SCALE_IND{ 25, 50 };
 
 /** Are fixed cargo destinations enabled for any cargo type? */
 static bool AnyFixedCargoDestinations()
@@ -572,7 +576,21 @@ uint Town::GetDestinationWeight(CargoID cid, byte weight_mod) const
 
 uint Industry::GetDestinationWeight(CargoID cid, byte weight_mod) const
 {
-	return weight_mod;
+	uint weight = LINK_MIN_WEIGHT;
+
+	for (uint i = 0; i < lengthof(this->accepts_cargo); i++) {
+		if (this->accepts_cargo[i] != cid) continue;
+		/* Empty stockpile means more weight for the link. Stockpiles above a fixed maximum have no further effect. */
+		uint16 stockpile = std::min(this->incoming_cargo_waiting[i], MAX_IND_STOCKPILE);
+		weight += (MAX_IND_STOCKPILE - stockpile) * weight_mod / WEIGHT_SCALE_IND[1];
+	}
+
+	/* Add a weight for the produced cargo. Use the average production here so the
+	 * weight isn't fluctuating that much when the input cargo isn't delivered regularly. */
+	uint16 total_prod = std::accumulate(std::begin(this->average_production), std::end(this->average_production), 0);
+	weight += total_prod * weight_mod / WEIGHT_SCALE_IND[0];
+
+	return weight;
 }
 
 /** Rebuild the cached count of incoming cargo links. */
