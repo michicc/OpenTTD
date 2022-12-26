@@ -394,6 +394,43 @@ static void CreateNewLinks(CargoSourceSink *source, CargoID cid, uint chance_a, 
 	}
 }
 
+/** Try to ensure a town has at least one link to a nearby city. */
+static void AddCityLink(Town *source)
+{
+	if (source->larger_town) return; // Skip cities.
+
+	for (CargoID cid : SetCargoBitIterator(source->cargo_produced)) {
+		if (_settings_game.cargo.GetDistributionType(cid) == DT_FIXED) {
+			/* Enough links already? */
+			if (source->cargo_links[cid].size() >= source->num_links_expected[cid]) continue;
+
+			/* Is there already a city link? */
+			auto has_city = [] (const CargoLink &l) { return l.dest != nullptr && l.dest->GetType() == ST_TOWN && static_cast<Town *>(l.dest)->larger_town; };
+			if (std::any_of(source->cargo_links[cid].begin(), source->cargo_links[cid].end(), has_city)) continue;
+
+			/* Try to find a nearby city. */
+			Town *dest = Town::GetRandom([=] (size_t index) {
+				const Town *t = Town::Get(index);
+				if (t == source) return false;
+				if (!EnumAnyDest(source, t, cid, IsSymmetricCargo(cid))) return false;
+
+				/* Filter for nearby cities. */
+				return EnumCity(source, t, cid) && EnumNearbyTown(source, t, cid);
+			});
+
+			if (dest == nullptr) continue; // No good destination? Too bad...
+
+			/* If this is a symmetric cargo and we accept it as well, create a back link. */
+			if (IsSymmetricCargo(cid) && dest->SuppliesCargo(cid) && source->AcceptsCargo(cid) && !HasLinkTo(dest, source, cid)) {
+				dest->cargo_links[cid].emplace_back(source, LWM_TOWN_CITY);
+				source->num_incoming_links[cid]++;
+			}
+
+			source->cargo_links[cid].emplace_back(dest, LWM_TOWN_CITY);
+		}
+	}
+}
+
 /** Update the demand links. */
 static void UpdateCargoLinks(Town *t)
 {
@@ -463,6 +500,8 @@ void UpdateCargoLinks()
 	for (Town *t : Town::Iterate()) UpdateExpectedLinks(t);
 	for (Industry *i : Industry::Iterate()) UpdateExpectedLinks(i);
 
+	/* Link each town to a nearby city. */
+	for (Town *t : Town::Iterate()) AddCityLink(t);
 	/* Make sure each industry gets at at least some input cargo. */
 	for (Industry *i : Industry::Iterate()) AddMissingIndustryLinks(i);
 
