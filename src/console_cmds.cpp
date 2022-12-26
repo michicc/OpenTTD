@@ -45,6 +45,9 @@
 #include "3rdparty/fmt/chrono.h"
 #include "company_cmd.h"
 #include "misc_cmd.h"
+#include "cargodest_base.h"
+#include "town.h"
+#include "industry.h"
 
 #include <sstream>
 
@@ -2501,6 +2504,31 @@ DEF_CONSOLE_CMD(ConDumpInfo)
 	return false;
 }
 
+DEF_CONSOLE_CMD(ConResetCargoDestinations)
+{
+	if (argc == 0) {
+		IConsolePrint(CC_HELP, "Regenerate all demand links for towns and industries. Has no effect if fixed cargo destinations are not enabled. Usage: 'reset_yacd'.");
+		return true;
+	}
+
+	/* Clear all current links. */
+	for (Town *t : Town::Iterate()) {
+		for (auto &l : t->cargo_links) {
+			l.clear();
+		}
+	}
+	for (Industry *i : Industry::Iterate()) {
+		for (auto &l : i->cargo_links) {
+			l.clear();
+		}
+	}
+
+	/* Rebuild destination links. */
+	UpdateCargoLinks();
+
+	return true;
+}
+
 /*******************************
  * console command registration
  *******************************/
@@ -2641,4 +2669,6 @@ void IConsoleStdLibRegister()
 	IConsole::CmdRegister("newgrf_profile",          ConNewGRFProfile,    ConHookNewGRFDeveloperTool);
 
 	IConsole::CmdRegister("dump_info",               ConDumpInfo);
+
+	IConsole::CmdRegister("reset_yacd",              ConResetCargoDestinations, ConHookNoNetwork);
 }
