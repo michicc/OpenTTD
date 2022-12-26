@@ -523,6 +523,15 @@ static IntervalTimer<TimerGameCalendar> _cargodest_monthly({ TimerGameCalendar::
 });
 
 
+CargoSourceSink *CargoSourceSink::Get(SourceType type, SourceID id)
+{
+	switch (type) {
+		case ST_TOWN: return Town::Get(id);
+		case ST_INDUSTRY: return Industry::Get(id);
+		default: NOT_REACHED();
+	}
+}
+
 /* virtual */ CargoSourceSink::~CargoSourceSink()
 {
 	if (Town::CleaningPool() || Industry::CleaningPool()) return;
@@ -654,4 +663,40 @@ void RebuildCargoLinkCounts()
 			}
 		}
 	}
+}
+
+/**
+ * Get a random demand link.
+ * @param source Source of the wanted link.
+ * @param cid Cargo type.
+ * @param allow_self Indicates if the local link is acceptable as a result.
+ * @param allow_random Indicates if the random dest link is acceptable as a result
+ * @param dst_type Indicates the acceptable destination types. Use \c ST_UNDEFINED if any type is acceptable.
+ * @return Pointer to a demand link or \c nullptr if no link found.
+ */
+const CargoLink *GetRandomCargoLink(const CargoSourceSink *source, CargoID cid, bool allow_self, bool allow_random, SourceType dst_type)
+{
+	/* Collect candidate links. */
+	uint cand_sum = 0;
+	std::vector<const CargoLink *> candidates;
+	for (const auto &l : source->cargo_links[cid]) {
+		if (l.dest == nullptr && !allow_random) continue; // Random destination link not wanted.
+		if (l.dest == source && !allow_self) continue; // Local link not wanted.
+
+		if (l.dest != nullptr && dst_type != ST_UNDEFINED && l.dest->GetType() != dst_type) continue;
+		if (l.dest != nullptr && !l.dest->AcceptsCargo(cid)) continue;
+
+		candidates.push_back(&l);
+		cand_sum += l.weight;
+	}
+
+	/* Choose a cargo link by weighted random. */
+	uint weight = RandomRange(cand_sum - 1);
+	uint cur_sum = 0;
+	for (const auto l : candidates) {
+		cur_sum += l->weight;
+		if (cur_sum > weight) return l;
+	}
+
+	return nullptr;
 }

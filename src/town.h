@@ -142,6 +142,8 @@ struct Town FINAL : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 		return this->cached_name.c_str();
 	}
 
+	using TownPool::PoolItem<&_town_pool>::Get;
+
 	static inline Town *GetByTile(TileIndex tile)
 	{
 		return Town::Get(GetTownIndex(tile));
