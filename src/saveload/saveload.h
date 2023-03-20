@@ -346,7 +346,7 @@ enum SaveLoadVersion : uint16 {
 	SLV_MULTITRACK_LEVEL_CROSSINGS,         ///< 302  PR#9931 v13.0  Multi-track level crossings.
 	SLV_NEWGRF_ROAD_STOPS,                  ///< 303  PR#10144 NewGRF road stops.
 	SLV_LINKGRAPH_EDGES,                    ///< 304  PR#10314 Explicitly store link graph edges destination, PR#10471 int64 instead of uint64 league rating
-	SLV_RESTORE_TOWN_CARGO_CACHE,           ///< 305  PR#xxxxx Restore accepted town cargo cache.
+	SLV_RESTORE_TOWN_CARGO_CACHE,           ///< 305  PR#xxxxx Restore accepted town cargo cache, Current vehicle order index.
 
 	SLV_VELOCITY_NAUTICAL,                  ///< 305  PR#10594 Separation of land and nautical velocity (knots!)
 	SLV_CONSISTENT_PARTIAL_Z,               ///< 306  PR#10570 Conversion from an inconsistent partial Z calculation for slopes, to one that is (more) consistent.

@@ -53,6 +53,10 @@ Order::~Order()
 	if (this->IsType(OT_GOTO_STATION) || this->IsType(OT_GOTO_WAYPOINT)) {
 		BaseStation *bs = BaseStation::GetIfValid(this->GetDestination());
 		if (bs != nullptr && bs->owner == OWNER_NONE) InvalidateWindowClassesData(WC_STATION_LIST, 0);
+
+	for (Vehicle *v : Vehicle::Iterate()) {
+		if (v->current_order.index == index) v->current_order.index = INVALID_ORDER;
+		if (v->last_order_id == index) v->last_order_id = INVALID_ORDER;
 	}
 }
 
@@ -2072,6 +2076,10 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 		return false;
 	}
 
+	/* Set the index of the current order to the index of the implicit order,
+	 * this is needed as the index is used for route link generation. */
+	v->current_order.index = v->GetOrder(v->cur_implicit_order_index)->index;
+
 	v->current_order = *order;
 	return UpdateOrderDest(v, order, conditional_depth + 1, pbs_look_ahead);
 }
@@ -2155,6 +2163,9 @@ bool ProcessOrders(Vehicle *v)
 
 	/* Otherwise set it, and determine the destination tile. */
 	v->current_order = *order;
+	/* Set the index of the current order to the index of the implicit order,
+	 * this is needed as the index is used for route link generation. */
+	v->current_order.index = v->GetOrder(v->cur_implicit_order_index)->index;
 
 	InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
 	switch (v->type) {
