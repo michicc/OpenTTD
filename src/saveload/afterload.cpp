@@ -3257,6 +3257,14 @@ bool AfterLoadGame()
 		}
 	}
 
+	if (IsSavegameVersionBefore(SLV_CURRENT_ORDER_INDEX)) {
+		for (Vehicle *v : Vehicle::Iterate()) {
+			/* Set the current order index from the order list. */
+			Order *o = v->GetOrder(v->cur_implicit_order_index);
+			if (o != nullptr) v->current_order.index = o->index;
+		}
+	}
+
 	/* Compute station catchment areas. This is needed here in case UpdateStationAcceptance is called below. */
 	Station::RecomputeCatchmentForAll();
 
