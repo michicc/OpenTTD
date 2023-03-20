@@ -333,6 +333,7 @@ public:
 	StationID last_station_visited;     ///< The last station we stopped at.
 	StationID last_loading_station;     ///< Last station the vehicle has stopped at and could possibly leave from with any cargo loaded.
 	uint64_t last_loading_tick;         ///< Last time (relative to _tick_counter) the vehicle has stopped at a station and could possibly leave with any cargo loaded.
+	OrderID last_order_id;              ///< Order id which caused the vehicle to arrive at the last loading station.
 
 	CargoID cargo_type;                 ///< type of cargo this vehicle is carrying
 	byte cargo_subtype;                 ///< Used for livery refits (NewGRF variations)

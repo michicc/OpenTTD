@@ -353,6 +353,8 @@ enum SaveLoadVersion : uint16 {
 	SLV_LINKGRAPH_SECONDS,                  ///< 308  PR#10610 Store linkgraph update intervals in seconds instead of days.
 	SLV_RESTORE_TOWN_CARGO_CACHE,           ///< 309  PR#xxxxx Restore accepted town cargo cache.
 
+	SLV_CURRENT_ORDER_INDEX,                ///< 310  PR#xxxxx Current vehicle order index.
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
 
