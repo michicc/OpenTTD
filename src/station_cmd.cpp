@@ -3813,7 +3813,7 @@ void DeleteStaleLinks(Station *from)
 		GoodsEntry &ge = from->goods[c];
 		LinkGraph *lg = LinkGraph::GetIfValid(ge.link_graph);
 		if (lg == nullptr) continue;
-		std::vector<NodeID> to_remove{};
+		std::vector<std::tuple<NodeID, OrderID, OrderID>> to_remove{};
 		for (Edge &edge : (*lg)[ge.node].edges) {
 			Station *to = Station::Get((*lg)[edge.dest_node].station);
 			assert(to->goods[c].node == edge.dest_node);
@@ -3870,7 +3870,7 @@ void DeleteStaleLinks(Station *from)
 
 				if (!updated) {
 					/* If it's still considered dead remove it. */
-					to_remove.emplace_back(to->goods[c].node);
+					to_remove.emplace_back(to->goods[c].node, edge.from_order, edge.dest_order);
 					ge.flows.DeleteFlows(to->index);
 					RerouteCargo(from, c, to->index, from->index);
 				}
@@ -3883,7 +3883,7 @@ void DeleteStaleLinks(Station *from)
 			}
 		}
 		/* Remove dead edges. */
-		for (NodeID r : to_remove) (*lg)[ge.node].RemoveEdge(r);
+		for (const auto &[r, from, to] : to_remove) (*lg)[ge.node].RemoveEdge(r, from, to);
 
 		assert(_date >= lg->LastCompression());
 		if ((uint)(_date - lg->LastCompression()) > LinkGraph::COMPRESSION_INTERVAL) {
@@ -3897,11 +3897,13 @@ void DeleteStaleLinks(Station *from)
  * @param st Station to get the link stats from.
  * @param cargo Cargo to increase stat for.
  * @param next_station_id Station the consist will be travelling to next.
+ * @param from_oid Originating order.
+ * @param to_oid Destination order.
  * @param capacity Capacity to add to link stat.
  * @param usage Usage to add to link stat.
  * @param mode Update mode to be applied.
  */
-void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode)
+void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode)
 {
 	GoodsEntry &ge1 = st->goods[cargo];
 	Station *st2 = Station::Get(next_station_id);
@@ -3943,7 +3945,7 @@ void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, uint c
 		}
 	}
 	if (lg != nullptr) {
-		(*lg)[ge1.node].UpdateEdge(ge2.node, capacity, usage, time, mode);
+		(*lg)[ge1.node].UpdateEdge(ge2.node, INVALID_ORDER, INVALID_ORDER, capacity, usage, time, mode);
 	}
 }
 
@@ -3952,8 +3954,10 @@ void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, uint c
  * @param st Station to get the link stats from.
  * @param front First vehicle in the consist.
  * @param next_station_id Station the consist will be travelling to next.
+ * @param from_oid Originating order.
+ * @param to_oid Destination order.
  */
-void IncreaseStats(Station *st, const Vehicle *front, StationID next_station_id, uint32 time)
+void IncreaseStats(Station *st, const Vehicle *front, StationID next_station_id, OrderID from_oid, OrderID to_oid, uint32 time)
 {
 	for (const Vehicle *v = front; v != nullptr; v = v->Next()) {
 		if (v->refit_cap > 0) {
@@ -3963,7 +3967,7 @@ void IncreaseStats(Station *st, const Vehicle *front, StationID next_station_id,
 			 * among the wagons in that case.
 			 * As usage is not such an important figure anyway we just
 			 * ignore the additional cargo then.*/
-			IncreaseStats(st, v->cargo_type, next_station_id, v->refit_cap,
+			IncreaseStats(st, v->cargo_type, next_station_id, from_oid, to_oid, v->refit_cap,
 					std::min<uint>(v->refit_cap, v->cargo.StoredCount()), time, EUM_INCREASE);
 		}
 	}

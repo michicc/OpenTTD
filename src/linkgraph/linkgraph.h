@@ -15,6 +15,7 @@
 #include "../station_base.h"
 #include "../cargotype.h"
 #include "../date_func.h"
+#include "../order_type.h"
 #include "../saveload/saveload.h"
 #include "linkgraph_type.h"
 #include <utility>
@@ -47,8 +48,10 @@ public:
 		Date last_unrestricted_update; ///< When the unrestricted part of the link was last updated.
 		Date last_restricted_update;   ///< When the restricted part of the link was last updated.
 		NodeID dest_node;              ///< Destination of the edge.
+		OrderID from_order;            ///< ID of the order the vehicle had when arriving at the origin.
+		OrderID dest_order;            ///< ID of the order the vehicle will leave the station with.
 
-		BaseEdge(NodeID dest_node = INVALID_NODE);
+		BaseEdge(NodeID dest_node = INVALID_NODE, OrderID from_order = INVALID_ORDER, OrderID dest_order = INVALID_ORDER);
 
 		/**
 		 * Get edge's average travel time.
@@ -69,7 +72,17 @@ public:
 		/** Comparison operator based on \c dest_node. */
 		bool operator <(const BaseEdge &rhs) const
 		{
-			return this->dest_node < rhs.dest_node;
+			return std::tie(this->dest_node, this->from_order, this->dest_order) < std::tie(rhs.dest_node, rhs.from_order, rhs.dest_order);
+		}
+
+		bool operator <(const std::tuple<NodeID, OrderID, OrderID> &rhs) const
+		{
+			return std::tie(this->dest_node, this->from_order, this->dest_order) < rhs;
+		}
+
+		friend inline bool operator <(const std::tuple<NodeID, OrderID, OrderID> &lhs, const LinkGraph::BaseEdge &rhs)
+		{
+			return lhs < std::tie(rhs.dest_node, rhs.from_order, rhs.dest_order);
 		}
 
 		bool operator <(NodeID rhs) const
@@ -127,41 +140,40 @@ public:
 			this->demand = demand;
 		}
 
-		void AddEdge(NodeID to, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
-		void UpdateEdge(NodeID to, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
-		void RemoveEdge(NodeID to);
+		void AddEdge(NodeID to, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
+		void UpdateEdge(NodeID to, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
+		void RemoveEdge(NodeID to, OrderID from_oid, OrderID to_oid);
 
 		/**
 		 * Check if an edge to a destination is present.
 		 * @param dest Wanted edge destination.
+		 * @param from_oid Incoming vehicle order of this link.
+		 * @param to_oid Outgoing vehicle order of this link.
 		 * @return True if an edge is present.
 		 */
-		bool HasEdgeTo(NodeID dest) const
+		bool HasEdgeTo(NodeID dest, OrderID from_oid, OrderID to_oid) const
 		{
-			return std::binary_search(this->edges.begin(), this->edges.end(), dest);
+			return std::binary_search(this->edges.begin(), this->edges.end(), std::make_tuple(dest, from_oid, to_oid));
 		}
 
-		BaseEdge &operator[](NodeID to)
+		/**
+		 * Get all edges to a destination node.
+		 * @param dest Wanted edge destination.
+		 * @return Iterator range for all matching edges.
+		 */
+		auto GetEdgesTo(NodeID dest) const
 		{
-			assert(this->HasEdgeTo(to));
-			return *GetEdge(to);
+			return std::equal_range(this->edges.begin(), this->edges.end(), dest);
 		}
 
-		const BaseEdge &operator[](NodeID to) const
+		BaseEdge &GetEdge(NodeID dest, OrderID from_oid, OrderID to_oid)
 		{
-			assert(this->HasEdgeTo(to));
-			return *GetEdge(to);
+			return *std::lower_bound(this->edges.begin(), this->edges.end(), std::make_tuple(dest, from_oid, to_oid));
 		}
 
-	private:
-		std::vector<BaseEdge>::iterator GetEdge(NodeID dest)
+		const BaseEdge &GetEdge(NodeID dest, OrderID from_oid, OrderID to_oid) const
 		{
-			return std::lower_bound(this->edges.begin(), this->edges.end(), dest);
-		}
-
-		std::vector<BaseEdge>::const_iterator GetEdge(NodeID dest) const
-		{
-			return std::lower_bound(this->edges.begin(), this->edges.end(), dest);
+			return *std::lower_bound(this->edges.begin(), this->edges.end(), std::make_tuple(dest, from_oid, to_oid));
 		}
 	};
 
@@ -254,6 +266,7 @@ public:
 
 	NodeID AddNode(const Station *st);
 	void RemoveNode(NodeID id);
+	void RemoveOrder(OrderID id);
 
 protected:
 	friend SaveLoadTable GetLinkGraphDesc();

@@ -130,15 +130,15 @@ LinkGraphJob::~LinkGraphJob()
 			Station *st2 = Station::GetIfValid(to);
 			if (st2 == nullptr || st2->goods[this->Cargo()].link_graph != this->link_graph.index ||
 					st2->goods[this->Cargo()].node != dest_id ||
-					!(*lg)[node_id].HasEdgeTo(dest_id) ||
-					(*lg)[node_id][dest_id].LastUpdate() == INVALID_DATE) {
+					!(*lg)[node_id].HasEdgeTo(dest_id, edge.base.from_order, edge.base.dest_order) ||
+					(*lg)[node_id].GetEdge(dest_id, edge.base.from_order, edge.base.dest_order).LastUpdate() == INVALID_DATE) {
 				/* Edge has been removed. Delete flows. */
 				StationIDStack erased = flows.DeleteFlows(to);
 				/* Delete old flows for source stations which have been deleted
 				 * from the new flows. This avoids flow cycles between old and
 				 * new flows. */
 				while (!erased.IsEmpty()) ge.flows.erase(erased.Pop());
-			} else if ((*lg)[node_id][dest_id].last_restricted_update == INVALID_DATE) {
+			} else if ((*lg)[node_id].GetEdge(dest_id, edge.base.from_order, edge.base.dest_order).last_restricted_update == INVALID_DATE) {
 				/* Edge is fully restricted. */
 				flows.RestrictFlows(to);
 			}

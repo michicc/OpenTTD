@@ -2224,7 +2224,7 @@ void Vehicle::BeginLoading()
 			this->last_loading_station != this->last_station_visited &&
 			((this->current_order.GetLoadType() & OLFB_NO_LOAD) == 0 ||
 			(this->current_order.GetUnloadType() & OUFB_NO_UNLOAD) == 0)) {
-		IncreaseStats(Station::Get(this->last_loading_station), this, this->last_station_visited, travel_time);
+		IncreaseStats(Station::Get(this->last_loading_station), this, this->last_station_visited, this->last_order_id, this->current_order.index, travel_time);
 	}
 
 	PrepareUnload(this);
