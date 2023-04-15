@@ -27,6 +27,7 @@
 #include "cheat_type.h"
 #include "order_cmd.h"
 #include "train_cmd.h"
+#include "linkgraph/linkgraph.h"
 
 #include "table/strings.h"
 
@@ -53,6 +54,15 @@ Order::~Order()
 	if (this->IsType(OT_GOTO_STATION) || this->IsType(OT_GOTO_WAYPOINT)) {
 		BaseStation *bs = BaseStation::GetIfValid(this->GetDestination());
 		if (bs != nullptr && bs->owner == OWNER_NONE) InvalidateWindowClassesData(WC_STATION_LIST, 0);
+
+		if (bs != nullptr && Station::IsExpected(bs)) {
+			Station *st = Station::From(bs);
+			for (CargoID c = 0; c < NUM_CARGO; ++c) {
+				LinkGraph *lg = LinkGraph::GetIfValid(st->goods[c].link_graph);
+				if (lg != nullptr) lg->RemoveOrder(this->index);
+			}
+		}
+	}
 
 	for (Vehicle *v : Vehicle::Iterate()) {
 		if (v->current_order.index == index) v->current_order.index = INVALID_ORDER;

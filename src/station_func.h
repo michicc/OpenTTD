@@ -19,6 +19,7 @@
 #include "road.h"
 #include "linkgraph/linkgraph_type.h"
 #include "industry_type.h"
+#include "order_type.h"
 
 void ModifyStationRatingAround(TileIndex tile, Owner owner, int amount, uint radius);
 
@@ -52,8 +53,8 @@ void UpdateAirportsNoise();
 
 bool SplitGroundSpriteForOverlay(const TileInfo *ti, SpriteID *ground, RailTrackOffset *overlay_offset);
 
-void IncreaseStats(Station *st, const Vehicle *v, StationID next_station_id, uint32 time);
-void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
+void IncreaseStats(Station *st, const Vehicle *v, StationID next_station_id, OrderID from_oid, OrderID to_oid, uint32 time);
+void IncreaseStats(Station *st, CargoID cargo, StationID next_station_id, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32 time, EdgeUpdateMode mode);
 void RerouteCargo(Station *st, CargoID c, StationID avoid, StationID avoid2);
 
 /**

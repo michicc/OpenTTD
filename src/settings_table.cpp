@@ -48,6 +48,7 @@
 #include "void_map.h"
 #include "cargodest_base.h"
 #include "industry.h"
+#include "linkgraph/refresh.h"
 
 #include "table/strings.h"
 #include "table/settings.h"
@@ -508,6 +509,15 @@ static void CargodestModeChanged(int32 new_value)
 	/* Update remaining links. */
 	RebuildCargoLinkCounts();
 	UpdateCargoLinks();
+
+	/* Clear out link graph edges as the rules might have changed. */
+	for (LinkGraph *lg : LinkGraph::Iterate()) {
+		lg->Clear();
+	}
+	/* Refresh links. */
+	for (Vehicle *v : Vehicle::Iterate()) {
+		if (v->IsPrimaryVehicle()) LinkRefresher::Run(v);
+	}
 }
 
 /* End - Callback Functions */
