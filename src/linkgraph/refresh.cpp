@@ -237,16 +237,16 @@ void LinkRefresher::RefreshStats(const Order *cur, const Order *next)
 					(TimerGameTick::Ticks)this->vehicle->current_order_time) {
 				uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
 				if (effective_capacity > (uint)this->vehicle->orders->GetTotalDuration()) {
-					IncreaseStats(st, c, next_station, effective_capacity /
-							this->vehicle->orders->GetTotalDuration(), 0, 0,
+					IncreaseStats(st, c, next_station, cur->index, next->index,
+							effective_capacity / this->vehicle->orders->GetTotalDuration(), 0, 0,
 							EUM_INCREASE | restricted_mode);
 				} else if (RandomRange(this->vehicle->orders->GetTotalDuration()) < effective_capacity) {
-					IncreaseStats(st, c, next_station, 1, 0, 0, EUM_INCREASE | restricted_mode);
+					IncreaseStats(st, c, next_station, cur->index, next->index, 1, 0, 0, EUM_INCREASE | restricted_mode);
 				} else {
-					IncreaseStats(st, c, next_station, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
+					IncreaseStats(st, c, next_station, cur->index, next->index, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
 				}
 			} else {
-				IncreaseStats(st, c, next_station, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
+				IncreaseStats(st, c, next_station, cur->index, next->index, cargo_quantity, 0, time_estimate, EUM_REFRESH | restricted_mode);
 			}
 		}
 	}

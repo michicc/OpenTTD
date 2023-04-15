@@ -38,6 +38,8 @@ public:
 		SLE_CONDVAR(Edge, last_restricted_update,   SLE_INT32, SLV_187, SL_MAX_VERSION),
 		    SLE_VAR(Edge, dest_node,                SLE_UINT16),
 		SLE_CONDVARNAME(Edge, dest_node, "next_edge", SLE_UINT16, SL_MIN_VERSION, SLV_LINKGRAPH_EDGES),
+		    SLE_VAR(Edge, from_order,               SLE_UINT32),
+			SLE_VAR(Edge, dest_order,               SLE_UINT32),
 	};
 	inline const static SaveLoadCompatTable compat_description = _linkgraph_edge_sl_compat;
 

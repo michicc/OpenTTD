@@ -35,7 +35,7 @@ LinkGraph::BaseNode::BaseNode(TileIndex xy, StationID st, uint demand)
 /**
  * Create an edge.
  */
-LinkGraph::BaseEdge::BaseEdge(NodeID dest_node)
+LinkGraph::BaseEdge::BaseEdge(NodeID dest_node, OrderID from_order, OrderID dest_order)
 {
 	this->capacity = 0;
 	this->usage = 0;
@@ -43,6 +43,8 @@ LinkGraph::BaseEdge::BaseEdge(NodeID dest_node)
 	this->last_unrestricted_update = CalendarTime::INVALID_DATE;
 	this->last_restricted_update = CalendarTime::INVALID_DATE;
 	this->dest_node = dest_node;
+	this->from_order = from_order;
+	this->dest_order = dest_order;
 }
 
 /**
@@ -128,13 +130,27 @@ void LinkGraph::RemoveNode(NodeID id)
 		auto [first, last] = std::equal_range(n.edges.begin(), n.edges.end(), id);
 		/* Remove potential node (erasing an empty range is safe). */
 		auto insert = n.edges.erase(first, last);
-		/* As the edge list is sorted, a potential edge to last_node will always be the last edge. */
-		if (!n.edges.empty() && n.edges.back().dest_node == last_node) {
+		/* Any edges that refer the the moved node? */
+		auto [l_first, l_last] = std::equal_range(n.edges.begin(), n.edges.end(), last_node);
+		if (l_first != l_last) {
 			/* Change dest ID and move into the spot of the deleted edge. */
-			n.edges.back().dest_node = id;
-			n.edges.insert(insert, n.edges.back());
-			n.edges.pop_back();
+			std::for_each(l_first, l_last, [=] (BaseEdge &e) { e.dest_node = id; });
+			std::stable_partition(insert, l_last, [=] (const BaseEdge &e) { return e.dest_node == id; });
 		}
+
+		assert(std::is_sorted(n.edges.begin(), n.edges.end()));
+	}
+}
+
+/**
+ * Remove all edges from the link graph that refer to a specific order.
+ *  @param id ID of the order to be removed.
+ */
+void LinkGraph::RemoveOrder(OrderID id)
+{
+	for (auto &n : this->nodes) {
+		auto to_remove = std::remove_if(n.edges.begin(), n.edges.end(), [=] (const BaseEdge &e) { return e.from_order == id || e.dest_order == id; });
+		n.edges.erase(to_remove, n.edges.end());
 	}
 }
 
@@ -160,15 +176,17 @@ NodeID LinkGraph::AddNode(const Station *st)
  * Fill an edge with values from a link. Set the restricted or unrestricted
  * update timestamp according to the given update mode.
  * @param to Destination node of the link.
+ * @param from_oid Incoming vehicle order of this link.
+ * @param to_oid Outgoing vehicle order of this link.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
  * @param mode Update mode to be used.
  */
-void LinkGraph::BaseNode::AddEdge(NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
+void LinkGraph::BaseNode::AddEdge(NodeID to, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
 {
-	assert(!this->HasEdgeTo(to));
+	assert(!this->HasEdgeTo(to, from_oid, to_oid));
 
-	BaseEdge &edge = *this->edges.emplace(std::upper_bound(this->edges.begin(), this->edges.end(), to), to);
+	BaseEdge &edge = *this->edges.emplace(std::upper_bound(this->edges.begin(), this->edges.end(), std::make_tuple(to, from_oid, to_oid)), to, from_oid, to_oid);
 	edge.capacity = capacity;
 	edge.usage = usage;
 	edge.travel_time_sum = static_cast<uint64_t>(travel_time) * capacity;
@@ -179,28 +197,32 @@ void LinkGraph::BaseNode::AddEdge(NodeID to, uint capacity, uint usage, uint32_t
 /**
  * Creates an edge if none exists yet or updates an existing edge.
  * @param to Target node.
+ * @param from_oid Incoming vehicle order of this link.
+ * @param to_oid Outgoing vehicle order of this link.
  * @param capacity Capacity of the link.
  * @param usage Usage to be added.
  * @param mode Update mode to be used.
  */
-void LinkGraph::BaseNode::UpdateEdge(NodeID to, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
+void LinkGraph::BaseNode::UpdateEdge(NodeID to, OrderID from_oid, OrderID to_oid, uint capacity, uint usage, uint32_t travel_time, EdgeUpdateMode mode)
 {
 	assert(capacity > 0);
 	assert(usage <= capacity);
-	if (!this->HasEdgeTo(to)) {
-		this->AddEdge(to, capacity, usage, travel_time, mode);
+	if (!this->HasEdgeTo(to, from_oid, to_oid)) {
+		this->AddEdge(to, from_oid, to_oid, capacity, usage, travel_time, mode);
 	} else {
-		this->GetEdge(to)->Update(capacity, usage, travel_time, mode);
+		this->GetEdge(to, from_oid, to_oid).Update(capacity, usage, travel_time, mode);
 	}
 }
 
 /**
  * Remove an outgoing edge from this node.
  * @param to ID of destination node.
+ * @param from_oid Incoming vehicle order of this link.
+ * @param to_oid Outgoing vehicle order of this link.
  */
-void LinkGraph::BaseNode::RemoveEdge(NodeID to)
+void LinkGraph::BaseNode::RemoveEdge(NodeID to, OrderID from_oid, OrderID to_oid)
 {
-	auto [first, last] = std::equal_range(this->edges.begin(), this->edges.end(), to);
+	auto [first, last] = std::equal_range(this->edges.begin(), this->edges.end(), std::make_tuple(to, from_oid, to_oid));
 	this->edges.erase(first, last);
 }
 
@@ -252,4 +274,15 @@ void LinkGraph::Init(uint size)
 {
 	assert(this->Size() == 0);
 	this->nodes.resize(size);
+}
+
+/**
+ * Clear all edges in the link graph.
+ */
+void LinkGraph::Clear()
+{
+	for (auto &n : this->nodes) {
+		n.edges.clear();
+	}
+	this->last_compression = TimerGameCalendar::date;
 }

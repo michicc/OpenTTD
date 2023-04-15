@@ -220,8 +220,9 @@ void LinkGraphOverlay::AddLinks(const Station *from, const Station *to)
 			continue;
 		}
 		const LinkGraph &lg = *LinkGraph::Get(ge.link_graph);
-		if (lg[ge.node].HasEdgeTo(to->goods[c].node)) {
-			ConstEdge &edge = lg[ge.node][to->goods[c].node];
+		auto edges = lg[ge.node].GetEdgesTo(to->goods[c].node);
+		for (auto it = edges.first; it != edges.second; ++it) {
+			ConstEdge &edge = *it;
 			this->AddStats(c, lg.Monthly(edge.capacity), lg.Monthly(edge.usage),
 					ge.flows.GetFlowVia(to->index),
 					edge.TravelTime() / Ticks::DAY_TICKS,
