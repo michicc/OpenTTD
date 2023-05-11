@@ -37,6 +37,7 @@
 #include "roadveh_cmd.h"
 #include "train_cmd.h"
 #include "ship_cmd.h"
+#include "consist_base.h"
 #include <sstream>
 #include <iomanip>
 
@@ -122,6 +123,7 @@ std::tuple<CommandCost, VehicleID, uint, uint16, CargoArray> CmdBuildVehicle(DoC
 	 * and (train) wagons don't have an unit number in any scenario. */
 	UnitID unit_num = (flags & DC_QUERY_COST || flags & DC_AUTOREPLACE || (type == VEH_TRAIN && e->u.rail.railveh_type == RAILVEH_WAGON)) ? 0 : GetFreeUnitNumber(type);
 	if (unit_num == UINT16_MAX) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), INVALID_VEHICLE, 0, 0, {} };
+	if (unit_num != 0 && !Consist::CanAllocateItem()) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), INVALID_VEHICLE, 0, 0, {} };
 
 	/* If we are refitting we need to temporarily purchase the vehicle to be able to
 	 * test it. */
@@ -151,6 +153,22 @@ std::tuple<CommandCost, VehicleID, uint, uint16, CargoArray> CmdBuildVehicle(DoC
 			v->unitnumber = unit_num;
 			v->value      = value.GetCost();
 			veh_id        = v->index;
+
+			if (unit_num != 0) {
+				/* CmdBuildRailVehicle may have already created a consist for us. */
+				if (v->GetConsist() == nullptr) {
+					Consist *cs = nullptr;
+					switch (type) {
+						case VEH_TRAIN:    cs = new TrainConsist(_current_company); break;
+						case VEH_ROAD:     cs = new RoadConsist(_current_company); break;
+						case VEH_SHIP:     cs = new ShipConsist(_current_company); break;
+						case VEH_AIRCRAFT: cs = new AircraftConsist(_current_company); break;
+						default: NOT_REACHED(); // Safe due to IsDepotTile()
+					}
+
+					cs->SetFront(v);
+				}
+			}
 		}
 
 		if (refitting) {
@@ -243,7 +261,11 @@ CommandCost CmdSellVehicle(DoCommandFlag flags, VehicleID v_id, bool sell_chain,
 		ret = CommandCost(EXPENSES_NEW_VEHICLES, -front->value);
 
 		if (flags & DC_EXEC) {
-			if (front->IsPrimaryVehicle() && backup_order) OrderBackup::Backup(front, client_id);
+			if (front->IsPrimaryVehicle()) {
+				if (backup_order) OrderBackup::Backup(front, client_id);
+				delete front->GetConsist();
+				front->SetConsist(nullptr);
+			}
 			delete front;
 		}
 	}

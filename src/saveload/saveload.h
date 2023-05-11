@@ -356,6 +356,8 @@ enum SaveLoadVersion : uint16 {
 	SLV_SAVEGAME_ID,                        ///< 313  PR#10719 Add an unique ID to every savegame (used to deduplicate surveys).
 	SLV_STRING_GAMELOG,                     ///< 314  PR#10801 Use std::string in gamelog.
 
+	SLV_CONSISTS,                           ///< 315  PR#xxxx Consists for vehicle chains.
+
 	SL_MAX_VERSION,                         ///< Highest possible saveload version
 };
 

@@ -73,6 +73,7 @@
 #include "timer/timer_game_calendar.h"
 #include "timer/timer_game_realtime.h"
 #include "timer/timer_game_tick.h"
+#include "consist_base.h"
 
 #include "linkgraph/linkgraphschedule.h"
 
@@ -1297,6 +1298,13 @@ static void CheckCaches()
 		memcpy(buff, &v->cargo, sizeof(VehicleCargoList));
 		v->cargo.InvalidateCache();
 		assert(memcmp(&v->cargo, buff, sizeof(VehicleCargoList)) == 0);
+	}
+
+	/* Check for back-links from vehicles to consists. */
+	for (Consist *cs : Consist::Iterate()) {
+		for (Vehicle *v = cs->Front(); v != nullptr; v = v->Next()) {
+			assert(v->GetConsist() == cs);
+		}
 	}
 
 	/* Backup stations_near */

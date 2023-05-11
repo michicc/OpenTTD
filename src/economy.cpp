@@ -437,6 +437,14 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 			}
 		}
 
+		for (Consist *cs : Consist::Iterate()) {
+			if (cs->owner == old_owner) {
+				assert(new_owner != INVALID_OWNER);
+
+				cs->owner = new_owner;
+			}
+		}
+
 		if (new_owner != INVALID_OWNER) GroupStatistics::UpdateAutoreplace(new_owner);
 	}
 

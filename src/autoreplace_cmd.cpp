@@ -22,6 +22,7 @@
 #include "ai/ai.hpp"
 #include "news_func.h"
 #include "strings_func.h"
+#include "consist_base.h"
 #include "autoreplace_cmd.h"
 #include "group_cmd.h"
 #include "order_cmd.h"
@@ -417,6 +418,8 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 
 	/* Last do those things which do never fail (resp. we do not care about), but which are not undo-able */
 	if (cost.Succeeded() && old_head != new_head && (flags & DC_EXEC) != 0) {
+		old_head->GetConsist()->SetFront(new_head);
+
 		/* Copy other things which cannot be copied by a command and which shall not stay resetted from the build vehicle command */
 		new_head->CopyVehicleConfigAndStatistics(old_head);
 		GroupStatistics::AddProfitLastYear(new_head);
@@ -425,6 +428,8 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 		ChangeVehicleViewports(old_head->index, new_head->index);
 		ChangeVehicleViewWindow(old_head->index, new_head->index);
 		ChangeVehicleNews(old_head->index, new_head->index);
+
+		old_head->SetConsist(nullptr);
 	}
 
 	return cost;
