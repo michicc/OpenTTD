@@ -17,6 +17,7 @@
 #include "road.h"
 #include "road_map.h"
 #include "newgrf_engine.h"
+#include "consist_base.h"
 
 struct RoadVehicle;
 
@@ -322,6 +323,14 @@ protected: // These functions should not be called outside acceleration code.
 
 		return false;
 	}
+};
+
+/**
+ * Specialized consist for the road transport type.
+ */
+class RoadConsist FINAL : public SpecializedConsist<RoadConsist, RoadVehicle, VEH_ROAD> {
+public:
+	inline RoadConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
 };
 
 #endif /* ROADVEH_H */

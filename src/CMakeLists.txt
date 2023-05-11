@@ -102,6 +102,9 @@ add_files(
     company_gui.h
     company_manager_face.h
     company_type.h
+    consist.cpp
+    consist_base.h
+    consist_type.h
     console.cpp
     console_cmds.cpp
     console_func.h

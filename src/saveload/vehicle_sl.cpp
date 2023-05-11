@@ -22,6 +22,7 @@
 #include "../effectvehicle_base.h"
 #include "../company_base.h"
 #include "../company_func.h"
+#include "../consist_base.h"
 #include "../disaster_vehicle.h"
 #include "../economy_base.h"
 
@@ -262,6 +263,11 @@ void AfterLoadVehicles(bool part_of_load)
 		if (part_of_load) v->fill_percent_te_id = INVALID_TE_ID;
 		v->first = nullptr;
 		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = INVALID_ENGINE;
+	}
+
+	for (Consist *cs : Consist::Iterate()) {
+		/* Reinstate consist pointers. */
+		cs->Front()->SetConsist(cs);
 	}
 
 	/* AfterLoadVehicles may also be called in case of NewGRF reload, in this
@@ -1088,6 +1094,33 @@ struct VEHSChunkHandler : ChunkHandler {
 
 			/* Advanced vehicle lists got added */
 			if (IsSavegameVersionBefore(SLV_60)) v->group_id = DEFAULT_GROUP;
+
+			if (IsSavegameVersionBefore(SLV_CONSISTS)) {
+				/* The way to detect the primary vehicle of a chain changed during several
+				 * savegame versions. Waiting for that stuff to be corrected in AfterLoadGame
+				 * is too late, so we have to do a miniature replica here. */
+				bool is_primary = v->IsPrimaryVehicle();
+				if ((v->type == VEH_TRAIN && IsSavegameVersionBefore(SLV_17, 1)) || (v->type == VEH_ROAD && IsSavegameVersionBefore(SLV_157))) {
+					is_primary = v->subtype == 0;
+				}
+
+				if (is_primary) {
+					/* We have a primary vehicle, create a consist for it. */
+
+					/* Consist pool is the same size as the vehicle pool which means
+					 * there should always be space in the consist pool. */
+					assert(Consist::CanAllocateItem());
+					Consist *c = nullptr;
+					switch (v->type) {
+						case VEH_TRAIN:    c = new TrainConsist(v->owner); break;
+						case VEH_ROAD:     c = new RoadConsist(v->owner); break;
+						case VEH_SHIP:     c = new ShipConsist(v->owner); break;
+						case VEH_AIRCRAFT: c = new AircraftConsist(v->owner); break;
+						default: NOT_REACHED();
+					}
+					c->front = v;
+				}
+			}
 		}
 	}
 
