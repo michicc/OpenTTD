@@ -143,6 +143,8 @@ struct Aircraft FINAL : public SpecializedVehicle<Aircraft, VEH_AIRCRAFT> {
 class AircraftConsist FINAL : public SpecializedConsist<AircraftConsist, Aircraft, VEH_AIRCRAFT> {
 public:
 	inline AircraftConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
+
+	bool Tick() override;
 };
 
 void GetRotorImage(const Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result);
