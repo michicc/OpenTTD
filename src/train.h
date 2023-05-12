@@ -359,6 +359,8 @@ protected: // These functions should not be called outside acceleration code.
 class TrainConsist FINAL : public SpecializedConsist<TrainConsist, Train, VEH_TRAIN> {
 public:
 	inline TrainConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
+
+	bool Tick() override;
 };
 
 #endif /* TRAIN_H */

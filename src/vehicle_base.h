@@ -570,7 +570,11 @@ public:
 	 * Calls the tick handler of the vehicle
 	 * @return is this vehicle still valid?
 	 */
-	virtual bool Tick() { return true; };
+	virtual bool Tick()
+	{
+		this->tick_counter++;
+		return true;
+	};
 
 	/**
 	 * Calls the new day handler of the vehicle

@@ -4073,19 +4073,9 @@ Money Train::GetRunningCost() const
  */
 bool Train::Tick()
 {
-	this->tick_counter++;
+	if (!this->GroundVehicleBase::Tick()) return false;
 
-	if (this->IsFrontEngine()) {
-		PerformanceAccumulator framerate(PFE_GL_TRAINS);
-
-		if (!(this->vehstatus & VS_STOPPED) || this->cur_speed > 0) this->running_ticks++;
-
-		this->current_order_time++;
-
-		if (!TrainLocoHandler(this, false)) return false;
-
-		return TrainLocoHandler(this, true);
-	} else if (this->IsFreeWagon() && (this->vehstatus & VS_CRASHED)) {
+	if (this->IsFreeWagon() && (this->vehstatus & VS_CRASHED)) {
 		/* Delete flooded standalone wagon chain */
 		if (++this->crash_anim_pos >= 4400) {
 			delete this;
@@ -4213,4 +4203,19 @@ uint16 Train::GetMaxWeight() const
 	}
 
 	return weight;
+}
+
+/**
+ * Update train consist data for a tick.
+ * @return True if the consist still exists, false if it has ceased to exist.
+ */
+bool TrainConsist::Tick()
+{
+	PerformanceAccumulator framerate(PFE_GL_TRAINS);
+
+	if (!this->SpecializedConsistBase::Tick()) return false;
+
+	if (!TrainLocoHandler(this->Front(), false)) return false;
+
+	return TrainLocoHandler(this->Front(), true);
 }

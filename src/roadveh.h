@@ -134,7 +134,6 @@ struct RoadVehicle FINAL : public GroundVehicle<RoadVehicle, VEH_ROAD> {
 	Money GetRunningCost() const override;
 	int GetDisplayImageWidth(Point *offset = nullptr) const;
 	bool IsInDepot() const override { return this->state == RVSB_IN_DEPOT; }
-	bool Tick() override;
 	void OnNewDay() override;
 	uint Crash(bool flooded = false) override;
 	Trackdir GetVehicleTrackdir() const override;
@@ -331,6 +330,8 @@ protected: // These functions should not be called outside acceleration code.
 class RoadConsist FINAL : public SpecializedConsist<RoadConsist, RoadVehicle, VEH_ROAD> {
 public:
 	inline RoadConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
+
+	bool Tick() override;
 };
 
 #endif /* ROADVEH_H */

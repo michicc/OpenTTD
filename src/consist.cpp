@@ -31,3 +31,18 @@ void Consist::SetFront(Vehicle *front)
 	this->front = front;
 	front->SetConsist(this);
 }
+
+/**
+ * The tick handler for consists.
+ * @return True if the consist is still valid.
+ */
+bool Consist::Tick()
+{
+	Vehicle *v = this->Front();
+
+	/* Update counters. */
+	v->current_order_time++;
+	if (!(v->vehstatus & VS_STOPPED) || v->cur_speed > 0) v->running_ticks++;
+
+	return true;
+}

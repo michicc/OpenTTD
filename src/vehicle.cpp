@@ -1035,6 +1035,10 @@ void CallVehicleTicks()
 		}
 	}
 
+	for (Consist *cs : Consist::Iterate()) {
+		cs->Tick();
+	}
+
 	Backup<CompanyID> cur_company(_current_company, FILE_LINE);
 	for (auto &it : _vehicles_to_autoreplace) {
 		Vehicle *v = it.first;

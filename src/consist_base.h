@@ -41,6 +41,8 @@ public:
 
 	void SetFront(Vehicle *front);
 
+	virtual bool Tick();
+
 	/**
 	 * Returns an iterable ensemble of all valid consists.
 	 * @param from index of the first consist to consider.
