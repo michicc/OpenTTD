@@ -215,6 +215,23 @@ void UpdateOldAircraft()
 	}
 }
 
+/** Extract consist flags from old vehicle flags. */
+ConsistFlags ConvertToConsistFlags(uint16_t old_flags)
+{
+	ConsistFlags consist_flags{};
+
+	if (HasBit(old_flags, 0)) SetBit(consist_flags, CF_LOADING_FINISHED);
+	if (HasBit(old_flags, 3)) SetBit(consist_flags, CF_TIMETABLE_STARTED);
+	if (HasBit(old_flags, 4)) SetBit(consist_flags, CF_AUTOFILL_TIMETABLE);
+	if (HasBit(old_flags, 5)) SetBit(consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+	if (HasBit(old_flags, 6)) SetBit(consist_flags, CF_STOP_LOADING);
+	if (HasBit(old_flags, 7)) SetBit(consist_flags, CF_PATHFINDER_LOST);
+	if (HasBit(old_flags, 8)) SetBit(consist_flags, CF_SERVINT_IS_CUSTOM);
+	if (HasBit(old_flags, 9)) SetBit(consist_flags, CF_SERVINT_IS_PERCENT);
+
+	return consist_flags;
+}
+
 /**
  * Check all vehicles to ensure their engine type is valid
  * for the currently loaded NewGRFs (that includes none...)
@@ -1120,6 +1137,10 @@ struct VEHSChunkHandler : ChunkHandler {
 					}
 					c->front = v;
 				}
+
+				/* Split old vehicle flags into consist flags and new vehicle flags. */
+				v->consist_flags = ConvertToConsistFlags(v->vehicle_flags);
+				v->vehicle_flags = (VehicleFlags)(((uint16_t)v->vehicle_flags >> 1) & 0x03);
 			}
 		}
 	}

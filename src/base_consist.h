@@ -12,6 +12,20 @@
 
 #include "order_type.h"
 #include "timer/timer_game_tick.h"
+#include "core/enum_type.hpp"
+
+/** Various state flags for the consist. */
+enum ConsistFlags : uint16_t {
+	CF_LOADING_FINISHED,        ///< Consist has finished loading.
+	CF_STOP_LOADING,            ///< Don't load anymore during the next load cycle.
+	CF_TIMETABLE_STARTED,       ///< Whether the consist has started running on the timetable yet.
+	CF_AUTOFILL_TIMETABLE,      ///< Whether the consist should fill in the timetable automatically.
+	CF_AUTOFILL_PRES_WAIT_TIME, ///< Whether non-destructive auto-fill should preserve waiting times
+	CF_PATHFINDER_LOST,         ///< Consist's pathfinder is lost.
+	CF_SERVINT_IS_CUSTOM,       ///< Service interval is custom.
+	CF_SERVINT_IS_PERCENT,      ///< Service interval is percent.
+};
+DECLARE_ENUM_AS_BIT_SET(ConsistFlags)
 
 /** Various front vehicle properties that are preserved when autoreplacing, using order-backup or switching front engines within a consist. */
 struct BaseConsist {
@@ -27,7 +41,7 @@ struct BaseConsist {
 	VehicleOrderID cur_real_order_index;///< The index to the current real (non-implicit) order
 	VehicleOrderID cur_implicit_order_index;///< The index to the current implicit order
 
-	uint16_t vehicle_flags;               ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
+	ConsistFlags consist_flags;         ///< Various state flags for the consist.
 
 	virtual ~BaseConsist() = default;
 
