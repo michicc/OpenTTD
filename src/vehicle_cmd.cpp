@@ -203,10 +203,8 @@ std::tuple<CommandCost, VehicleID, uint, uint16, CargoArray> CmdBuildVehicle(DoC
 			GroupStatistics::CountEngine(v, 1);
 			GroupStatistics::UpdateAutoreplace(_current_company);
 
-			if (v->IsPrimaryVehicle()) {
-				GroupStatistics::CountVehicle(v, 1);
-				if (!(subflags & DC_AUTOREPLACE)) OrderBackup::Restore(v, client_id);
-			}
+			if (v->IsPrimaryVehicle()) GroupStatistics::CountVehicle(v, 1);
+			if (unit_num != 0 && !(subflags & DC_AUTOREPLACE)) OrderBackup::Restore(v->GetConsist(), client_id);
 		}
 
 
@@ -262,8 +260,9 @@ CommandCost CmdSellVehicle(DoCommandFlag flags, VehicleID v_id, bool sell_chain,
 
 		if (flags & DC_EXEC) {
 			if (front->IsPrimaryVehicle()) {
-				if (backup_order) OrderBackup::Backup(front, client_id);
-				delete front->GetConsist();
+				Consist *cs = front->GetConsist();
+				if (backup_order) OrderBackup::Backup(cs, client_id);
+				delete cs;
 				front->SetConsist(nullptr);
 			}
 			delete front;

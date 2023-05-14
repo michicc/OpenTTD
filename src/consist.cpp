@@ -11,12 +11,20 @@
 #include "consist_base.h"
 #include "core/pool_func.hpp"
 #include "vehicle_base.h"
+#include "order_backup.h"
 
 #include "safeguards.h"
 
 /** The pool with all our consists. */
 ConsistPool _consist_pool("Consist");
 INSTANTIATE_POOL_METHODS(Consist)
+
+Consist::~Consist()
+{
+	if (CleaningPool()) return;
+
+	OrderBackup::ClearConsist(this);
+}
 
 /**
  * Sets a new front vehicle pointer. This also updates the consist pointer of the vehicle chain.
