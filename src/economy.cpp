@@ -1283,7 +1283,7 @@ void PrepareUnload(Vehicle *front_v)
 	curr_station->loading_vehicles.push_back(front_v);
 
 	/* At this moment loading cannot be finished */
-	ClrBit(front_v->vehicle_flags, VF_LOADING_FINISHED);
+	ClrBit(front_v->consist_flags, CF_LOADING_FINISHED);
 
 	/* Start unloading at the first possible moment */
 	front_v->load_unload_ticks = 1;
@@ -1659,7 +1659,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 	if (front->type == VEH_TRAIN && (!IsTileType(front->tile, MP_STATION) || GetStationIndex(front->tile) != st->index)) {
 		/* The train reversed in the station. Take the "easy" way
 		 * out and let the train just leave as it always did. */
-		SetBit(front->vehicle_flags, VF_LOADING_FINISHED);
+		SetBit(front->consist_flags, CF_LOADING_FINISHED);
 		front->load_unload_ticks = 1;
 		return;
 	}
@@ -1755,7 +1755,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 		}
 
 		/* Do not pick up goods when we have no-load set or loading is stopped. */
-		if (front->current_order.GetLoadType() & OLFB_NO_LOAD || HasBit(front->vehicle_flags, VF_STOP_LOADING)) continue;
+		if (front->current_order.GetLoadType() & OLFB_NO_LOAD || HasBit(front->consist_flags, CF_STOP_LOADING)) continue;
 
 		/* This order has a refit, if this is the first vehicle part carrying cargo and the whole vehicle is empty, try refitting. */
 		if (front->current_order.IsRefit() && artic_part == 1) {
@@ -1868,7 +1868,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 
 	if (!anything_unloaded) delete payment;
 
-	ClrBit(front->vehicle_flags, VF_STOP_LOADING);
+	ClrBit(front->consist_flags, CF_STOP_LOADING);
 	if (anything_loaded || anything_unloaded) {
 		if (_settings_game.order.gradual_loading) {
 			/* The time it takes to load one 'slice' of cargo or passengers depends
@@ -1881,7 +1881,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 		 * load and we're not supposed to wait any longer: stop loading. */
 		if (!anything_unloaded && full_load_amount == 0 && reservation_left == 0 && !(front->current_order.GetLoadType() & OLFB_FULL_LOAD) &&
 				front->current_order_time >= std::max(front->current_order.GetTimetabledWait() - front->lateness_counter, 0)) {
-			SetBit(front->vehicle_flags, VF_STOP_LOADING);
+			SetBit(front->consist_flags, CF_STOP_LOADING);
 		}
 
 		UpdateLoadUnloadTicks(front, st, new_load_unload_ticks);
@@ -1908,7 +1908,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 			if (!finished_loading) LinkRefresher::Run(front, true, true);
 		}
 
-		SB(front->vehicle_flags, VF_LOADING_FINISHED, 1, finished_loading);
+		SB(front->consist_flags, CF_LOADING_FINISHED, 1, finished_loading);
 	}
 
 	/* Calculate the loading indicator fill percent and display

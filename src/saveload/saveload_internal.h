@@ -13,6 +13,7 @@
 #include "../company_manager_face.h"
 #include "../order_base.h"
 #include "../engine_type.h"
+#include "../base_consist.h"
 #include "saveload.h"
 
 void InitializeOldNames();
@@ -42,6 +43,7 @@ void ResetViewportAfterLoadGame();
 
 void ConvertOldMultiheadToNew();
 void ConnectMultiheadedTrains();
+ConsistFlags ConvertToConsistFlags(uint16_t old_flags);
 
 void ResetTempEngineData();
 Engine *GetTempDataEngine(EngineID index);
