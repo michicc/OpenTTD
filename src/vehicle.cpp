@@ -778,10 +778,10 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 {
 	if (path_found) {
 		/* Route found, is the vehicle marked with "lost" flag? */
-		if (!HasBit(this->vehicle_flags, VF_PATHFINDER_LOST)) return;
+		if (!HasBit(this->consist_flags, CF_PATHFINDER_LOST)) return;
 
 		/* Clear the flag as the PF's problem was solved. */
-		ClrBit(this->vehicle_flags, VF_PATHFINDER_LOST);
+		ClrBit(this->consist_flags, CF_PATHFINDER_LOST);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 		/* Delete the news item. */
@@ -790,10 +790,10 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 	}
 
 	/* Were we already lost? */
-	if (HasBit(this->vehicle_flags, VF_PATHFINDER_LOST)) return;
+	if (HasBit(this->consist_flags, CF_PATHFINDER_LOST)) return;
 
 	/* It is first time the problem occurred, set the "lost" flag. */
-	SetBit(this->vehicle_flags, VF_PATHFINDER_LOST);
+	SetBit(this->consist_flags, CF_PATHFINDER_LOST);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 	/* Notify user about the event. */
@@ -1452,7 +1452,7 @@ uint8 CalcPercentVehicleFilled(const Vehicle *front, StringID *colour)
 			unloading += HasBit(v->vehicle_flags, VF_CARGO_UNLOADING) ? 1 : 0;
 			loading |= !order_no_load &&
 					(order_full_load || st->goods[v->cargo_type].HasRating()) &&
-					!HasBit(v->vehicle_flags, VF_LOADING_FINISHED) && !HasBit(v->vehicle_flags, VF_STOP_LOADING);
+					!HasBit(v->consist_flags, CF_LOADING_FINISHED) && !HasBit(v->consist_flags, CF_STOP_LOADING);
 			cars++;
 		}
 	}
@@ -2338,7 +2338,7 @@ void Vehicle::HandleLoading(bool mode)
 			uint wait_time = std::max(this->current_order.GetTimetabledWait() - this->lateness_counter, 0);
 
 			/* Not the first call for this tick, or still loading */
-			if (mode || !HasBit(this->vehicle_flags, VF_LOADING_FINISHED) || this->current_order_time < wait_time) return;
+			if (mode || !HasBit(this->consist_flags, CF_LOADING_FINISHED) || this->current_order_time < wait_time) return;
 
 			this->PlayLeaveStationSound();
 

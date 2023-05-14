@@ -181,7 +181,7 @@ struct TimetableWindow : Window {
 	 */
 	static bool BuildArrivalDepartureList(const Vehicle *v, std::vector<TimetableArrivalDeparture> &table)
 	{
-		assert(HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED));
+		assert(HasBit(v->consist_flags, CF_TIMETABLE_STARTED));
 
 		bool travelling = (!v->current_order.IsType(OT_LOADING) || v->current_order.GetNonStopType() == ONSF_STOP_EVERYWHERE);
 		Ticks start_time = TimerGameCalendar::date_fract - v->current_order_time;
@@ -335,7 +335,7 @@ struct TimetableWindow : Window {
 			this->DisableWidget(WID_VT_SHARED_ORDER_LIST);
 		}
 
-		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE));
+		this->SetWidgetLoweredState(WID_VT_AUTOFILL, HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE));
 
 		this->DrawWidgets();
 	}
@@ -430,7 +430,7 @@ struct TimetableWindow : Window {
 		 * i.e. are only shown if we can calculate all times.
 		 * Excluding order lists with only one order makes some things easier. */
 		Ticks total_time = v->orders != nullptr ? v->orders->GetTimetableDurationIncomplete() : 0;
-		if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED)) return;
+		if (total_time <= 0 || v->GetNumOrders() <= 1 || !HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) return;
 
 		std::vector<TimetableArrivalDeparture> arr_dep(v->GetNumOrders());
 		const VehicleOrderID cur_order = v->cur_real_order_index % v->GetNumOrders();
@@ -508,7 +508,7 @@ struct TimetableWindow : Window {
 			SetDParam(0, STR_JUST_DATE_TINY);
 			SetDParam(1, v->timetable_start);
 			DrawString(tr, STR_TIMETABLE_STATUS_START_AT);
-		} else if (!HasBit(v->vehicle_flags, VF_TIMETABLE_STARTED)) {
+		} else if (!HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) {
 			/* We aren't running on a timetable yet, so how can we be "on time"
 			 * when we aren't even "on service"/"on duty"? */
 			DrawString(tr, STR_TIMETABLE_STATUS_NOT_STARTED);
@@ -642,7 +642,7 @@ struct TimetableWindow : Window {
 				break;
 
 			case WID_VT_AUTOFILL: { // Autofill the timetable.
-				Command<CMD_AUTOFILL_TIMETABLE>::Post(STR_ERROR_CAN_T_TIMETABLE_VEHICLE, v->index, !HasBit(v->vehicle_flags, VF_AUTOFILL_TIMETABLE), _ctrl_pressed);
+				Command<CMD_AUTOFILL_TIMETABLE>::Post(STR_ERROR_CAN_T_TIMETABLE_VEHICLE, v->index, !HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE), _ctrl_pressed);
 				break;
 			}
 

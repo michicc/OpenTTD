@@ -262,9 +262,10 @@ SaveLoadTable GetOrderBackupDescription()
 		 SLE_CONDVAR(OrderBackup, current_order_time,       SLE_UINT32,                SLV_176, SL_MAX_VERSION),
 		 SLE_CONDVAR(OrderBackup, lateness_counter,         SLE_INT32,                 SLV_176, SL_MAX_VERSION),
 		 SLE_CONDVAR(OrderBackup, timetable_start,          SLE_INT32,                 SLV_176, SL_MAX_VERSION),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags,            SLE_FILE_U8 | SLE_VAR_U16, SLV_176, SLV_180),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags,            SLE_UINT16,                SLV_180, SL_MAX_VERSION),
-		     SLE_REF(OrderBackup, orders,                   REF_ORDER),
+		 SLE_CONDVARNAME(OrderBackup, consist_flags, "vehicle_flags", SLE_FILE_U8 | SLE_VAR_U16, SLV_176, SLV_180),
+		 SLE_CONDVARNAME(OrderBackup, consist_flags, "vehicle_flags", SLE_UINT16,                SLV_180, SLV_CONSISTS),
+		 SLE_CONDVAR(OrderBackup, consist_flags,            SLE_UINT16,                SLV_CONSISTS, SL_MAX_VERSION),
+			 SLE_REF(OrderBackup, orders,                   REF_ORDER),
 	};
 
 	return _order_backup_desc;
@@ -299,6 +300,10 @@ struct BKORChunkHandler : ChunkHandler {
 			/* set num_orders to 0 so it's a valid OrderList */
 			OrderBackup *ob = new (index) OrderBackup();
 			SlObject(ob, slt);
+
+			if (IsSavegameVersionBefore(SLV_CONSISTS)) {
+				ob->consist_flags = ConvertToConsistFlags(ob->consist_flags);
+			}
 		}
 	}
 
