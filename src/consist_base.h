@@ -10,9 +10,11 @@
 #ifndef CONSIST_BASE_H
 #define CONSIST_BASE_H
 
+#include "base_consist.h"
 #include "consist_type.h"
+#include "core/bitmath_func.hpp"
 #include "core/pool_type.hpp"
-#include "vehicle_type.h"
+#include "vehicle_base.h"
 #include "company_type.h"
 
 /** A consist pool for a little over 1 million consists. */
@@ -20,15 +22,35 @@ typedef Pool<Consist, ConsistID, 512, 0xFF000> ConsistPool;
 extern ConsistPool _consist_pool;
 
 /** Consist data structure holding information common to a vehicle chain. */
-class Consist : public ConsistPool::PoolItem<&_consist_pool> {
+class Consist : public ConsistPool::PoolItem<&_consist_pool>, public BaseConsist {
 protected:
 	Vehicle *front;             ///< Pointer to the first vehicle of the associated vehicle chain.
 
 	Consist(VehicleType type = VEH_INVALID, ::Owner owner = INVALID_OWNER) : type(type), owner(owner) {}
+	friend struct CNSTChunkHandler;
+
+	/**
+	 * Advance cur_real_order_index to the next real order.
+	 * cur_implicit_order_index is not touched.
+	 */
+	void SkipToNextRealOrderIndex()
+	{
+		if (this->Front()->GetNumManualOrders() > 0) {
+			/* Advance to next real order */
+			do {
+				this->cur_real_order_index++;
+				if (this->cur_real_order_index >= this->Front()->GetNumOrders()) this->cur_real_order_index = 0;
+			} while (this->Front()->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT));
+		} else {
+			this->cur_real_order_index = 0;
+		}
+	}
 
 public:
 	VehicleType type; ///< Type of the consist.
 	Owner owner;      ///< Which company owns the consist?
+
+	uint64_t last_loading_tick;         ///< Last time (based on TimerGameTick counter) the vehicle has stopped at a station and could possibly leave with any cargo loaded.
 
 	/** We want to 'destruct' the right class. */
 	virtual ~Consist();
@@ -40,6 +62,79 @@ public:
 	inline Vehicle *Front() const { return this->front; }
 
 	void SetFront(Vehicle *front);
+
+
+	inline uint16 GetServiceInterval() const { return this->service_interval; }
+
+	inline void SetServiceInterval(uint16 interval) { this->service_interval = interval; }
+
+	inline bool ServiceIntervalIsCustom() const { return HasBit(this->consist_flags, CF_SERVINT_IS_CUSTOM); }
+
+	inline bool ServiceIntervalIsPercent() const { return HasBit(this->consist_flags, CF_SERVINT_IS_PERCENT); }
+
+	inline void SetServiceIntervalIsCustom(bool on) { SB(this->consist_flags, CF_SERVINT_IS_CUSTOM, 1, on); }
+
+	inline void SetServiceIntervalIsPercent(bool on) { SB(this->consist_flags, CF_SERVINT_IS_PERCENT, 1, on); }
+
+	/**
+	 * Increments cur_implicit_order_index, keeps care of the wrap-around and invalidates the GUI.
+	 * cur_real_order_index is incremented as well, if needed.
+	 * Note: current_order is not invalidated.
+	 */
+	void IncrementImplicitOrderIndex()
+	{
+		if (this->cur_implicit_order_index == this->cur_real_order_index) {
+			/* Increment real order index as well */
+			this->SkipToNextRealOrderIndex();
+		}
+
+		assert(this->cur_real_order_index == 0 || this->cur_real_order_index < this->Front()->GetNumOrders());
+
+		/* Advance to next implicit order */
+		do {
+			this->cur_implicit_order_index++;
+			if (this->cur_implicit_order_index >= this->Front()->GetNumOrders()) this->cur_implicit_order_index = 0;
+		} while (this->cur_implicit_order_index != this->cur_real_order_index && !this->Front()->GetOrder(this->cur_implicit_order_index)->IsType(OT_IMPLICIT));
+
+		InvalidateVehicleOrder(this->Front(), 0);
+	}
+
+	/**
+	 * Advanced cur_real_order_index to the next real order, keeps care of the wrap-around and invalidates the GUI.
+	 * cur_implicit_order_index is incremented as well, if it was equal to cur_real_order_index, i.e. cur_real_order_index is skipped
+	 * but not any implicit orders.
+	 * Note: current_order is not invalidated.
+	 */
+	void IncrementRealOrderIndex()
+	{
+		if (this->cur_implicit_order_index == this->cur_real_order_index) {
+			/* Increment both real and implicit order */
+			this->IncrementImplicitOrderIndex();
+		} else {
+			/* Increment real order only */
+			this->SkipToNextRealOrderIndex();
+			InvalidateVehicleOrder(this->Front(), 0);
+		}
+	}
+
+	/**
+	 * Skip implicit orders until cur_real_order_index is a non-implicit order.
+	 */
+	void UpdateRealOrderIndex()
+	{
+		/* Make sure the index is valid */
+		if (this->cur_real_order_index >= this->Front()->GetNumOrders()) this->cur_real_order_index = 0;
+
+		if (this->Front()->GetNumManualOrders() > 0) {
+			/* Advance to next real order */
+			while (this->Front()->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT)) {
+				this->cur_real_order_index++;
+				if (this->cur_real_order_index >= this->Front()->GetNumOrders()) this->cur_real_order_index = 0;
+			}
+		} else {
+			this->cur_real_order_index = 0;
+		}
+	}
 
 	virtual bool Tick();
 

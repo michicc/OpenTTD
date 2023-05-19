@@ -57,6 +57,7 @@
 #include "../disaster_vehicle.h"
 #include "../ship.h"
 #include "../water.h"
+#include "../consist_base.h"
 #include "../timer/timer.h"
 #include "../timer/timer_game_calendar.h"
 #include "../timer/timer_game_tick.h"
@@ -1599,11 +1600,13 @@ bool AfterLoadGame()
 			if ((v->type != VEH_TRAIN || Train::From(v)->IsFrontEngine()) &&  // for all locs
 					!(v->vehstatus & (VS_STOPPED | VS_CRASHED)) && // not stopped or crashed
 					v->current_order.IsType(OT_LOADING)) {         // loading
+				assert(v->Previous() == nullptr);
+
 				Station::Get(v->last_station_visited)->loading_vehicles.push_back(v);
 
 				/* The loading finished flag is *only* set when actually completely
 				 * finished. Because the vehicle is loading, it is not finished. */
-				ClrBit(v->consist_flags, CF_LOADING_FINISHED);
+				ClrBit(v->GetConsist()->consist_flags, CF_LOADING_FINISHED);
 			}
 		}
 	} else if (IsSavegameVersionBefore(SLV_59)) {
@@ -2574,7 +2577,7 @@ bool AfterLoadGame()
 			if (!HasBit(t->flags, 5)) continue;
 
 			ClrBit(t->flags, 5);
-			SetBit(t->consist_flags, CF_PATHFINDER_LOST);
+			if (t->IsPrimaryVehicle()) SetBit(t->GetConsist()->consist_flags, CF_PATHFINDER_LOST);
 		}
 
 		/* Introduced terraform/clear limits. */
@@ -2686,15 +2689,15 @@ bool AfterLoadGame()
 			assert(v->tile != TileVirtXY(v->x_pos, v->y_pos) || v->z_pos == GetSlopePixelZ(v->x_pos, v->y_pos, true));
 		}
 
-		/* Fill Vehicle::cur_real_order_index */
-		for (Vehicle *v : Vehicle::Iterate()) {
-			if (!v->IsPrimaryVehicle()) continue;
+		/* Fill Consist::cur_real_order_index */
+		for (Consist *cs : Consist::Iterate()) {
+			assert(cs->Front() != nullptr);
 
 			/* Older versions are less strict with indices being in range and fix them on the fly */
-			if (v->cur_implicit_order_index >= v->GetNumOrders()) v->cur_implicit_order_index = 0;
+			if (cs->cur_implicit_order_index >= cs->Front()->GetNumOrders()) cs->cur_implicit_order_index = 0;
 
-			v->cur_real_order_index = v->cur_implicit_order_index;
-			v->UpdateRealOrderIndex();
+			cs->cur_real_order_index = cs->cur_implicit_order_index;
+			cs->UpdateRealOrderIndex();
 		}
 	}
 
@@ -3154,8 +3157,8 @@ bool AfterLoadGame()
 
 	/* Use current order time to approximate last loading time */
 	if (IsSavegameVersionBefore(SLV_LAST_LOADING_TICK)) {
-		for (Vehicle *v : Vehicle::Iterate()) {
-			v->last_loading_tick = std::max(TimerGameTick::counter, static_cast<uint64>(v->current_order_time)) - v->current_order_time;
+		for (Consist *cs : Consist::Iterate()) {
+			cs->last_loading_tick = std::max(TimerGameTick::counter, static_cast<uint64>(cs->current_order_time)) - cs->current_order_time;
 		}
 	}
 

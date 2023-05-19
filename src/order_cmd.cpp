@@ -25,6 +25,7 @@
 #include "company_base.h"
 #include "order_backup.h"
 #include "cheat_type.h"
+#include "consist_base.h"
 #include "order_cmd.h"
 #include "train_cmd.h"
 
@@ -417,7 +418,7 @@ StationIDStack OrderList::GetNextStoppingStation(const Vehicle *v, const Order *
 
 	const Order *next = first;
 	if (first == nullptr) {
-		next = this->GetOrderAt(v->cur_implicit_order_index);
+		next = this->GetOrderAt(v->GetConsist()->cur_implicit_order_index);
 		if (next == nullptr) {
 			next = this->GetFirstOrder();
 			if (next == nullptr) return INVALID_STATION;
@@ -936,30 +937,31 @@ void InsertOrder(Vehicle *v, Order *new_o, VehicleOrderID sel_ord)
 	DeleteOrderWarnings(u);
 	for (; u != nullptr; u = u->NextShared()) {
 		assert(v->orders == u->orders);
+		Consist *u_cs = u->GetConsist();
 
 		/* If there is added an order before the current one, we need
 		 * to update the selected order. We do not change implicit/real order indices though.
 		 * If the new order is between the current implicit order and real order, the implicit order will
 		 * later skip the inserted order. */
-		if (sel_ord <= u->cur_real_order_index) {
-			uint cur = u->cur_real_order_index + 1;
+		if (sel_ord <= u_cs->cur_real_order_index) {
+			uint cur = u_cs->cur_real_order_index + 1;
 			/* Check if we don't go out of bound */
 			if (cur < u->GetNumOrders()) {
-				u->cur_real_order_index = cur;
+				u_cs->cur_real_order_index = cur;
 			}
 		}
-		if (sel_ord == u->cur_implicit_order_index && u->IsGroundVehicle()) {
+		if (sel_ord == u_cs->cur_implicit_order_index && u->IsGroundVehicle()) {
 			/* We are inserting an order just before the current implicit order.
 			 * We do not know whether we will reach current implicit or the newly inserted order first.
 			 * So, disable creation of implicit orders until we are on track again. */
 			uint16 &gv_flags = u->GetGroundVehicleFlags();
 			SetBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 		}
-		if (sel_ord <= u->cur_implicit_order_index) {
-			uint cur = u->cur_implicit_order_index + 1;
+		if (sel_ord <= u_cs->cur_implicit_order_index) {
+			uint cur = u_cs->cur_implicit_order_index + 1;
 			/* Check if we don't go out of bound */
 			if (cur < u->GetNumOrders()) {
-				u->cur_implicit_order_index = cur;
+				u_cs->cur_implicit_order_index = cur;
 			}
 		}
 		/* Update any possible open window of the vehicle */
@@ -1053,27 +1055,28 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
 	DeleteOrderWarnings(u);
 	for (; u != nullptr; u = u->NextShared()) {
 		assert(v->orders == u->orders);
+		Consist *u_cs = u->GetConsist();
 
-		if (sel_ord == u->cur_real_order_index && u->current_order.IsType(OT_LOADING)) {
+		if (sel_ord == u_cs->cur_real_order_index && u->current_order.IsType(OT_LOADING)) {
 			CancelLoadingDueToDeletedOrder(u);
 		}
 
-		if (sel_ord < u->cur_real_order_index) {
-			u->cur_real_order_index--;
-		} else if (sel_ord == u->cur_real_order_index) {
-			u->UpdateRealOrderIndex();
+		if (sel_ord < u_cs->cur_real_order_index) {
+			u_cs->cur_real_order_index--;
+		} else if (sel_ord == u_cs->cur_real_order_index) {
+			u_cs->UpdateRealOrderIndex();
 		}
 
-		if (sel_ord < u->cur_implicit_order_index) {
-			u->cur_implicit_order_index--;
-		} else if (sel_ord == u->cur_implicit_order_index) {
+		if (sel_ord < u_cs->cur_implicit_order_index) {
+			u_cs->cur_implicit_order_index--;
+		} else if (sel_ord == u_cs->cur_implicit_order_index) {
 			/* Make sure the index is valid */
-			if (u->cur_implicit_order_index >= u->GetNumOrders()) u->cur_implicit_order_index = 0;
+			if (u_cs->cur_implicit_order_index >= u->GetNumOrders()) u_cs->cur_implicit_order_index = 0;
 
 			/* Skip non-implicit orders for the implicit-order-index (e.g. if the current implicit order was deleted */
-			while (u->cur_implicit_order_index != u->cur_real_order_index && !u->GetOrder(u->cur_implicit_order_index)->IsType(OT_IMPLICIT)) {
-				u->cur_implicit_order_index++;
-				if (u->cur_implicit_order_index >= u->GetNumOrders()) u->cur_implicit_order_index = 0;
+			while (u_cs->cur_implicit_order_index != u_cs->cur_real_order_index && !u->GetOrder(u_cs->cur_implicit_order_index)->IsType(OT_IMPLICIT)) {
+				u_cs->cur_implicit_order_index++;
+				if (u_cs->cur_implicit_order_index >= u->GetNumOrders()) u_cs->cur_implicit_order_index = 0;
 			}
 		}
 
@@ -1111,7 +1114,8 @@ CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID
 {
 	Vehicle *v = Vehicle::GetIfValid(veh_id);
 
-	if (v == nullptr || !v->IsPrimaryVehicle() || sel_ord == v->cur_implicit_order_index || sel_ord >= v->GetNumOrders() || v->GetNumOrders() < 2) return CMD_ERROR;
+	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || sel_ord == v->GetConsist()->cur_implicit_order_index || sel_ord >= v->GetNumOrders() || v->GetNumOrders() < 2) return CMD_ERROR;
+	Consist *cs = v->GetConsist();
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1119,8 +1123,8 @@ CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID
 	if (flags & DC_EXEC) {
 		if (v->current_order.IsType(OT_LOADING)) v->LeaveStation();
 
-		v->cur_implicit_order_index = v->cur_real_order_index = sel_ord;
-		v->UpdateRealOrderIndex();
+		cs->cur_implicit_order_index = cs->cur_real_order_index = sel_ord;
+		cs->UpdateRealOrderIndex();
 
 		InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
 
@@ -1183,20 +1187,21 @@ CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID movi
 			 * completely out-dated anyway. So, keep it simple and just keep cur_implicit_order_index as well.
 			 * The worst which can happen is that a lot of implicit orders are removed when reaching current_order.
 			 */
-			if (u->cur_real_order_index == moving_order) {
-				u->cur_real_order_index = target_order;
-			} else if (u->cur_real_order_index > moving_order && u->cur_real_order_index <= target_order) {
-				u->cur_real_order_index--;
-			} else if (u->cur_real_order_index < moving_order && u->cur_real_order_index >= target_order) {
-				u->cur_real_order_index++;
+			Consist *u_cs = u->GetConsist();
+			if (u_cs->cur_real_order_index == moving_order) {
+				u_cs->cur_real_order_index = target_order;
+			} else if (u_cs->cur_real_order_index > moving_order && u_cs->cur_real_order_index <= target_order) {
+				u_cs->cur_real_order_index--;
+			} else if (u_cs->cur_real_order_index < moving_order && u_cs->cur_real_order_index >= target_order) {
+				u_cs->cur_real_order_index++;
 			}
 
-			if (u->cur_implicit_order_index == moving_order) {
-				u->cur_implicit_order_index = target_order;
-			} else if (u->cur_implicit_order_index > moving_order && u->cur_implicit_order_index <= target_order) {
-				u->cur_implicit_order_index--;
-			} else if (u->cur_implicit_order_index < moving_order && u->cur_implicit_order_index >= target_order) {
-				u->cur_implicit_order_index++;
+			if (u_cs->cur_implicit_order_index == moving_order) {
+				u_cs->cur_implicit_order_index = target_order;
+			} else if (u_cs->cur_implicit_order_index > moving_order && u_cs->cur_implicit_order_index <= target_order) {
+				u_cs->cur_implicit_order_index--;
+			} else if (u_cs->cur_implicit_order_index < moving_order && u_cs->cur_implicit_order_index >= target_order) {
+				u_cs->cur_implicit_order_index++;
 			}
 
 			assert(v->orders == u->orders);
@@ -1450,7 +1455,7 @@ CommandCost CmdModifyOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 			 * so do not care and those orders should not be active
 			 * when this function is called.
 			 */
-			if (sel_ord == u->cur_real_order_index &&
+			if (sel_ord == u->GetConsist()->cur_real_order_index &&
 					(u->current_order.IsType(OT_GOTO_STATION) || u->current_order.IsType(OT_LOADING)) &&
 					u->current_order.GetLoadType() != order->GetLoadType()) {
 				u->current_order.SetLoadType(order->GetLoadType());
@@ -1673,7 +1678,7 @@ CommandCost CmdOrderRefit(DoCommandFlag flags, VehicleID veh, VehicleOrderID ord
 			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
 
 			/* If the vehicle already got the current depot set as current order, then update current order as well */
-			if (u->cur_real_order_index == order_number && (u->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS)) {
+			if (u->GetConsist()->cur_real_order_index == order_number && (u->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS)) {
 				u->current_order.SetRefit(cargo);
 			}
 		}
@@ -1861,7 +1866,7 @@ void DeleteVehicleOrders(Vehicle *v, bool keep_orderlist, bool reset_order_indic
 	}
 
 	if (reset_order_indices) {
-		v->cur_implicit_order_index = v->cur_real_order_index = 0;
+		if (v->GetConsist() != nullptr) v->GetConsist()->cur_implicit_order_index = v->GetConsist()->cur_real_order_index = 0;
 		if (v->current_order.IsType(OT_LOADING)) {
 			CancelLoadingDueToDeletedOrder(v);
 		}
@@ -1966,6 +1971,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 		return false;
 	}
 
+	Consist *cs = v->GetConsist();
 	switch (order->GetType()) {
 		case OT_GOTO_STATION:
 			v->SetDestTile(v->GetOrderStationLocation(order->GetDestination()));
@@ -1975,7 +1981,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 			if ((order->GetDepotOrderType() & ODTFB_SERVICE) && !v->NeedsServicing()) {
 				assert(!pbs_look_ahead);
 				UpdateVehicleTimetable(v, true);
-				v->IncrementRealOrderIndex();
+				cs->IncrementRealOrderIndex();
 				break;
 			}
 
@@ -2007,7 +2013,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				if (pbs_look_ahead) return false;
 
 				UpdateVehicleTimetable(v, true);
-				v->IncrementRealOrderIndex();
+				cs->IncrementRealOrderIndex();
 			} else {
 				if (v->type != VEH_AIRCRAFT) {
 					v->SetDestTile(Depot::Get(order->GetDestination())->xy);
@@ -2034,9 +2040,9 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				/* Jump to next_order. cur_implicit_order_index becomes exactly that order,
 				 * cur_real_order_index might come after next_order. */
 				UpdateVehicleTimetable(v, false);
-				v->cur_implicit_order_index = v->cur_real_order_index = next_order;
-				v->UpdateRealOrderIndex();
-				v->current_order_time += v->GetOrder(v->cur_real_order_index)->GetTimetabledTravel();
+				cs->cur_implicit_order_index = cs->cur_real_order_index = next_order;
+				cs->UpdateRealOrderIndex();
+				cs->current_order_time += v->GetOrder(cs->cur_real_order_index)->GetTimetabledTravel();
 
 				/* Disable creation of implicit orders.
 				 * When inserting them we do not know that we would have to make the conditional orders point to them. */
@@ -2046,7 +2052,7 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 				}
 			} else {
 				UpdateVehicleTimetable(v, true);
-				v->IncrementRealOrderIndex();
+				cs->IncrementRealOrderIndex();
 			}
 			break;
 		}
@@ -2056,11 +2062,11 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
 			return false;
 	}
 
-	assert(v->cur_implicit_order_index < v->GetNumOrders());
-	assert(v->cur_real_order_index < v->GetNumOrders());
+	assert(cs->cur_implicit_order_index < v->GetNumOrders());
+	assert(cs->cur_real_order_index < v->GetNumOrders());
 
 	/* Get the current order */
-	order = v->GetOrder(v->cur_real_order_index);
+	order = v->GetOrder(cs->cur_real_order_index);
 	if (order != nullptr && order->IsType(OT_IMPLICIT)) {
 		assert(v->GetNumManualOrders() == 0);
 		order = nullptr;
@@ -2085,6 +2091,8 @@ bool UpdateOrderDest(Vehicle *v, const Order *order, int conditional_depth, bool
  */
 bool ProcessOrders(Vehicle *v)
 {
+	Consist *cs = v->GetConsist();
+
 	switch (v->current_order.GetType()) {
 		case OT_GOTO_DEPOT:
 			/* Let a depot order in the orderlist interrupt. */
@@ -2121,14 +2129,14 @@ bool ProcessOrders(Vehicle *v)
 		 * visited station will cause the vehicle to still stop. */
 		v->last_station_visited = v->current_order.GetDestination();
 		UpdateVehicleTimetable(v, true);
-		v->IncrementImplicitOrderIndex();
+		cs->IncrementImplicitOrderIndex();
 	}
 
 	/* Get the current order */
-	assert(v->cur_implicit_order_index == 0 || v->cur_implicit_order_index < v->GetNumOrders());
-	v->UpdateRealOrderIndex();
+	assert(cs->cur_implicit_order_index == 0 || cs->cur_implicit_order_index < v->GetNumOrders());
+	cs->UpdateRealOrderIndex();
 
-	const Order *order = v->GetOrder(v->cur_real_order_index);
+	const Order *order = v->GetOrder(cs->cur_real_order_index);
 	if (order != nullptr && order->IsType(OT_IMPLICIT)) {
 		assert(v->GetNumManualOrders() == 0);
 		order = nullptr;

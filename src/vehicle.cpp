@@ -191,11 +191,13 @@ bool Vehicle::NeedsServicing() const
 	 * vehicles to go for service is lame. */
 	if (this->vehstatus & (VS_STOPPED | VS_CRASHED)) return false;
 
+	Consist *cs = this->GetConsist();
+
 	/* Are we ready for the next service cycle? */
 	const Company *c = Company::Get(this->owner);
-	if (this->ServiceIntervalIsPercent() ?
-			(this->reliability >= this->GetEngine()->reliability * (100 - this->GetServiceInterval()) / 100) :
-			(this->date_of_last_service + this->GetServiceInterval() >= TimerGameCalendar::date)) {
+	if (cs->ServiceIntervalIsPercent() ?
+			(this->reliability >= this->GetEngine()->reliability * (100 - cs->GetServiceInterval()) / 100) :
+			(this->date_of_last_service + cs->GetServiceInterval() >= TimerGameCalendar::date)) {
 		return false;
 	}
 
@@ -776,12 +778,14 @@ void Vehicle::ShiftDates(int interval)
  */
 void Vehicle::HandlePathfindingResult(bool path_found)
 {
+	Consist *cs = this->GetConsist();
+
 	if (path_found) {
 		/* Route found, is the vehicle marked with "lost" flag? */
-		if (!HasBit(this->consist_flags, CF_PATHFINDER_LOST)) return;
+		if (!HasBit(cs->consist_flags, CF_PATHFINDER_LOST)) return;
 
 		/* Clear the flag as the PF's problem was solved. */
-		ClrBit(this->consist_flags, CF_PATHFINDER_LOST);
+		ClrBit(cs->consist_flags, CF_PATHFINDER_LOST);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 		/* Delete the news item. */
@@ -790,10 +794,10 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 	}
 
 	/* Were we already lost? */
-	if (HasBit(this->consist_flags, CF_PATHFINDER_LOST)) return;
+	if (HasBit(cs->consist_flags, CF_PATHFINDER_LOST)) return;
 
 	/* It is first time the problem occurred, set the "lost" flag. */
-	SetBit(this->consist_flags, CF_PATHFINDER_LOST);
+	SetBit(cs->consist_flags, CF_PATHFINDER_LOST);
 	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 	/* Notify user about the event. */
@@ -1451,7 +1455,7 @@ uint8 CalcPercentVehicleFilled(const Vehicle *front, StringID *colour)
 			unloading += HasBit(v->vehicle_flags, VF_CARGO_UNLOADING) ? 1 : 0;
 			loading |= !order_no_load &&
 					(order_full_load || st->goods[v->cargo_type].HasRating()) &&
-					!HasBit(v->consist_flags, CF_LOADING_FINISHED) && !HasBit(v->consist_flags, CF_STOP_LOADING);
+					!HasBit(v->GetConsist()->consist_flags, CF_LOADING_FINISHED) && !HasBit(v->GetConsist()->consist_flags, CF_STOP_LOADING);
 			cars++;
 		}
 	}
@@ -1489,6 +1493,8 @@ void VehicleEnterDepot(Vehicle *v)
 {
 	/* Always work with the front of the vehicle */
 	assert(v == v->First());
+
+	Consist *cs = v->GetConsist();
 
 	switch (v->type) {
 		case VEH_TRAIN: {
@@ -1549,7 +1555,7 @@ void VehicleEnterDepot(Vehicle *v)
 	if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 		SetWindowDirty(WC_VEHICLE_VIEW, v->index);
 
-		const Order *real_order = v->GetOrder(v->cur_real_order_index);
+		const Order *real_order = v->GetOrder(cs->cur_real_order_index);
 
 		/* Test whether we are heading for this depot. If not, do nothing.
 		 * Note: The target depot for nearest-/manual-depot-orders is only updated on junctions, but we want to accept every depot. */
@@ -1584,7 +1590,7 @@ void VehicleEnterDepot(Vehicle *v)
 			/* Part of orders */
 			v->DeleteUnreachedImplicitOrders();
 			UpdateVehicleTimetable(v, true);
-			v->IncrementImplicitOrderIndex();
+			cs->IncrementImplicitOrderIndex();
 		}
 		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {
 			/* Vehicles are always stopped on entering depots. Do not restart this one. */
@@ -2074,35 +2080,37 @@ PaletteID GetVehiclePalette(const Vehicle *v)
  */
 void Vehicle::DeleteUnreachedImplicitOrders()
 {
+	Consist *cs = this->GetConsist();
+
 	if (this->IsGroundVehicle()) {
 		uint16 &gv_flags = this->GetGroundVehicleFlags();
 		if (HasBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS)) {
 			/* Do not delete orders, only skip them */
 			ClrBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
-			this->cur_implicit_order_index = this->cur_real_order_index;
+			cs->cur_implicit_order_index = cs->cur_real_order_index;
 			InvalidateVehicleOrder(this, 0);
 			return;
 		}
 	}
 
-	const Order *order = this->GetOrder(this->cur_implicit_order_index);
+	const Order *order = this->GetOrder(cs->cur_implicit_order_index);
 	while (order != nullptr) {
-		if (this->cur_implicit_order_index == this->cur_real_order_index) break;
+		if (cs->cur_implicit_order_index == cs->cur_real_order_index) break;
 
 		if (order->IsType(OT_IMPLICIT)) {
-			DeleteOrder(this, this->cur_implicit_order_index);
+			DeleteOrder(this, cs->cur_implicit_order_index);
 			/* DeleteOrder does various magic with order_indices, so resync 'order' with 'cur_implicit_order_index' */
-			order = this->GetOrder(this->cur_implicit_order_index);
+			order = this->GetOrder(cs->cur_implicit_order_index);
 		} else {
 			/* Skip non-implicit orders, e.g. service-orders */
 			order = order->next;
-			this->cur_implicit_order_index++;
+			cs->cur_implicit_order_index++;
 		}
 
 		/* Wrap around */
 		if (order == nullptr) {
 			order = this->GetOrder(0);
-			this->cur_implicit_order_index = 0;
+			cs->cur_implicit_order_index = 0;
 		}
 	}
 }
@@ -2115,7 +2123,9 @@ void Vehicle::BeginLoading()
 {
 	assert(IsTileType(this->tile, MP_STATION) || this->type == VEH_SHIP);
 
-	Ticks travel_time = TimerGameTick::counter - this->last_loading_tick;
+	Consist *cs = this->GetConsist();
+
+	Ticks travel_time = TimerGameTick::counter - cs->last_loading_tick;
 	if (this->current_order.IsType(OT_GOTO_STATION) &&
 			this->current_order.GetDestination() == this->last_station_visited) {
 		this->DeleteUnreachedImplicitOrders();
@@ -2136,13 +2146,13 @@ void Vehicle::BeginLoading()
 		 * to show that we are stopping here.
 		 * While only groundvehicles have implicit orders, e.g. aircraft might still enter
 		 * the 'wrong' terminal when skipping orders etc. */
-		Order *in_list = this->GetOrder(this->cur_implicit_order_index);
+		Order *in_list = this->GetOrder(cs->cur_implicit_order_index);
 		if (this->IsGroundVehicle() &&
 				(in_list == nullptr || !in_list->IsType(OT_IMPLICIT) ||
 				in_list->GetDestination() != this->last_station_visited)) {
 			bool suppress_implicit_orders = HasBit(this->GetGroundVehicleFlags(), GVF_SUPPRESS_IMPLICIT_ORDERS);
 			/* Do not create consecutive duplicates of implicit orders */
-			Order *prev_order = this->cur_implicit_order_index > 0 ? this->GetOrder(this->cur_implicit_order_index - 1) : (this->GetNumOrders() > 1 ? this->GetLastOrder() : nullptr);
+			Order *prev_order = cs->cur_implicit_order_index > 0 ? this->GetOrder(cs->cur_implicit_order_index - 1) : (this->GetNumOrders() > 1 ? this->GetLastOrder() : nullptr);
 			if (prev_order == nullptr ||
 					(!prev_order->IsType(OT_IMPLICIT) && !prev_order->IsType(OT_GOTO_STATION)) ||
 					prev_order->GetDestination() != this->last_station_visited) {
@@ -2152,9 +2162,9 @@ void Vehicle::BeginLoading()
 				 * implicit orders treat the last order in the list like an
 				 * explicit one, except if the overall number of orders surpasses
 				 * IMPLICIT_ORDER_ONLY_CAP. */
-				int target_index = this->cur_implicit_order_index;
+				int target_index = cs->cur_implicit_order_index;
 				bool found = false;
-				while (target_index != this->cur_real_order_index || this->GetNumManualOrders() == 0) {
+				while (target_index != cs->cur_real_order_index || this->GetNumManualOrders() == 0) {
 					const Order *order = this->GetOrder(target_index);
 					if (order == nullptr) break; // No orders.
 					if (order->IsType(OT_IMPLICIT) && order->GetDestination() == this->last_station_visited) {
@@ -2169,32 +2179,32 @@ void Vehicle::BeginLoading()
 						}
 						target_index = 0;
 					}
-					if (target_index == this->cur_implicit_order_index) break; // Avoid infinite loop.
+					if (target_index == cs->cur_implicit_order_index) break; // Avoid infinite loop.
 				}
 
 				if (found) {
 					if (suppress_implicit_orders) {
 						/* Skip to the found order */
-						this->cur_implicit_order_index = target_index;
+						cs->cur_implicit_order_index = target_index;
 						InvalidateVehicleOrder(this, 0);
 					} else {
 						/* Delete all implicit orders up to the station we just reached */
-						const Order *order = this->GetOrder(this->cur_implicit_order_index);
+						const Order *order = this->GetOrder(cs->cur_implicit_order_index);
 						while (!order->IsType(OT_IMPLICIT) || order->GetDestination() != this->last_station_visited) {
 							if (order->IsType(OT_IMPLICIT)) {
-								DeleteOrder(this, this->cur_implicit_order_index);
+								DeleteOrder(this, cs->cur_implicit_order_index);
 								/* DeleteOrder does various magic with order_indices, so resync 'order' with 'cur_implicit_order_index' */
-								order = this->GetOrder(this->cur_implicit_order_index);
+								order = this->GetOrder(cs->cur_implicit_order_index);
 							} else {
 								/* Skip non-implicit orders, e.g. service-orders */
 								order = order->next;
-								this->cur_implicit_order_index++;
+								cs->cur_implicit_order_index++;
 							}
 
 							/* Wrap around */
 							if (order == nullptr) {
 								order = this->GetOrder(0);
-								this->cur_implicit_order_index = 0;
+								cs->cur_implicit_order_index = 0;
 							}
 							assert(order != nullptr);
 						}
@@ -2205,8 +2215,8 @@ void Vehicle::BeginLoading()
 					/* Insert new implicit order */
 					Order *implicit_order = new Order();
 					implicit_order->MakeImplicit(this->last_station_visited);
-					InsertOrder(this, implicit_order, this->cur_implicit_order_index);
-					if (this->cur_implicit_order_index > 0) --this->cur_implicit_order_index;
+					InsertOrder(this, implicit_order, cs->cur_implicit_order_index);
+					if (cs->cur_implicit_order_index > 0) --cs->cur_implicit_order_index;
 
 					/* InsertOrder disabled creation of implicit orders for all vehicles with the same implicit order.
 					 * Reenable it for this vehicle */
@@ -2280,7 +2290,7 @@ void Vehicle::LeaveStation()
 
 			/* if the vehicle could load here or could stop with cargo loaded set the last loading station */
 			this->last_loading_station = this->last_station_visited;
-			this->last_loading_tick = TimerGameTick::counter;
+			this->GetConsist()->last_loading_tick = TimerGameTick::counter;
 		} else {
 			/* if the vehicle couldn't load and had to unload or transfer everything
 			 * set the last loading station to invalid as it will leave empty. */
@@ -2332,19 +2342,21 @@ void Vehicle::ResetRefitCaps()
  */
 void Vehicle::HandleLoading(bool mode)
 {
+	Consist *cs = this->GetConsist();
+
 	switch (this->current_order.GetType()) {
 		case OT_LOADING: {
-			uint wait_time = std::max(this->current_order.GetTimetabledWait() - this->lateness_counter, 0);
+			uint wait_time = std::max(this->current_order.GetTimetabledWait() - cs->lateness_counter, 0);
 
 			/* Not the first call for this tick, or still loading */
-			if (mode || !HasBit(this->consist_flags, CF_LOADING_FINISHED) || this->current_order_time < wait_time) return;
+			if (mode || !HasBit(cs->consist_flags, CF_LOADING_FINISHED) || cs->current_order_time < wait_time) return;
 
 			this->PlayLeaveStationSound();
 
 			this->LeaveStation();
 
 			/* Only advance to next order if we just loaded at the current one */
-			const Order *order = this->GetOrder(this->cur_implicit_order_index);
+			const Order *order = this->GetOrder(cs->cur_implicit_order_index);
 			if (order == nullptr ||
 					(!order->IsType(OT_IMPLICIT) && !order->IsType(OT_GOTO_STATION)) ||
 					order->GetDestination() != this->last_station_visited) {
@@ -2358,7 +2370,7 @@ void Vehicle::HandleLoading(bool mode)
 		default: return;
 	}
 
-	this->IncrementImplicitOrderIndex();
+	cs->IncrementImplicitOrderIndex();
 }
 
 /**
@@ -2419,7 +2431,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 		if (flags & DC_EXEC) {
 			/* If the orders to 'goto depot' are in the orders list (forced servicing),
 			 * then skip to the next order; effectively cancelling this forced service */
-			if (this->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) this->IncrementRealOrderIndex();
+			if (this->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) this->GetConsist()->IncrementRealOrderIndex();
 
 			if (this->IsGroundVehicle()) {
 				uint16 &gv_flags = this->GetGroundVehicleFlags();

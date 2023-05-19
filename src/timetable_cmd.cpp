@@ -15,6 +15,7 @@
 #include "vehicle_base.h"
 #include "timetable_cmd.h"
 #include "timetable.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -61,7 +62,7 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16 val,
 	v->orders->UpdateTimetableDuration(timetable_delta);
 
 	for (v = v->FirstShared(); v != nullptr; v = v->NextShared()) {
-		if (v->cur_real_order_index == order_number && v->current_order.Equals(*order)) {
+		if (v->GetConsist()->cur_real_order_index == order_number && v->current_order.Equals(*order)) {
 			switch (mtf) {
 				case MTF_WAIT_TIME:
 					v->current_order.SetWaitTime(val);
@@ -218,7 +219,7 @@ CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, VehicleID veh, ModifyTim
 CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_to_group)
 {
 	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -227,18 +228,18 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_t
 		if (apply_to_group) {
 			int32 most_late = 0;
 			for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
-				if (u->lateness_counter > most_late) {
-					most_late = u->lateness_counter;
+				if (u->GetConsist()->lateness_counter > most_late) {
+					most_late = u->GetConsist()->lateness_counter;
 				}
 			}
 			if (most_late > 0) {
 				for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
-					u->lateness_counter -= most_late;
+					u->GetConsist()->lateness_counter -= most_late;
 					SetWindowDirty(WC_VEHICLE_TIMETABLE, u->index);
 				}
 			}
 		} else {
-			v->lateness_counter = 0;
+			v->GetConsist()->lateness_counter = 0;
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
 		}
 	}
@@ -256,8 +257,8 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_t
  */
 static bool VehicleTimetableSorter(Vehicle * const &a, Vehicle * const &b)
 {
-	VehicleOrderID a_order = a->cur_real_order_index;
-	VehicleOrderID b_order = b->cur_real_order_index;
+	VehicleOrderID a_order = a->GetConsist()->cur_real_order_index;
+	VehicleOrderID b_order = b->GetConsist()->cur_real_order_index;
 	int j = (int)b_order - (int)a_order;
 
 	/* Are we currently at an ordered station (un)loading? */
@@ -277,7 +278,7 @@ static bool VehicleTimetableSorter(Vehicle * const &a, Vehicle * const &b)
 	if (j != 0) return j < 0;
 
 	/* Look at the time we spent in this order; the higher, the closer to its destination. */
-	i = b->current_order_time - a->current_order_time;
+	i = b->GetConsist()->current_order_time - a->GetConsist()->current_order_time;
 	if (i != 0) return i < 0;
 
 	/* If all else is equal, use some unique index to sort it the same way. */
@@ -329,11 +330,12 @@ CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool tim
 		int idx = 0;
 
 		for (Vehicle *w : vehs) {
+			Consist *cs = w->GetConsist();
 
-			w->lateness_counter = 0;
-			ClrBit(w->consist_flags, CF_TIMETABLE_STARTED);
+			cs->lateness_counter = 0;
+			ClrBit(cs->consist_flags, CF_TIMETABLE_STARTED);
 			/* Do multiplication, then division to reduce rounding errors. */
-			w->timetable_start = start_date + idx * total_duration / num_vehs / DAY_TICKS;
+			cs->timetable_start = start_date + idx * total_duration / num_vehs / DAY_TICKS;
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, w->index);
 			++idx;
 		}
@@ -357,34 +359,36 @@ CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool tim
 CommandCost CmdAutofillTimetable(DoCommandFlag flags, VehicleID veh, bool autofill, bool preserve_wait_time)
 {
 	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
+		Consist *cs = v->GetConsist();
+
 		if (autofill) {
 			/* Start autofilling the timetable, which clears the
 			 * "timetable has started" bit. Times are not cleared anymore, but are
 			 * overwritten when the order is reached now. */
-			SetBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
-			ClrBit(v->consist_flags, CF_TIMETABLE_STARTED);
+			SetBit(cs->consist_flags, CF_AUTOFILL_TIMETABLE);
+			ClrBit(cs->consist_flags, CF_TIMETABLE_STARTED);
 
 			/* Overwrite waiting times only if they got longer */
-			if (preserve_wait_time) SetBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+			if (preserve_wait_time) SetBit(cs->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 
-			v->timetable_start = 0;
-			v->lateness_counter = 0;
+			cs->timetable_start = 0;
+			cs->lateness_counter = 0;
 		} else {
-			ClrBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
-			ClrBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+			ClrBit(cs->consist_flags, CF_AUTOFILL_TIMETABLE);
+			ClrBit(cs->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 		}
 
 		for (Vehicle *v2 = v->FirstShared(); v2 != nullptr; v2 = v2->NextShared()) {
 			if (v2 != v) {
 				/* Stop autofilling; only one vehicle at a time can perform autofill */
-				ClrBit(v2->consist_flags, CF_AUTOFILL_TIMETABLE);
-				ClrBit(v2->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_TIMETABLE);
+				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 			}
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->index);
 		}
@@ -400,14 +404,16 @@ CommandCost CmdAutofillTimetable(DoCommandFlag flags, VehicleID veh, bool autofi
  */
 void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 {
-	uint time_taken = v->current_order_time;
+	Consist *cs = v->GetConsist();
 
-	v->current_order_time = 0;
+	uint time_taken = cs->current_order_time;
+
+	cs->current_order_time = 0;
 
 	if (v->current_order.IsType(OT_IMPLICIT)) return; // no timetabling of auto orders
 
-	if (v->cur_real_order_index >= v->GetNumOrders()) return;
-	Order *real_current_order = v->GetOrder(v->cur_real_order_index);
+	if (cs->cur_real_order_index >= v->GetNumOrders()) return;
+	Order *real_current_order = v->GetOrder(cs->cur_real_order_index);
 	assert(real_current_order != nullptr);
 
 	VehicleOrderID first_manual_order = 0;
@@ -418,27 +424,27 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 	bool just_started = false;
 
 	/* This vehicle is arriving at the first destination in the timetable. */
-	if (v->cur_real_order_index == first_manual_order && travelling) {
+	if (cs->cur_real_order_index == first_manual_order && travelling) {
 		/* If the start date hasn't been set, or it was set automatically when
 		 * the vehicle last arrived at the first destination, update it to the
 		 * current time. Otherwise set the late counter appropriately to when
 		 * the vehicle should have arrived. */
-		just_started = !HasBit(v->consist_flags, CF_TIMETABLE_STARTED);
+		just_started = !HasBit(cs->consist_flags, CF_TIMETABLE_STARTED);
 
-		if (v->timetable_start != 0) {
-			v->lateness_counter = (TimerGameCalendar::date - v->timetable_start) * DAY_TICKS + TimerGameCalendar::date_fract;
-			v->timetable_start = 0;
+		if (cs->timetable_start != 0) {
+			cs->lateness_counter = (TimerGameCalendar::date - cs->timetable_start) * DAY_TICKS + TimerGameCalendar::date_fract;
+			cs->timetable_start = 0;
 		}
 
-		SetBit(v->consist_flags, CF_TIMETABLE_STARTED);
+		SetBit(cs->consist_flags, CF_TIMETABLE_STARTED);
 		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
 	}
 
-	if (!HasBit(v->consist_flags, CF_TIMETABLE_STARTED)) return;
+	if (!HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) return;
 
-	bool autofilling = HasBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
+	bool autofilling = HasBit(cs->consist_flags, CF_AUTOFILL_TIMETABLE);
 	bool remeasure_wait_time = !real_current_order->IsWaitTimetabled() ||
-			(autofilling && !HasBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME));
+			(autofilling && !HasBit(cs->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME));
 
 	if (travelling && remeasure_wait_time) {
 		/* We just finished travelling and want to remeasure the loading time,
@@ -463,18 +469,18 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 		uint time_to_set = CeilDiv(std::max(time_taken, 1U), DAY_TICKS) * DAY_TICKS;
 
 		if (travelling && (autofilling || !real_current_order->IsTravelTimetabled())) {
-			ChangeTimetable(v, v->cur_real_order_index, time_to_set, MTF_TRAVEL_TIME, autofilling);
+			ChangeTimetable(v, cs->cur_real_order_index, time_to_set, MTF_TRAVEL_TIME, autofilling);
 		} else if (!travelling && (autofilling || !real_current_order->IsWaitTimetabled())) {
-			ChangeTimetable(v, v->cur_real_order_index, time_to_set, MTF_WAIT_TIME, autofilling);
+			ChangeTimetable(v, cs->cur_real_order_index, time_to_set, MTF_WAIT_TIME, autofilling);
 		}
 	}
 
-	if (v->cur_real_order_index == first_manual_order && travelling) {
+	if (cs->cur_real_order_index == first_manual_order && travelling) {
 		/* If we just started we would have returned earlier and have not reached
 		 * this code. So obviously, we have completed our round: So turn autofill
 		 * off again. */
-		ClrBit(v->consist_flags, CF_AUTOFILL_TIMETABLE);
-		ClrBit(v->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
+		ClrBit(cs->consist_flags, CF_AUTOFILL_TIMETABLE);
+		ClrBit(cs->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 	}
 
 	if (autofilling) return;
@@ -485,19 +491,19 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 	/* Vehicles will wait at stations if they arrive early even if they are not
 	 * timetabled to wait there, so make sure the lateness counter is updated
 	 * when this happens. */
-	if (timetabled == 0 && (travelling || v->lateness_counter >= 0)) return;
+	if (timetabled == 0 && (travelling || cs->lateness_counter >= 0)) return;
 
-	v->lateness_counter -= (timetabled - time_taken);
+	cs->lateness_counter -= (timetabled - time_taken);
 
 	/* When we are more late than this timetabled bit takes we (somewhat expensively)
 	 * check how many ticks the (fully filled) timetable has. If a timetable cycle is
 	 * shorter than the amount of ticks we are late we reduce the lateness by the
 	 * length of a full cycle till lateness is less than the length of a timetable
 	 * cycle. When the timetable isn't fully filled the cycle will be INVALID_TICKS. */
-	if (v->lateness_counter > (int)timetabled) {
+	if (cs->lateness_counter > (int)timetabled) {
 		Ticks cycle = v->orders->GetTimetableTotalDuration();
-		if (cycle != INVALID_TICKS && v->lateness_counter > cycle) {
-			v->lateness_counter %= cycle;
+		if (cycle != INVALID_TICKS && cs->lateness_counter > cycle) {
+			cs->lateness_counter %= cycle;
 		}
 	}
 

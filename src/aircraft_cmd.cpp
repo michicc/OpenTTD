@@ -311,7 +311,6 @@ CommandCost CmdBuildAircraft(DoCommandFlag flags, TileIndex tile, const Engine *
 		v->cargo_type = e->GetDefaultCargoType();
 		u->cargo_type = CT_MAIL;
 
-		v->name.clear();
 		v->last_station_visited = INVALID_STATION;
 		v->last_loading_station = INVALID_STATION;
 
@@ -336,8 +335,6 @@ CommandCost CmdBuildAircraft(DoCommandFlag flags, TileIndex tile, const Engine *
 		v->targetairport = GetStationIndex(tile);
 		v->SetNext(u);
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_aircraft);
-
 		v->date_of_last_service = TimerGameCalendar::date;
 		v->build_year = u->build_year = TimerGameCalendar::year;
 
@@ -349,7 +346,6 @@ CommandCost CmdBuildAircraft(DoCommandFlag flags, TileIndex tile, const Engine *
 
 		v->vehicle_flags = (VehicleFlags)0;
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();
 

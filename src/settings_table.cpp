@@ -46,6 +46,7 @@
 #include "vehicle_func.h"
 #include "viewport_func.h"
 #include "void_map.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 #include "table/settings.h"
@@ -159,10 +160,10 @@ static void UpdateAllServiceInterval(int32 new_value)
 
 	if (update_vehicles) {
 		const Company *c = Company::Get(_current_company);
-		for (Vehicle *v : Vehicle::Iterate()) {
-			if (v->owner == _current_company && v->IsPrimaryVehicle() && !v->ServiceIntervalIsCustom()) {
-				v->SetServiceInterval(CompanyServiceInterval(c, v->type));
-				v->SetServiceIntervalIsPercent(new_value != 0);
+		for (Consist *cs : Consist::Iterate()) {
+			if (cs->owner == _current_company && !cs->ServiceIntervalIsCustom()) {
+				cs->SetServiceInterval(CompanyServiceInterval(c, cs->type));
+				cs->SetServiceIntervalIsPercent(new_value != 0);
 			}
 		}
 	}
@@ -187,9 +188,9 @@ static bool CanUpdateServiceInterval(VehicleType type, int32 &new_value)
 static void UpdateServiceInterval(VehicleType type, int32 new_value)
 {
 	if (_game_mode != GM_MENU && Company::IsValidID(_current_company)) {
-		for (Vehicle *v : Vehicle::Iterate()) {
-			if (v->owner == _current_company && v->type == type && v->IsPrimaryVehicle() && !v->ServiceIntervalIsCustom()) {
-				v->SetServiceInterval(new_value);
+		for (Consist *cs : Consist::Iterate()) {
+			if (cs->owner == _current_company && cs->type == type && !cs->ServiceIntervalIsCustom()) {
+				cs->SetServiceInterval(new_value);
 			}
 		}
 	}
