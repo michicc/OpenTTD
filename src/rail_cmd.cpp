@@ -33,6 +33,7 @@
 #include "object_map.h"
 #include "rail_cmd.h"
 #include "landscape_cmd.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 #include "table/railtypes.h"
@@ -2970,7 +2971,7 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int
 		v->track = TRACK_BIT_DEPOT,
 		v->vehstatus |= VS_HIDDEN;
 		v->direction = ReverseDir(v->direction);
-		if (v->Next() == nullptr) VehicleEnterDepot(v->First());
+		if (v->Next() == nullptr) v->GetConsist()->EnterDepot();
 		v->tile = tile;
 
 		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);

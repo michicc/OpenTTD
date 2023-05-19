@@ -682,16 +682,9 @@ void ResetVehicleColourMap()
 	for (Vehicle *v : Vehicle::Iterate()) { v->colourmap = PAL_NONE; }
 }
 
-/**
- * List of vehicles that should check for autoreplace this tick.
- * Mapping of vehicle -> leave depot immediately after autoreplace.
- */
-using AutoreplaceMap = std::map<Vehicle *, bool>;
-static AutoreplaceMap _vehicles_to_autoreplace;
 
 void InitializeVehicles()
 {
-	_vehicles_to_autoreplace.clear();
 	ResetVehicleHash();
 }
 
@@ -908,23 +901,6 @@ Vehicle::~Vehicle()
 }
 
 /**
- * Adds a vehicle to the list of vehicles that visited a depot this tick
- * @param *v vehicle to add
- */
-void VehicleEnteredDepotThisTick(Vehicle *v)
-{
-	/* Vehicle should stop in the depot if it was in 'stopping' state */
-	_vehicles_to_autoreplace[v] = !(v->vehstatus & VS_STOPPED);
-
-	/* We ALWAYS set the stopped state. Even when the vehicle does not plan on
-	 * stopping in the depot, so we stop it to ensure that it will not reserve
-	 * the path out of the depot before we might autoreplace it to a different
-	 * engine. The new engine would not own the reserved path we store that we
-	 * stopped the vehicle, so autoreplace can start it again */
-	v->vehstatus |= VS_STOPPED;
-}
-
-/**
  * Increases the day counter for all vehicles and calls 1-day and 32-day handlers.
  * Each tick, it processes vehicles with "index % DAY_TICKS == TimerGameCalendar::date_fract",
  * so each day, all vehicles are processes in DAY_TICKS steps.
@@ -961,8 +937,6 @@ static void RunVehicleDayProc()
 
 void CallVehicleTicks()
 {
-	_vehicles_to_autoreplace.clear();
-
 	RunVehicleDayProc();
 
 	{
@@ -1044,57 +1018,6 @@ void CallVehicleTicks()
 			}
 		}
 	}
-
-	for (Consist *cs : Consist::Iterate()) {
-		cs->Tick();
-	}
-
-	Backup<CompanyID> cur_company(_current_company, FILE_LINE);
-	for (auto &it : _vehicles_to_autoreplace) {
-		Vehicle *v = it.first;
-		/* Autoreplace needs the current company set as the vehicle owner */
-		cur_company.Change(v->owner);
-
-		/* Start vehicle if we stopped them in VehicleEnteredDepotThisTick()
-		 * We need to stop them between VehicleEnteredDepotThisTick() and here or we risk that
-		 * they are already leaving the depot again before being replaced. */
-		if (it.second) v->vehstatus &= ~VS_STOPPED;
-
-		/* Store the position of the effect as the vehicle pointer will become invalid later */
-		int x = v->x_pos;
-		int y = v->y_pos;
-		int z = v->z_pos;
-
-		const Company *c = Company::Get(_current_company);
-		SubtractMoneyFromCompany(CommandCost(EXPENSES_NEW_VEHICLES, (Money)c->settings.engine_renew_money));
-		CommandCost res = Command<CMD_AUTOREPLACE_VEHICLE>::Do(DC_EXEC, v->index);
-		SubtractMoneyFromCompany(CommandCost(EXPENSES_NEW_VEHICLES, -(Money)c->settings.engine_renew_money));
-
-		if (!IsLocalCompany()) continue;
-
-		if (res.Succeeded()) {
-			ShowCostOrIncomeAnimation(x, y, z, res.GetCost());
-			continue;
-		}
-
-		StringID error_message = res.GetErrorMessage();
-		if (error_message == STR_ERROR_AUTOREPLACE_NOTHING_TO_DO || error_message == INVALID_STRING_ID) continue;
-
-		if (error_message == STR_ERROR_NOT_ENOUGH_CASH_REQUIRES_CURRENCY) error_message = STR_ERROR_AUTOREPLACE_MONEY_LIMIT;
-
-		StringID message;
-		if (error_message == STR_ERROR_TRAIN_TOO_LONG_AFTER_REPLACEMENT) {
-			message = error_message;
-		} else {
-			message = STR_NEWS_VEHICLE_AUTORENEW_FAILED;
-		}
-
-		SetDParam(0, v->index);
-		SetDParam(1, error_message);
-		AddVehicleAdviceNewsItem(message, v->index);
-	}
-
-	cur_company.Restore();
 }
 
 /**
@@ -1510,130 +1433,6 @@ uint8_t CalcPercentVehicleFilled(const Vehicle *front, StringID *colour)
 	} else {
 		/* More than 50%; round down, so that 100% means really full. */
 		return (count * 100) / max;
-	}
-}
-
-/**
- * Vehicle entirely entered the depot, update its status, orders, vehicle windows, service it, etc.
- * @param v Vehicle that entered a depot.
- */
-void VehicleEnterDepot(Vehicle *v)
-{
-	/* Always work with the front of the vehicle */
-	assert(v == v->First());
-
-	Consist *cs = v->GetConsist();
-
-	switch (v->type) {
-		case VEH_TRAIN: {
-			Train *t = Train::From(v);
-			SetWindowClassesDirty(WC_TRAINS_LIST);
-			/* Clear path reservation */
-			SetDepotReservation(t->tile, false);
-			if (_settings_client.gui.show_track_reservation) MarkTileDirtyByTile(t->tile);
-
-			UpdateSignalsOnSegment(t->tile, INVALID_DIAGDIR, t->owner);
-			t->wait_counter = 0;
-			t->force_proceed = TFP_NONE;
-			ClrBit(t->flags, VRF_TOGGLE_REVERSE);
-			t->ConsistChanged(CCF_ARRANGE);
-			break;
-		}
-
-		case VEH_ROAD:
-			SetWindowClassesDirty(WC_ROADVEH_LIST);
-			break;
-
-		case VEH_SHIP: {
-			SetWindowClassesDirty(WC_SHIPS_LIST);
-			Ship *ship = Ship::From(v);
-			ship->state = TRACK_BIT_DEPOT;
-			ship->UpdateCache();
-			ship->UpdateViewport(true, true);
-			SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
-			break;
-		}
-
-		case VEH_AIRCRAFT:
-			SetWindowClassesDirty(WC_AIRCRAFT_LIST);
-			HandleAircraftEnterHangar(Aircraft::From(v));
-			break;
-		default: NOT_REACHED();
-	}
-	SetWindowDirty(WC_VEHICLE_VIEW, v->index);
-
-	if (v->type != VEH_TRAIN) {
-		/* Trains update the vehicle list when the first unit enters the depot and calls VehicleEnterDepot() when the last unit enters.
-		 * We only increase the number of vehicles when the first one enters, so we will not need to search for more vehicles in the depot */
-		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
-	}
-	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
-
-	v->vehstatus |= VS_HIDDEN;
-	v->cur_speed = 0;
-
-	VehicleServiceInDepot(v);
-
-	/* After a vehicle trigger, the graphics and properties of the vehicle could change. */
-	TriggerVehicle(v, VEHICLE_TRIGGER_DEPOT);
-	v->MarkDirty();
-
-	InvalidateWindowData(WC_VEHICLE_VIEW, v->index);
-
-	if (v->current_order.IsType(OT_GOTO_DEPOT)) {
-		SetWindowDirty(WC_VEHICLE_VIEW, v->index);
-
-		const Order *real_order = v->GetOrder(cs->cur_real_order_index);
-
-		/* Test whether we are heading for this depot. If not, do nothing.
-		 * Note: The target depot for nearest-/manual-depot-orders is only updated on junctions, but we want to accept every depot. */
-		if ((v->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) &&
-				real_order != nullptr && !(real_order->GetDepotActionType() & ODATFB_NEAREST_DEPOT) &&
-				(v->type == VEH_AIRCRAFT ? v->current_order.GetDestination() != GetStationIndex(v->tile) : v->dest_tile != v->tile)) {
-			/* We are heading for another depot, keep driving. */
-			return;
-		}
-
-		if (v->current_order.IsRefit()) {
-			Backup<CompanyID> cur_company(_current_company, v->owner, FILE_LINE);
-			CommandCost cost = std::get<0>(Command<CMD_REFIT_VEHICLE>::Do(DC_EXEC, v->index, v->current_order.GetRefitCargo(), 0xFF, false, false, 0));
-			cur_company.Restore();
-
-			if (cost.Failed()) {
-				_vehicles_to_autoreplace[v] = false;
-				if (v->owner == _local_company) {
-					/* Notify the user that we stopped the vehicle */
-					SetDParam(0, v->index);
-					AddVehicleAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, v->index);
-				}
-			} else if (cost.GetCost() != 0) {
-				v->profit_this_year -= cost.GetCost() << 8;
-				if (v->owner == _local_company) {
-					ShowCostOrIncomeAnimation(v->x_pos, v->y_pos, v->z_pos, cost.GetCost());
-				}
-			}
-		}
-
-		if (v->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS) {
-			/* Part of orders */
-			v->DeleteUnreachedImplicitOrders();
-			UpdateVehicleTimetable(v, true);
-			cs->IncrementImplicitOrderIndex();
-		}
-		if (v->current_order.GetDepotActionType() & ODATFB_HALT) {
-			/* Vehicles are always stopped on entering depots. Do not restart this one. */
-			_vehicles_to_autoreplace[v] = false;
-			/* Invalidate last_loading_station. As the link from the station
-			 * before the stop to the station after the stop can't be predicted
-			 * we shouldn't construct it when the vehicle visits the next stop. */
-			v->last_loading_station = INVALID_STATION;
-			if (v->owner == _local_company) {
-				SetDParam(0, v->index);
-				AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + v->type, v->index);
-			}
-			AI::NewEvent(v->owner, new ScriptEventVehicleWaitingInDepot(v->index));
-		}
-		v->current_order.MakeDummy();
 	}
 }
 

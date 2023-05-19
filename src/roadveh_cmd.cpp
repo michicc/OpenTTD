@@ -36,6 +36,7 @@
 #include "zoom_func.h"
 #include "framerate_type.h"
 #include "consist_base.h"
+#include "consist_func.h"
 #include "roadveh_cmd.h"
 #include "road_cmd.h"
 
@@ -1020,7 +1021,7 @@ bool RoadVehLeaveDepot(RoadVehicle *v, bool first)
 	if (first) {
 		/* We are leaving a depot, but have to go to the exact same one; re-enter */
 		if (v->current_order.IsType(OT_GOTO_DEPOT) && v->tile == v->dest_tile) {
-			VehicleEnterDepot(v);
+			v->GetConsist()->EnterDepot();
 			return true;
 		}
 
@@ -1760,4 +1761,12 @@ bool RoadConsist::Tick()
 	if (!this->SpecializedConsistBase::Tick()) return false;
 
 	return RoadVehController(this->Front());
+}
+
+void RoadConsist::EnterDepot()
+{
+	SetWindowClassesDirty(WC_ROADVEH_LIST);
+	InvalidateWindowData(WC_VEHICLE_DEPOT, this->Front()->tile);
+
+	this->SpecializedConsistBase::EnterDepot();
 }
