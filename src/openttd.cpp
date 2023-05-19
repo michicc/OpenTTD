@@ -75,6 +75,7 @@
 #include "timer/timer_game_realtime.h"
 #include "timer/timer_game_tick.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "linkgraph/linkgraphschedule.h"
 
@@ -1401,6 +1402,7 @@ void StateGameLoop()
 		BasePersistentStorageArray::SwitchMode(PSM_ENTER_GAMELOOP);
 		RunTileLoop();
 		CallVehicleTicks();
+		CallConsistTicks();
 		CallLandscapeTick();
 		BasePersistentStorageArray::SwitchMode(PSM_LEAVE_GAMELOOP);
 		UpdateLandscapingLimits();
@@ -1426,6 +1428,7 @@ void StateGameLoop()
 		TimerManager<TimerGameTick>::Elapsed(1);
 		RunTileLoop();
 		CallVehicleTicks();
+		CallConsistTicks();
 		CallLandscapeTick();
 		BasePersistentStorageArray::SwitchMode(PSM_LEAVE_GAMELOOP);
 

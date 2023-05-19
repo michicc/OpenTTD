@@ -39,6 +39,7 @@
 #include "misc_cmd.h"
 #include "timer/timer_game_calendar.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 #include "table/train_sprites.h"
@@ -2318,7 +2319,7 @@ static bool CheckTrainStayInDepot(Train *v)
 	/* We are leaving a depot, but have to go to the exact same one; re-enter. */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) && v->tile == v->dest_tile) {
 		/* Service when depot has no reservation. */
-		if (!HasDepotReservation(v->tile)) VehicleEnterDepot(v);
+		if (!HasDepotReservation(v->tile)) v->GetConsist()->EnterDepot();
 		return true;
 	}
 
@@ -4259,4 +4260,22 @@ bool TrainConsist::Tick()
 	if (!TrainLocoHandler(this->Front(), false)) return false;
 
 	return TrainLocoHandler(this->Front(), true);
+}
+
+void TrainConsist::EnterDepot()
+{
+	Train *t = this->Front();
+
+	SetWindowClassesDirty(WC_TRAINS_LIST);
+	/* Clear path reservation */
+	SetDepotReservation(t->tile, false);
+	if (_settings_client.gui.show_track_reservation) MarkTileDirtyByTile(t->tile);
+
+	UpdateSignalsOnSegment(t->tile, INVALID_DIAGDIR, t->owner);
+	t->wait_counter = 0;
+	t->force_proceed = TFP_NONE;
+	ClrBit(t->flags, VRF_TOGGLE_REVERSE);
+	t->ConsistChanged(CCF_ARRANGE);
+
+	this->SpecializedConsistBase::EnterDepot();
 }

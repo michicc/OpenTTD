@@ -61,6 +61,7 @@ public:
 	inline ShipConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
 
 	bool Tick() override;
+	void EnterDepot() override;
 };
 
 

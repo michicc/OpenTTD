@@ -332,6 +332,7 @@ public:
 	inline RoadConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
 
 	bool Tick() override;
+	void EnterDepot() override;
 };
 
 #endif /* ROADVEH_H */
