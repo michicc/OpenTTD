@@ -42,6 +42,7 @@
 #include "../string_func.h"
 #include "../fios.h"
 #include "../error.h"
+#include "../consist_base.h"
 #include <atomic>
 #ifdef __EMSCRIPTEN__
 #	include <emscripten.h>
@@ -250,6 +251,7 @@ static const std::vector<ChunkHandlerRef> &ChunkHandlers()
 	extern const ChunkHandlerTable _object_chunk_handlers;
 	extern const ChunkHandlerTable _persistent_storage_chunk_handlers;
 	extern const ChunkHandlerTable _water_region_chunk_handlers;
+	extern const ChunkHandlerTable _consist_chunk_handlers;
 
 	/** List of all chunks in a savegame. */
 	static const ChunkHandlerTable _chunk_handler_tables[] = {
@@ -288,6 +290,7 @@ static const std::vector<ChunkHandlerRef> &ChunkHandlers()
 		_object_chunk_handlers,
 		_persistent_storage_chunk_handlers,
 		_water_region_chunk_handlers,
+		_consist_chunk_handlers,
 	};
 
 	static std::vector<ChunkHandlerRef> _chunk_handlers;

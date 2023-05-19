@@ -52,7 +52,7 @@ OrderBackup::OrderBackup(const Consist *cs, uint32_t user)
 	this->tile             = v->tile;
 	this->group            = v->group_id;
 
-	this->CopyConsistPropertiesFrom(v);
+	this->CopyConsistPropertiesFrom(cs);
 
 	/* If we have shared orders, store the vehicle we share the order with. */
 	if (v->IsOrderListShared()) {
@@ -92,11 +92,11 @@ void OrderBackup::DoRestore(Consist *cs)
 	/* Remove backed up name if it's no longer unique. */
 	if (!IsUniqueVehicleName(this->name)) this->name.clear();
 
-	v->CopyConsistPropertiesFrom(this);
+	cs->CopyConsistPropertiesFrom(this);
 
 	/* Make sure orders are in range */
-	v->UpdateRealOrderIndex();
-	if (v->cur_implicit_order_index >= v->GetNumOrders()) v->cur_implicit_order_index = v->cur_real_order_index;
+	cs->UpdateRealOrderIndex();
+	if (cs->cur_implicit_order_index >= v->GetNumOrders()) cs->cur_implicit_order_index = cs->cur_real_order_index;
 
 	/* Restore vehicle group */
 	Command<CMD_ADD_VEHICLE_GROUP>::Do(DC_EXEC, this->group, v->index, false, VehicleListIdentifier{});

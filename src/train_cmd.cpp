@@ -787,7 +787,6 @@ CommandCost CmdBuildRailVehicle(DoCommandFlag flags, TileIndex tile, const Engin
 
 		v->railtype = rvi->railtype;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_trains);
 		v->date_of_last_service = TimerGameCalendar::date;
 		v->date_of_last_service_newgrf = TimerGameCalendar::date;
 		v->build_year = TimerGameCalendar::year;
@@ -795,7 +794,6 @@ CommandCost CmdBuildRailVehicle(DoCommandFlag flags, TileIndex tile, const Engin
 		v->random_bits = Random();
 
 		if (e->flags & ENGINE_EXCLUSIVE_PREVIEW) SetBit(v->vehicle_flags, VF_BUILT_AS_PROTOTYPE);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->group_id = DEFAULT_GROUP;
 
@@ -1352,7 +1350,6 @@ CommandCost CmdMoveRailVehicle(DoCommandFlag flags, VehicleID src_veh, VehicleID
 			/* Remove stuff not valid anymore for non-front engines. */
 			DeleteVehicleOrders(src);
 			src->unitnumber = 0;
-			src->name.clear();
 		}
 
 		/* We weren't a front engine but are becoming one. So
@@ -2616,7 +2613,7 @@ public:
 		old_order(_v->current_order),
 		old_dest_tile(_v->dest_tile),
 		old_last_station_visited(_v->last_station_visited),
-		index(_v->cur_real_order_index),
+		index(_v->GetConsist()->cur_real_order_index),
 		suppress_implicit_orders(HasBit(_v->gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS)),
 		restored(false)
 	{
@@ -2688,7 +2685,7 @@ public:
 			 * orders can lead to an infinite loop. */
 			++this->index;
 			depth++;
-		} while (this->index != this->v->cur_real_order_index && depth < this->v->GetNumOrders());
+		} while (this->index != this->v->GetConsist()->cur_real_order_index && depth < this->v->GetNumOrders());
 
 		return false;
 	}
@@ -2964,7 +2961,7 @@ TileIndex Train::GetOrderStationLocation(StationID station)
 	const Station *st = Station::Get(station);
 	if (!(st->facilities & FACIL_TRAIN)) {
 		/* The destination station has no trainstation tiles. */
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return 0;
 	}
 
