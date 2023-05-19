@@ -36,6 +36,7 @@
 #include "game/game_text.hpp"
 #include "network/network_content_gui.h"
 #include "newgrf_engine.h"
+#include "consist_base.h"
 #include "core/backup_type.hpp"
 #include <stack>
 #include <charconv>
@@ -1576,9 +1577,10 @@ static void FormatString(StringBuilder &builder, const char *str_arg, StringPara
 				case SCC_VEHICLE_NAME: { // {VEHICLE}
 					const Vehicle *v = Vehicle::GetIfValid(args.GetNextParameter<VehicleID>());
 					if (v == nullptr) break;
+					const Consist *cs = v->GetConsist();
 
-					if (!v->name.empty()) {
-						auto tmp_params = MakeParameters(v->name);
+					if (!cs->name.empty()) {
+						auto tmp_params = MakeParameters(cs->name);
 						GetStringWithArgs(builder, STR_JUST_RAW_STRING, tmp_params);
 					} else if (v->group_id != DEFAULT_GROUP) {
 						/* The vehicle has no name, but is member of a group, so print group name */

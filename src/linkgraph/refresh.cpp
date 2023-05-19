@@ -9,6 +9,7 @@
 
 #include "../stdafx.h"
 #include "../core/bitmath_func.hpp"
+#include "../consist_base.h"
 #include "../station_func.h"
 #include "../engine_base.h"
 #include "../vehicle_func.h"
@@ -29,7 +30,7 @@
 	if (v->orders == nullptr) return;
 
 	/* Make sure the first order is a useful order. */
-	const Order *first = v->orders->GetNextDecisionNode(v->GetOrder(v->cur_implicit_order_index), 0);
+	const Order *first = v->orders->GetNextDecisionNode(v->GetOrder(v->GetConsist()->cur_implicit_order_index), 0);
 	if (first == nullptr) return;
 
 	HopSet seen_hops;

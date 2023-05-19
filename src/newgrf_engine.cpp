@@ -24,6 +24,7 @@
 #include "newgrf_railtype.h"
 #include "newgrf_roadtype.h"
 #include "ship.h"
+#include "consist_base.h"
 
 #include "safeguards.h"
 
@@ -735,7 +736,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		case 0x0A: return v->current_order.MapOldOrder();
 		case 0x0B: return v->current_order.GetDestination();
 		case 0x0C: return v->GetNumOrders();
-		case 0x0D: return v->cur_real_order_index;
+		case 0x0D: return v->GetConsist()->cur_real_order_index;
 		case 0x0E: break; // not implemented
 		case 0x0F: break; // not implemented
 		case 0x10:
@@ -754,8 +755,8 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 		}
 		case 0x12: return ClampTo<uint16_t>(v->date_of_last_service_newgrf - CalendarTime::DAYS_TILL_ORIGINAL_BASE_YEAR);
 		case 0x13: return GB(ClampTo<uint16_t>(v->date_of_last_service_newgrf - CalendarTime::DAYS_TILL_ORIGINAL_BASE_YEAR), 8, 8);
-		case 0x14: return v->GetServiceInterval();
-		case 0x15: return GB(v->GetServiceInterval(), 8, 8);
+		case 0x14: return v->GetConsist()->GetServiceInterval();
+		case 0x15: return GB(v->GetConsist()->GetServiceInterval(), 8, 8);
 		case 0x16: return v->last_station_visited;
 		case 0x17: return v->tick_counter;
 		case 0x18:
