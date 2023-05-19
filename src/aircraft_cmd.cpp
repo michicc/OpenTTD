@@ -40,6 +40,7 @@
 #include "framerate_type.h"
 #include "aircraft_cmd.h"
 #include "vehicle_cmd.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -1487,7 +1488,7 @@ static void AircraftEventHandler_EnterTerminal(Aircraft *v, const AirportFTAClas
  */
 static void AircraftEventHandler_EnterHangar(Aircraft *v, const AirportFTAClass *apc)
 {
-	VehicleEnterDepot(v);
+	v->GetConsist()->EnterDepot();
 	v->state = apc->layout[v->pos].heading;
 }
 
@@ -1516,7 +1517,7 @@ static void AircraftEventHandler_InHangar(Aircraft *v, const AirportFTAClass *ap
 
 	/* We are leaving a hangar, but have to go to the exact same one; re-enter */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) && v->current_order.GetDestination() == v->targetairport) {
-		VehicleEnterDepot(v);
+		v->GetConsist()->EnterDepot();
 		return;
 	}
 
@@ -2168,4 +2169,13 @@ bool AircraftConsist::Tick()
 	}
 
 	return true;
+}
+
+void AircraftConsist::EnterDepot()
+{
+	SetWindowClassesDirty(WC_AIRCRAFT_LIST);
+	HandleAircraftEnterHangar(this->Front());
+	InvalidateWindowData(WC_VEHICLE_DEPOT, this->Front()->tile);
+
+	this->SpecializedConsistBase::EnterDepot();
 }

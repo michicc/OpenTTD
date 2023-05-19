@@ -136,7 +136,10 @@ public:
 		}
 	}
 
+
 	virtual bool Tick();
+
+	virtual void EnterDepot();
 
 	/**
 	 * Returns an iterable ensemble of all valid consists.

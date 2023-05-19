@@ -36,6 +36,7 @@
 #include "industry_map.h"
 #include "ship_cmd.h"
 #include "consist_base.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 
@@ -350,7 +351,7 @@ static bool CheckShipLeaveDepot(Ship *v)
 	/* We are leaving a depot, but have to go to the exact same one; re-enter */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) &&
 			IsShipDepotTile(v->tile) && GetDepotIndex(v->tile) == v->current_order.GetDestination()) {
-		VehicleEnterDepot(v);
+		v->GetConsist()->EnterDepot();
 		return true;
 	}
 
@@ -737,7 +738,7 @@ static void ShipController(Ship *v)
 							v->dest_tile == gp.new_tile) {
 							/* Depot orders really need to reach the tile */
 							if ((gp.x & 0xF) == 8 && (gp.y & 0xF) == 8) {
-								VehicleEnterDepot(v);
+								v->GetConsist()->EnterDepot();
 								return;
 							}
 						} else if (v->current_order.IsType(OT_GOTO_STATION) && IsDockingTile(gp.new_tile)) {
@@ -930,4 +931,17 @@ bool ShipConsist::Tick()
 	ShipController(this->Front());
 
 	return true;
+}
+
+void ShipConsist::EnterDepot()
+{
+	Ship *ship = this->Front();
+	ship->state = TRACK_BIT_DEPOT;
+	ship->UpdateCache();
+	ship->UpdateViewport(true, true);
+	SetWindowDirty(WC_VEHICLE_DEPOT, ship->tile);
+	SetWindowClassesDirty(WC_SHIPS_LIST);
+	InvalidateWindowData(WC_VEHICLE_DEPOT, ship->tile);
+
+	this->SpecializedConsistBase::EnterDepot();
 }

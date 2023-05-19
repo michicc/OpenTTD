@@ -40,6 +40,7 @@
 #include "road_cmd.h"
 #include "landscape_cmd.h"
 #include "rail_cmd.h"
+#include "consist_func.h"
 
 #include "table/strings.h"
 #include "table/roadtypes.h"
@@ -2215,7 +2216,7 @@ static VehicleEnterTileStatus VehicleEnter_Road(Vehicle *v, TileIndex tile, int 
 				rv->state = RVSB_IN_DEPOT;
 				rv->vehstatus |= VS_HIDDEN;
 				rv->direction = ReverseDir(rv->direction);
-				if (rv->Next() == nullptr) VehicleEnterDepot(rv->First());
+				if (rv->Next() == nullptr) rv->GetConsist()->EnterDepot();
 				rv->tile = tile;
 
 				InvalidateWindowData(WC_VEHICLE_DEPOT, rv->tile);

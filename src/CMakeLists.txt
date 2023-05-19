@@ -104,6 +104,7 @@ add_files(
     company_type.h
     consist.cpp
     consist_base.h
+    consist_func.h
     consist_type.h
     console.cpp
     console_cmds.cpp

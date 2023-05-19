@@ -361,6 +361,7 @@ public:
 	inline TrainConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
 
 	bool Tick() override;
+	void EnterDepot() override;
 };
 
 #endif /* TRAIN_H */

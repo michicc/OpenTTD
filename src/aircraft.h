@@ -145,6 +145,7 @@ public:
 	inline AircraftConsist(Owner owner = INVALID_OWNER) : SpecializedConsist(owner) {}
 
 	bool Tick() override;
+	void EnterDepot() override;
 };
 
 void GetRotorImage(const Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result);
