@@ -90,6 +90,7 @@
 #include "network/network_func.h"
 #include "framerate_type.h"
 #include "viewport_cmd.h"
+#include "consist_base.h"
 
 #include <forward_list>
 #include <stack>
@@ -238,16 +239,14 @@ void InitializeWindowViewport(Window *w, int x, int y,
 	Point pt;
 
 	if (follow_flags & 0x80000000) {
-		const Vehicle *veh;
-
-		vp->follow_vehicle = (VehicleID)(follow_flags & 0xFFFFF);
-		veh = Vehicle::Get(vp->follow_vehicle);
+		vp->follow_consist = (ConsistID)(follow_flags & 0xFFFFF);
+		const Vehicle *veh = Consist::Get(vp->follow_consist)->Front();
 		pt = MapXYZToViewport(vp, veh->x_pos, veh->y_pos, veh->z_pos);
 	} else {
 		x = TileX(follow_flags) * TILE_SIZE;
 		y = TileY(follow_flags) * TILE_SIZE;
 
-		vp->follow_vehicle = INVALID_VEHICLE;
+		vp->follow_consist = INVALID_CONSIST;
 		pt = MapXYZToViewport(vp, x, y, GetSlopePixelZ(x, y));
 	}
 
@@ -1866,8 +1865,8 @@ void UpdateViewportPosition(Window *w)
 {
 	const Viewport *vp = w->viewport;
 
-	if (w->viewport->follow_vehicle != INVALID_VEHICLE) {
-		const Vehicle *veh = Vehicle::Get(w->viewport->follow_vehicle);
+	if (w->viewport->follow_consist != INVALID_CONSIST) {
+		const Vehicle *veh = Consist::Get(w->viewport->follow_consist)->Front();
 		Point pt = MapXYZToViewport(vp, veh->x_pos, veh->y_pos, veh->z_pos);
 
 		w->viewport->scrollpos_x = pt.x;
@@ -2411,7 +2410,7 @@ bool ScrollWindowTo(int x, int y, int z, Window *w, bool instant)
 	}
 
 	Point pt = MapXYZToViewport(w->viewport, x, y, z);
-	w->viewport->follow_vehicle = INVALID_VEHICLE;
+	w->viewport->follow_consist = INVALID_CONSIST;
 
 	if (w->viewport->dest_scrollpos_x == pt.x && w->viewport->dest_scrollpos_y == pt.y) return false;
 

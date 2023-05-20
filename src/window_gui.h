@@ -18,6 +18,7 @@
 #include "widget_type.h"
 #include "core/smallvec_type.hpp"
 #include "string_type.h"
+#include "consist_type.h"
 
 /**
  * Flags to describe the look of the frame
@@ -179,13 +180,13 @@ static const int WHITE_BORDER_DURATION = 3; ///< The initial timeout value for W
 
 /**
  * Data structure for a window viewport.
- * A viewport is either following a vehicle (its id in then in #follow_vehicle), or it aims to display a specific
- * location #dest_scrollpos_x, #dest_scrollpos_y (#follow_vehicle is then #INVALID_VEHICLE).
+ * A viewport is either following a consist (its id in then in #follow_consist), or it aims to display a specific
+ * location #dest_scrollpos_x, #dest_scrollpos_y (#follow_vehicle is then #INVALID_CONSIST).
  * The actual location being shown is #scrollpos_x, #scrollpos_y.
  * @see InitializeViewport(), UpdateViewportPosition(), UpdateViewportCoordinates().
  */
 struct ViewportData : Viewport {
-	VehicleID follow_vehicle; ///< VehicleID to follow if following a vehicle, #INVALID_VEHICLE otherwise.
+	ConsistID follow_consist; ///< ConsistID to follow if following a vehicle, #INVALID_CONSIST otherwise.
 	int32 scrollpos_x;        ///< Currently shown x coordinate (virtual screen coordinate of topleft corner of the viewport).
 	int32 scrollpos_y;        ///< Currently shown y coordinate (virtual screen coordinate of topleft corner of the viewport).
 	int32 dest_scrollpos_x;   ///< Current destination x coordinate to display (virtual screen coordinate of topleft corner of the viewport).
