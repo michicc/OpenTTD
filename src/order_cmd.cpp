@@ -661,18 +661,18 @@ static inline bool OrderGoesToStation(const Vehicle *v, const Order *o)
 }
 
 /**
- * Delete all news items regarding defective orders about a vehicle
+ * Delete all news items regarding defective orders about a consist.
  * This could kill still valid warnings (for example about void order when just
  * another order gets added), but assume the company will notice the problems,
  * when they're changing the orders.
  */
-static void DeleteOrderWarnings(const Vehicle *v)
+void DeleteOrderWarnings(const Consist *cs)
 {
-	DeleteVehicleNews(v->index, STR_NEWS_VEHICLE_HAS_TOO_FEW_ORDERS);
-	DeleteVehicleNews(v->index, STR_NEWS_VEHICLE_HAS_VOID_ORDER);
-	DeleteVehicleNews(v->index, STR_NEWS_VEHICLE_HAS_DUPLICATE_ENTRY);
-	DeleteVehicleNews(v->index, STR_NEWS_VEHICLE_HAS_INVALID_ENTRY);
-	DeleteVehicleNews(v->index, STR_NEWS_PLANE_USES_TOO_SHORT_RUNWAY);
+	DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_HAS_TOO_FEW_ORDERS);
+	DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_HAS_VOID_ORDER);
+	DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_HAS_DUPLICATE_ENTRY);
+	DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_HAS_INVALID_ENTRY);
+	DeleteConsistNews(cs->index, STR_NEWS_PLANE_USES_TOO_SHORT_RUNWAY);
 }
 
 /**
@@ -934,7 +934,7 @@ void InsertOrder(Vehicle *v, Order *new_o, VehicleOrderID sel_ord)
 	}
 
 	Vehicle *u = v->FirstShared();
-	DeleteOrderWarnings(u);
+	DeleteOrderWarnings(u->GetConsist());
 	for (; u != nullptr; u = u->NextShared()) {
 		assert(v->orders == u->orders);
 		Consist *u_cs = u->GetConsist();
@@ -1052,7 +1052,7 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
 	v->orders->DeleteOrderAt(sel_ord);
 
 	Vehicle *u = v->FirstShared();
-	DeleteOrderWarnings(u);
+	DeleteOrderWarnings(u->GetConsist());
 	for (; u != nullptr; u = u->NextShared()) {
 		assert(v->orders == u->orders);
 		Consist *u_cs = u->GetConsist();
@@ -1168,7 +1168,7 @@ CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID movi
 		/* Update shared list */
 		Vehicle *u = v->FirstShared();
 
-		DeleteOrderWarnings(u);
+		DeleteOrderWarnings(u->GetConsist());
 
 		for (; u != nullptr; u = u->NextShared()) {
 			/* Update the current order.
@@ -1444,7 +1444,7 @@ CommandCost CmdModifyOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 
 		/* Update the windows and full load flags, also for vehicles that share the same order list */
 		Vehicle *u = v->FirstShared();
-		DeleteOrderWarnings(u);
+		DeleteOrderWarnings(u->GetConsist());
 		for (; u != nullptr; u = u->NextShared()) {
 			/* Toggle u->current_order "Full load" flag if it changed.
 			 * However, as the same flag is used for depot orders, check
@@ -1757,7 +1757,7 @@ void CheckOrders(const Vehicle *v)
 		if (message == INVALID_STRING_ID) return;
 
 		SetDParam(0, v->GetConsist()->index);
-		AddVehicleAdviceNewsItem(message, v->index);
+		AddConsistAdviceNewsItem(message, v->GetConsist()->index);
 	}
 }
 
@@ -1853,7 +1853,8 @@ bool Vehicle::HasDepotOrder() const
  */
 void DeleteVehicleOrders(Vehicle *v, bool keep_orderlist, bool reset_order_indices)
 {
-	DeleteOrderWarnings(v);
+	Consist *cs = v->GetConsist();
+	if (cs != nullptr) DeleteOrderWarnings(cs);
 
 	if (v->IsOrderListShared()) {
 		/* Remove ourself from the shared order list. */
@@ -1866,7 +1867,7 @@ void DeleteVehicleOrders(Vehicle *v, bool keep_orderlist, bool reset_order_indic
 	}
 
 	if (reset_order_indices) {
-		if (v->GetConsist() != nullptr) v->GetConsist()->cur_implicit_order_index = v->GetConsist()->cur_real_order_index = 0;
+		if (v->GetConsist() != nullptr) cs->cur_implicit_order_index = cs->cur_real_order_index = 0;
 		if (v->current_order.IsType(OT_LOADING)) {
 			CancelLoadingDueToDeletedOrder(v);
 		}

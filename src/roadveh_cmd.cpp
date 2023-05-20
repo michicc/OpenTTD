@@ -687,10 +687,10 @@ static void RoadVehArrivesAt(const RoadVehicle *v, Station *st)
 		if (!(st->had_vehicle_of_type & HVOT_BUS)) {
 			st->had_vehicle_of_type |= HVOT_BUS;
 			SetDParam(0, st->index);
-			AddVehicleNewsItem(
+			AddConsistNewsItem(
 				RoadTypeIsRoad(v->roadtype) ? STR_NEWS_FIRST_BUS_ARRIVAL : STR_NEWS_FIRST_PASSENGER_TRAM_ARRIVAL,
 				(v->owner == _local_company) ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
-				v->index,
+				v->GetConsist()->index,
 				st->index
 			);
 			AI::NewEvent(v->owner, new ScriptEventStationFirstVehicle(st->index, v->index));
@@ -701,10 +701,10 @@ static void RoadVehArrivesAt(const RoadVehicle *v, Station *st)
 		if (!(st->had_vehicle_of_type & HVOT_TRUCK)) {
 			st->had_vehicle_of_type |= HVOT_TRUCK;
 			SetDParam(0, st->index);
-			AddVehicleNewsItem(
+			AddConsistNewsItem(
 				RoadTypeIsRoad(v->roadtype) ? STR_NEWS_FIRST_TRUCK_ARRIVAL : STR_NEWS_FIRST_CARGO_TRAM_ARRIVAL,
 				(v->owner == _local_company) ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
-				v->index,
+				v->GetConsist()->index,
 				st->index
 			);
 			AI::NewEvent(v->owner, new ScriptEventStationFirstVehicle(st->index, v->index));

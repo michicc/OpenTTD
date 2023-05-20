@@ -204,6 +204,28 @@ public:
 	}
 
 	/**
+	 * Converts a Consist to SpecializedConsist with type checking.
+	 * @param cs Consist pointer
+	 * @return pointer to SpecializedConsist
+	 */
+	static inline T *From(Consist *cs)
+	{
+		assert(cs->type == TType);
+		return (T *)cs;
+	}
+
+	/**
+	 * Converts a const Consist to const SpecializedConsist with type checking.
+	 * @param cs Consist pointer
+	 * @return pointer to SpecializedConsist
+	 */
+	static inline const T *From(const Consist *cs)
+	{
+		assert(cs->type == TType);
+		return (const T *)cs;
+	}
+
+	/**
 	 * Returns an iterable ensemble of all valid consists of type T
 	 * @param from index of the first consist to consider
 	 * @return an iterable ensemble of all valid consists of type T

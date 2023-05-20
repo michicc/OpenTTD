@@ -283,14 +283,14 @@ struct NewsWindow : Window {
 		if (desc == &_company_news_desc) this->GetWidget<NWidgetCore>(WID_N_TITLE)->widget_data = this->ni->params[0];
 
 		NWidgetCore *nwid = this->GetWidget<NWidgetCore>(WID_N_SHOW_GROUP);
-		if (ni->reftype1 == NR_VEHICLE && nwid != nullptr) {
-			const Vehicle *v = Vehicle::Get(ni->ref1);
-			switch (v->type) {
+		if (ni->reftype1 == NR_CONSIST && nwid != nullptr) {
+			const Consist *cs = Consist::Get(ni->ref1);
+			switch (cs->type) {
 				case VEH_TRAIN:
 					nwid->widget_data = STR_TRAIN;
 					break;
 				case VEH_ROAD:
-					nwid->widget_data = RoadVehicle::From(v)->IsBus() ? STR_BUS : STR_LORRY;
+					nwid->widget_data = RoadConsist::From(cs)->Front()->IsBus() ? STR_BUS : STR_LORRY;
 					break;
 				case VEH_SHIP:
 					nwid->widget_data = STR_SHIP;
@@ -308,7 +308,7 @@ struct NewsWindow : Window {
 		/* Initialize viewport if it exists. */
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_N_VIEWPORT);
 		if (nvp != nullptr) {
-			nvp->InitializeViewport(this, ni->reftype1 == NR_VEHICLE ? 0x80000000 | (Vehicle::Get(ni->ref1)->GetConsist()->index) : (uint32)GetReferenceTile(ni->reftype1, ni->ref1),ScaleZoomGUI(ZOOM_LVL_NEWS));
+			nvp->InitializeViewport(this, ni->reftype1 == NR_CONSIST ? 0x80000000 | ni->ref1 : (uint32)GetReferenceTile(ni->reftype1, ni->ref1), ScaleZoomGUI(ZOOM_LVL_NEWS));
 			if (this->ni->flags & NF_NO_TRANSPARENT) nvp->disp_flags |= ND_NO_TRANSPARENCY;
 			if ((this->ni->flags & NF_INCOLOUR) == 0) {
 				nvp->disp_flags |= ND_SHADE_GREY;
@@ -382,7 +382,7 @@ struct NewsWindow : Window {
 			}
 
 			case WID_N_SHOW_GROUP:
-				if (this->ni->reftype1 == NR_VEHICLE) {
+				if (this->ni->reftype1 == NR_CONSIST) {
 					Dimension d2 = GetStringBoundingBox(this->GetWidget<NWidgetCore>(WID_N_SHOW_GROUP)->widget_data);
 					d2.height += WidgetDimensions::scaled.captiontext.Vertical();
 					d2.width += WidgetDimensions::scaled.captiontext.Horizontal();
@@ -484,9 +484,9 @@ struct NewsWindow : Window {
 				break;
 
 			case WID_N_CAPTION:
-				if (this->ni->reftype1 == NR_VEHICLE) {
-					const Vehicle *v = Vehicle::Get(this->ni->ref1);
-					ShowVehicleViewWindow(v);
+				if (this->ni->reftype1 == NR_CONSIST) {
+					const Consist *cs = Consist::Get(this->ni->ref1);
+					ShowVehicleViewWindow(cs->Front());
 				}
 				break;
 
@@ -494,15 +494,15 @@ struct NewsWindow : Window {
 				break; // Ignore clicks
 
 			case WID_N_SHOW_GROUP:
-				if (this->ni->reftype1 == NR_VEHICLE) {
-					const Vehicle *v = Vehicle::Get(this->ni->ref1);
-					ShowCompanyGroupForVehicle(v);
+				if (this->ni->reftype1 == NR_CONSIST) {
+					const Consist *cs = Consist::Get(this->ni->ref1);
+					ShowCompanyGroupForVehicle(cs->Front());
 				}
 				break;
 			default:
-				if (this->ni->reftype1 == NR_VEHICLE) {
-					const Vehicle *v = Vehicle::Get(this->ni->ref1);
-					ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos);
+				if (this->ni->reftype1 == NR_CONSIST) {
+					const Consist *cs = Consist::Get(this->ni->ref1);
+					ScrollMainWindowTo(cs->Front()->x_pos, cs->Front()->y_pos, cs->Front()->z_pos);
 				} else {
 					TileIndex tile1 = GetReferenceTile(this->ni->reftype1, this->ni->ref1);
 					TileIndex tile2 = GetReferenceTile(this->ni->reftype2, this->ni->ref2);
@@ -525,7 +525,7 @@ struct NewsWindow : Window {
 			NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_N_VIEWPORT);
 			nvp->UpdateViewportCoordinates(this);
 
-			if (ni->reftype1 != NR_VEHICLE) {
+			if (ni->reftype1 != NR_CONSIST) {
 				ScrollWindowToTile(GetReferenceTile(ni->reftype1, ni->ref1), this, true); // Re-center viewport.
 			}
 		}
@@ -872,8 +872,8 @@ CommandCost CmdCustomNewsItem(DoCommandFlag flags, NewsType type, NewsReferenceT
 			if (!IsValidTile(reference)) return CMD_ERROR;
 			break;
 
-		case NR_VEHICLE:
-			if (!Vehicle::IsValidID(reference)) return CMD_ERROR;
+		case NR_CONSIST:
+			if (!Consist::IsValidID(reference)) return CMD_ERROR;
 			break;
 
 		case NR_STATION:
@@ -907,18 +907,18 @@ CommandCost CmdCustomNewsItem(DoCommandFlag flags, NewsType type, NewsReferenceT
 }
 
 /**
- * Delete a news item type about a vehicle.
- * When the news item type is INVALID_STRING_ID all news about the vehicle gets deleted.
- * @param vid  The vehicle to remove the news for.
+ * Delete a news item type about a consist.
+ * When the news item type is INVALID_STRING_ID all news about the consist gets deleted.
+ * @param cid  The consist to remove the news for.
  * @param news The news type to remove.
  */
-void DeleteVehicleNews(VehicleID vid, StringID news)
+void DeleteConsistNews(ConsistID cid, StringID news)
 {
 	NewsItem *ni = _oldest_news;
 
 	while (ni != nullptr) {
 		NewsItem *next = ni->next;
-		if (((ni->reftype1 == NR_VEHICLE && ni->ref1 == vid) || (ni->reftype2 == NR_VEHICLE && ni->ref2 == vid)) &&
+		if (((ni->reftype1 == NR_CONSIST && ni->ref1 == cid) || (ni->reftype2 == NR_CONSIST && ni->ref2 == cid)) &&
 				(news == INVALID_STRING_ID || ni->string_id == news)) {
 			DeleteNewsItem(ni);
 		}
@@ -984,21 +984,6 @@ static void RemoveOldNewsItems()
 	for (NewsItem *cur = _oldest_news; _total_news > MIN_NEWS_AMOUNT && cur != nullptr; cur = next) {
 		next = cur->next;
 		if (TimerGameCalendar::date - _news_type_data[cur->type].age * _settings_client.gui.news_message_timeout > cur->date) DeleteNewsItem(cur);
-	}
-}
-
-/**
- * Report a change in vehicle IDs (due to autoreplace) to affected vehicle news.
- * @note Viewports of currently displayed news is changed via #ChangeVehicleViewports
- * @param from_index the old vehicle ID
- * @param to_index the new vehicle ID
- */
-void ChangeVehicleNews(VehicleID from_index, VehicleID to_index)
-{
-	for (NewsItem *ni = _oldest_news; ni != nullptr; ni = ni->next) {
-		if (ni->reftype1 == NR_VEHICLE && ni->ref1 == from_index) ni->ref1 = to_index;
-		if (ni->reftype2 == NR_VEHICLE && ni->ref2 == from_index) ni->ref2 = to_index;
-		if (ni->flags & NF_VEHICLE_PARAM0 && ni->params[0] == from_index) ni->params[0] = to_index;
 	}
 }
 

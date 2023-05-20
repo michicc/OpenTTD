@@ -11,7 +11,7 @@
 #define NEWS_FUNC_H
 
 #include "news_type.h"
-#include "vehicle_type.h"
+#include "consist_type.h"
 #include "station_type.h"
 #include "industry_type.h"
 
@@ -23,23 +23,21 @@ static inline void AddCompanyNewsItem(StringID string, CompanyNewsInformation *c
 }
 
 /**
- * Adds a newsitem referencing a vehicle.
- *
- * @warning The DParams may not reference the vehicle due to autoreplace stuff. See AddVehicleAdviceNewsItem for how that can be done.
+ * Adds a newsitem referencing a consist.
  */
-static inline void AddVehicleNewsItem(StringID string, NewsType type, VehicleID vehicle, StationID station = INVALID_STATION)
+static inline void AddConsistNewsItem(StringID string, NewsType type, ConsistID consist, StationID station = INVALID_STATION)
 {
-	AddNewsItem(string, type, NF_NO_TRANSPARENT | NF_SHADE | NF_THIN, NR_VEHICLE, vehicle, station == INVALID_STATION ? NR_NONE : NR_STATION, station);
+	AddNewsItem(string, type, NF_NO_TRANSPARENT | NF_SHADE | NF_THIN, NR_CONSIST, consist, station == INVALID_STATION ? NR_NONE : NR_STATION, station);
 }
 
 /**
- * Adds a vehicle-advice news item.
+ * Adds a consist-advice news item.
  *
- * @warning DParam 0 must reference the vehicle!
+ * @warning DParam 0 must reference the consist!
  */
-static inline void AddVehicleAdviceNewsItem(StringID string, VehicleID vehicle)
+static inline void AddConsistAdviceNewsItem(StringID string, ConsistID consist)
 {
-	AddNewsItem(string, NT_ADVICE, NF_INCOLOUR | NF_SMALL | NF_VEHICLE_PARAM0, NR_VEHICLE, vehicle);
+	AddNewsItem(string, NT_ADVICE, NF_INCOLOUR | NF_SMALL, NR_CONSIST, consist);
 }
 
 static inline void AddTileNewsItem(StringID string, NewsType type, TileIndex tile, const NewsAllocatedData *data = nullptr, StationID station = INVALID_STATION)
@@ -58,7 +56,7 @@ void InitNewsItemStructs();
 extern const NewsItem *_statusbar_news_item;
 
 void DeleteInvalidEngineNews();
-void DeleteVehicleNews(VehicleID vid, StringID news);
+void DeleteConsistNews(ConsistID cid, StringID news);
 void DeleteStationNews(StationID sid);
 void DeleteIndustryNews(IndustryID iid);
 
