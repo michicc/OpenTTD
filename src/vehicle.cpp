@@ -789,7 +789,7 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 		/* Delete the news item. */
-		DeleteVehicleNews(this->index, STR_NEWS_VEHICLE_IS_LOST);
+		DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_IS_LOST);
 		return;
 	}
 
@@ -804,7 +804,7 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 	AI::NewEvent(this->owner, new ScriptEventVehicleLost(this->index));
 	if (_settings_client.gui.lost_vehicle_warn && this->owner == _local_company) {
 		SetDParam(0, cs->index);
-		AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, this->index);
+		AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, cs->index);
 	}
 }
 
@@ -894,7 +894,6 @@ Vehicle::~Vehicle()
 
 	UpdateVehicleTileHash(this, true);
 	UpdateVehicleViewportHash(this, INVALID_COORD, 0, this->sprite_cache.old_coord.left, this->sprite_cache.old_coord.top);
-	DeleteVehicleNews(this->index, INVALID_STRING_ID);
 	DeleteNewGRFInspectWindow(GetGrfSpecFeature(this->type), this->index);
 }
 
@@ -1367,7 +1366,7 @@ void AgeVehicle(Vehicle *v)
 	}
 
 	SetDParam(0, v->GetConsist()->index);
-	AddVehicleAdviceNewsItem(str, v->index);
+	AddConsistAdviceNewsItem(str, v->GetConsist()->index);
 }
 
 /**
@@ -2647,7 +2646,7 @@ static IntervalTimer<TimerGameCalendar> _vehicles_yearly({TimerGameCalendar::YEA
 				if (_settings_client.gui.vehicle_income_warn && v->owner == _local_company) {
 					SetDParam(0, v->GetConsist()->index);
 					SetDParam(1, profit);
-					AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->index);
+					AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->GetConsist()->index);
 				}
 				AI::NewEvent(v->owner, new ScriptEventVehicleUnprofitable(v->index));
 			}

@@ -38,6 +38,8 @@ Consist::~Consist()
 
 	OrderBackup::ClearConsist(this);
 	StopGlobalFollowConsist(this);
+	DeleteOrderWarnings(this);
+	DeleteConsistNews(this->index, INVALID_STRING_ID);
 }
 
 /**
@@ -145,7 +147,7 @@ void Consist::EnterDepot()
 				if (v->owner == _local_company) {
 					/* Notify the user that we stopped the vehicle */
 					SetDParam(0, this->index);
-					AddVehicleAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, v->index);
+					AddConsistAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, this->index);
 				}
 			} else if (cost.GetCost() != 0) {
 				v->profit_this_year -= cost.GetCost() << 8;
@@ -168,9 +170,9 @@ void Consist::EnterDepot()
 			 * before the stop to the station after the stop can't be predicted
 			 * we shouldn't construct it when the vehicle visits the next stop. */
 			v->last_loading_station = INVALID_STATION;
-			if (v->owner == _local_company) {
+			if (this->owner == _local_company) {
 				SetDParam(0, this->index);
-				AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + v->type, v->index);
+				AddConsistAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + this->type, this->index);
 			}
 			AI::NewEvent(v->owner, new ScriptEventVehicleWaitingInDepot(v->index));
 		}
@@ -228,7 +230,7 @@ void CallConsistTicks()
 
 		SetDParam(0, it.first->index);
 		SetDParam(1, error_message);
-		AddVehicleAdviceNewsItem(message, v->index);
+		AddConsistAdviceNewsItem(message, it.first->index);
 	}
 
 	cur_company.Restore();

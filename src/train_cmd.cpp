@@ -3016,10 +3016,10 @@ static void TrainEnterStation(Train *v, StationID station)
 	if (!(st->had_vehicle_of_type & HVOT_TRAIN)) {
 		st->had_vehicle_of_type |= HVOT_TRAIN;
 		SetDParam(0, st->index);
-		AddVehicleNewsItem(
+		AddConsistNewsItem(
 			STR_NEWS_FIRST_TRAIN_ARRIVAL,
 			v->owner == _local_company ? NT_ARRIVAL_COMPANY : NT_ARRIVAL_OTHER,
-			v->index,
+			v->GetConsist()->index,
 			st->index
 		);
 		AI::NewEvent(v->owner, new ScriptEventStationFirstVehicle(st->index, v->index));
@@ -4016,7 +4016,7 @@ static bool TrainLocoHandler(Train *v, bool mode)
 				/* Show message to player. */
 				if (_settings_client.gui.lost_vehicle_warn && v->owner == _local_company) {
 					SetDParam(0, v->GetConsist()->index);
-					AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_STUCK, v->index);
+					AddConsistAdviceNewsItem(STR_NEWS_TRAIN_IS_STUCK, v->GetConsist()->index);
 				}
 				v->wait_counter = 0;
 			}
