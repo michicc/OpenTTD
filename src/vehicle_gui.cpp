@@ -889,7 +889,7 @@ struct RefitWindow : public Window {
 
 	void SetStringParameters(WidgetID widget) const override
 	{
-		if (widget == WID_VR_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->index);
+		if (widget == WID_VR_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->GetConsist()->index);
 	}
 
 	/**
@@ -1343,13 +1343,13 @@ static bool VehicleNameSorter(const Vehicle * const &a, const Vehicle * const &b
 
 	if (a != _last_vehicle[0]) {
 		_last_vehicle[0] = a;
-		SetDParam(0, a->index);
+		SetDParam(0, a->GetConsist()->index);
 		last_name[0] = GetString(STR_VEHICLE_NAME);
 	}
 
 	if (b != _last_vehicle[1]) {
 		_last_vehicle[1] = b;
-		SetDParam(0, b->index);
+		SetDParam(0, b->GetConsist()->index);
 		last_name[1] = GetString(STR_VEHICLE_NAME);
 	}
 
@@ -1701,7 +1701,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 					if (!cs->name.empty()) {
 						/* The vehicle got a name so we will print it and the cargoes */
 						SetDParam(0, STR_VEHICLE_NAME);
-						SetDParam(1, v->index);
+						SetDParam(1, cs->index);
 						SetDParam(2, STR_VEHICLE_LIST_CARGO);
 						SetDParam(3, vehicle_cargoes);
 						DrawString(tr.left, tr.right, ir.top, STR_VEHICLE_LIST_NAME_AND_CARGO, TC_BLACK, SA_LEFT, false, FS_SMALL);
@@ -1719,7 +1719,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 					}
 				} else if (!cs->name.empty()) {
 					/* The vehicle got a name so we will print it */
-					SetDParam(0, v->index);
+					SetDParam(0, cs->index);
 					DrawString(tr.left, tr.right, ir.top, STR_VEHICLE_NAME, TC_BLACK, SA_LEFT, false, FS_SMALL);
 				} else if (v->group_id != DEFAULT_GROUP) {
 					/* The vehicle has no name, but is member of a group, so print group name */
@@ -2477,7 +2477,7 @@ struct VehicleDetailsWindow : Window {
 
 	void SetStringParameters(WidgetID widget) const override
 	{
-		if (widget == WID_VD_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->index);
+		if (widget == WID_VD_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->GetConsist()->index);
 	}
 
 	void DrawWidget(const Rect &r, WidgetID widget) const override
@@ -2983,7 +2983,7 @@ public:
 		if (widget != WID_VV_CAPTION) return;
 
 		const Vehicle *v = Vehicle::Get(this->window_number);
-		SetDParam(0, v->index);
+		SetDParam(0, v->GetConsist()->index);
 	}
 
 	void DrawWidget(const Rect &r, WidgetID widget) const override
@@ -3098,7 +3098,7 @@ public:
 
 		switch (widget) {
 			case WID_VV_RENAME: { // rename
-				SetDParam(0, v->index);
+				SetDParam(0, v->GetConsist()->index);
 				ShowQueryString(STR_VEHICLE_NAME, STR_QUERY_RENAME_TRAIN_CAPTION + v->type,
 						MAX_LENGTH_VEHICLE_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 				break;

@@ -1574,10 +1574,10 @@ static void FormatString(StringBuilder &builder, const char *str_arg, StringPara
 					break;
 				}
 
-				case SCC_VEHICLE_NAME: { // {VEHICLE}
-					const Vehicle *v = Vehicle::GetIfValid(args.GetNextParameter<VehicleID>());
-					if (v == nullptr) break;
-					const Consist *cs = v->GetConsist();
+				case SCC_CONSIST_NAME: { // {VEHICLE}
+					const Consist *cs = Consist::GetIfValid(args.GetNextParameter<ConsistID>());
+					if (cs == nullptr) break;
+					const Vehicle *v = cs->Front();
 
 					if (!cs->name.empty()) {
 						auto tmp_params = MakeParameters(cs->name);
@@ -1590,7 +1590,7 @@ static void FormatString(StringBuilder &builder, const char *str_arg, StringPara
 						auto tmp_params = MakeParameters(v->unitnumber);
 
 						StringID string_id;
-						switch (v->type) {
+						switch (cs->type) {
 							default:           string_id = STR_INVALID_VEHICLE; break;
 							case VEH_TRAIN:    string_id = STR_SV_TRAIN_NAME; break;
 							case VEH_ROAD:     string_id = STR_SV_ROAD_VEHICLE_NAME; break;
