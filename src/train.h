@@ -178,6 +178,8 @@ struct Train FINAL : public GroundVehicle<Train, VEH_TRAIN> {
 		return this->gcache.cached_veh_length / 2 + (this->Next() != nullptr ? this->Next()->gcache.cached_veh_length + 1 : 0) / 2;
 	}
 
+	class TrainConsist *GetConsist() const;
+
 protected: // These functions should not be called outside acceleration code.
 
 	/**

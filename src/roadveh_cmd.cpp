@@ -986,7 +986,7 @@ static Trackdir RoadFindPathToDest(RoadVehicle *v, TileIndex tile, DiagDirection
 
 		default: NOT_REACHED();
 	}
-	v->HandlePathfindingResult(path_found);
+	v->GetConsist()->HandlePathfindingResult(path_found);
 
 found_best_track:;
 
@@ -1561,8 +1561,10 @@ again:
 	return true;
 }
 
-static bool RoadVehController(RoadVehicle *v)
+static bool RoadVehController(RoadConsist *cs)
 {
+	RoadVehicle *v = cs->Front();
+
 	/* decrease counters */
 	if (v->reverse_ctr != 0) v->reverse_ctr--;
 
@@ -1578,7 +1580,7 @@ static bool RoadVehController(RoadVehicle *v)
 		return true;
 	}
 
-	ProcessOrders(v);
+	ProcessOrders(cs);
 	v->HandleLoading();
 
 	if (v->current_order.IsType(OT_LOADING)) return true;
@@ -1759,7 +1761,7 @@ bool RoadConsist::Tick()
 
 	if (!this->SpecializedConsistBase::Tick()) return false;
 
-	return RoadVehController(this->Front());
+	return RoadVehController(this);
 }
 
 void RoadConsist::EnterDepot()
