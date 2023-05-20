@@ -769,45 +769,6 @@ void Vehicle::ShiftDates(TimerGameCalendar::Date interval)
 	 * for vehicles outside of a depot. */
 }
 
-/**
- * Handle the pathfinding result, especially the lost status.
- * If the vehicle is now lost and wasn't previously fire an
- * event to the AIs and a news message to the user. If the
- * vehicle is not lost anymore remove the news message.
- * @param path_found Whether the vehicle has a path to its destination.
- */
-void Vehicle::HandlePathfindingResult(bool path_found)
-{
-	Consist *cs = this->GetConsist();
-
-	if (path_found) {
-		/* Route found, is the vehicle marked with "lost" flag? */
-		if (!HasBit(cs->consist_flags, CF_PATHFINDER_LOST)) return;
-
-		/* Clear the flag as the PF's problem was solved. */
-		ClrBit(cs->consist_flags, CF_PATHFINDER_LOST);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
-		InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
-		/* Delete the news item. */
-		DeleteConsistNews(cs->index, STR_NEWS_VEHICLE_IS_LOST);
-		return;
-	}
-
-	/* Were we already lost? */
-	if (HasBit(cs->consist_flags, CF_PATHFINDER_LOST)) return;
-
-	/* It is first time the problem occurred, set the "lost" flag. */
-	SetBit(cs->consist_flags, CF_PATHFINDER_LOST);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
-	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
-	/* Notify user about the event. */
-	AI::NewEvent(this->owner, new ScriptEventVehicleLost(this->index));
-	if (_settings_client.gui.lost_vehicle_warn && this->owner == _local_company) {
-		SetDParam(0, cs->index);
-		AddConsistAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, cs->index);
-	}
-}
-
 /** Destroy all stuff that (still) needs the virtual functions to work properly */
 void Vehicle::PreDestructor()
 {

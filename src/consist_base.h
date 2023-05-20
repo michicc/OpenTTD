@@ -141,6 +141,8 @@ public:
 
 	virtual void EnterDepot();
 
+	void HandlePathfindingResult(bool path_found);
+
 	/**
 	 * Returns an iterable ensemble of all valid consists.
 	 * @param from index of the first consist to consider.

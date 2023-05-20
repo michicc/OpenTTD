@@ -455,16 +455,17 @@ static void ShipArrivesAt(const Vehicle *v, Station *st)
 /**
  * Runs the pathfinder to choose a track to continue along.
  *
- * @param v Ship to navigate
+ * @param cs Ship to navigate
  * @param tile Tile, the ship is about to enter
  * @param enterdir Direction of entering
  * @param tracks Available track choices on \a tile
  * @return Track to choose, or INVALID_TRACK when to reverse.
  */
-static Track ChooseShipTrack(Ship *v, TileIndex tile, DiagDirection enterdir, TrackBits tracks)
+static Track ChooseShipTrack(ShipConsist *cs, TileIndex tile, DiagDirection enterdir, TrackBits tracks)
 {
 	assert(IsValidDiagDirection(enterdir));
 
+	Ship *v = cs->Front();
 	bool path_found = true;
 	Track track;
 
@@ -496,7 +497,7 @@ static Track ChooseShipTrack(Ship *v, TileIndex tile, DiagDirection enterdir, Tr
 		}
 	}
 
-	v->HandlePathfindingResult(path_found);
+	cs->HandlePathfindingResult(path_found);
 	return track;
 }
 
@@ -671,13 +672,15 @@ static void ReverseShip(Ship *v)
 	v->UpdateViewport(true, true);
 }
 
-static void ShipController(Ship *v)
+static void ShipController(ShipConsist *cs)
 {
+	Ship *v = cs->Front();
+
 	if (v->HandleBreakdown()) return;
 
 	if (v->vehstatus & VS_STOPPED) return;
 
-	if (ProcessOrders(v) && CheckReverseShip(v)) return ReverseShip(v);
+	if (ProcessOrders(cs) && CheckReverseShip(v)) return ReverseShip(v);
 
 	v->HandleLoading();
 
@@ -772,7 +775,7 @@ static void ShipController(Ship *v)
 				}
 
 				/* Choose a direction, and continue if we find one */
-				const Track track = ChooseShipTrack(v, gp.new_tile, diagdir, tracks);
+				const Track track = ChooseShipTrack(cs, gp.new_tile, diagdir, tracks);
 				if (track == INVALID_TRACK) return ReverseShip(v);
 
 				const ShipSubcoordData &b = _ship_subcoord[diagdir][track];
@@ -929,7 +932,7 @@ bool ShipConsist::Tick()
 
 	if (!this->SpecializedConsistBase::Tick()) return false;
 
-	ShipController(this->Front());
+	ShipController(this);
 
 	return true;
 }
