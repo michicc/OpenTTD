@@ -668,7 +668,7 @@ public:
 	void SetupSmallestSize(Window *w) override;
 	void Draw(const Window *w) override;
 
-	void InitializeViewport(Window *w, std::variant<TileIndex, VehicleID> focus, ZoomLevel zoom);
+	void InitializeViewport(Window *w, std::variant<TileIndex, ConsistID> focus, ZoomLevel zoom);
 	void UpdateViewportCoordinates(Window *w);
 };
 

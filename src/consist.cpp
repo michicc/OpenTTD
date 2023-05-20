@@ -23,6 +23,7 @@
 #include "vehicle_base.h"
 #include "vehicle_cmd.h"
 #include "vehicle_func.h"
+#include "vehicle_gui.h"
 #include "window_func.h"
 
 #include "safeguards.h"
@@ -36,6 +37,7 @@ Consist::~Consist()
 	if (CleaningPool()) return;
 
 	OrderBackup::ClearConsist(this);
+	StopGlobalFollowConsist(this);
 }
 
 /**

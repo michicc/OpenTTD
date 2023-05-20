@@ -1470,7 +1470,6 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 	if (w != nullptr) {
 		/* Update window_number */
 		w->window_number = to_index;
-		if (w->viewport != nullptr) w->viewport->follow_vehicle = to_index;
 
 		/* Update vehicle drag data */
 		if (_thd.window_class == window_class && _thd.window_number == (WindowNumber)from_index) {
@@ -2909,7 +2908,7 @@ public:
 		}
 		this->FinishInitNested(window_number);
 		this->owner = v->owner;
-		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, static_cast<VehicleID>(this->window_number), ScaleZoomGUI(_vehicle_view_zoom_levels[v->type]));
+		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, v->GetConsist()->index, ScaleZoomGUI(_vehicle_view_zoom_levels[v->type]));
 
 		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATUS_START_STOP_TOOLTIP + v->type;
 		this->GetWidget<NWidgetCore>(WID_VV_RENAME)->tool_tip           = STR_VEHICLE_DETAILS_TRAIN_RENAME + v->type;
@@ -3129,7 +3128,7 @@ public:
 					const Window *mainwindow = GetMainWindow();
 					if (click_count > 1 && mainwindow->viewport->zoom <= ZOOM_LVL_OUT_4X) {
 						/* main window 'follows' vehicle */
-						mainwindow->viewport->follow_vehicle = v->index;
+						mainwindow->viewport->follow_consist = v->GetConsist()->index;
 					} else {
 						ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos);
 					}
@@ -3187,7 +3186,7 @@ public:
 			const Window *mainwindow = GetMainWindow();
 			const Vehicle *v = Vehicle::Get(window_number);
 			/* Only play the sound if we're following this vehicle */
-			if (mainwindow->viewport->follow_vehicle == v->index) {
+			if (mainwindow->viewport->follow_consist == v->GetConsist()->index) {
 				v->PlayLeaveStationSound(true);
 			}
 		}
@@ -3344,12 +3343,13 @@ bool VehicleClicked(const GUIVehicleGroup &vehgroup)
 	return VehicleClicked(vehgroup.vehicles_begin, vehgroup.vehicles_end);
 }
 
-void StopGlobalFollowVehicle(const Vehicle *v)
+void StopGlobalFollowConsist(const Consist *cs)
 {
 	Window *w = GetMainWindow();
-	if (w->viewport->follow_vehicle == v->index) {
+	if (w->viewport->follow_consist == cs->index) {
+		const Vehicle *v = cs->Front();
 		ScrollMainWindowTo(v->x_pos, v->y_pos, v->z_pos, true); // lock the main view on the vehicle's last position
-		w->viewport->follow_vehicle = INVALID_VEHICLE;
+		w->viewport->follow_consist = INVALID_CONSIST;
 	}
 }
 
