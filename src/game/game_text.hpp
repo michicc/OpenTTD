@@ -15,6 +15,7 @@ struct StringParam {
 		UNUSED,
 		RAW_STRING,
 		STRING,
+		VEHICLE,
 		OTHER
 	};
 

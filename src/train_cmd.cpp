@@ -86,7 +86,7 @@ void CheckTrainsLengths()
 					if ((w->track != TRACK_BIT_DEPOT &&
 							std::max(abs(u->x_pos - w->x_pos), abs(u->y_pos - w->y_pos)) != u->CalcNextVehicleOffset()) ||
 							(w->track == TRACK_BIT_DEPOT && TicksToLeaveDepot(u) <= 0)) {
-						SetDParam(0, v->index);
+						SetDParam(0, v->GetConsist()->index);
 						SetDParam(1, v->owner);
 						ShowErrorMessage(STR_BROKEN_VEHICLE_LENGTH, INVALID_STRING_ID, WL_CRITICAL);
 
@@ -4015,7 +4015,7 @@ static bool TrainLocoHandler(Train *v, bool mode)
 			if (HasBit(v->flags, VRF_TRAIN_STUCK) && v->wait_counter > 2 * _settings_game.pf.wait_for_pbs_path * Ticks::DAY_TICKS) {
 				/* Show message to player. */
 				if (_settings_client.gui.lost_vehicle_warn && v->owner == _local_company) {
-					SetDParam(0, v->index);
+					SetDParam(0, v->GetConsist()->index);
 					AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_STUCK, v->index);
 				}
 				v->wait_counter = 0;
