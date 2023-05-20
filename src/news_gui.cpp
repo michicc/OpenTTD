@@ -309,7 +309,7 @@ struct NewsWindow : Window {
 		NWidgetViewport *nvp = this->GetWidget<NWidgetViewport>(WID_N_VIEWPORT);
 		if (nvp != nullptr) {
 			if (ni->reftype1 == NR_VEHICLE) {
-				nvp->InitializeViewport(this, static_cast<VehicleID>(ni->ref1), ScaleZoomGUI(ZOOM_LVL_NEWS));
+				nvp->InitializeViewport(this, static_cast<ConsistID>(Vehicle::Get(ni->ref1)->GetConsist()->index), ScaleZoomGUI(ZOOM_LVL_NEWS));
 			} else {
 				nvp->InitializeViewport(this, GetReferenceTile(ni->reftype1, ni->ref1), ScaleZoomGUI(ZOOM_LVL_NEWS));
 			}

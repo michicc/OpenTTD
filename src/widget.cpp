@@ -2225,7 +2225,7 @@ void NWidgetViewport::Draw(const Window *w)
  * @param focus        Either the tile index or vehicle ID to focus.
  * @param zoom         Zoom level.
  */
-void NWidgetViewport::InitializeViewport(Window *w, std::variant<TileIndex, VehicleID> focus, ZoomLevel zoom)
+void NWidgetViewport::InitializeViewport(Window *w, std::variant<TileIndex, ConsistID> focus, ZoomLevel zoom)
 {
 	InitializeWindowViewport(w, this->pos_x, this->pos_y, this->current_x, this->current_y, focus, zoom);
 }
