@@ -16,6 +16,7 @@ struct StringParam {
 	enum ParamType {
 		RAW_STRING,
 		STRING,
+		VEHICLE,
 		OTHER
 	};
 

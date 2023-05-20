@@ -348,7 +348,7 @@ struct TimetableWindow : Window {
 	void SetStringParameters(int widget) const override
 	{
 		switch (widget) {
-			case WID_VT_CAPTION: SetDParam(0, this->vehicle->index); break;
+			case WID_VT_CAPTION: SetDParam(0, this->consist->index); break;
 			case WID_VT_EXPECTED: SetDParam(0, this->show_expected ? STR_TIMETABLE_EXPECTED : STR_TIMETABLE_SCHEDULED); break;
 		}
 	}

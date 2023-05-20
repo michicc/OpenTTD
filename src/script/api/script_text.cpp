@@ -15,6 +15,8 @@
 #include "script_log.hpp"
 #include "../script_fatalerror.hpp"
 #include "../../table/control_codes.h"
+#include "../../consist_base.h"
+#include "../../vehicle_base.h"
 
 #include "table/strings.h"
 
@@ -233,7 +235,11 @@ char *ScriptText::_GetEncodedText(char *p, char *lastofp, int &param_count, Stri
 					if (cur_idx + cur_param.consumes > this->paramc) throw Script_FatalError(fmt::format("{}: Not enough parameters", name));
 					for (int i = 0; i < cur_param.consumes; i++) {
 						if (!std::holds_alternative<SQInteger>(this->param[cur_idx])) throw Script_FatalError(fmt::format("{}: Parameter {} expects an integer", name, param_count + i));
-						p = strecpy(p, fmt::format(":{:X}", std::get<SQInteger>(this->param[cur_idx++])).c_str(), lastofp);
+						auto val = std::get<SQInteger>(this->param[cur_idx++]);
+						/* Scripts use vehicle IDs in their string params, but the internal
+						 * string system uses consists IDs. Translate them here if needed. */
+						if (cur_param.type == StringParam::VEHICLE && i == 0) val = ::Vehicle::Get(val)->GetConsist()->index;
+						p = strecpy(p, fmt::format(":{:X}", val).c_str(), lastofp);
 					}
 			}
 		}

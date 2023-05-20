@@ -144,7 +144,7 @@ void Consist::EnterDepot()
 				_consists_to_autoreplace[this] = false;
 				if (v->owner == _local_company) {
 					/* Notify the user that we stopped the vehicle */
-					SetDParam(0, v->index);
+					SetDParam(0, this->index);
 					AddVehicleAdviceNewsItem(STR_NEWS_ORDER_REFIT_FAILED, v->index);
 				}
 			} else if (cost.GetCost() != 0) {
@@ -169,7 +169,7 @@ void Consist::EnterDepot()
 			 * we shouldn't construct it when the vehicle visits the next stop. */
 			v->last_loading_station = INVALID_STATION;
 			if (v->owner == _local_company) {
-				SetDParam(0, v->index);
+				SetDParam(0, this->index);
 				AddVehicleAdviceNewsItem(STR_NEWS_TRAIN_IS_WAITING + v->type, v->index);
 			}
 			AI::NewEvent(v->owner, new ScriptEventVehicleWaitingInDepot(v->index));
@@ -226,7 +226,7 @@ void CallConsistTicks()
 			message = STR_NEWS_VEHICLE_AUTORENEW_FAILED;
 		}
 
-		SetDParam(0, v->index);
+		SetDParam(0, it.first->index);
 		SetDParam(1, error_message);
 		AddVehicleAdviceNewsItem(message, v->index);
 	}

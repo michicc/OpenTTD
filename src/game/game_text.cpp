@@ -260,6 +260,7 @@ static StringParam::ParamType GetParamType(const CmdStruct *cs)
 {
 	if (cs->value == SCC_RAW_STRING_POINTER) return StringParam::RAW_STRING;
 	if (cs->value == SCC_STRING || cs != TranslateCmdForCompare(cs)) return StringParam::STRING;
+	if (cs->value == SCC_CONSIST_NAME) return StringParam::VEHICLE;
 	return StringParam::OTHER;
 }
 

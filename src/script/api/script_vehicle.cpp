@@ -303,7 +303,7 @@
 {
 	if (!IsPrimaryVehicle(vehicle_id)) return std::nullopt;
 
-	::SetDParam(0, vehicle_id);
+	::SetDParam(0, ::Vehicle::Get(vehicle_id)->GetConsist()->index);
 	return GetString(STR_VEHICLE_NAME);
 }
 

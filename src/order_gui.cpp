@@ -1154,7 +1154,7 @@ public:
 			}
 
 			case WID_O_CAPTION:
-				SetDParam(0, this->vehicle->index);
+				SetDParam(0, this->vehicle->GetConsist()->index);
 				break;
 		}
 	}

@@ -796,7 +796,7 @@ void Vehicle::HandlePathfindingResult(bool path_found)
 	/* Notify user about the event. */
 	AI::NewEvent(this->owner, new ScriptEventVehicleLost(this->index));
 	if (_settings_client.gui.lost_vehicle_warn && this->owner == _local_company) {
-		SetDParam(0, this->index);
+		SetDParam(0, cs->index);
 		AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_LOST, this->index);
 	}
 }
@@ -1338,7 +1338,7 @@ void AgeVehicle(Vehicle *v)
 		return;
 	}
 
-	SetDParam(0, v->index);
+	SetDParam(0, v->GetConsist()->index);
 	AddVehicleAdviceNewsItem(str, v->index);
 }
 
@@ -2644,7 +2644,7 @@ static IntervalTimer<TimerGameCalendar> _vehicles_yearly({TimerGameCalendar::YEA
 			Money profit = v->GetDisplayProfitThisYear();
 			if (v->age >= 730 && profit < 0) {
 				if (_settings_client.gui.vehicle_income_warn && v->owner == _local_company) {
-					SetDParam(0, v->index);
+					SetDParam(0, v->GetConsist()->index);
 					SetDParam(1, profit);
 					AddVehicleAdviceNewsItem(STR_NEWS_VEHICLE_IS_UNPROFITABLE, v->index);
 				}

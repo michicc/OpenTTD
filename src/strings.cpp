@@ -1578,10 +1578,10 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 				break;
 			}
 
-			case SCC_VEHICLE_NAME: { // {VEHICLE}
-				const Vehicle *v = Vehicle::GetIfValid(args->GetInt32(SCC_VEHICLE_NAME));
-				if (v == nullptr) break;
-				const Consist *cs = v->GetConsist();
+			case SCC_CONSIST_NAME: { // {VEHICLE}
+				const Consist *cs = Consist::GetIfValid(args->GetInt32(SCC_CONSIST_NAME));
+				if (cs == nullptr) break;
+				const Vehicle *v = cs->Front();
 
 				if (!cs->name.empty()) {
 					int64 args_array[] = {(int64)(size_t)cs->name.c_str()};
@@ -1597,7 +1597,7 @@ static char *FormatString(char *buff, const char *str_arg, StringParameters *arg
 					StringParameters tmp_params(args_array);
 
 					StringID string_id;
-					switch (v->type) {
+					switch (cs->type) {
 						default:           string_id = STR_INVALID_VEHICLE; break;
 						case VEH_TRAIN:    string_id = STR_SV_TRAIN_NAME; break;
 						case VEH_ROAD:     string_id = STR_SV_ROAD_VEHICLE_NAME; break;

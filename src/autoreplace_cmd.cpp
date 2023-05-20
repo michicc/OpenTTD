@@ -324,7 +324,7 @@ static CommandCost BuildReplacementVehicle(Vehicle *old_veh, Vehicle **new_vehic
 	if (refit_cargo == CT_INVALID) {
 		if (!IsLocalCompany()) return CommandCost();
 
-		SetDParam(0, old_veh->index);
+		SetDParam(0, old_veh->GetConsist()->index);
 
 		int order_id = GetIncompatibleRefitOrderIdForAutoreplace(old_veh, e);
 		if (order_id != -1) {

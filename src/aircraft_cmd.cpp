@@ -2041,7 +2041,7 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 			AI::NewEvent(v->owner, new ScriptEventAircraftDestTooFar(v->index));
 			if (v->owner == _local_company) {
 				/* Post a news message. */
-				SetDParam(0, v->index);
+				SetDParam(0, v->GetConsist()->index);
 				AddVehicleAdviceNewsItem(STR_NEWS_AIRCRAFT_DEST_TOO_FAR, v->index);
 			}
 		}
