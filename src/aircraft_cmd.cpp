@@ -2032,9 +2032,9 @@ static bool AirportFindFreeHelipad(Aircraft *v, const AirportFTAClass *apc)
  * @param v The aircraft.
  * @param too_far True if the current destination is too far away.
  */
-static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
+static void AircraftHandleDestTooFar(AircraftConsist *cs, bool too_far)
 {
-	Consist *cs = v->GetConsist();
+	Aircraft *v = cs->Front();
 
 	if (too_far) {
 		if (!HasBit(v->flags, VAF_DEST_TOO_FAR)) {
@@ -2058,8 +2058,10 @@ static void AircraftHandleDestTooFar(Aircraft *v, bool too_far)
 	}
 }
 
-static bool AircraftEventHandler(Aircraft *v, int loop)
+static bool AircraftEventHandler(AircraftConsist *cs, int loop)
 {
+	Aircraft *v = cs->Front();
+
 	if (v->vehstatus & VS_CRASHED) {
 		return HandleCrashedAircraft(v);
 	}
@@ -2069,14 +2071,14 @@ static bool AircraftEventHandler(Aircraft *v, int loop)
 	v->HandleBreakdown();
 
 	HandleAircraftSmoke(v, loop != 0);
-	ProcessOrders(v);
+	ProcessOrders(cs);
 	v->HandleLoading(loop != 0);
 
 	if (v->current_order.IsType(OT_LOADING) || v->current_order.IsType(OT_LEAVESTATION)) return true;
 
 	if (v->state >= ENDTAKEOFF && v->state <= HELIENDLANDING) {
 		/* If we are flying, unconditionally clear the 'dest too far' state. */
-		AircraftHandleDestTooFar(v, false);
+		AircraftHandleDestTooFar(cs, false);
 	} else if (v->acache.cached_max_range_sqr != 0) {
 		/* Check the distance to the next destination. This code works because the target
 		 * airport is only updated after take off and not on the ground. */
@@ -2085,7 +2087,7 @@ static bool AircraftEventHandler(Aircraft *v, int loop)
 
 		if (cur_st != nullptr && cur_st->airport.tile != INVALID_TILE && next_st != nullptr && next_st->airport.tile != INVALID_TILE) {
 			uint dist = DistanceSquare(cur_st->airport.tile, next_st->airport.tile);
-			AircraftHandleDestTooFar(v, dist > v->acache.cached_max_range_sqr);
+			AircraftHandleDestTooFar(cs, dist > v->acache.cached_max_range_sqr);
 		}
 	}
 
@@ -2167,7 +2169,7 @@ bool AircraftConsist::Tick()
 
 	for (uint i = 0; i != 2; i++) {
 		/* stop if the aircraft was deleted */
-		if (!AircraftEventHandler(this->Front(), i)) return false;
+		if (!AircraftEventHandler(this, i)) return false;
 	}
 
 	return true;
