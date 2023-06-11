@@ -49,6 +49,10 @@ private:
 	SourceID source_id;     ///< Index of source, INVALID_SOURCE if unknown/invalid.
 	StationID source;       ///< The station where the cargo came from first.
 	TileIndex source_xy;    ///< The origin of the cargo (first station in feeder chain).
+	TileIndex dest_xy;      ///< Destination tile or INVALID_TILE if no specific destination
+	SourceType dest_type;   ///< Type of \c dest_id.
+	SourceID dest_id;       ///< Index of the destination, INVALID_SOURCE if no destination.
+
 	union {
 		TileOrStationID loaded_at_xy; ///< Location where this cargo has been loaded into the vehicle.
 		TileOrStationID next_station; ///< Station where the cargo wants to go next.
@@ -65,8 +69,8 @@ public:
 	static const uint16 MAX_COUNT = UINT16_MAX;
 
 	CargoPacket();
-	CargoPacket(StationID source, TileIndex source_xy, uint16 count, SourceType source_type, SourceID source_id);
-	CargoPacket(uint16 count, byte days_in_transit, StationID source, TileIndex source_xy, TileIndex loaded_at_xy, Money feeder_share = 0, SourceType source_type = ST_INDUSTRY, SourceID source_id = INVALID_SOURCE);
+	CargoPacket(StationID source, TileIndex source_xy, uint16 count, SourceType source_type, SourceID source_id, TileIndex dest_xy = INVALID_TILE, SourceType dest_type = ST_INDUSTRY, SourceID dest_id = INVALID_SOURCE);
+	CargoPacket(uint16 count, byte days_in_transit, StationID source, TileIndex source_xy, TileIndex loaded_at_xy, Money feeder_share = 0, SourceType source_type = ST_INDUSTRY, SourceID source_id = INVALID_SOURCE, TileIndex dest_xy = INVALID_TILE, SourceType dest_type = ST_INDUSTRY, SourceID dest_id = INVALID_SOURCE);
 
 	/** Destroy the packet. */
 	~CargoPacket() { }
@@ -186,6 +190,33 @@ public:
 	inline StationID NextStation() const
 	{
 		return this->next_station;
+	}
+
+	/**
+	 * Gets the coordinates of the cargo's destination.
+	 * @return The destination tile.
+	 */
+	inline TileIndex DestinationXY() const
+	{
+		return this->dest_xy;
+	}
+
+	/**
+	 * Gets the ID of the destination of the cargo.
+	 * @return The destination ID.
+	 */
+	inline SourceID DestinationID() const
+	{
+		return this->dest_id;
+	}
+
+	/**
+	 * Gets the type of the destination of the cargo.
+	 * @return The destination type.
+	 */
+	inline SourceType DestinationType() const
+	{
+		return this->dest_type;
 	}
 
 	static void InvalidateAllFrom(SourceType src_type, SourceID src);
@@ -436,7 +467,10 @@ public:
 				cp1->days_in_transit == cp2->days_in_transit &&
 				cp1->source_type     == cp2->source_type &&
 				cp1->source_id       == cp2->source_id &&
-				cp1->loaded_at_xy    == cp2->loaded_at_xy;
+				cp1->loaded_at_xy    == cp2->loaded_at_xy &&
+				cp1->dest_xy         == cp2->dest_xy &&
+				cp1->dest_type       == cp2->dest_type &&
+				cp1->dest_id         == cp2->dest_id;
 	}
 };
 
@@ -550,7 +584,10 @@ public:
 		return cp1->source_xy    == cp2->source_xy &&
 				cp1->days_in_transit == cp2->days_in_transit &&
 				cp1->source_type     == cp2->source_type &&
-				cp1->source_id       == cp2->source_id;
+				cp1->source_id       == cp2->source_id &&
+				cp1->dest_xy         == cp2->dest_xy &&
+				cp1->dest_type       == cp2->dest_type &&
+				cp1->dest_id         == cp2->dest_id;
 	}
 };
 
