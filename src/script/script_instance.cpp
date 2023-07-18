@@ -179,7 +179,9 @@ void ScriptInstance::GameLoop()
 
 	if (this->suspend   < -1) this->suspend++; // Multiplayer suspend, increase up to -1.
 	if (this->suspend   < 0)  return;          // Multiplayer suspend, wait for Continue().
-	if (--this->suspend > 0)  return;          // Singleplayer suspend, decrease to 0.
+	if (--this->suspend > 0) {                 // Singleplayer suspend, decrease to 0.
+		if (!this->wake_on_event || !ScriptEventController::IsEventWaiting()) return;
+	}
 
 	_current_company = ScriptObject::GetCompany();
 
@@ -194,6 +196,7 @@ void ScriptInstance::GameLoop()
 		} catch (Script_Suspend &e) {
 			this->suspend  = e.GetSuspendTime();
 			this->callback = e.GetSuspendCallback();
+			this->wake_on_event = e.WakeForEvent();
 
 			return;
 		}
@@ -201,6 +204,7 @@ void ScriptInstance::GameLoop()
 
 	this->suspend  = 0;
 	this->callback = nullptr;
+	this->wake_on_event = false;
 
 	if (!this->is_started) {
 		try {
@@ -224,6 +228,7 @@ void ScriptInstance::GameLoop()
 		} catch (Script_Suspend &e) {
 			this->suspend  = e.GetSuspendTime();
 			this->callback = e.GetSuspendCallback();
+			this->wake_on_event = e.WakeForEvent();
 		} catch (Script_FatalError &e) {
 			this->is_dead = true;
 			this->engine->ThrowError(e.GetErrorMessage());
@@ -245,6 +250,7 @@ void ScriptInstance::GameLoop()
 	} catch (Script_Suspend &e) {
 		this->suspend  = e.GetSuspendTime();
 		this->callback = e.GetSuspendCallback();
+		this->wake_on_event = e.WakeForEvent();
 	} catch (Script_FatalError &e) {
 		this->is_dead = true;
 		this->engine->ThrowError(e.GetErrorMessage());

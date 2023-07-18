@@ -31,7 +31,7 @@
 	ScriptObject::SetDoCommandDelay(ticks);
 }
 
-/* static */ void ScriptController::Sleep(int ticks)
+/* static */ void ScriptController::DoSleep(int ticks, bool wake_event)
 {
 	if (!ScriptObject::CanSuspend()) {
 		throw Script_FatalError("You are not allowed to call Sleep in your constructor, Save(), Load(), and any valuator.");
@@ -42,7 +42,17 @@
 		ticks = 1;
 	}
 
-	throw Script_Suspend(ticks, nullptr);
+	throw Script_Suspend(ticks, nullptr, wake_event);
+}
+
+/* static */ void ScriptController::Sleep(int ticks)
+{
+	ScriptController::DoSleep(ticks, false);
+}
+
+/* static */ void ScriptController::SleepEvent(int ticks)
+{
+	ScriptController::DoSleep(ticks, true);
 }
 
 /* static */ void ScriptController::Break(const std::string &message)

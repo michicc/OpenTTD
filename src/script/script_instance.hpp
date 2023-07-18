@@ -286,6 +286,7 @@ private:
 	bool is_dead;                         ///< True if the script has been stopped.
 	bool is_save_data_on_stack;           ///< Is the save data still on the squirrel stack?
 	int suspend;                          ///< The amount of ticks to suspend this script before it's allowed to continue.
+	bool wake_on_event;                   ///< Exit suspend if the event queue is not empty?
 	bool is_paused;                       ///< Is the script paused? (a paused script will not be executed until unpaused)
 	bool in_shutdown;                     ///< Is this instance currently being destructed?
 	Script_SuspendCallbackProc *callback; ///< Callback that should be called in the next tick the script runs.

@@ -24,10 +24,12 @@ public:
 	 * Create the suspend exception.
 	 * @param time The amount of ticks to suspend.
 	 * @param callback The callback to call when the script may resume again.
+	 * @param wake_event Stop suspend if an event is in the event queue?
 	 */
-	Script_Suspend(int time, Script_SuspendCallbackProc *callback) :
+	Script_Suspend(int time, Script_SuspendCallbackProc *callback, bool wake_event = false) :
 		time(time),
-		callback(callback)
+		callback(callback),
+		wake_event(wake_event)
 	{}
 
 	/**
@@ -42,9 +44,16 @@ public:
 	 */
 	Script_SuspendCallbackProc *GetSuspendCallback() { return callback; }
 
+	/**
+	 * Stop suspend if an event is in the event queue?
+	 * @return True if the suspend should end on an event.
+	 */
+	bool WakeForEvent() { return wake_event; }
+
 private:
 	int time;                             ///< Amount of ticks to suspend the script.
 	Script_SuspendCallbackProc *callback; ///< Callback function to call when the script can run again.
+	bool wake_event;                      ///< Stop suspend if an event is in the event queue?
 };
 
 #endif /* SCRIPT_SUSPEND_HPP */

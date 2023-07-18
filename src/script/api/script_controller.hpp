@@ -171,6 +171,14 @@ public:
 	static void Sleep(int ticks);
 
 	/**
+	 * Sleep for X ticks or until an event occurs. The code continues after this line
+	 *   when the X script ticks are passed or the event queue is not empty.
+	 * @param ticks the ticks to wait
+	 * @pre ticks > 0.
+	 */
+	static void SleepEvent(int ticks);
+
+	/**
 	 * Break execution of the script when script developer tools are active. For
 	 * other users, nothing will happen when you call this function. To resume
 	 * the script, you have to click on the continue button in the AI debug
@@ -208,6 +216,8 @@ private:
 	uint ticks;                       ///< The amount of ticks we're sleeping.
 	LoadedLibraryList loaded_library; ///< The libraries we loaded.
 	int loaded_library_count;         ///< The amount of libraries.
+
+	static void DoSleep(int ticks, bool wake_event);
 
 	/**
 	 * Register all classes that are known inside the script API.
