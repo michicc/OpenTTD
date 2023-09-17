@@ -829,8 +829,6 @@ void Vehicle::PreDestructor()
 	DeleteVehicleOrders(this);
 	DeleteDepotHighlightOfVehicle(this);
 
-	ReleaseDisastersTargetingVehicle(this->index);
-
 	if (this->IsPrimaryVehicle()) {
 		delete this->GetConsist();
 		this->SetConsist(nullptr);
