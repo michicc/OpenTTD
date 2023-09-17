@@ -422,6 +422,16 @@ void AfterLoadVehicles(bool part_of_load)
 				cs->timetable_start = GetStartTickFromDate(cs->timetable_start);
 			}
 		}
+
+		if (IsSavegameVersionBefore(SLV_CONSISTS)) {
+			for (DisasterVehicle *v : DisasterVehicle::Iterate()) {
+				/* Small UFO target was changed to point at the consist instead of the vehicle. */
+				if (v->subtype == ST_SMALL_UFO && v->state == 1) {
+					Vehicle *target = Vehicle::Get(v->dest_tile.base());
+					v->dest_tile = target->GetConsist()->index;
+				}
+			}
+		}
 	}
 
 	CheckValidVehicles();

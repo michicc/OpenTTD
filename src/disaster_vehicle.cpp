@@ -345,9 +345,9 @@ static bool DisasterTick_Ufo(DisasterVehicle *v)
 		}
 
 		n = RandomRange(n); // Choose one of them.
-		for (const RoadVehicle *u : RoadVehicle::Iterate()) {
+		for (const RoadConsist *u : RoadConsist::Iterate()) {
 			/* Find (n+1)-th road vehicle. */
-			if (u->IsFrontEngine() && (n-- == 0)) {
+			if (n-- == 0) {
 				/* Target it. */
 				v->dest_tile = u->index;
 				v->age = 0;
@@ -358,8 +358,9 @@ static bool DisasterTick_Ufo(DisasterVehicle *v)
 		return true;
 	} else {
 		/* Target a vehicle */
-		RoadVehicle *u = RoadVehicle::Get(v->dest_tile.base());
-		assert(u != nullptr && u->type == VEH_ROAD && u->IsFrontEngine());
+		RoadConsist *u_cs = RoadConsist::Get(v->dest_tile.base());
+		assert(u_cs != nullptr && u_cs->type == VEH_ROAD);
+		RoadVehicle *u = u_cs->Front();
 
 		uint dist = Delta(v->x_pos, u->x_pos) + Delta(v->y_pos, u->y_pos);
 
@@ -967,15 +968,15 @@ void ReleaseDisastersTargetingIndustry(IndustryID i)
 }
 
 /**
- * Notify disasters that we are about to delete a vehicle. So make them head elsewhere.
- * @param vehicle deleted vehicle
+ * Notify disasters that we are about to delete a consist. So make them head elsewhere.
+ * @param consist deleted consist
  */
-void ReleaseDisastersTargetingVehicle(VehicleID vehicle)
+void ReleaseDisastersTargetingVehicle(ConsistID consist)
 {
 	for (DisasterVehicle *v : DisasterVehicle::Iterate()) {
 		/* primary disaster vehicles that have chosen target */
 		if (v->subtype == ST_SMALL_UFO) {
-			if (v->state != 0 && v->dest_tile == vehicle) {
+			if (v->state != 0 && v->dest_tile == consist) {
 				/* Revert to target-searching */
 				v->state = 0;
 				v->dest_tile = RandomTile();

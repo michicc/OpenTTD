@@ -40,6 +40,7 @@ Consist::~Consist()
 	StopGlobalFollowConsist(this);
 	DeleteOrderWarnings(this);
 	DeleteConsistNews(this->index, INVALID_STRING_ID);
+	ReleaseDisastersTargetingVehicle(this->index);
 }
 
 /**
