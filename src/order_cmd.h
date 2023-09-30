@@ -13,14 +13,15 @@
 #include "command_type.h"
 #include "order_base.h"
 #include "misc/endian_buffer.hpp"
+#include "consist_type.h"
 
-CommandCost CmdModifyOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID sel_ord, ModifyOrderFlags mof, uint16_t data);
-CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID sel_ord);
-CommandCost CmdDeleteOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID sel_ord);
-CommandCost CmdInsertOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID sel_ord, const Order &new_order);
-CommandCost CmdOrderRefit(DoCommandFlag flags, VehicleID veh, VehicleOrderID order_number, CargoID cargo);
-CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID veh_dst, VehicleID veh_src);
-CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID moving_order, VehicleOrderID target_order);
+CommandCost CmdModifyOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord, ModifyOrderFlags mof, uint16_t data);
+CommandCost CmdSkipToOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord);
+CommandCost CmdDeleteOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord);
+CommandCost CmdInsertOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord, const Order &new_order);
+CommandCost CmdOrderRefit(DoCommandFlag flags, ConsistID consist, VehicleOrderID order_number, CargoID cargo);
+CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, ConsistID consist_dst, ConsistID consist_src);
+CommandCost CmdMoveOrder(DoCommandFlag flags, ConsistID veh, VehicleOrderID moving_order, VehicleOrderID target_order);
 CommandCost CmdClearOrderBackup(DoCommandFlag flags, TileIndex tile, ClientID user_id);
 
 DEF_CMD_TRAIT(CMD_MODIFY_ORDER,       CmdModifyOrder,       CMD_LOCATION,  CMDT_ROUTE_MANAGEMENT)

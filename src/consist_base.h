@@ -63,6 +63,15 @@ public:
 
 	void SetFront(Vehicle *front);
 
+	/**
+	 * Check if the consist is a ground consist.
+	 * @return True iff the consist is a train or a road consist.
+	 */
+	debug_inline bool IsGroundVehicle() const
+	{
+		return this->type == VEH_TRAIN || this->type == VEH_ROAD;
+	}
+
 
 	inline uint16_t GetServiceInterval() const { return this->service_interval; }
 

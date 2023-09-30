@@ -541,6 +541,7 @@ private:
 	VehicleOrderID order_over;         ///< Order over which another order is dragged, \c INVALID_VEH_ORDER_ID if none.
 	OrderPlaceObjectState goto_type;
 	const Vehicle *vehicle; ///< Vehicle owning the orders being displayed and manipulated.
+	const Consist *consist; ///< Consist owning the orders being displayed and manipulated.
 	Scrollbar *vscroll;
 	bool can_do_refit;     ///< Vehicle chain can be refitted in depot.
 	bool can_do_autorefit; ///< Vehicle chain can be auto-refitted.
@@ -607,7 +608,7 @@ private:
 		}
 		if (order->GetLoadType() == load_type) return; // If we still match, do nothing
 
-		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, sel_ord, MOF_LOAD, load_type);
+		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, sel_ord, MOF_LOAD, load_type);
 	}
 
 	/**
@@ -622,7 +623,7 @@ private:
 			if (order == nullptr) return;
 			i = (order->GetDepotOrderType() & ODTFB_SERVICE) ? DA_ALWAYS_GO : DA_SERVICE;
 		}
-		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, sel_ord, MOF_DEPOT_ACTION, i);
+		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, sel_ord, MOF_DEPOT_ACTION, i);
 	}
 
 	/**
@@ -637,7 +638,7 @@ private:
 				_settings_client.gui.new_nonstop && this->vehicle->IsGroundVehicle() ? ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS : ONSF_STOP_EVERYWHERE);
 		order.SetDepotActionType(ODATFB_NEAREST_DEPOT);
 
-		Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), order);
+		Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->consist->index, this->OrderGetSel(), order);
 	}
 
 	/**
@@ -657,11 +658,11 @@ private:
 		}
 		if (order->GetUnloadType() == unload_type) return; // If we still match, do nothing
 
-		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, sel_ord, MOF_UNLOAD, unload_type);
+		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, sel_ord, MOF_UNLOAD, unload_type);
 
 		/* Transfer and unload orders with leave empty as default */
 		if (unload_type == OUFB_TRANSFER || unload_type == OUFB_UNLOAD) {
-			Command<CMD_MODIFY_ORDER>::Post(this->vehicle->tile, this->vehicle->index, sel_ord, MOF_LOAD, OLFB_NO_LOAD);
+			Command<CMD_MODIFY_ORDER>::Post(this->vehicle->tile, this->consist->index, sel_ord, MOF_LOAD, OLFB_NO_LOAD);
 			this->SetWidgetDirty(WID_O_FULL_LOAD);
 		}
 	}
@@ -685,7 +686,7 @@ private:
 		}
 
 		this->SetWidgetDirty(WID_O_NON_STOP);
-		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, sel_ord, MOF_NON_STOP, non_stop);
+		Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, sel_ord, MOF_NON_STOP, non_stop);
 	}
 
 	/**
@@ -695,11 +696,11 @@ private:
 	void OrderClick_Skip()
 	{
 		/* Don't skip when there's nothing to skip */
-		if (_ctrl_pressed && this->vehicle->GetConsist()->cur_implicit_order_index == this->OrderGetSel()) return;
+		if (_ctrl_pressed && this->consist->cur_implicit_order_index == this->OrderGetSel()) return;
 		if (this->vehicle->GetNumOrders() <= 1) return;
 
 		Command<CMD_SKIP_TO_ORDER>::Post(_ctrl_pressed ? STR_ERROR_CAN_T_SKIP_TO_ORDER : STR_ERROR_CAN_T_SKIP_ORDER,
-				this->vehicle->tile, this->vehicle->index, _ctrl_pressed ? this->OrderGetSel() : ((this->vehicle->GetConsist()->cur_implicit_order_index + 1) % this->vehicle->GetNumOrders()));
+				this->vehicle->tile, this->consist->index, _ctrl_pressed ? this->OrderGetSel() : ((this->consist->cur_implicit_order_index + 1) % this->vehicle->GetNumOrders()));
 	}
 
 	/**
@@ -735,7 +736,7 @@ private:
 		/* Get another vehicle that share orders with this vehicle. */
 		Vehicle *other_shared = (this->vehicle->FirstShared() == this->vehicle) ? this->vehicle->NextShared() : this->vehicle->PreviousShared();
 		/* Copy the order list of the other vehicle. */
-		if (Command<CMD_CLONE_ORDER>::Post(STR_ERROR_CAN_T_STOP_SHARING_ORDER_LIST, this->vehicle->tile, CO_COPY, this->vehicle->index, other_shared->index)) {
+		if (Command<CMD_CLONE_ORDER>::Post(STR_ERROR_CAN_T_STOP_SHARING_ORDER_LIST, this->vehicle->tile, CO_COPY, this->consist->index, other_shared->GetConsist()->index)) {
 			this->UpdateButtonState();
 		}
 	}
@@ -750,10 +751,10 @@ private:
 	{
 		if (_ctrl_pressed) {
 			/* Cancel refitting */
-			Command<CMD_ORDER_REFIT>::Post(this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), CARGO_NO_REFIT);
+			Command<CMD_ORDER_REFIT>::Post(this->vehicle->tile, this->consist->index, this->OrderGetSel(), CARGO_NO_REFIT);
 		} else {
 			if (i == 1) { // Auto-refit to available cargo type.
-				Command<CMD_ORDER_REFIT>::Post(this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), CARGO_AUTO_REFIT);
+				Command<CMD_ORDER_REFIT>::Post(this->vehicle->tile, this->consist->index, this->OrderGetSel(), CARGO_AUTO_REFIT);
 			} else {
 				ShowVehicleRefitWindow(this->vehicle, this->OrderGetSel(), this, auto_refit);
 			}
@@ -775,6 +776,7 @@ public:
 	OrdersWindow(WindowDesc *desc, const Vehicle *v) : Window(desc)
 	{
 		this->vehicle = v;
+		this->consist = v->GetConsist();
 
 		this->CreateNestedTree();
 		this->vscroll = this->GetScrollbar(WID_O_SCROLLBAR);
@@ -848,6 +850,7 @@ public:
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
 				this->vehicle = Vehicle::Get(this->window_number);
+				this->consist = this->vehicle->GetConsist();
 				FALLTHROUGH;
 
 			case VIWD_CONSIST_CHANGED:
@@ -1174,7 +1177,7 @@ public:
 						order.index = 0;
 						order.MakeConditional(order_id);
 
-						Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), order);
+						Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->consist->index, this->OrderGetSel(), order);
 					}
 					ResetObjectToPlace();
 					break;
@@ -1197,7 +1200,7 @@ public:
 				} else if (sel == this->selected_order) {
 					if (this->vehicle->type == VEH_TRAIN && sel < this->vehicle->GetNumOrders()) {
 						Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER,
-								this->vehicle->tile, this->vehicle->index, sel,
+								this->vehicle->tile, this->consist->index, sel,
 								MOF_STOP_LOCATION, (this->vehicle->GetOrder(sel)->GetStopLocation() + 1) % OSL_END);
 					}
 				} else {
@@ -1348,7 +1351,7 @@ public:
 				default:
 					break;
 			}
-			Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, sel, MOF_COND_VALUE, Clamp(value, 0, 2047));
+			Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, sel, MOF_COND_VALUE, Clamp(value, 0, 2047));
 		}
 	}
 
@@ -1386,11 +1389,11 @@ public:
 				break;
 
 			case WID_O_COND_VARIABLE:
-				Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), MOF_COND_VARIABLE, index);
+				Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, this->OrderGetSel(), MOF_COND_VARIABLE, index);
 				break;
 
 			case WID_O_COND_COMPARATOR:
-				Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), MOF_COND_COMPARATOR, index);
+				Command<CMD_MODIFY_ORDER>::Post(STR_ERROR_CAN_T_MODIFY_THIS_ORDER, this->vehicle->tile, this->consist->index, this->OrderGetSel(), MOF_COND_COMPARATOR, index);
 				break;
 		}
 	}
@@ -1403,7 +1406,7 @@ public:
 				VehicleOrderID to_order = this->GetOrderFromPt(pt.y);
 
 				if (!(from_order == to_order || from_order == INVALID_VEH_ORDER_ID || from_order > this->vehicle->GetNumOrders() || to_order == INVALID_VEH_ORDER_ID || to_order > this->vehicle->GetNumOrders()) &&
-						Command<CMD_MOVE_ORDER>::Post(STR_ERROR_CAN_T_MOVE_THIS_ORDER, this->vehicle->tile, this->vehicle->index, from_order, to_order)) {
+						Command<CMD_MOVE_ORDER>::Post(STR_ERROR_CAN_T_MOVE_THIS_ORDER, this->vehicle->tile, this->consist->index, from_order, to_order)) {
 					this->selected_order = -1;
 					this->UpdateButtonState();
 				}
@@ -1455,7 +1458,7 @@ public:
 			const Order cmd = GetOrderCmdFromTile(this->vehicle, tile);
 			if (cmd.IsType(OT_NOTHING)) return;
 
-			if (Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->vehicle->index, this->OrderGetSel(), cmd)) {
+			if (Command<CMD_INSERT_ORDER>::Post(STR_ERROR_CAN_T_INSERT_NEW_ORDER, this->vehicle->tile, this->consist->index, this->OrderGetSel(), cmd)) {
 				/* With quick goto the Go To button stays active */
 				if (!_settings_client.gui.quick_goto) ResetObjectToPlace();
 			}
@@ -1473,7 +1476,7 @@ public:
 		if (this->vehicle->GetNumOrders() != 0 && !share_order) return false;
 
 		if (Command<CMD_CLONE_ORDER>::Post(share_order ? STR_ERROR_CAN_T_SHARE_ORDER_LIST : STR_ERROR_CAN_T_COPY_ORDER_LIST,
-				this->vehicle->tile, share_order ? CO_SHARE : CO_COPY, this->vehicle->index, v->index)) {
+				this->vehicle->tile, share_order ? CO_SHARE : CO_COPY, this->consist->index, v->GetConsist()->index)) {
 			this->selected_order = -1;
 			ResetObjectToPlace();
 		}
