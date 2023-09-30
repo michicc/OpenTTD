@@ -12,12 +12,13 @@
 
 #include "command_type.h"
 #include "timer/timer_game_tick.h"
+#include "consist_type.h"
 
-CommandCost CmdChangeTimetable(DoCommandFlag flags, VehicleID veh, VehicleOrderID order_number, ModifyTimetableFlags mtf, uint16_t data);
-CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, VehicleID veh, ModifyTimetableFlags mtf, uint16_t data);
-CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_to_group);
-CommandCost CmdAutofillTimetable(DoCommandFlag flags, VehicleID veh, bool autofill, bool preserve_wait_time);
-CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool timetable_all, TimerGameTick::TickCounter start_tick);
+CommandCost CmdChangeTimetable(DoCommandFlag flags, ConsistID consist, VehicleOrderID order_number, ModifyTimetableFlags mtf, uint16_t data);
+CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, ConsistID consist, ModifyTimetableFlags mtf, uint16_t data);
+CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, ConsistID consist, bool apply_to_group);
+CommandCost CmdAutofillTimetable(DoCommandFlag flags, ConsistID consist, bool autofill, bool preserve_wait_time);
+CommandCost CmdSetTimetableStart(DoCommandFlag flags, ConsistID consist, bool timetable_all, TimerGameTick::TickCounter start_tick);
 
 DEF_CMD_TRAIT(CMD_CHANGE_TIMETABLE,      CmdChangeTimetable,     0, CMDT_ROUTE_MANAGEMENT)
 DEF_CMD_TRAIT(CMD_BULK_CHANGE_TIMETABLE, CmdBulkChangeTimetable, 0, CMDT_ROUTE_MANAGEMENT)

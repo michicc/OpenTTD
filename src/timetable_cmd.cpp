@@ -58,14 +58,15 @@ TimerGameCalendar::Date GetDateFromStartTick(TimerGameTick::TickCounter start_ti
 
 /**
  * Change/update a particular timetable entry.
- * @param v            The vehicle to change the timetable of.
+ * @param cs           The conist to change the timetable of.
  * @param order_number The index of the timetable in the order list.
  * @param val          The new data of the timetable entry.
  * @param mtf          Which part of the timetable entry to change.
  * @param timetabled   If the new value is explicitly timetabled.
  */
-static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16_t val, ModifyTimetableFlags mtf, bool timetabled)
+static void ChangeTimetable(Consist *cs, VehicleOrderID order_number, uint16_t val, ModifyTimetableFlags mtf, bool timetabled)
 {
+	Vehicle *v = cs->Front();
 	Order *order = v->GetOrder(order_number);
 	assert(order != nullptr);
 	int total_delta = 0;
@@ -124,19 +125,20 @@ static void ChangeTimetable(Vehicle *v, VehicleOrderID order_number, uint16_t va
 /**
  * Change timetable data of an order.
  * @param flags Operation to perform.
- * @param veh Vehicle with the orders to change.
+ * @param consist Consist with the orders to change.
  * @param order_number Order index to modify.
  * @param mtf Timetable data to change (@see ModifyTimetableFlags)
  * @param data The data to modify as specified by \c mtf.
  *             0 to clear times, UINT16_MAX to clear speed limit.
  * @return the cost of this operation or an error
  */
-CommandCost CmdChangeTimetable(DoCommandFlag flags, VehicleID veh, VehicleOrderID order_number, ModifyTimetableFlags mtf, uint16_t data)
+CommandCost CmdChangeTimetable(DoCommandFlag flags, ConsistID consist, VehicleOrderID order_number, ModifyTimetableFlags mtf, uint16_t data)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	Order *order = v->GetOrder(order_number);
@@ -179,27 +181,27 @@ CommandCost CmdChangeTimetable(DoCommandFlag flags, VehicleID veh, VehicleOrderI
 	}
 
 	if (travel_time != order->GetTravelTime() && order->IsType(OT_CONDITIONAL)) return CMD_ERROR;
-	if (max_speed != order->GetMaxSpeed() && (order->IsType(OT_CONDITIONAL) || v->type == VEH_AIRCRAFT)) return CMD_ERROR;
+	if (max_speed != order->GetMaxSpeed() && (order->IsType(OT_CONDITIONAL) || cs->type == VEH_AIRCRAFT)) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
 		switch (mtf) {
 			case MTF_WAIT_TIME:
 				/* Set time if changing the value or confirming an estimated time as timetabled. */
 				if (wait_time != order->GetWaitTime() || (wait_time > 0 && !order->IsWaitTimetabled())) {
-					ChangeTimetable(v, order_number, wait_time, MTF_WAIT_TIME, wait_time > 0);
+					ChangeTimetable(cs, order_number, wait_time, MTF_WAIT_TIME, wait_time > 0);
 				}
 				break;
 
 			case MTF_TRAVEL_TIME:
 				/* Set time if changing the value or confirming an estimated time as timetabled. */
 				if (travel_time != order->GetTravelTime() || (travel_time > 0 && !order->IsTravelTimetabled())) {
-					ChangeTimetable(v, order_number, travel_time, MTF_TRAVEL_TIME, travel_time > 0);
+					ChangeTimetable(cs, order_number, travel_time, MTF_TRAVEL_TIME, travel_time > 0);
 				}
 				break;
 
 			case MTF_TRAVEL_SPEED:
 				if (max_speed != order->GetMaxSpeed()) {
-					ChangeTimetable(v, order_number, max_speed, MTF_TRAVEL_SPEED, max_speed != UINT16_MAX);
+					ChangeTimetable(cs, order_number, max_speed, MTF_TRAVEL_SPEED, max_speed != UINT16_MAX);
 				}
 				break;
 
@@ -214,18 +216,19 @@ CommandCost CmdChangeTimetable(DoCommandFlag flags, VehicleID veh, VehicleOrderI
 /**
  * Change timetable data of all orders of a vehicle.
  * @param flags Operation to perform.
- * @param veh Vehicle with the orders to change.
+ * @param consist Consist with the orders to change.
  * @param mtf Timetable data to change (@see ModifyTimetableFlags)
  * @param data The data to modify as specified by \c mtf.
  *             0 to clear times, UINT16_MAX to clear speed limit.
  * @return the cost of this operation or an error
  */
-CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, VehicleID veh, ModifyTimetableFlags mtf, uint16_t data)
+CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, ConsistID consist, ModifyTimetableFlags mtf, uint16_t data)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	if (mtf >= MTF_END) return CMD_ERROR;
@@ -237,7 +240,7 @@ CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, VehicleID veh, ModifyTim
 			Order *order = v->GetOrder(order_number);
 			if (order == nullptr || order->IsType(OT_IMPLICIT)) continue;
 
-			Command<CMD_CHANGE_TIMETABLE>::Do(DC_EXEC, v->index, order_number, mtf, data);
+			Command<CMD_CHANGE_TIMETABLE>::Do(DC_EXEC, cs->index, order_number, mtf, data);
 		}
 	}
 
@@ -247,20 +250,22 @@ CommandCost CmdBulkChangeTimetable(DoCommandFlag flags, VehicleID veh, ModifyTim
 /**
  * Clear the lateness counter to make the vehicle on time.
  * @param flags Operation to perform.
- * @param veh Vehicle with the orders to change.
+ * @param consist Consist with the orders to change.
  * @param apply_to_group Set to reset the late counter for all vehicles sharing the orders.
  * @return the cost of this operation or an error
  */
-CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_to_group)
+CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, ConsistID consist, bool apply_to_group)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
+	if (v->orders == nullptr) return CMD_ERROR;
 
 	/* A vehicle can't be late if its timetable hasn't started.
 	 * If we're setting all vehicles in the group, we handle that below. */
 	if (!apply_to_group && !HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) return CommandCost(STR_ERROR_TIMETABLE_NOT_STARTED);
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
@@ -284,7 +289,7 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_t
 				}
 			}
 		} else {
-			v->GetConsist()->lateness_counter = 0;
+			cs->lateness_counter = 0;
 			SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
 		}
 	}
@@ -293,22 +298,22 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, VehicleID veh, bool apply_t
 }
 
 /**
- * Order vehicles based on their timetable. The vehicles will be sorted in order
+ * Order consists based on their timetable. The consists will be sorted in order
  * they would reach the first station.
  *
- * @param a First Vehicle pointer.
- * @param b Second Vehicle pointer.
+ * @param a First Consist pointer.
+ * @param b Second Consist pointer.
  * @return Comparison value.
  */
-static bool VehicleTimetableSorter(Vehicle * const &a, Vehicle * const &b)
+static bool ConsistTimetableSorter(Consist * const &a, Consist * const &b)
 {
-	VehicleOrderID a_order = a->GetConsist()->cur_real_order_index;
-	VehicleOrderID b_order = b->GetConsist()->cur_real_order_index;
+	VehicleOrderID a_order = a->cur_real_order_index;
+	VehicleOrderID b_order = b->cur_real_order_index;
 	int j = (int)b_order - (int)a_order;
 
 	/* Are we currently at an ordered station (un)loading? */
-	bool a_load = a->current_order.IsType(OT_LOADING) && a->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE;
-	bool b_load = b->current_order.IsType(OT_LOADING) && b->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE;
+	bool a_load = a->Front()->current_order.IsType(OT_LOADING) && a->Front()->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE;
+	bool b_load = b->Front()->current_order.IsType(OT_LOADING) && b->Front()->current_order.GetNonStopType() != ONSF_STOP_EVERYWHERE;
 
 	/* If the current order is not loading at the ordered station, decrease the order index by one since we have
 	 * not yet arrived at the station (and thus the timetable entry; still in the travelling of the previous one).
@@ -323,27 +328,29 @@ static bool VehicleTimetableSorter(Vehicle * const &a, Vehicle * const &b)
 	if (j != 0) return j < 0;
 
 	/* Look at the time we spent in this order; the higher, the closer to its destination. */
-	i = b->GetConsist()->current_order_time - a->GetConsist()->current_order_time;
+	i = b->current_order_time - a->current_order_time;
 	if (i != 0) return i < 0;
 
 	/* If all else is equal, use some unique index to sort it the same way. */
-	return b->unitnumber < a->unitnumber;
+	return b->index < a->index;
 }
 
 /**
  * Set the start date of the timetable.
  * @param flags Operation to perform.
- * @param veh_id Vehicle ID.
+ * @param consist Consist ID.
  * @param timetable_all Set to set timetable start for all vehicles sharing this order
  * @param start_tick The TimerGameTick::counter tick when the timetable starts.
  * @return The error or cost of the operation.
  */
-CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool timetable_all, TimerGameTick::TickCounter start_tick)
+CommandCost CmdSetTimetableStart(DoCommandFlag flags, ConsistID consist, bool timetable_all, TimerGameTick::TickCounter start_tick)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
-	if (v == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
+	if (v->orders == nullptr) return CMD_ERROR;
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	TimerGameTick::Ticks total_duration = v->orders->GetTimetableTotalDuration();
@@ -365,32 +372,30 @@ CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool tim
 	if (timetable_all && start_date + (total_duration / Ticks::DAY_TICKS) > CalendarTime::MAX_DATE) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
-		std::vector<Vehicle *> vehs;
+		std::vector<Consist *> cons;
 
 		if (timetable_all) {
 			for (Vehicle *w = v->orders->GetFirstSharedVehicle(); w != nullptr; w = w->NextShared()) {
-				vehs.push_back(w);
+				cons.push_back(w->GetConsist());
 			}
 		} else {
-			vehs.push_back(v);
+			cons.push_back(cs);
 		}
 
-		int num_vehs = (uint)vehs.size();
+		int num_cons = (uint)cons.size();
 
-		if (num_vehs >= 2) {
-			std::sort(vehs.begin(), vehs.end(), &VehicleTimetableSorter);
+		if (num_cons >= 2) {
+			std::sort(cons.begin(), cons.end(), &ConsistTimetableSorter);
 		}
 
 		int idx = 0;
 
-		for (Vehicle *w : vehs) {
-			Consist *cs = w->GetConsist();
-
-			cs->lateness_counter = 0;
-			ClrBit(cs->consist_flags, CF_TIMETABLE_STARTED);
+		for (Consist *w_cs : cons) {
+			w_cs->lateness_counter = 0;
+			ClrBit(w_cs->consist_flags, CF_TIMETABLE_STARTED);
 			/* Do multiplication, then division to reduce rounding errors. */
-			cs->timetable_start = start_tick + (idx * total_duration / num_vehs);
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, w->index);
+			w_cs->timetable_start = start_tick + (idx * total_duration / num_cons);
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, w_cs->Front()->index);
 			++idx;
 		}
 
@@ -405,22 +410,22 @@ CommandCost CmdSetTimetableStart(DoCommandFlag flags, VehicleID veh_id, bool tim
  * actually takes to complete it. When starting to autofill the current times
  * are cleared and the timetable will start again from scratch.
  * @param flags Operation to perform.
- * @param veh Vehicle index.
+ * @param consist Consist index.
  * @param autofill Enable or disable autofill
  * @param preserve_wait_time Set to preserve waiting times in non-destructive mode
  * @return the cost of this operation or an error
  */
-CommandCost CmdAutofillTimetable(DoCommandFlag flags, VehicleID veh, bool autofill, bool preserve_wait_time)
+CommandCost CmdAutofillTimetable(DoCommandFlag flags, ConsistID consist, bool autofill, bool preserve_wait_time)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || v->orders == nullptr) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
+	if (v->orders == nullptr) return CMD_ERROR;
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
-		Consist *cs = v->GetConsist();
-
 		if (autofill) {
 			/* Start autofilling the timetable, which clears the
 			 * "timetable has started" bit. Times are not cleared anymore, but are
@@ -522,9 +527,9 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 		uint time_to_set = CeilDiv(std::max(time_taken, 1), Ticks::TICKS_PER_SECOND) * Ticks::TICKS_PER_SECOND;
 
 		if (travelling && (autofilling || !real_current_order->IsTravelTimetabled())) {
-			ChangeTimetable(v, cs->cur_real_order_index, time_to_set, MTF_TRAVEL_TIME, autofilling);
+			ChangeTimetable(cs, cs->cur_real_order_index, time_to_set, MTF_TRAVEL_TIME, autofilling);
 		} else if (!travelling && (autofilling || !real_current_order->IsWaitTimetabled())) {
-			ChangeTimetable(v, cs->cur_real_order_index, time_to_set, MTF_WAIT_TIME, autofilling);
+			ChangeTimetable(cs, cs->cur_real_order_index, time_to_set, MTF_WAIT_TIME, autofilling);
 		}
 	}
 
