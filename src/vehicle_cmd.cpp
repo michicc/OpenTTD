@@ -1004,7 +1004,7 @@ std::tuple<CommandCost, VehicleID> CmdCloneVehicle(DoCommandFlag flags, TileInde
 		 * the vehicle refitted before doing this, otherwise the moved
 		 * cargo types might not match (passenger vs non-passenger)
 		 */
-		CommandCost result = Command<CMD_CLONE_ORDER>::Do(flags, (share_orders ? CO_SHARE : CO_COPY), w_front->index, v_front->index);
+		CommandCost result = Command<CMD_CLONE_ORDER>::Do(flags, (share_orders ? CO_SHARE : CO_COPY), w_front->GetConsist()->index, v_front->GetConsist()->index);
 		if (result.Failed()) {
 			/* The vehicle has already been bought, so now it must be sold again. */
 			Command<CMD_SELL_VEHICLE>::Do(flags, w_front->index, true, false, INVALID_CLIENT_ID);

@@ -702,21 +702,22 @@ uint GetOrderDistance(const Order *prev, const Order *cur, const Vehicle *v, int
 }
 
 /**
- * Add an order to the orderlist of a vehicle.
+ * Add an order to the orderlist of a consist.
  * @param flags operation to perform
- * @param veh ID of the vehicle
+ * @param consist the ID of the consist
  * @param sel_ord the selected order (if any). If the last order is given,
  *                        the order will be inserted before that one
  *                        the maximum vehicle order id is 254.
  * @param new_order order to insert
  * @return the cost of this operation or an error
  */
-CommandCost CmdInsertOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID sel_ord, const Order &new_order)
+CommandCost CmdInsertOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord, const Order &new_order)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	/* Validate properties we don't want to have different from default as they are set by other commands. */
@@ -771,7 +772,7 @@ CommandCost CmdInsertOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 
 		case OT_GOTO_DEPOT: {
 			if ((new_order.GetDepotActionType() & ODATFB_NEAREST_DEPOT) == 0) {
-				if (v->type == VEH_AIRCRAFT) {
+				if (cs->type == VEH_AIRCRAFT) {
 					const Station *st = Station::GetIfValid(new_order.GetDestination());
 
 					if (st == nullptr) return CMD_ERROR;
@@ -819,7 +820,7 @@ CommandCost CmdInsertOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 			const Waypoint *wp = Waypoint::GetIfValid(new_order.GetDestination());
 			if (wp == nullptr) return CMD_ERROR;
 
-			switch (v->type) {
+			switch (cs->type) {
 				default: return CMD_ERROR;
 
 				case VEH_TRAIN: {
@@ -842,7 +843,7 @@ CommandCost CmdInsertOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 			/* Order flags can be any of the following for waypoints:
 			 * [non-stop]
 			 * non-stop orders (if any) are only valid for trains */
-			if (new_order.GetNonStopType() != ONSF_STOP_EVERYWHERE && v->type != VEH_TRAIN) return CMD_ERROR;
+			if (new_order.GetNonStopType() != ONSF_STOP_EVERYWHERE && cs->type != VEH_TRAIN) return CMD_ERROR;
 			break;
 		}
 
@@ -978,19 +979,19 @@ static CommandCost DecloneOrder(Vehicle *dst, DoCommandFlag flags)
 }
 
 /**
- * Delete an order from the orderlist of a vehicle.
+ * Delete an order from the orderlist of a consist.
  * @param flags operation to perform
- * @param veh_id the ID of the vehicle
+ * @param consist the ID of the consist
  * @param sel_ord the order to delete (max 255)
  * @return the cost of this operation or an error
  */
-CommandCost CmdDeleteOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID sel_ord)
+CommandCost CmdDeleteOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
-
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	/* If we did not select an order, we maybe want to de-clone the orders */
@@ -1081,16 +1082,17 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
 /**
  * Goto order of order-list.
  * @param flags operation to perform
- * @param veh_id The ID of the vehicle which order is skipped
+ * @param consist the ID of the consist which order is skipped
  * @param sel_ord the selected order to which we want to skip
  * @return the cost of this operation or an error
  */
-CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID sel_ord)
+CommandCost CmdSkipToOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle() || sel_ord == v->GetConsist()->cur_implicit_order_index || sel_ord >= v->GetNumOrders() || v->GetNumOrders() < 2) return CMD_ERROR;
-	Consist *cs = v->GetConsist();
+	if (sel_ord == cs->cur_implicit_order_index || sel_ord >= v->GetNumOrders() || v->GetNumOrders() < 2) return CMD_ERROR;
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1104,8 +1106,8 @@ CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID
 		InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
 
 		/* We have an aircraft/ship, they have a mini-schedule, so update them all */
-		if (v->type == VEH_AIRCRAFT) SetWindowClassesDirty(WC_AIRCRAFT_LIST);
-		if (v->type == VEH_SHIP) SetWindowClassesDirty(WC_SHIPS_LIST);
+		if (cs->type == VEH_AIRCRAFT) SetWindowClassesDirty(WC_AIRCRAFT_LIST);
+		if (cs->type == VEH_SHIP) SetWindowClassesDirty(WC_SHIPS_LIST);
 	}
 
 	return CommandCost();
@@ -1114,19 +1116,20 @@ CommandCost CmdSkipToOrder(DoCommandFlag flags, VehicleID veh_id, VehicleOrderID
 /**
  * Move an order inside the orderlist
  * @param flags operation to perform
- * @param veh the ID of the vehicle
+ * @param consist the ID of the consist
  * @param moving_order the order to move
  * @param target_order the target order
  * @return the cost of this operation or an error
  * @note The target order will move one place down in the orderlist
  *  if you move the order upwards else it'll move it one place down
  */
-CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID moving_order, VehicleOrderID target_order)
+CommandCost CmdMoveOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID moving_order, VehicleOrderID target_order)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	/* Don't make senseless movements */
@@ -1200,16 +1203,16 @@ CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID movi
 		}
 
 		/* Make sure to rebuild the whole list */
-		InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 0);
+		InvalidateWindowClassesData(GetWindowClassForVehicleType(cs->type), 0);
 	}
 
 	return CommandCost();
 }
 
 /**
- * Modify an order in the orderlist of a vehicle.
+ * Modify an order in the orderlist of a consist.
  * @param flags operation to perform
- * @param veh ID of the vehicle
+ * @param consist the ID of the consist
  * @param sel_ord the selected order (if any). If the last order is given,
  *                the order will be inserted before that one
  *                the maximum vehicle order id is 254.
@@ -1217,14 +1220,15 @@ CommandCost CmdMoveOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID movi
  * @param data the data to modify
  * @return the cost of this operation or an error
  */
-CommandCost CmdModifyOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID sel_ord, ModifyOrderFlags mof, uint16_t data)
+CommandCost CmdModifyOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID sel_ord, ModifyOrderFlags mof, uint16_t data)
 {
 	if (mof >= MOF_END) return CMD_ERROR;
 
-	Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	/* Is it a valid order? */
@@ -1257,13 +1261,13 @@ CommandCost CmdModifyOrder(DoCommandFlag flags, VehicleID veh, VehicleOrderID se
 		default: NOT_REACHED();
 
 		case MOF_NON_STOP:
-			if (!v->IsGroundVehicle()) return CMD_ERROR;
+			if (!cs->IsGroundVehicle()) return CMD_ERROR;
 			if (data >= ONSF_END) return CMD_ERROR;
 			if (data == order->GetNonStopType()) return CMD_ERROR;
 			break;
 
 		case MOF_STOP_LOCATION:
-			if (v->type != VEH_TRAIN) return CMD_ERROR;
+			if (cs->type != VEH_TRAIN) return CMD_ERROR;
 			if (data >= OSL_END) return CMD_ERROR;
 			break;
 
@@ -1472,57 +1476,59 @@ static bool CheckAircraftOrderDistance(const Aircraft *v_new, const Vehicle *v_o
 }
 
 /**
- * Clone/share/copy an order-list of another vehicle.
+ * Clone/share/copy an order-list of another consist.
  * @param flags operation to perform
  * @param action action to perform
- * @param veh_dst destination vehicle to clone orders to
- * @param veh_src source vehicle to clone orders from, if any (none for CO_UNSHARE)
+ * @param consist_dst destination consist to clone orders to
+ * @param consist_src source consist to clone orders from, if any (none for CO_UNSHARE)
  * @return the cost of this operation or an error
  */
-CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID veh_dst, VehicleID veh_src)
+CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, ConsistID consist_dst, ConsistID consist_src)
 {
-	Vehicle *dst = Vehicle::GetIfValid(veh_dst);
-	if (dst == nullptr || !dst->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *dst = Consist::GetIfValid(consist_dst);
+	if (dst == nullptr) return CMD_ERROR;
+	Vehicle *v_dst = dst->Front();
 
 	CommandCost ret = CheckOwnership(dst->owner);
 	if (ret.Failed()) return ret;
 
 	switch (action) {
 		case CO_SHARE: {
-			Vehicle *src = Vehicle::GetIfValid(veh_src);
+			Consist *src = Consist::GetIfValid(consist_src);
+			Vehicle *v_src = src->Front();
 
 			/* Sanity checks */
-			if (src == nullptr || !src->IsPrimaryVehicle() || dst->type != src->type || dst == src) return CMD_ERROR;
+			if (src == nullptr || dst->type != src->type || dst == src) return CMD_ERROR;
 
 			ret = CheckOwnership(src->owner);
 			if (ret.Failed()) return ret;
 
 			/* Trucks can't share orders with busses (and visa versa) */
-			if (src->type == VEH_ROAD && RoadVehicle::From(src)->IsBus() != RoadVehicle::From(dst)->IsBus()) {
+			if (src->type == VEH_ROAD && RoadVehicle::From(v_src)->IsBus() != RoadVehicle::From(v_dst)->IsBus()) {
 				return CMD_ERROR;
 			}
 
 			/* Is the vehicle already in the shared list? */
-			if (src->FirstShared() == dst->FirstShared()) return CMD_ERROR;
+			if (v_src->FirstShared() == v_dst->FirstShared()) return CMD_ERROR;
 
-			for (const Order *order : src->Orders()) {
-				if (!OrderGoesToStation(dst, order)) continue;
+			for (const Order *order : v_src->Orders()) {
+				if (!OrderGoesToStation(v_dst, order)) continue;
 
 				/* Allow copying unreachable destinations if they were already unreachable for the source.
 				 * This is basically to allow cloning / autorenewing / autoreplacing vehicles, while the stations
 				 * are temporarily invalid due to reconstruction. */
 				const Station *st = Station::Get(order->GetDestination());
-				if (CanVehicleUseStation(src, st) && !CanVehicleUseStation(dst, st)) {
-					return CommandCost(STR_ERROR_CAN_T_COPY_SHARE_ORDER, GetVehicleCannotUseStationReason(dst, st));
+				if (CanVehicleUseStation(v_src, st) && !CanVehicleUseStation(v_dst, st)) {
+					return CommandCost(STR_ERROR_CAN_T_COPY_SHARE_ORDER, GetVehicleCannotUseStationReason(v_dst, st));
 				}
 			}
 
 			/* Check for aircraft range limits. */
-			if (dst->type == VEH_AIRCRAFT && !CheckAircraftOrderDistance(Aircraft::From(dst), src, src->GetFirstOrder())) {
+			if (dst->type == VEH_AIRCRAFT && !CheckAircraftOrderDistance(Aircraft::From(v_dst), v_src, v_src->GetFirstOrder())) {
 				return_cmd_error(STR_ERROR_AIRCRAFT_NOT_ENOUGH_RANGE);
 			}
 
-			if (src->orders == nullptr && !OrderList::CanAllocateItem()) {
+			if (v_src->orders == nullptr && !OrderList::CanAllocateItem()) {
 				return_cmd_error(STR_ERROR_NO_MORE_SPACE_FOR_ORDERS);
 			}
 
@@ -1530,15 +1536,15 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID ve
 				/* If the destination vehicle had a OrderList, destroy it.
 				 * We only reset the order indices, if the new orders are obviously different.
 				 * (We mainly do this to keep the order indices valid and in range.) */
-				DeleteVehicleOrders(dst, false, dst->GetNumOrders() != src->GetNumOrders());
+				DeleteVehicleOrders(v_dst, false, v_dst->GetNumOrders() != v_src->GetNumOrders());
 
-				dst->orders = src->orders;
+				v_dst->orders = v_src->orders;
 
 				/* Link this vehicle in the shared-list */
-				dst->AddToShared(src);
+				v_dst->AddToShared(v_src);
 
-				InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
-				InvalidateVehicleOrder(src, VIWD_MODIFY_ORDERS);
+				InvalidateVehicleOrder(v_dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidateVehicleOrder(v_src, VIWD_MODIFY_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type), 0);
 			}
@@ -1546,31 +1552,32 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID ve
 		}
 
 		case CO_COPY: {
-			Vehicle *src = Vehicle::GetIfValid(veh_src);
+			Consist *src = Consist::GetIfValid(consist_src);
+			Vehicle *v_src = src->Front();
 
 			/* Sanity checks */
-			if (src == nullptr || !src->IsPrimaryVehicle() || dst->type != src->type || dst == src) return CMD_ERROR;
+			if (src == nullptr || dst->type != src->type || dst == src) return CMD_ERROR;
 
 			ret = CheckOwnership(src->owner);
 			if (ret.Failed()) return ret;
 
 			/* Trucks can't copy all the orders from busses (and visa versa),
 			 * and neither can helicopters and aircraft. */
-			for (const Order *order : src->Orders()) {
-				if (!OrderGoesToStation(dst, order)) continue;
+			for (const Order *order : v_src->Orders()) {
+				if (!OrderGoesToStation(v_dst, order)) continue;
 				Station *st = Station::Get(order->GetDestination());
-				if (!CanVehicleUseStation(dst, st)) {
-					return CommandCost(STR_ERROR_CAN_T_COPY_SHARE_ORDER, GetVehicleCannotUseStationReason(dst, st));
+				if (!CanVehicleUseStation(v_dst, st)) {
+					return CommandCost(STR_ERROR_CAN_T_COPY_SHARE_ORDER, GetVehicleCannotUseStationReason(v_dst, st));
 				}
 			}
 
 			/* Check for aircraft range limits. */
-			if (dst->type == VEH_AIRCRAFT && !CheckAircraftOrderDistance(Aircraft::From(dst), src, src->GetFirstOrder())) {
+			if (dst->type == VEH_AIRCRAFT && !CheckAircraftOrderDistance(Aircraft::From(v_dst), v_src, v_src->GetFirstOrder())) {
 				return_cmd_error(STR_ERROR_AIRCRAFT_NOT_ENOUGH_RANGE);
 			}
 
 			/* make sure there are orders available */
-			if (!Order::CanAllocateItem(src->GetNumOrders()) || !OrderList::CanAllocateItem()) {
+			if (!Order::CanAllocateItem(v_src->GetNumOrders()) || !OrderList::CanAllocateItem()) {
 				return_cmd_error(STR_ERROR_NO_MORE_SPACE_FOR_ORDERS);
 			}
 
@@ -1581,32 +1588,32 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID ve
 				/* If the destination vehicle had an order list, destroy the chain but keep the OrderList.
 				 * We only reset the order indices, if the new orders are obviously different.
 				 * (We mainly do this to keep the order indices valid and in range.) */
-				DeleteVehicleOrders(dst, true, dst->GetNumOrders() != src->GetNumOrders());
+				DeleteVehicleOrders(v_dst, true, v_dst->GetNumOrders() != v_src->GetNumOrders());
 
 				order_dst = &first;
-				for (const Order *order : src->Orders()) {
+				for (const Order *order : v_src->Orders()) {
 					*order_dst = new Order();
 					(*order_dst)->AssignOrder(*order);
 					order_dst = &(*order_dst)->next;
 				}
-				if (dst->orders == nullptr) {
-					dst->orders = new OrderList(first, dst);
+				if (v_dst->orders == nullptr) {
+					v_dst->orders = new OrderList(first, v_dst);
 				} else {
-					assert(dst->orders->GetFirstOrder() == nullptr);
-					assert(!dst->orders->IsShared());
-					delete dst->orders;
+					assert(v_dst->orders->GetFirstOrder() == nullptr);
+					assert(!v_dst->orders->IsShared());
+					delete v_dst->orders;
 					assert(OrderList::CanAllocateItem());
-					dst->orders = new OrderList(first, dst);
+					v_dst->orders = new OrderList(first, v_dst);
 				}
 
-				InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidateVehicleOrder(v_dst, VIWD_REMOVE_ALL_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type), 0);
 			}
 			break;
 		}
 
-		case CO_UNSHARE: return DecloneOrder(dst, flags);
+		case CO_UNSHARE: return DecloneOrder(v_dst, flags);
 		default: return CMD_ERROR;
 	}
 
@@ -1616,19 +1623,20 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, VehicleID ve
 /**
  * Add/remove refit orders from an order
  * @param flags operation to perform
- * @param veh VehicleIndex of the vehicle having the order
+ * @param consist the ID of the consist having the order
  * @param order_number number of order to modify
  * @param cargo CargoID
  * @return the cost of this operation or an error
  */
-CommandCost CmdOrderRefit(DoCommandFlag flags, VehicleID veh, VehicleOrderID order_number, CargoID cargo)
+CommandCost CmdOrderRefit(DoCommandFlag flags, ConsistID consist, VehicleOrderID order_number, CargoID cargo)
 {
 	if (cargo >= NUM_CARGO && cargo != CARGO_NO_REFIT && cargo != CARGO_AUTO_REFIT) return CMD_ERROR;
 
-	const Vehicle *v = Vehicle::GetIfValid(veh);
-	if (v == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(consist);
+	if (cs == nullptr) return CMD_ERROR;
+	Vehicle *v = cs->Front();
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	Order *order = v->GetOrder(order_number);
@@ -1842,7 +1850,7 @@ void DeleteVehicleOrders(Vehicle *v, bool keep_orderlist, bool reset_order_indic
 	}
 
 	if (reset_order_indices) {
-		if (v->GetConsist() != nullptr) cs->cur_implicit_order_index = cs->cur_real_order_index = 0;
+		if (cs != nullptr) cs->cur_implicit_order_index = cs->cur_real_order_index = 0;
 		if (v->current_order.IsType(OT_LOADING)) {
 			CancelLoadingDueToDeletedOrder(v);
 		}
