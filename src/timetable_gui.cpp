@@ -202,8 +202,8 @@ static void ChangeTimetableStartCallback(const Window *w, TimerGameCalendar::Dat
 struct TimetableWindow : Window {
 	int sel_index;
 	VehicleTimetableWidgets query_widget; ///< Which button was clicked to open the query text input?
-	const Vehicle *vehicle;    ///< Vehicle monitored by the window.
 	const Consist *consist;    ///< Consist monitored by the window.
+	const Vehicle *vehicle;    ///< Vehicle monitored by the window.
 	bool show_expected;        ///< Whether we show expected arrival or scheduled.
 	Scrollbar *vscroll;        ///< The scrollbar.
 	bool set_start_date_all;   ///< Set start date using minutes text entry for all timetable entries (ctrl-click) action.
@@ -212,8 +212,8 @@ struct TimetableWindow : Window {
 	TimetableWindow(WindowDesc *desc, WindowNumber window_number) :
 			Window(desc),
 			sel_index(-1),
-			vehicle(Vehicle::Get(window_number)),
-			consist(vehicle->GetConsist()),
+			consist(Consist::Get(window_number)),
+			vehicle(consist->Front()),
 			show_expected(true)
 	{
 		this->CreateNestedTree();
@@ -221,7 +221,7 @@ struct TimetableWindow : Window {
 		this->UpdateSelectionStates();
 		this->FinishInitNested(window_number);
 
-		this->owner = this->vehicle->owner;
+		this->owner = this->consist->owner;
 	}
 
 	/**
@@ -291,8 +291,8 @@ struct TimetableWindow : Window {
 		switch (data) {
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
-				this->vehicle = Vehicle::Get(this->window_number);
-				this->consist = this->vehicle->GetConsist();
+				this->consist = Consist::Get(this->window_number);
+				this->vehicle = this->consist->Front();
 				break;
 
 			case VIWD_REMOVE_ALL_ORDERS:
@@ -635,7 +635,7 @@ struct TimetableWindow : Window {
 
 		switch (widget) {
 			case WID_VT_ORDER_VIEW: // Order view button
-				ShowOrdersWindow(v);
+				ShowOrdersWindow(cs);
 				break;
 
 			case WID_VT_TIMETABLE_PANEL: { // Main panel.
@@ -862,12 +862,12 @@ static WindowDesc _timetable_desc(__FILE__, __LINE__,
 );
 
 /**
- * Show the timetable for a given vehicle.
- * @param v The vehicle to show the timetable for.
+ * Show the timetable for a given consist.
+ * @param cs The consist to show the timetable for.
  */
-void ShowTimetableWindow(const Vehicle *v)
+void ShowTimetableWindow(const Consist *cs)
 {
-	CloseWindowById(WC_VEHICLE_DETAILS, v->index, false);
-	CloseWindowById(WC_VEHICLE_ORDERS, v->index, false);
-	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, v->index);
+	CloseWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	CloseWindowById(WC_VEHICLE_ORDERS, cs->index, false);
+	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, cs->index);
 }

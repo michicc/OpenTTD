@@ -12,8 +12,22 @@
 #include "script_game.hpp"
 #include "../../window_func.h"
 #include "../../window_gui.h"
+#include "../../consist_base.h"
 
 #include "../../safeguards.h"
+
+static WindowNumber TranslateVehicleWindowNumber(ScriptWindow::WindowClass window, WindowNumber number)
+{
+	if (number == ScriptWindow::NUMBER_ALL) return number;
+
+	switch (window) {
+		case ScriptWindow::WC_VEHICLE_ORDERS:
+		case ScriptWindow::WC_VEHICLE_TIMETABLE:
+			return ::Vehicle::IsValidID(number) && ::Vehicle::Get(number)->GetConsist() != nullptr ? ::Vehicle::Get(number)->GetConsist()->index : ScriptWindow::NUMBER_ALL;
+		default:
+			return number;
+	}
+}
 
 /* static */ void ScriptWindow::Close(WindowClass window, SQInteger number)
 {
@@ -26,7 +40,7 @@
 
 	number = Clamp<SQInteger>(number, 0, INT32_MAX);
 
-	CloseWindowById((::WindowClass)window, number);
+	CloseWindowById((::WindowClass)window, TranslateVehicleWindowNumber(window, number));
 }
 
 /* static */ bool ScriptWindow::IsOpen(WindowClass window, SQInteger number)
@@ -39,7 +53,7 @@
 
 	number = Clamp<SQInteger>(number, 0, INT32_MAX);
 
-	return FindWindowById((::WindowClass)window, number) != nullptr;
+	return FindWindowById((::WindowClass)window, TranslateVehicleWindowNumber(window, number)) != nullptr;
 }
 
 /* static */ void ScriptWindow::Highlight(WindowClass window, SQInteger number, SQInteger widget, TextColour colour)
@@ -51,7 +65,7 @@
 
 	number = Clamp<SQInteger>(number, 0, INT32_MAX);
 
-	Window *w = FindWindowById((::WindowClass)window, number);
+	Window *w = FindWindowById((::WindowClass)window, TranslateVehicleWindowNumber(window, number));
 	assert(w != nullptr);
 
 	if (widget == WIDGET_ALL) {

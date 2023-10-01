@@ -118,7 +118,7 @@ static void ChangeTimetable(Consist *cs, VehicleOrderID order_number, uint16_t v
 					NOT_REACHED();
 			}
 		}
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 }
 
@@ -285,12 +285,12 @@ CommandCost CmdSetVehicleOnTime(DoCommandFlag flags, ConsistID consist, bool app
 					if (!HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) continue;
 
 					u->GetConsist()->lateness_counter -= most_late;
-					SetWindowDirty(WC_VEHICLE_TIMETABLE, u->index);
+					SetWindowDirty(WC_VEHICLE_TIMETABLE, u->GetConsist()->index);
 				}
 			}
 		} else {
 			cs->lateness_counter = 0;
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, cs->index);
 		}
 	}
 
@@ -395,7 +395,7 @@ CommandCost CmdSetTimetableStart(DoCommandFlag flags, ConsistID consist, bool ti
 			ClrBit(w_cs->consist_flags, CF_TIMETABLE_STARTED);
 			/* Do multiplication, then division to reduce rounding errors. */
 			w_cs->timetable_start = start_tick + (idx * total_duration / num_cons);
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, w_cs->Front()->index);
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, w_cs->index);
 			++idx;
 		}
 
@@ -449,7 +449,7 @@ CommandCost CmdAutofillTimetable(DoCommandFlag flags, ConsistID consist, bool au
 				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_TIMETABLE);
 				ClrBit(v2->GetConsist()->consist_flags, CF_AUTOFILL_PRES_WAIT_TIME);
 			}
-			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->index);
+			SetWindowDirty(WC_VEHICLE_TIMETABLE, v2->GetConsist()->index);
 		}
 	}
 
@@ -496,7 +496,7 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 		}
 
 		SetBit(cs->consist_flags, CF_TIMETABLE_STARTED);
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, cs->index);
 	}
 
 	if (!HasBit(cs->consist_flags, CF_TIMETABLE_STARTED)) return;
@@ -566,6 +566,6 @@ void UpdateVehicleTimetable(Vehicle *v, bool travelling)
 	}
 
 	for (v = v->FirstShared(); v != nullptr; v = v->NextShared()) {
-		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+		SetWindowDirty(WC_VEHICLE_TIMETABLE, v->GetConsist()->index);
 	}
 }

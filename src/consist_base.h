@@ -105,7 +105,7 @@ public:
 			if (this->cur_implicit_order_index >= this->Front()->GetNumOrders()) this->cur_implicit_order_index = 0;
 		} while (this->cur_implicit_order_index != this->cur_real_order_index && !this->Front()->GetOrder(this->cur_implicit_order_index)->IsType(OT_IMPLICIT));
 
-		InvalidateVehicleOrder(this->Front(), 0);
+		InvalidateConsistOrder(this, 0);
 	}
 
 	/**
@@ -122,7 +122,7 @@ public:
 		} else {
 			/* Increment real order only */
 			this->SkipToNextRealOrderIndex();
-			InvalidateVehicleOrder(this->Front(), 0);
+			InvalidateConsistOrder(this, 0);
 		}
 	}
 

@@ -16,6 +16,7 @@
 #include "transport_type.h"
 #include "story_type.h"
 #include "company_type.h"
+#include "consist_type.h"
 
 struct Window;
 
@@ -27,7 +28,7 @@ void ShowGameOptions();
 void ShowGameSettings();
 
 /* train_gui.cpp */
-void ShowOrdersWindow(const Vehicle *v);
+void ShowOrdersWindow(const Consist *cs);
 
 /* dock_gui.cpp */
 Window *ShowBuildDocksToolbar();
