@@ -207,7 +207,7 @@ enum WindowClass {
 
 	/**
 	 * Vehicle orders; %Window numbers:
-	 *   - #VehicleID = #OrderWidgets
+	 *   - #ConsistID = #OrderWidgets
 	 */
 	WC_VEHICLE_ORDERS,
 
@@ -219,7 +219,7 @@ enum WindowClass {
 
 	/**
 	 * Vehicle timetable; %Window numbers:
-	 *   - #VehicleID = #VehicleTimetableWidgets
+	 *   - #ConsistID = #VehicleTimetableWidgets
 	 */
 	WC_VEHICLE_TIMETABLE,
 

@@ -1489,10 +1489,8 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index)
 {
 	ChangeVehicleWindow(WC_VEHICLE_VIEW,      from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_ORDERS,    from_index, to_index);
 	ChangeVehicleWindow(WC_VEHICLE_REFIT,     from_index, to_index);
 	ChangeVehicleWindow(WC_VEHICLE_DETAILS,   from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_TIMETABLE, from_index, to_index);
 }
 
 static constexpr NWidgetPart _nested_vehicle_list[] = {
@@ -2004,7 +2002,7 @@ public:
 		    case WID_VL_ORDER_VIEW: // Open the shared orders window
 				assert(this->vli.type == VL_SHARED_ORDERS);
 				assert(!this->vehicles.empty());
-				ShowOrdersWindow(this->vehicles[0]);
+				ShowOrdersWindow(this->vehicles[0]->GetConsist());
 				break;
 
 			case WID_VL_SORT_ORDER: // Flip sorting method ascending/descending
@@ -2048,7 +2046,7 @@ public:
 						if (!VehicleClicked(vehgroup)) {
 							const Vehicle *v = vehgroup.vehicles_begin[0];
 							if (_ctrl_pressed) {
-								ShowOrdersWindow(v);
+								ShowOrdersWindow(v->GetConsist());
 							} else {
 								if (vehgroup.NumVehicles() == 1) {
 									ShowVehicleViewWindow(v);
@@ -2688,8 +2686,8 @@ static WindowDesc _nontrain_vehicle_details_desc(__FILE__, __LINE__,
 /** Shows the vehicle details window of the given vehicle. */
 static void ShowVehicleDetailsWindow(const Vehicle *v)
 {
-	CloseWindowById(WC_VEHICLE_ORDERS, v->index, false);
-	CloseWindowById(WC_VEHICLE_TIMETABLE, v->index, false);
+	CloseWindowById(WC_VEHICLE_ORDERS, v->GetConsist()->index, false);
+	CloseWindowById(WC_VEHICLE_TIMETABLE, v->GetConsist()->index, false);
 	AllocateWindowDescFront<VehicleDetailsWindow>((v->type == VEH_TRAIN) ? &_train_vehicle_details_desc : &_nontrain_vehicle_details_desc, v->index);
 }
 
@@ -2924,10 +2922,11 @@ public:
 
 	void Close([[maybe_unused]] int data = 0) override
 	{
-		CloseWindowById(WC_VEHICLE_ORDERS, this->window_number, false);
+		ConsistID consist = Vehicle::Get(this->window_number)->GetConsist()->index;
+		CloseWindowById(WC_VEHICLE_ORDERS, consist, false);
 		CloseWindowById(WC_VEHICLE_REFIT, this->window_number, false);
 		CloseWindowById(WC_VEHICLE_DETAILS, this->window_number, false);
-		CloseWindowById(WC_VEHICLE_TIMETABLE, this->window_number, false);
+		CloseWindowById(WC_VEHICLE_TIMETABLE, consist, false);
 		this->Window::Close();
 	}
 
@@ -3095,10 +3094,11 @@ public:
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
 		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = v->GetConsist();
 
 		switch (widget) {
 			case WID_VV_RENAME: { // rename
-				SetDParam(0, v->GetConsist()->index);
+				SetDParam(0, cs->index);
 				ShowQueryString(STR_VEHICLE_NAME, STR_QUERY_RENAME_TRAIN_CAPTION + v->type,
 						MAX_LENGTH_VEHICLE_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 				break;
@@ -3143,9 +3143,9 @@ public:
 				break;
 			case WID_VV_SHOW_ORDERS: // show orders
 				if (_ctrl_pressed) {
-					ShowTimetableWindow(v);
+					ShowTimetableWindow(cs);
 				} else {
-					ShowOrdersWindow(v);
+					ShowOrdersWindow(cs);
 				}
 				break;
 			case WID_VV_SHOW_DETAILS: // show details

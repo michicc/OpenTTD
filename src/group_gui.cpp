@@ -756,7 +756,7 @@ public:
 				}
 				if (v) {
 					if (_ctrl_pressed && this->grouping == GB_SHARED_ORDERS) {
-						ShowOrdersWindow(v);
+						ShowOrdersWindow(v->GetConsist());
 					} else {
 						this->vehicle_sel = v->index;
 

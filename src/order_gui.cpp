@@ -773,29 +773,29 @@ private:
 	}
 
 public:
-	OrdersWindow(WindowDesc *desc, const Vehicle *v) : Window(desc)
+	OrdersWindow(WindowDesc *desc, const Consist *cs) : Window(desc)
 	{
-		this->vehicle = v;
-		this->consist = v->GetConsist();
+		this->consist = cs;
+		this->vehicle = cs->Front();
 
 		this->CreateNestedTree();
 		this->vscroll = this->GetScrollbar(WID_O_SCROLLBAR);
-		this->FinishInitNested(v->index);
-		if (v->owner == _local_company) {
+		this->FinishInitNested(cs->index);
+		if (cs->owner == _local_company) {
 			this->DisableWidget(WID_O_EMPTY);
 		}
 
 		this->selected_order = -1;
 		this->order_over = INVALID_VEH_ORDER_ID;
 		this->goto_type = OPOS_NONE;
-		this->owner = v->owner;
+		this->owner = cs->owner;
 
 		this->UpdateAutoRefitState();
 
-		if (_settings_client.gui.quick_goto && v->owner == _local_company) {
+		if (_settings_client.gui.quick_goto && cs->owner == _local_company) {
 			/* If there are less than 2 station, make Go To active. */
 			int station_orders = 0;
-			for (const Order *order : v->Orders()) {
+			for (const Order *order : this->vehicle->Orders()) {
 				if (order->IsType(OT_GOTO_STATION)) station_orders++;
 			}
 
@@ -849,8 +849,8 @@ public:
 		switch (data) {
 			case VIWD_AUTOREPLACE:
 				/* Autoreplace replaced the vehicle */
-				this->vehicle = Vehicle::Get(this->window_number);
-				this->consist = this->vehicle->GetConsist();
+				this->consist = Consist::Get(this->window_number);
+				this->vehicle = this->consist->Front();
 				FALLTHROUGH;
 
 			case VIWD_CONSIST_CHANGED:
@@ -1297,7 +1297,7 @@ public:
 				break;
 
 			case WID_O_TIMETABLE_VIEW:
-				ShowTimetableWindow(this->vehicle);
+				ShowTimetableWindow(this->consist);
 				break;
 
 			case WID_O_COND_VARIABLE: {
@@ -1748,11 +1748,11 @@ static WindowDesc _other_orders_desc(__FILE__, __LINE__,
 	&OrdersWindow::hotkeys
 );
 
-void ShowOrdersWindow(const Vehicle *v)
+void ShowOrdersWindow(const Consist *cs)
 {
-	CloseWindowById(WC_VEHICLE_DETAILS, v->index, false);
-	CloseWindowById(WC_VEHICLE_TIMETABLE, v->index, false);
-	if (BringWindowToFrontById(WC_VEHICLE_ORDERS, v->index) != nullptr) return;
+	CloseWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	CloseWindowById(WC_VEHICLE_TIMETABLE, cs->index, false);
+	if (BringWindowToFrontById(WC_VEHICLE_ORDERS, cs->index) != nullptr) return;
 
 	/* Using a different WindowDescs for _local_company causes problems.
 	 * Due to this we have to close order windows in ChangeWindowOwner/CloseCompanyWindows,
@@ -1760,9 +1760,9 @@ void ShowOrdersWindow(const Vehicle *v)
 	 * in crashed due to missing widges.
 	 * TODO Rewrite the order GUI to not use different WindowDescs.
 	 */
-	if (v->owner != _local_company) {
-		new OrdersWindow(&_other_orders_desc, v);
+	if (cs->owner != _local_company) {
+		new OrdersWindow(&_other_orders_desc, cs);
 	} else {
-		new OrdersWindow(v->IsGroundVehicle() ? &_orders_train_desc : &_orders_desc, v);
+		new OrdersWindow(cs->IsGroundVehicle() ? &_orders_train_desc : &_orders_desc, cs);
 	}
 }

@@ -41,6 +41,9 @@ Consist::~Consist()
 	DeleteOrderWarnings(this);
 	DeleteConsistNews(this->index, INVALID_STRING_ID);
 	ReleaseDisastersTargetingVehicle(this->index);
+
+	CloseWindowById(WC_VEHICLE_ORDERS, this->index);
+	CloseWindowById(WC_VEHICLE_TIMETABLE, this->index);
 }
 
 /**

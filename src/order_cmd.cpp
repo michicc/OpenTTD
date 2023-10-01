@@ -246,22 +246,27 @@ Order::Order(uint32_t packed)
 
 /**
  *
- * Updates the widgets of a vehicle which contains the order-data
+ * Updates the widgets of a consist which contains the order-data
  *
  */
-void InvalidateVehicleOrder(const Vehicle *v, int data)
+void InvalidateConsistOrder(const Consist *cs, int data)
 {
-	SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+	/* We may be called during auto-replace when the consist isn't set yet.
+	 * As the orders of an auto-replaced vehicle won't change, there's nothing
+	 * to invalidate either. */
+	if (cs == nullptr) return;
+
+	SetWindowDirty(WC_VEHICLE_VIEW, cs->Front()->index);
 
 	if (data != 0) {
 		/* Calls SetDirty() too */
-		InvalidateWindowData(WC_VEHICLE_ORDERS,    v->index, data);
-		InvalidateWindowData(WC_VEHICLE_TIMETABLE, v->index, data);
+		InvalidateWindowData(WC_VEHICLE_ORDERS,    cs->index, data);
+		InvalidateWindowData(WC_VEHICLE_TIMETABLE, cs->index, data);
 		return;
 	}
 
-	SetWindowDirty(WC_VEHICLE_ORDERS,    v->index);
-	SetWindowDirty(WC_VEHICLE_TIMETABLE, v->index);
+	SetWindowDirty(WC_VEHICLE_ORDERS,    cs->index);
+	SetWindowDirty(WC_VEHICLE_TIMETABLE, cs->index);
 }
 
 /**
@@ -941,7 +946,7 @@ void InsertOrder(Vehicle *v, Order *new_o, VehicleOrderID sel_ord)
 			}
 		}
 		/* Update any possible open window of the vehicle */
-		InvalidateVehicleOrder(u, INVALID_VEH_ORDER_ID | (sel_ord << 8));
+		InvalidateConsistOrder(u_cs, INVALID_VEH_ORDER_ID | (sel_ord << 8));
 	}
 
 	/* As we insert an order, the order to skip to will be 'wrong'. */
@@ -965,14 +970,14 @@ void InsertOrder(Vehicle *v, Order *new_o, VehicleOrderID sel_ord)
 
 /**
  * Declone an order-list
- * @param *dst delete the orders of this vehicle
+ * @param *dst delete the orders of this consist
  * @param flags execution flags
  */
-static CommandCost DecloneOrder(Vehicle *dst, DoCommandFlag flags)
+static CommandCost DecloneOrder(Consist *dst, DoCommandFlag flags)
 {
 	if (flags & DC_EXEC) {
-		DeleteVehicleOrders(dst);
-		InvalidateVehicleOrder(dst, VIWD_REMOVE_ALL_ORDERS);
+		DeleteVehicleOrders(dst->Front());
+		InvalidateConsistOrder(dst, VIWD_REMOVE_ALL_ORDERS);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type), 0);
 	}
 	return CommandCost();
@@ -995,7 +1000,7 @@ CommandCost CmdDeleteOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderI
 	if (ret.Failed()) return ret;
 
 	/* If we did not select an order, we maybe want to de-clone the orders */
-	if (sel_ord >= v->GetNumOrders()) return DecloneOrder(v, flags);
+	if (sel_ord >= v->GetNumOrders()) return DecloneOrder(cs, flags);
 
 	if (v->GetOrder(sel_ord) == nullptr) return CMD_ERROR;
 
@@ -1057,7 +1062,7 @@ void DeleteOrder(Vehicle *v, VehicleOrderID sel_ord)
 		}
 
 		/* Update any possible open window of the vehicle */
-		InvalidateVehicleOrder(u, sel_ord | (INVALID_VEH_ORDER_ID << 8));
+		InvalidateConsistOrder(u_cs, sel_ord | (INVALID_VEH_ORDER_ID << 8));
 	}
 
 	/* As we delete an order, the order to skip to will be 'wrong'. */
@@ -1103,7 +1108,7 @@ CommandCost CmdSkipToOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderI
 		cs->cur_implicit_order_index = cs->cur_real_order_index = sel_ord;
 		cs->UpdateRealOrderIndex();
 
-		InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
+		InvalidateConsistOrder(cs, VIWD_MODIFY_ORDERS);
 
 		/* We have an aircraft/ship, they have a mini-schedule, so update them all */
 		if (cs->type == VEH_AIRCRAFT) SetWindowClassesDirty(WC_AIRCRAFT_LIST);
@@ -1184,7 +1189,7 @@ CommandCost CmdMoveOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderID 
 
 			assert(v->orders == u->orders);
 			/* Update any possible open window of the vehicle */
-			InvalidateVehicleOrder(u, moving_order | (target_order << 8));
+			InvalidateConsistOrder(u_cs, moving_order | (target_order << 8));
 		}
 
 		/* As we move an order, the order to skip to will be 'wrong'. */
@@ -1439,7 +1444,7 @@ CommandCost CmdModifyOrder(DoCommandFlag flags, ConsistID consist, VehicleOrderI
 					u->current_order.GetLoadType() != order->GetLoadType()) {
 				u->current_order.SetLoadType(order->GetLoadType());
 			}
-			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+			InvalidateConsistOrder(u->GetConsist(), VIWD_MODIFY_ORDERS);
 		}
 	}
 
@@ -1543,8 +1548,8 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, ConsistID co
 				/* Link this vehicle in the shared-list */
 				v_dst->AddToShared(v_src);
 
-				InvalidateVehicleOrder(v_dst, VIWD_REMOVE_ALL_ORDERS);
-				InvalidateVehicleOrder(v_src, VIWD_MODIFY_ORDERS);
+				InvalidateConsistOrder(dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidateConsistOrder(src, VIWD_MODIFY_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type), 0);
 			}
@@ -1606,14 +1611,14 @@ CommandCost CmdCloneOrder(DoCommandFlag flags, CloneOptions action, ConsistID co
 					v_dst->orders = new OrderList(first, v_dst);
 				}
 
-				InvalidateVehicleOrder(v_dst, VIWD_REMOVE_ALL_ORDERS);
+				InvalidateConsistOrder(dst, VIWD_REMOVE_ALL_ORDERS);
 
 				InvalidateWindowClassesData(GetWindowClassForVehicleType(dst->type), 0);
 			}
 			break;
 		}
 
-		case CO_UNSHARE: return DecloneOrder(v_dst, flags);
+		case CO_UNSHARE: return DecloneOrder(dst, flags);
 		default: return CMD_ERROR;
 	}
 
@@ -1658,7 +1663,7 @@ CommandCost CmdOrderRefit(DoCommandFlag flags, ConsistID consist, VehicleOrderID
 
 		for (Vehicle *u = v->FirstShared(); u != nullptr; u = u->NextShared()) {
 			/* Update any possible open window of the vehicle */
-			InvalidateVehicleOrder(u, VIWD_MODIFY_ORDERS);
+			InvalidateConsistOrder(u->GetConsist(), VIWD_MODIFY_ORDERS);
 
 			/* If the vehicle already got the current depot set as current order, then update current order as well */
 			if (u->GetConsist()->cur_real_order_index == order_number && (u->current_order.GetDepotOrderType() & ODTFB_PART_OF_ORDERS)) {
@@ -1802,8 +1807,8 @@ restart:
 
 				for (const Vehicle *w = v->FirstShared(); w != nullptr; w = w->NextShared()) {
 					/* In GUI, simulate by removing the order and adding it back */
-					InvalidateVehicleOrder(w, id | (INVALID_VEH_ORDER_ID << 8));
-					InvalidateVehicleOrder(w, (INVALID_VEH_ORDER_ID << 8) | id);
+					InvalidateConsistOrder(w->GetConsist(), id | (INVALID_VEH_ORDER_ID << 8));
+					InvalidateConsistOrder(w->GetConsist(), (INVALID_VEH_ORDER_ID << 8) | id);
 				}
 			}
 		}
@@ -2158,7 +2163,7 @@ bool ProcessOrders(Consist *cs)
 	/* Otherwise set it, and determine the destination tile. */
 	v->current_order = *order;
 
-	InvalidateVehicleOrder(v, VIWD_MODIFY_ORDERS);
+	InvalidateConsistOrder(cs, VIWD_MODIFY_ORDERS);
 	switch (v->type) {
 		default:
 			NOT_REACHED();

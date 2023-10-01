@@ -817,10 +817,8 @@ void Vehicle::PreDestructor()
 
 	if (this->IsPrimaryVehicle()) {
 		CloseWindowById(WC_VEHICLE_VIEW, this->index);
-		CloseWindowById(WC_VEHICLE_ORDERS, this->index);
 		CloseWindowById(WC_VEHICLE_REFIT, this->index);
 		CloseWindowById(WC_VEHICLE_DETAILS, this->index);
-		CloseWindowById(WC_VEHICLE_TIMETABLE, this->index);
 		SetWindowDirty(WC_COMPANY, this->owner);
 	}
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
@@ -1871,7 +1869,7 @@ void Vehicle::DeleteUnreachedImplicitOrders()
 			/* Do not delete orders, only skip them */
 			ClrBit(gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 			cs->cur_implicit_order_index = cs->cur_real_order_index;
-			InvalidateVehicleOrder(this, 0);
+			InvalidateConsistOrder(cs, 0);
 			return;
 		}
 	}
@@ -1969,7 +1967,7 @@ void Vehicle::BeginLoading()
 					if (suppress_implicit_orders) {
 						/* Skip to the found order */
 						cs->cur_implicit_order_index = target_index;
-						InvalidateVehicleOrder(this, 0);
+						InvalidateConsistOrder(cs, 0);
 					} else {
 						/* Delete all implicit orders up to the station we just reached */
 						const Order *order = this->GetOrder(cs->cur_implicit_order_index);
@@ -2584,7 +2582,7 @@ void Vehicle::RemoveFromShared()
 	if (this->orders->GetNumVehicles() == 1) {
 		/* When there is only one vehicle, remove the shared order list window. */
 		CloseWindowById(GetWindowClassForVehicleType(this->type), vli.Pack());
-		InvalidateVehicleOrder(this->FirstShared(), VIWD_MODIFY_ORDERS);
+		InvalidateConsistOrder(this->FirstShared()->GetConsist(), VIWD_MODIFY_ORDERS);
 	} else if (were_first) {
 		/* If we were the first one, update to the new first one.
 		 * Note: FirstShared() is already the new first */
