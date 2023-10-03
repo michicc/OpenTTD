@@ -246,9 +246,11 @@ void Train::ConsistChanged(ConsistChangeFlags allowed_changes)
 	if (this->IsFrontEngine()) {
 		this->UpdateAcceleration();
 		Consist *cs = this->GetConsist();
-		if (cs != nullptr) InvalidateWindowData(WC_VEHICLE_ORDERS, cs->index, VIWD_CONSIST_CHANGED);
-		SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
-		InvalidateWindowData(WC_VEHICLE_REFIT, this->index, VIWD_CONSIST_CHANGED);
+		if (cs != nullptr) {
+			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
+			InvalidateWindowData(WC_VEHICLE_ORDERS, cs->index, VIWD_CONSIST_CHANGED);
+			InvalidateWindowData(WC_VEHICLE_REFIT, cs->index, VIWD_CONSIST_CHANGED);
+		}
 		InvalidateNewGRFInspectWindow(GSF_TRAINS, this->index);
 	}
 }
@@ -1173,20 +1175,19 @@ static void NormaliseTrainHead(Train *head)
 		return;
 	}
 
-	/* Update the refit button and window */
-	InvalidateWindowData(WC_VEHICLE_REFIT, head->index, VIWD_CONSIST_CHANGED);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, head->index, WID_VV_REFIT);
-
 	/* If we don't have a unit number yet, set one. */
 	if (head->unitnumber != 0) {
 		/* Make sure all vehicles have the same consist pointer. */
 		head->SetConsist(head->GetConsist());
-		return;
+	} else {
+		Consist *c = new TrainConsist(head->owner);
+		c->SetFront(head);
+		head->unitnumber = GetFreeUnitNumber(VEH_TRAIN);
 	}
 
-	Consist *c = new TrainConsist(head->owner);
-	c->SetFront(head);
-	head->unitnumber = GetFreeUnitNumber(VEH_TRAIN);
+	/* Update the refit button and window */
+	InvalidateWindowData(WC_VEHICLE_REFIT, head->GetConsist()->index, VIWD_CONSIST_CHANGED);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, head->index, WID_VV_REFIT);
 }
 
 /**
@@ -1331,8 +1332,6 @@ CommandCost CmdMoveRailVehicle(DoCommandFlag flags, VehicleID src_veh, VehicleID
 		if (src == original_src_head && src->IsEngine() && !src->IsFrontEngine()) {
 			/* Cases #2 and #3: the front engine gets trashed. */
 			CloseWindowById(WC_VEHICLE_VIEW, src->index);
-			CloseWindowById(WC_VEHICLE_REFIT, src->index);
-			CloseWindowById(WC_VEHICLE_DETAILS, src->index);
 			DeleteNewGRFInspectWindow(GSF_TRAINS, src->index);
 			SetWindowDirty(WC_COMPANY, _current_company);
 
@@ -2098,7 +2097,7 @@ CommandCost CmdReverseTrainDirection(DoCommandFlag flags, VehicleID veh_id, bool
 
 			front->ConsistChanged(CCF_ARRANGE);
 			SetWindowDirty(WC_VEHICLE_DEPOT, front->tile);
-			SetWindowDirty(WC_VEHICLE_DETAILS, front->index);
+			SetWindowDirty(WC_VEHICLE_DETAILS, front->GetConsist()->index);
 			SetWindowDirty(WC_VEHICLE_VIEW, front->index);
 			SetWindowClassesDirty(WC_TRAINS_LIST);
 		}
@@ -4207,7 +4206,7 @@ void Train::OnNewDay()
 
 			SubtractMoneyFromCompanyFract(this->owner, cost);
 
-			SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+			SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 			SetWindowClassesDirty(WC_TRAINS_LIST);
 		}
 	}

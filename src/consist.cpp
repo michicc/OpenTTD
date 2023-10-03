@@ -43,6 +43,8 @@ Consist::~Consist()
 	ReleaseDisastersTargetingVehicle(this->index);
 
 	CloseWindowById(WC_VEHICLE_ORDERS, this->index);
+	CloseWindowById(WC_VEHICLE_REFIT, this->index);
+	CloseWindowById(WC_VEHICLE_DETAILS, this->index);
 	CloseWindowById(WC_VEHICLE_TIMETABLE, this->index);
 }
 

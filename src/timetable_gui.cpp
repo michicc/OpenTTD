@@ -867,7 +867,7 @@ static WindowDesc _timetable_desc(__FILE__, __LINE__,
  */
 void ShowTimetableWindow(const Consist *cs)
 {
-	CloseWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	CloseWindowById(WC_VEHICLE_DETAILS, cs->index, false);
 	CloseWindowById(WC_VEHICLE_ORDERS, cs->index, false);
 	AllocateWindowDescFront<TimetableWindow>(&_timetable_desc, cs->index);
 }

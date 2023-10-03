@@ -64,7 +64,7 @@ void GroundVehicle<T, Type>::PowerChanged()
 
 		this->gcache.cached_power = total_power;
 		this->gcache.cached_max_te = max_te;
-		SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+		if (const Consist *cs = this->GetConsist(); cs != nullptr) SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	}
 

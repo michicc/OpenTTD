@@ -195,13 +195,13 @@ enum WindowClass {
 
 	/**
 	 * Vehicle details; %Window numbers:
-	 *   - #VehicleID = #VehicleDetailsWidgets
+	 *   - #ConsistID = #VehicleDetailsWidgets
 	 */
 	WC_VEHICLE_DETAILS,
 
 	/**
 	 * Vehicle refit; %Window numbers:
-	 *   - #VehicleID = #VehicleRefitWidgets
+	 *   - #ConsistID = #VehicleRefitWidgets
 	 */
 	WC_VEHICLE_REFIT,
 

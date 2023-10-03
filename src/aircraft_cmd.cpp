@@ -457,7 +457,7 @@ void Aircraft::OnNewDay()
 
 	SubtractMoneyFromCompanyFract(this->owner, cost);
 
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 	SetWindowClassesDirty(WC_AIRCRAFT_LIST);
 }
 
@@ -1556,7 +1556,7 @@ static void AircraftEventHandler_AtTerminal(Aircraft *v, const AirportFTAClass *
 				v->date_of_last_service_newgrf = TimerGameCalendar::date;
 				v->breakdowns_since_last_service = 0;
 				v->reliability = v->GetEngine()->reliability;
-				SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+				SetWindowDirty(WC_VEHICLE_DETAILS, v->GetConsist()->index);
 			}
 		}
 		return;
