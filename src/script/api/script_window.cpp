@@ -22,6 +22,8 @@ static WindowNumber TranslateVehicleWindowNumber(ScriptWindow::WindowClass windo
 
 	switch (window) {
 		case ScriptWindow::WC_VEHICLE_ORDERS:
+		case ScriptWindow::WC_VEHICLE_REFIT:
+		case ScriptWindow::WC_VEHICLE_DETAILS:
 		case ScriptWindow::WC_VEHICLE_TIMETABLE:
 			return ::Vehicle::IsValidID(number) && ::Vehicle::Get(number)->GetConsist() != nullptr ? ::Vehicle::Get(number)->GetConsist()->index : ScriptWindow::NUMBER_ALL;
 		default:

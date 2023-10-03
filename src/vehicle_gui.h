@@ -20,7 +20,7 @@
 #include "company_type.h"
 #include "consist_type.h"
 
-void ShowVehicleRefitWindow(const Vehicle *v, VehicleOrderID order, Window *parent, bool auto_refit = false);
+void ShowConsistRefitWindow(const Consist *cs, VehicleOrderID order, Window *parent, bool auto_refit = false);
 
 /** The tabs in the train details window */
 enum TrainDetailsWindowTabs : byte {

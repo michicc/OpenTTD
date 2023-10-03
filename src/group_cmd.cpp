@@ -567,6 +567,7 @@ std::tuple<CommandCost, GroupID> CmdAddVehicleGroup(DoCommandFlag flags, GroupID
 		for (const Vehicle *vc : list) {
 			/* VehicleList is const but we need to modify the vehicle. */
 			Vehicle *v = Vehicle::Get(vc->index);
+			Consist *cs = v->GetConsist();
 			AddVehicleToGroup(v, new_g);
 
 			if (add_shared) {
@@ -578,9 +579,9 @@ std::tuple<CommandCost, GroupID> CmdAddVehicleGroup(DoCommandFlag flags, GroupID
 
 			SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
 			SetWindowDirty(WC_VEHICLE_VIEW, v->index);
-			SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 			InvalidateWindowData(WC_VEHICLE_VIEW, v->index);
-			InvalidateWindowData(WC_VEHICLE_DETAILS, v->index);
+			InvalidateWindowData(WC_VEHICLE_DETAILS, cs->index);
 		}
 
 		GroupStatistics::UpdateAutoreplace(_current_company);

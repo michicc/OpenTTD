@@ -245,7 +245,7 @@ void Ship::OnNewDay()
 
 	SubtractMoneyFromCompanyFract(this->owner, cost);
 
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 	/* we need this for the profit */
 	SetWindowClassesDirty(WC_SHIPS_LIST);
 }

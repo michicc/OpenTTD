@@ -571,7 +571,7 @@ std::tuple<CommandCost, uint, uint16_t, CargoArray> CmdRefitVehicle(DoCommandFla
 		front->MarkDirty();
 
 		if (!free_wagon) {
-			InvalidateWindowData(WC_VEHICLE_DETAILS, front->index);
+			if (v->GetConsist() != nullptr) InvalidateWindowData(WC_VEHICLE_DETAILS, front->GetConsist()->index);
 			InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 0);
 		}
 		SetWindowDirty(WC_VEHICLE_DEPOT, front->tile);
@@ -1149,7 +1149,7 @@ CommandCost CmdChangeServiceInt(DoCommandFlag flags, VehicleID veh_id, uint16_t 
 		cs->SetServiceInterval(serv_int);
 		cs->SetServiceIntervalIsCustom(is_custom);
 		cs->SetServiceIntervalIsPercent(is_percent);
-		SetWindowDirty(WC_VEHICLE_DETAILS, v->index);
+		SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 	}
 
 	return CommandCost();

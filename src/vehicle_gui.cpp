@@ -662,7 +662,7 @@ struct RefitWindow : public Window {
 		this->selected_refit = nullptr;
 
 		this->refit_list.clear();
-		Vehicle *v = Vehicle::Get(this->window_number);
+		Vehicle *v = Consist::Get(this->window_number)->Front();
 
 		/* Check only the selected vehicles. */
 		VehicleSet vehicles_to_refit;
@@ -820,24 +820,24 @@ struct RefitWindow : public Window {
 		this->selected_refit = nullptr;
 	}
 
-	RefitWindow(WindowDesc *desc, const Vehicle *v, VehicleOrderID order, bool auto_refit) : Window(desc)
+	RefitWindow(WindowDesc *desc, const Consist *cs, VehicleOrderID order, bool auto_refit) : Window(desc)
 	{
 		this->auto_refit = auto_refit;
 		this->order = order;
 		this->CreateNestedTree();
 
 		this->vscroll = this->GetScrollbar(WID_VR_SCROLLBAR);
-		this->hscroll = (v->IsGroundVehicle() ? this->GetScrollbar(WID_VR_HSCROLLBAR) : nullptr);
-		this->GetWidget<NWidgetCore>(WID_VR_SELECT_HEADER)->tool_tip = STR_REFIT_TRAIN_LIST_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VR_MATRIX)->tool_tip        = STR_REFIT_TRAIN_LIST_TOOLTIP + v->type;
+		this->hscroll = (cs->IsGroundVehicle() ? this->GetScrollbar(WID_VR_HSCROLLBAR) : nullptr);
+		this->GetWidget<NWidgetCore>(WID_VR_SELECT_HEADER)->tool_tip = STR_REFIT_TRAIN_LIST_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VR_MATRIX)->tool_tip        = STR_REFIT_TRAIN_LIST_TOOLTIP + cs->type;
 		NWidgetCore *nwi = this->GetWidget<NWidgetCore>(WID_VR_REFIT);
-		nwi->widget_data = STR_REFIT_TRAIN_REFIT_BUTTON + v->type;
-		nwi->tool_tip    = STR_REFIT_TRAIN_REFIT_TOOLTIP + v->type;
-		this->GetWidget<NWidgetStacked>(WID_VR_SHOW_HSCROLLBAR)->SetDisplayedPlane(v->IsGroundVehicle() ? 0 : SZSP_HORIZONTAL);
-		this->GetWidget<NWidgetCore>(WID_VR_VEHICLE_PANEL_DISPLAY)->tool_tip = (v->type == VEH_TRAIN) ? STR_REFIT_SELECT_VEHICLES_TOOLTIP : STR_NULL;
+		nwi->widget_data = STR_REFIT_TRAIN_REFIT_BUTTON + cs->type;
+		nwi->tool_tip    = STR_REFIT_TRAIN_REFIT_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetStacked>(WID_VR_SHOW_HSCROLLBAR)->SetDisplayedPlane(cs->IsGroundVehicle() ? 0 : SZSP_HORIZONTAL);
+		this->GetWidget<NWidgetCore>(WID_VR_VEHICLE_PANEL_DISPLAY)->tool_tip = (cs->type == VEH_TRAIN) ? STR_REFIT_SELECT_VEHICLES_TOOLTIP : STR_NULL;
 
-		this->FinishInitNested(v->index);
-		this->owner = v->owner;
+		this->FinishInitNested(cs->index);
+		this->owner = cs->owner;
 
 		this->SetWidgetDisabledState(WID_VR_REFIT, this->selected_refit == nullptr);
 	}
@@ -878,7 +878,7 @@ struct RefitWindow : public Window {
 				break;
 
 			case WID_VR_VEHICLE_PANEL_DISPLAY:
-				size->height = ScaleGUITrad(GetVehicleHeight(Vehicle::Get(this->window_number)->type));
+				size->height = ScaleGUITrad(GetVehicleHeight(Consist::Get(this->window_number)->type));
 				break;
 
 			case WID_VR_INFO:
@@ -889,7 +889,7 @@ struct RefitWindow : public Window {
 
 	void SetStringParameters(WidgetID widget) const override
 	{
-		if (widget == WID_VR_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->GetConsist()->index);
+		if (widget == WID_VR_CAPTION) SetDParam(0, Consist::Get(this->window_number)->index);
 	}
 
 	/**
@@ -941,14 +941,14 @@ struct RefitWindow : public Window {
 	{
 		switch (widget) {
 			case WID_VR_VEHICLE_PANEL_DISPLAY: {
-				Vehicle *v = Vehicle::Get(this->window_number);
-				DrawVehicleImage(v, {this->sprite_left, r.top, this->sprite_right, r.bottom},
+				Consist *cs = Consist::Get(this->window_number);
+				DrawVehicleImage(cs->Front(), {this->sprite_left, r.top, this->sprite_right, r.bottom},
 					INVALID_VEHICLE, EIT_IN_DETAILS, this->hscroll != nullptr ? this->hscroll->GetPosition() : 0);
 
 				/* Highlight selected vehicles. */
 				if (this->order != INVALID_VEH_ORDER_ID) break;
 				int x = 0;
-				switch (v->type) {
+				switch (cs->type) {
 					case VEH_TRAIN: {
 						VehicleSet vehicles_to_refit;
 						GetVehicleSet(vehicles_to_refit, Vehicle::Get(this->selected_vehicle), this->num_vehicles);
@@ -961,7 +961,7 @@ struct RefitWindow : public Window {
 						const int highlight_top = CenterBounds(r.top, r.bottom, height);
 						const int highlight_bottom = highlight_top + height - 1;
 
-						for (Train *u = Train::From(v); u != nullptr; u = u->Next()) {
+						for (Train *u = Train::From(cs->Front()); u != nullptr; u = u->Next()) {
 							/* Start checking. */
 							const bool contained = std::find(vehicles_to_refit.begin(), vehicles_to_refit.end(), u->index) != vehicles_to_refit.end();
 							if (contained && left == INT32_MIN) {
@@ -1031,7 +1031,7 @@ struct RefitWindow : public Window {
 			case VIWD_AUTOREPLACE: // Autoreplace replaced the vehicle; selected_vehicle became invalid.
 			case VIWD_CONSIST_CHANGED: { // The consist has changed; rebuild the entire list.
 				/* Clear the selection. */
-				Vehicle *v = Vehicle::Get(this->window_number);
+				Vehicle *v = Consist::Get(this->window_number)->Front();
 				this->selected_vehicle = v->index;
 				this->num_vehicles = UINT8_MAX;
 				FALLTHROUGH;
@@ -1042,7 +1042,7 @@ struct RefitWindow : public Window {
 				this->BuildRefitList();
 
 				/* The vehicle width has changed too. */
-				this->vehicle_width = GetVehicleWidth(Vehicle::Get(this->window_number), EIT_IN_DETAILS);
+				this->vehicle_width = GetVehicleWidth(Consist::Get(this->window_number)->Front(), EIT_IN_DETAILS);
 				uint max_width = 0;
 
 				/* Check the width of all cargo information strings. */
@@ -1088,7 +1088,7 @@ struct RefitWindow : public Window {
 		int right_x = std::max(this->click_x, drag_x);
 		this->num_vehicles = 0;
 
-		Vehicle *v = Vehicle::Get(this->window_number);
+		Vehicle *v = Consist::Get(this->window_number)->Front();
 		/* Find the vehicle part that was clicked. */
 		switch (v->type) {
 			case VEH_TRAIN: {
@@ -1161,13 +1161,13 @@ struct RefitWindow : public Window {
 
 			case WID_VR_REFIT: // refit button
 				if (this->selected_refit != nullptr) {
-					const Vehicle *v = Vehicle::Get(this->window_number);
+					const Consist *cs = Consist::Get(this->window_number);
 
 					if (this->order == INVALID_VEH_ORDER_ID) {
-						bool delete_window = this->selected_vehicle == v->index && this->num_vehicles == UINT8_MAX;
-						if (Command<CMD_REFIT_VEHICLE>::Post(GetCmdRefitVehMsg(v), v->tile, this->selected_vehicle, this->selected_refit->cargo, this->selected_refit->subtype, false, false, this->num_vehicles) && delete_window) this->Close();
+						bool delete_window = this->selected_vehicle == cs->Front()->index && this->num_vehicles == UINT8_MAX;
+						if (Command<CMD_REFIT_VEHICLE>::Post(GetCmdRefitVehMsg(cs->type), cs->Front()->tile, this->selected_vehicle, this->selected_refit->cargo, this->selected_refit->subtype, false, false, this->num_vehicles) && delete_window) this->Close();
 					} else {
-						if (Command<CMD_ORDER_REFIT>::Post(v->tile, v->GetConsist()->index, this->order, this->selected_refit->cargo)) this->Close();
+						if (Command<CMD_ORDER_REFIT>::Post(cs->Front()->tile, cs->index, this->order, this->selected_refit->cargo)) this->Close();
 					}
 				}
 				break;
@@ -1202,7 +1202,7 @@ struct RefitWindow : public Window {
 
 	void OnResize() override
 	{
-		this->vehicle_width = GetVehicleWidth(Vehicle::Get(this->window_number), EIT_IN_DETAILS);
+		this->vehicle_width = GetVehicleWidth(Consist::Get(this->window_number)->Front(), EIT_IN_DETAILS);
 		this->vscroll->SetCapacityFromWidget(this, WID_VR_MATRIX);
 		if (this->hscroll != nullptr) this->hscroll->SetCapacityFromWidget(this, WID_VR_VEHICLE_PANEL_DISPLAY);
 	}
@@ -1242,16 +1242,16 @@ static WindowDesc _vehicle_refit_desc(__FILE__, __LINE__,
 );
 
 /**
- * Show the refit window for a vehicle
- * @param *v The vehicle to show the refit window for
+ * Show the refit window for a consist
+ * @param cs The consist to show the refit window for
  * @param order of the vehicle to assign refit to, or INVALID_VEH_ORDER_ID to refit the vehicle now
  * @param parent the parent window of the refit window
  * @param auto_refit Choose cargo for auto-refitting
  */
-void ShowVehicleRefitWindow(const Vehicle *v, VehicleOrderID order, Window *parent, bool auto_refit)
+void ShowConsistRefitWindow(const Consist *cs, VehicleOrderID order, Window *parent, bool auto_refit)
 {
-	CloseWindowById(WC_VEHICLE_REFIT, v->index);
-	RefitWindow *w = new RefitWindow(&_vehicle_refit_desc, v, order, auto_refit);
+	CloseWindowById(WC_VEHICLE_REFIT, cs->index);
+	RefitWindow *w = new RefitWindow(&_vehicle_refit_desc, cs, order, auto_refit);
 	w->parent = parent;
 }
 
@@ -1489,8 +1489,6 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index)
 {
 	ChangeVehicleWindow(WC_VEHICLE_VIEW,      from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_REFIT,     from_index, to_index);
-	ChangeVehicleWindow(WC_VEHICLE_DETAILS,   from_index, to_index);
 }
 
 static constexpr NWidgetPart _nested_vehicle_list[] = {
@@ -2311,13 +2309,13 @@ struct VehicleDetailsWindow : Window {
 	/** Initialize a newly created vehicle details window */
 	VehicleDetailsWindow(WindowDesc *desc, WindowNumber window_number) : Window(desc)
 	{
-		const Vehicle *v = Vehicle::Get(window_number);
+		const Consist *cs = Consist::Get(window_number);
 
 		this->CreateNestedTree();
-		this->vscroll = (v->type == VEH_TRAIN ? this->GetScrollbar(WID_VD_SCROLLBAR) : nullptr);
+		this->vscroll = (cs->type == VEH_TRAIN ? this->GetScrollbar(WID_VD_SCROLLBAR) : nullptr);
 		this->FinishInitNested(window_number);
 
-		this->owner = v->owner;
+		this->owner = cs->owner;
 		this->tab = TDW_TAB_CARGO;
 	}
 
@@ -2334,10 +2332,10 @@ struct VehicleDetailsWindow : Window {
 			return;
 		}
 		if (!gui_scope) return;
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		if (v->type == VEH_ROAD) {
+		const Consist *cs = Consist::Get(this->window_number);
+		if (cs->type == VEH_ROAD) {
 			const NWidgetBase *nwid_info = this->GetWidget<NWidgetBase>(WID_VD_MIDDLE_DETAILS);
-			uint aimed_height = this->GetRoadVehDetailsHeight(v);
+			uint aimed_height = this->GetRoadVehDetailsHeight(cs);
 			/* If the number of articulated parts changes, the size of the window must change too. */
 			if (aimed_height != nwid_info->current_y) {
 				this->ReInit();
@@ -2347,13 +2345,13 @@ struct VehicleDetailsWindow : Window {
 
 	/**
 	 * Gets the desired height for the road vehicle details panel.
-	 * @param v Road vehicle being shown.
+	 * @param v Road consist being shown.
 	 * @return Desired height in pixels.
 	 */
-	uint GetRoadVehDetailsHeight(const Vehicle *v)
+	uint GetRoadVehDetailsHeight(const Consist *cs)
 	{
 		uint desired_height;
-		if (v->HasArticulatedPart()) {
+		if (const Vehicle *v = cs->Front(); v->HasArticulatedPart()) {
 			/* An articulated RV has its text drawn under the sprite instead of after it, hence 15 pixels extra. */
 			desired_height = ScaleGUITrad(15) + 3 * GetCharacterHeight(FS_NORMAL) + WidgetDimensions::scaled.vsep_normal * 2;
 			/* Add space for the cargo amount for each part. */
@@ -2391,10 +2389,10 @@ struct VehicleDetailsWindow : Window {
 			}
 
 			case WID_VD_MIDDLE_DETAILS: {
-				const Vehicle *v = Vehicle::Get(this->window_number);
-				switch (v->type) {
+				const Consist *cs = Consist::Get(this->window_number);
+				switch (cs->type) {
 					case VEH_ROAD:
-						size->height = this->GetRoadVehDetailsHeight(v) + padding.height;
+						size->height = this->GetRoadVehDetailsHeight(cs) + padding.height;
 						break;
 
 					case VEH_SHIP:
@@ -2475,13 +2473,13 @@ struct VehicleDetailsWindow : Window {
 
 	void SetStringParameters(WidgetID widget) const override
 	{
-		if (widget == WID_VD_CAPTION) SetDParam(0, Vehicle::Get(this->window_number)->GetConsist()->index);
+		if (widget == WID_VD_CAPTION) SetDParam(0, Consist::Get(this->window_number)->index);
 	}
 
 	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		const Consist *cs = v->GetConsist();
+		const Consist *cs = Consist::Get(this->window_number);
+		const Vehicle *v = cs->Front();
 
 		switch (widget) {
 			case WID_VD_TOP_DETAILS: {
@@ -2584,16 +2582,15 @@ struct VehicleDetailsWindow : Window {
 	/** Repaint vehicle details window. */
 	void OnPaint() override
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		const Consist *cs = v->GetConsist();
+		const Consist *cs = Consist::Get(this->window_number);
 
-		if (v->type == VEH_TRAIN) {
+		if (cs->type == VEH_TRAIN) {
 			this->LowerWidget(WID_VD_DETAILS_CARGO_CARRIED + this->tab);
-			this->vscroll->SetCount(GetTrainDetailsWndVScroll(v->index, this->tab));
+			this->vscroll->SetCount(GetTrainDetailsWndVScroll(cs->Front()->index, this->tab));
 		}
 
 		/* Disable service-scroller when interval is set to disabled */
-		this->SetWidgetsDisabledState(!IsVehicleServiceIntervalEnabled(v->type, v->owner),
+		this->SetWidgetsDisabledState(!IsVehicleServiceIntervalEnabled(cs->type, cs->owner),
 			WID_VD_INCREASE_SERVICING_INTERVAL,
 			WID_VD_DECREASE_SERVICING_INTERVAL);
 
@@ -2611,19 +2608,18 @@ struct VehicleDetailsWindow : Window {
 			case WID_VD_INCREASE_SERVICING_INTERVAL:   // increase int
 			case WID_VD_DECREASE_SERVICING_INTERVAL: { // decrease int
 				int mod = _ctrl_pressed ? 5 : 10;
-				const Vehicle *v = Vehicle::Get(this->window_number);
-				const Consist *cs = v->GetConsist();
+				const Consist *cs = Consist::Get(this->window_number);
 
 				mod = (widget == WID_VD_DECREASE_SERVICING_INTERVAL) ? -mod : mod;
 				mod = GetServiceIntervalClamped(mod + cs->GetServiceInterval(), cs->ServiceIntervalIsPercent());
 				if (mod == cs->GetServiceInterval()) return;
 
-				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, v->index, mod, true, cs->ServiceIntervalIsPercent());
+				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->Front()->index, mod, true, cs->ServiceIntervalIsPercent());
 				break;
 			}
 
 			case WID_VD_SERVICE_INTERVAL_DROPDOWN: {
-				const Consist *cs = Vehicle::Get(this->window_number)->GetConsist();
+				const Consist *cs = Consist::Get(this->window_number);
 				ShowDropDownMenu(this, _service_interval_dropdown, cs->ServiceIntervalIsCustom() ? (cs->ServiceIntervalIsPercent() ? 2 : 1) : 0, widget, 0, 0);
 				break;
 			}
@@ -2648,11 +2644,11 @@ struct VehicleDetailsWindow : Window {
 	{
 		switch (widget) {
 			case WID_VD_SERVICE_INTERVAL_DROPDOWN: {
-				const Vehicle *v = Vehicle::Get(this->window_number);
+				const Consist *cs = Consist::Get(this->window_number);
 				bool iscustom = index != 0;
-				bool ispercent = iscustom ? (index == 2) : Company::Get(v->owner)->settings.vehicle.servint_ispercent;
-				uint16_t interval = GetServiceIntervalClamped(v->GetConsist()->GetServiceInterval(), ispercent);
-				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, v->index, interval, iscustom, ispercent);
+				bool ispercent = iscustom ? (index == 2) : Company::Get(cs->owner)->settings.vehicle.servint_ispercent;
+				uint16_t interval = GetServiceIntervalClamped(cs->GetServiceInterval(), ispercent);
+				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->Front()->index, interval, iscustom, ispercent);
 				break;
 			}
 		}
@@ -2683,12 +2679,12 @@ static WindowDesc _nontrain_vehicle_details_desc(__FILE__, __LINE__,
 	std::begin(_nested_nontrain_vehicle_details_widgets), std::end(_nested_nontrain_vehicle_details_widgets)
 );
 
-/** Shows the vehicle details window of the given vehicle. */
-static void ShowVehicleDetailsWindow(const Vehicle *v)
+/** Shows the vehicle details window of the given consist. */
+static void ShowConsistDetailsWindow(const Consist *cs)
 {
-	CloseWindowById(WC_VEHICLE_ORDERS, v->GetConsist()->index, false);
-	CloseWindowById(WC_VEHICLE_TIMETABLE, v->GetConsist()->index, false);
-	AllocateWindowDescFront<VehicleDetailsWindow>((v->type == VEH_TRAIN) ? &_train_vehicle_details_desc : &_nontrain_vehicle_details_desc, v->index);
+	CloseWindowById(WC_VEHICLE_ORDERS, cs->index, false);
+	CloseWindowById(WC_VEHICLE_TIMETABLE, cs->index, false);
+	AllocateWindowDescFront<VehicleDetailsWindow>((cs->type == VEH_TRAIN) ? &_train_vehicle_details_desc : &_nontrain_vehicle_details_desc, cs->index);
 }
 
 
@@ -2924,8 +2920,8 @@ public:
 	{
 		ConsistID consist = Vehicle::Get(this->window_number)->GetConsist()->index;
 		CloseWindowById(WC_VEHICLE_ORDERS, consist, false);
-		CloseWindowById(WC_VEHICLE_REFIT, this->window_number, false);
-		CloseWindowById(WC_VEHICLE_DETAILS, this->window_number, false);
+		CloseWindowById(WC_VEHICLE_REFIT, consist, false);
+		CloseWindowById(WC_VEHICLE_DETAILS, consist, false);
 		CloseWindowById(WC_VEHICLE_TIMETABLE, consist, false);
 		this->Window::Close();
 	}
@@ -3139,7 +3135,7 @@ public:
 				Command<CMD_SEND_VEHICLE_TO_DEPOT>::Post(GetCmdSendToDepotMsg(v), v->index, _ctrl_pressed ? DepotCommand::Service : DepotCommand::None, {});
 				break;
 			case WID_VV_REFIT: // refit
-				ShowVehicleRefitWindow(v, INVALID_VEH_ORDER_ID, this);
+				ShowConsistRefitWindow(cs, INVALID_VEH_ORDER_ID, this);
 				break;
 			case WID_VV_SHOW_ORDERS: // show orders
 				if (_ctrl_pressed) {
@@ -3152,7 +3148,7 @@ public:
 				if (_ctrl_pressed) {
 					ShowCompanyGroupForVehicle(v);
 				} else {
-					ShowVehicleDetailsWindow(v);
+					ShowConsistDetailsWindow(cs);
 				}
 				break;
 			case WID_VV_CLONE: // clone vehicle

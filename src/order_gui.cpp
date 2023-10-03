@@ -756,7 +756,7 @@ private:
 			if (i == 1) { // Auto-refit to available cargo type.
 				Command<CMD_ORDER_REFIT>::Post(this->vehicle->tile, this->consist->index, this->OrderGetSel(), CARGO_AUTO_REFIT);
 			} else {
-				ShowVehicleRefitWindow(this->vehicle, this->OrderGetSel(), this, auto_refit);
+				ShowConsistRefitWindow(this->consist, this->OrderGetSel(), this, auto_refit);
 			}
 		}
 	}
@@ -1750,7 +1750,7 @@ static WindowDesc _other_orders_desc(__FILE__, __LINE__,
 
 void ShowOrdersWindow(const Consist *cs)
 {
-	CloseWindowById(WC_VEHICLE_DETAILS, cs->Front()->index, false);
+	CloseWindowById(WC_VEHICLE_DETAILS, cs->index, false);
 	CloseWindowById(WC_VEHICLE_TIMETABLE, cs->index, false);
 	if (BringWindowToFrontById(WC_VEHICLE_ORDERS, cs->index) != nullptr) return;
 

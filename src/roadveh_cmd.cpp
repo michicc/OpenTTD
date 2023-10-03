@@ -1713,7 +1713,7 @@ void RoadVehicle::OnNewDay()
 
 	SubtractMoneyFromCompanyFract(this->owner, cost);
 
-	SetWindowDirty(WC_VEHICLE_DETAILS, this->index);
+	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 	SetWindowClassesDirty(WC_ROADVEH_LIST);
 }
 
