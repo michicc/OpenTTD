@@ -1123,31 +1123,30 @@ CommandCost CmdRenameConsist(DoCommandFlag flags, ConsistID cons_id, const std::
 /**
  * Change the service interval of a vehicle
  * @param flags type of operation
- * @param veh_id vehicle ID that is being service-interval-changed
+ * @param cons_id consist ID that is being service-interval-changed
  * @param serv_int new service interval
  * @param is_custom service interval is custom flag
  * @param is_percent service interval is percentage flag
  * @return the cost of this operation or an error
  */
-CommandCost CmdChangeServiceInt(DoCommandFlag flags, VehicleID veh_id, uint16_t serv_int, bool is_custom, bool is_percent)
+CommandCost CmdChangeServiceInt(DoCommandFlag flags, ConsistID cons_id, uint16_t serv_int, bool is_custom, bool is_percent)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
-	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(cons_id);
+	if (cs == nullptr) return CMD_ERROR;
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
-	const Company *company = Company::Get(v->owner);
+	const Company *company = Company::Get(cs->owner);
 	is_percent = is_custom ? is_percent : company->settings.vehicle.servint_ispercent;
 
 	if (is_custom) {
 		if (serv_int != GetServiceIntervalClamped(serv_int, is_percent)) return CMD_ERROR;
 	} else {
-		serv_int = CompanyServiceInterval(company, v->type);
+		serv_int = CompanyServiceInterval(company, cs->type);
 	}
 
 	if (flags & DC_EXEC) {
-		Consist *cs = v->GetConsist();
 		cs->SetServiceInterval(serv_int);
 		cs->SetServiceIntervalIsCustom(is_custom);
 		cs->SetServiceIntervalIsPercent(is_percent);
