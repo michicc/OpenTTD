@@ -2604,7 +2604,7 @@ struct VehicleDetailsWindow : Window {
 				mod = GetServiceIntervalClamped(mod + cs->GetServiceInterval(), cs->ServiceIntervalIsPercent());
 				if (mod == cs->GetServiceInterval()) return;
 
-				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->Front()->index, mod, true, cs->ServiceIntervalIsPercent());
+				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->index, mod, true, cs->ServiceIntervalIsPercent());
 				break;
 			}
 
@@ -2638,7 +2638,7 @@ struct VehicleDetailsWindow : Window {
 				bool iscustom = index != 0;
 				bool ispercent = iscustom ? (index == 2) : Company::Get(cs->owner)->settings.vehicle.servint_ispercent;
 				uint16_t interval = GetServiceIntervalClamped(cs->GetServiceInterval(), ispercent);
-				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->Front()->index, interval, iscustom, ispercent);
+				Command<CMD_CHANGE_SERVICE_INT>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, cs->index, interval, iscustom, ispercent);
 				break;
 			}
 		}

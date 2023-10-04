@@ -486,7 +486,7 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 					 * However, do not rely on that behaviour.
 					 */
 					int interval = CompanyServiceInterval(new_company, cs->type);
-					Command<CMD_CHANGE_SERVICE_INT>::Do(DC_EXEC | DC_BANKRUPT, cs->Front()->index, interval, false, new_company->settings.vehicle.servint_ispercent);
+					Command<CMD_CHANGE_SERVICE_INT>::Do(DC_EXEC | DC_BANKRUPT, cs->index, interval, false, new_company->settings.vehicle.servint_ispercent);
 				}
 
 				cs->owner = new_owner;
