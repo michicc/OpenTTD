@@ -1481,16 +1481,6 @@ static inline void ChangeVehicleWindow(WindowClass window_class, VehicleID from_
 	}
 }
 
-/**
- * Report a change in vehicle IDs (due to autoreplace) to affected vehicle windows.
- * @param from_index the old vehicle ID
- * @param to_index the new vehicle ID
- */
-void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index)
-{
-	ChangeVehicleWindow(WC_VEHICLE_VIEW,      from_index, to_index);
-}
-
 static constexpr NWidgetPart _nested_vehicle_list[] = {
 	NWidget(NWID_HORIZONTAL),
 		NWidget(WWT_CLOSEBOX, COLOUR_GREY),
@@ -2033,7 +2023,7 @@ public:
 							if (_ctrl_pressed) {
 								ShowCompanyGroupForVehicle(v);
 							} else {
-								ShowVehicleViewWindow(v);
+								ShowConsistViewWindow(v->GetConsist());
 							}
 						}
 						break;
@@ -2047,7 +2037,7 @@ public:
 								ShowOrdersWindow(v->GetConsist());
 							} else {
 								if (vehgroup.NumVehicles() == 1) {
-									ShowVehicleViewWindow(v);
+									ShowConsistViewWindow(v->GetConsist());
 								} else {
 									ShowVehicleListWindow(v);
 								}
@@ -2873,8 +2863,8 @@ public:
 			SPR_SEND_SHIP_TODEPOT,
 			SPR_SEND_AIRCRAFT_TODEPOT,
 		};
-		const Vehicle *v = Vehicle::Get(window_number);
-		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->widget_data = vehicle_view_goto_depot_sprites[v->type];
+		const Consist *cs = Consist::Get(window_number);
+		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->widget_data = vehicle_view_goto_depot_sprites[cs->type];
 
 		/* Sprites for the 'clone vehicle' button indexed by vehicle type. */
 		static const SpriteID vehicle_view_clone_sprites[] = {
@@ -2883,9 +2873,9 @@ public:
 			SPR_CLONE_SHIP,
 			SPR_CLONE_AIRCRAFT,
 		};
-		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->widget_data = vehicle_view_clone_sprites[v->type];
+		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->widget_data = vehicle_view_clone_sprites[cs->type];
 
-		switch (v->type) {
+		switch (cs->type) {
 			case VEH_TRAIN:
 				this->GetWidget<NWidgetCore>(WID_VV_TURN_AROUND)->tool_tip = STR_VEHICLE_VIEW_TRAIN_REVERSE_TOOLTIP;
 				break;
@@ -2901,41 +2891,40 @@ public:
 			default: NOT_REACHED();
 		}
 		this->FinishInitNested(window_number);
-		this->owner = v->owner;
-		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, v->GetConsist()->index, ScaleZoomGUI(_vehicle_view_zoom_levels[v->type]));
+		this->owner = cs->owner;
+		this->GetWidget<NWidgetViewport>(WID_VV_VIEWPORT)->InitializeViewport(this, cs->index, ScaleZoomGUI(_vehicle_view_zoom_levels[cs->type]));
 
-		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATUS_START_STOP_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_RENAME)->tool_tip           = STR_VEHICLE_DETAILS_TRAIN_RENAME + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_LOCATION)->tool_tip         = STR_VEHICLE_VIEW_TRAIN_CENTER_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_REFIT)->tool_tip            = STR_VEHICLE_VIEW_TRAIN_REFIT_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_SEND_TO_DEPOT_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_SHOW_ORDERS)->tool_tip      = STR_VEHICLE_VIEW_TRAIN_ORDERS_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_SHOW_DETAILS)->tool_tip     = STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP + v->type;
-		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->tool_tip            = STR_VEHICLE_VIEW_CLONE_TRAIN_INFO + v->type;
+		this->GetWidget<NWidgetCore>(WID_VV_START_STOP)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_STATUS_START_STOP_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_RENAME)->tool_tip           = STR_VEHICLE_DETAILS_TRAIN_RENAME + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_LOCATION)->tool_tip         = STR_VEHICLE_VIEW_TRAIN_CENTER_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_REFIT)->tool_tip            = STR_VEHICLE_VIEW_TRAIN_REFIT_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_GOTO_DEPOT)->tool_tip       = STR_VEHICLE_VIEW_TRAIN_SEND_TO_DEPOT_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_SHOW_ORDERS)->tool_tip      = STR_VEHICLE_VIEW_TRAIN_ORDERS_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_SHOW_DETAILS)->tool_tip     = STR_VEHICLE_VIEW_TRAIN_SHOW_DETAILS_TOOLTIP + cs->type;
+		this->GetWidget<NWidgetCore>(WID_VV_CLONE)->tool_tip            = STR_VEHICLE_VIEW_CLONE_TRAIN_INFO + cs->type;
 
 		this->UpdateButtonStatus();
 	}
 
 	void Close([[maybe_unused]] int data = 0) override
 	{
-		ConsistID consist = Vehicle::Get(this->window_number)->GetConsist()->index;
-		CloseWindowById(WC_VEHICLE_ORDERS, consist, false);
-		CloseWindowById(WC_VEHICLE_REFIT, consist, false);
-		CloseWindowById(WC_VEHICLE_DETAILS, consist, false);
-		CloseWindowById(WC_VEHICLE_TIMETABLE, consist, false);
+		CloseWindowById(WC_VEHICLE_ORDERS, this->window_number, false);
+		CloseWindowById(WC_VEHICLE_REFIT, this->window_number, false);
+		CloseWindowById(WC_VEHICLE_DETAILS, this->window_number, false);
+		CloseWindowById(WC_VEHICLE_TIMETABLE, this->window_number, false);
 		this->Window::Close();
 	}
 
 	void UpdateWidgetSize(WidgetID widget, Dimension *size, [[maybe_unused]] const Dimension &padding, [[maybe_unused]] Dimension *fill, [[maybe_unused]] Dimension *resize) override
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
 		switch (widget) {
 			case WID_VV_START_STOP:
 				size->height = std::max<uint>({size->height, (uint)GetCharacterHeight(FS_NORMAL), GetScaledSpriteSize(SPR_WARNING_SIGN).height, GetScaledSpriteSize(SPR_FLAG_VEH_STOPPED).height, GetScaledSpriteSize(SPR_FLAG_VEH_RUNNING).height}) + padding.height;
 				break;
 
 			case WID_VV_FORCE_PROCEED:
-				if (v->type != VEH_TRAIN) {
+				if (cs->type != VEH_TRAIN) {
 					size->height = 0;
 					size->width = 0;
 				}
@@ -2943,32 +2932,32 @@ public:
 
 			case WID_VV_VIEWPORT:
 				size->width = VV_INITIAL_VIEWPORT_WIDTH;
-				size->height = (v->type == VEH_TRAIN) ? VV_INITIAL_VIEWPORT_HEIGHT_TRAIN : VV_INITIAL_VIEWPORT_HEIGHT;
+				size->height = (cs->type == VEH_TRAIN) ? VV_INITIAL_VIEWPORT_HEIGHT_TRAIN : VV_INITIAL_VIEWPORT_HEIGHT;
 				break;
 		}
 	}
 
 	void OnPaint() override
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		bool is_localcompany = v->owner == _local_company;
-		bool refitable_and_stopped_in_depot = IsVehicleRefitable(v);
+		const Consist *cs = Consist::Get(this->window_number);
+		bool is_localcompany = cs->owner == _local_company;
+		bool refitable_and_stopped_in_depot = IsVehicleRefitable(cs->Front());
 
 		this->SetWidgetDisabledState(WID_VV_RENAME, !is_localcompany);
 		this->SetWidgetDisabledState(WID_VV_GOTO_DEPOT, !is_localcompany);
 		this->SetWidgetDisabledState(WID_VV_REFIT, !refitable_and_stopped_in_depot || !is_localcompany);
 		this->SetWidgetDisabledState(WID_VV_CLONE, !is_localcompany);
 
-		if (v->type == VEH_TRAIN) {
-			this->SetWidgetLoweredState(WID_VV_FORCE_PROCEED, Train::From(v)->force_proceed == TFP_SIGNAL);
+		if (cs->type == VEH_TRAIN) {
+			this->SetWidgetLoweredState(WID_VV_FORCE_PROCEED, Train::From(cs->Front())->force_proceed == TFP_SIGNAL);
 			this->SetWidgetDisabledState(WID_VV_FORCE_PROCEED, !is_localcompany);
 		}
 
-		if (v->type == VEH_TRAIN || v->type == VEH_ROAD) {
+		if (cs->type == VEH_TRAIN || cs->type == VEH_ROAD) {
 			this->SetWidgetDisabledState(WID_VV_TURN_AROUND, !is_localcompany);
 		}
 
-		this->SetWidgetDisabledState(WID_VV_ORDER_LOCATION, v->current_order.GetLocation(v) == INVALID_TILE);
+		this->SetWidgetDisabledState(WID_VV_ORDER_LOCATION, cs->Front()->current_order.GetLocation(cs->Front()) == INVALID_TILE);
 
 		this->DrawWidgets();
 	}
@@ -2977,16 +2966,15 @@ public:
 	{
 		if (widget != WID_VV_CAPTION) return;
 
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		SetDParam(0, v->GetConsist()->index);
+		SetDParam(0, this->window_number);
 	}
 
 	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
 		if (widget != WID_VV_START_STOP) return;
 
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		const Consist *cs = v->GetConsist();
+		const Consist *cs = Consist::Get(this->window_number);
+		const Vehicle *v = cs->Front();
 		StringID str;
 		TextColour text_colour = TC_FROMSTRING;
 		if (v->vehstatus & VS_CRASHED) {
@@ -3089,13 +3077,13 @@ public:
 
 	void OnClick([[maybe_unused]] Point pt, WidgetID widget, [[maybe_unused]] int click_count) override
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		const Consist *cs = v->GetConsist();
+		const Consist *cs = Consist::Get(this->window_number);
+		const Vehicle *v = cs->Front();
 
 		switch (widget) {
 			case WID_VV_RENAME: { // rename
 				SetDParam(0, cs->index);
-				ShowQueryString(STR_VEHICLE_NAME, STR_QUERY_RENAME_TRAIN_CAPTION + v->type,
+				ShowQueryString(STR_VEHICLE_NAME, STR_QUERY_RENAME_TRAIN_CAPTION + cs->type,
 						MAX_LENGTH_VEHICLE_NAME_CHARS, this, CS_ALPHANUMERAL, QSF_ENABLE_DEFAULT | QSF_LEN_IN_CHARS);
 				break;
 			}
@@ -3180,10 +3168,10 @@ public:
 		/* If the hotkey is not for any widget in the UI (i.e. for honking) */
 		if (hotkey == WID_VV_HONK_HORN) {
 			const Window *mainwindow = GetMainWindow();
-			const Vehicle *v = Vehicle::Get(window_number);
+			const Consist *cs = Consist::Get(window_number);
 			/* Only play the sound if we're following this vehicle */
-			if (mainwindow->viewport->follow_consist == v->GetConsist()->index) {
-				v->PlayLeaveStationSound(true);
+			if (mainwindow->viewport->follow_consist == cs->index) {
+				cs->Front()->PlayLeaveStationSound(true);
 			}
 		}
 		return Window::OnHotkey(hotkey);
@@ -3193,7 +3181,8 @@ public:
 	{
 		if (str == nullptr) return;
 
-		Command<CMD_RENAME_VEHICLE>::Post(STR_ERROR_CAN_T_RENAME_TRAIN + Vehicle::Get(this->window_number)->type, this->window_number, str);
+		const Consist *cs = Consist::Get(this->window_number);
+		Command<CMD_RENAME_VEHICLE>::Post(STR_ERROR_CAN_T_RENAME_TRAIN +cs->type, cs->Front()->index, str);
 	}
 
 	void OnMouseOver([[maybe_unused]] Point pt, WidgetID widget) override
@@ -3215,8 +3204,8 @@ public:
 
 	void UpdateButtonStatus()
 	{
-		const Vehicle *v = Vehicle::Get(this->window_number);
-		bool veh_stopped = v->IsStoppedInDepot();
+		const Consist *cs = Consist::Get(this->window_number);
+		bool veh_stopped = cs->Front()->IsStoppedInDepot();
 
 		/* Widget WID_VV_GOTO_DEPOT must be hidden if the vehicle is already stopped in depot.
 		 * Widget WID_VV_CLONE_VEH should then be shown, since cloning is allowed only while in depot and stopped.
@@ -3228,7 +3217,7 @@ public:
 			this->SetWidgetDirty(WID_VV_SELECT_DEPOT_CLONE);
 		}
 		/* The same system applies to widget WID_VV_REFIT_VEH and VVW_WIDGET_TURN_AROUND.*/
-		if (v->IsGroundVehicle()) {
+		if (cs->IsGroundVehicle()) {
 			plane = veh_stopped ? SEL_RT_REFIT : SEL_RT_TURN_AROUND;
 			nwi = this->GetWidget<NWidgetStacked>(WID_VV_SELECT_REFIT_TURN);
 			if (nwi->shown_plane + SEL_RT_BASEPLANE != plane) {
@@ -3256,12 +3245,14 @@ public:
 
 	bool IsNewGRFInspectable() const override
 	{
-		return ::IsNewGRFInspectable(GetGrfSpecFeature(Vehicle::Get(this->window_number)->type), this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
+		return ::IsNewGRFInspectable(GetGrfSpecFeature(cs->type), cs->Front()->index);
 	}
 
 	void ShowNewGRFInspectWindow() const override
 	{
-		::ShowNewGRFInspectWindow(GetGrfSpecFeature(Vehicle::Get(this->window_number)->type), this->window_number);
+		const Consist *cs = Consist::Get(this->window_number);
+		::ShowNewGRFInspectWindow(GetGrfSpecFeature(cs->type), cs->Front()->index);
 	}
 
 	static inline HotkeyList hotkeys{"vehicleview", {
@@ -3290,10 +3281,10 @@ static WindowDesc _train_view_desc(__FILE__, __LINE__,
 	&VehicleViewWindow::hotkeys
 );
 
-/** Shows the vehicle view window of the given vehicle. */
-void ShowVehicleViewWindow(const Vehicle *v)
+/** Shows the vehicle view window of the given consist. */
+void ShowConsistViewWindow(const Consist *cs)
 {
-	AllocateWindowDescFront<VehicleViewWindow>((v->type == VEH_TRAIN) ? &_train_view_desc : &_vehicle_view_desc, v->index);
+	AllocateWindowDescFront<VehicleViewWindow>((cs->type == VEH_TRAIN) ? &_train_view_desc : &_vehicle_view_desc, cs->index);
 }
 
 /**
@@ -3360,7 +3351,7 @@ void CcBuildPrimaryVehicle(Commands, const CommandCost &result, VehicleID new_ve
 	if (result.Failed()) return;
 
 	const Vehicle *v = Vehicle::Get(new_veh_id);
-	ShowVehicleViewWindow(v);
+	ShowConsistViewWindow(v->GetConsist());
 }
 
 /**

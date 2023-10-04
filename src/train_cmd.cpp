@@ -1187,7 +1187,7 @@ static void NormaliseTrainHead(Train *head)
 
 	/* Update the refit button and window */
 	InvalidateWindowData(WC_VEHICLE_REFIT, head->GetConsist()->index, VIWD_CONSIST_CHANGED);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, head->index, WID_VV_REFIT);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, head->GetConsist()->index, WID_VV_REFIT);
 }
 
 /**
@@ -1331,7 +1331,6 @@ CommandCost CmdMoveRailVehicle(DoCommandFlag flags, VehicleID src_veh, VehicleID
 		 */
 		if (src == original_src_head && src->IsEngine() && !src->IsFrontEngine()) {
 			/* Cases #2 and #3: the front engine gets trashed. */
-			CloseWindowById(WC_VEHICLE_VIEW, src->index);
 			DeleteNewGRFInspectWindow(GSF_TRAINS, src->index);
 			SetWindowDirty(WC_COMPANY, _current_company);
 
@@ -1566,7 +1565,7 @@ static void MarkTrainAsStuck(Train *v)
 		v->subspeed = 0;
 		v->SetLastSpeed();
 
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 }
 
@@ -2029,7 +2028,7 @@ void ReverseTrainDirection(Train *v)
 	/* If we are inside a depot after reversing, don't bother with path reserving. */
 	if (v->track == TRACK_BIT_DEPOT) {
 		/* Can't be stuck here as inside a depot is always a safe tile. */
-		if (HasBit(v->flags, VRF_TRAIN_STUCK)) SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		if (HasBit(v->flags, VRF_TRAIN_STUCK)) SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		ClrBit(v->flags, VRF_TRAIN_STUCK);
 		return;
 	}
@@ -2098,7 +2097,7 @@ CommandCost CmdReverseTrainDirection(DoCommandFlag flags, VehicleID veh_id, bool
 			front->ConsistChanged(CCF_ARRANGE);
 			SetWindowDirty(WC_VEHICLE_DEPOT, front->tile);
 			SetWindowDirty(WC_VEHICLE_DETAILS, front->GetConsist()->index);
-			SetWindowDirty(WC_VEHICLE_VIEW, front->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, front->GetConsist()->index);
 			SetWindowClassesDirty(WC_TRAINS_LIST);
 		}
 	} else {
@@ -2120,7 +2119,7 @@ CommandCost CmdReverseTrainDirection(DoCommandFlag flags, VehicleID veh_id, bool
 
 			/* We cancel any 'skip signal at dangers' here */
 			v->force_proceed = TFP_NONE;
-			SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, v->GetConsist()->index);
 
 			if (_settings_game.vehicle.train_acceleration_model != AM_ORIGINAL && v->cur_speed != 0) {
 				ToggleBit(v->flags, VRF_REVERSING);
@@ -2159,7 +2158,7 @@ CommandCost CmdForceTrainProceed(DoCommandFlag flags, VehicleID veh_id)
 		 * would like to pass the signal at danger and run till the
 		 * next signal we encounter. */
 		t->force_proceed = t->force_proceed == TFP_SIGNAL ? TFP_NONE : HasBit(t->flags, VRF_TRAIN_STUCK) || t->IsChainInDepot() ? TFP_STUCK : TFP_SIGNAL;
-		SetWindowDirty(WC_VEHICLE_VIEW, t->index);
+		SetWindowDirty(WC_VEHICLE_VIEW, t->GetConsist()->index);
 	}
 
 	return CommandCost();
@@ -2852,7 +2851,7 @@ static Track ChooseTrainTrack(TrainConsist *cs, TileIndex tile, DiagDirection en
 			final_dest != INVALID_TILE && IsRailDepotTile(final_dest)) {
 		v->current_order.SetDestination(GetDepotIndex(final_dest));
 		v->dest_tile = final_dest;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 	}
 
 	return best_track;
@@ -2898,7 +2897,7 @@ bool TryPathReserve(Train *v, bool mark_as_stuck, bool first_tile_okay)
 	/* If we have a reserved path and the path ends at a safe tile, we are finished already. */
 	if (origin.okay && (v->tile != origin.tile || first_tile_okay)) {
 		/* Can't be stuck then. */
-		if (HasBit(v->flags, VRF_TRAIN_STUCK)) SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		if (HasBit(v->flags, VRF_TRAIN_STUCK)) SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		ClrBit(v->flags, VRF_TRAIN_STUCK);
 		return true;
 	}
@@ -2926,7 +2925,7 @@ bool TryPathReserve(Train *v, bool mark_as_stuck, bool first_tile_okay)
 
 	if (HasBit(v->flags, VRF_TRAIN_STUCK)) {
 		v->wait_counter = 0;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 	ClrBit(v->flags, VRF_TRAIN_STUCK);
 	return true;
@@ -3028,7 +3027,7 @@ static void TrainEnterStation(Train *v, StationID station)
 	}
 
 	v->force_proceed = TFP_NONE;
-	SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+	SetWindowDirty(WC_VEHICLE_VIEW, v->GetConsist()->index);
 
 	v->BeginLoading();
 
@@ -3365,7 +3364,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 							/* However, we do not want to be stopped by PBS signals
 							 * entered via the back. */
 							v->force_proceed = (v->force_proceed == TFP_SIGNAL) ? TFP_STUCK : TFP_NONE;
-							SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+							SetWindowDirty(WC_VEHICLE_VIEW, v->GetConsist()->index);
 						}
 					}
 
@@ -3956,7 +3955,7 @@ static bool TrainLocoHandler(TrainConsist *cs, bool mode)
 
 	if (v->force_proceed != TFP_NONE) {
 		ClrBit(v->flags, VRF_TRAIN_STUCK);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 	}
 
 	/* train is broken down? */
@@ -4027,13 +4026,13 @@ static bool TrainLocoHandler(TrainConsist *cs, bool mode)
 			if (v->force_proceed == TFP_NONE) return true;
 			ClrBit(v->flags, VRF_TRAIN_STUCK);
 			v->wait_counter = 0;
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 		}
 	}
 
 	if (v->current_order.IsType(OT_LEAVESTATION)) {
 		v->current_order.Free();
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 		return true;
 	}
 
@@ -4043,7 +4042,7 @@ static bool TrainLocoHandler(TrainConsist *cs, bool mode)
 	if (v->cur_speed == 0 && (v->vehstatus & VS_STOPPED)) {
 		/* If we manually stopped, we're not force-proceeding anymore. */
 		v->force_proceed = TFP_NONE;
-		SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+		SetWindowDirty(WC_VEHICLE_VIEW, cs->index);
 	}
 
 	int adv_spd = v->GetAdvanceDistance();
@@ -4158,7 +4157,7 @@ static void CheckIfTrainNeedsService(Train *v)
 			 * suddenly moved farther away, we continue our normal
 			 * schedule? */
 			v->current_order.MakeDummy();
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		}
 		return;
 	}
@@ -4174,7 +4173,7 @@ static void CheckIfTrainNeedsService(Train *v)
 	SetBit(v->gv_flags, GVF_SUPPRESS_IMPLICIT_ORDERS);
 	v->current_order.MakeGoToDepot(depot, ODTFB_SERVICE, ONSF_NO_STOP_AT_INTERMEDIATE_STATIONS, ODATFB_NEAREST_DEPOT);
 	v->dest_tile = tfdd.tile;
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 }
 
 /** Update day counters of the train vehicle. */

@@ -189,14 +189,14 @@ static void CheckIfShipNeedsService(Vehicle *v)
 	if (depot == nullptr) {
 		if (v->current_order.IsType(OT_GOTO_DEPOT)) {
 			v->current_order.MakeDummy();
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 		}
 		return;
 	}
 
 	v->current_order.MakeGoToDepot(depot->index, ODTFB_SERVICE);
 	v->SetDestTile(depot->xy);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 }
 
 /**
@@ -417,7 +417,7 @@ static uint ShipAccelerate(Vehicle *v)
 	/* updates statusbar only if speed have changed to save CPU time */
 	if (speed != v->cur_speed) {
 		v->cur_speed = speed;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 
 	const uint advance_speed = v->GetAdvanceSpeed(speed);
@@ -602,7 +602,7 @@ static bool ShipMoveUpDownOnLock(Ship *v)
 
 	if (v->cur_speed != 0) {
 		v->cur_speed = 0;
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->GetConsist()->index, WID_VV_START_STOP);
 	}
 
 	if ((v->tick_counter & 7) == 0) {
@@ -723,7 +723,7 @@ static void ShipController(ShipConsist *cs)
 					 * always skip ahead. */
 					if (v->current_order.IsType(OT_LEAVESTATION)) {
 						v->current_order.Free();
-						SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
+						SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 						/* Test if continuing forward would lead to a dead-end, moving into the dock. */
 						const DiagDirection exitdir = VehicleExitDir(v->direction, v->state);
 						const TileIndex tile = TileAddByDiagDir(v->tile, exitdir);

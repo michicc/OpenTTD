@@ -42,6 +42,7 @@ Consist::~Consist()
 	DeleteConsistNews(this->index, INVALID_STRING_ID);
 	ReleaseDisastersTargetingVehicle(this->index);
 
+	CloseWindowById(WC_VEHICLE_VIEW, this->index);
 	CloseWindowById(WC_VEHICLE_ORDERS, this->index);
 	CloseWindowById(WC_VEHICLE_REFIT, this->index);
 	CloseWindowById(WC_VEHICLE_DETAILS, this->index);
@@ -93,7 +94,7 @@ void Consist::HandlePathfindingResult(bool path_found)
 
 		/* Clear the flag as the PF's problem was solved. */
 		ClrBit(this->consist_flags, CF_PATHFINDER_LOST);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->Front()->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 		/* Delete the news item. */
 		DeleteConsistNews(this->index, STR_NEWS_VEHICLE_IS_LOST);
@@ -105,7 +106,7 @@ void Consist::HandlePathfindingResult(bool path_found)
 
 	/* It is first time the problem occurred, set the "lost" flag. */
 	SetBit(this->consist_flags, CF_PATHFINDER_LOST);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->Front()->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type));
 	/* Notify user about the event. */
 	AI::NewEvent(this->owner, new ScriptEventVehicleLost(this->Front()->index));
@@ -153,7 +154,7 @@ void Consist::EnterDepot()
 {
 	Vehicle *v = this->Front();
 
-	SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+	SetWindowDirty(WC_VEHICLE_VIEW, this->index);
 	SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
 
 	v->vehstatus |= VS_HIDDEN;
@@ -165,10 +166,10 @@ void Consist::EnterDepot()
 	TriggerVehicle(v, VEHICLE_TRIGGER_DEPOT);
 	v->MarkDirty();
 
-	InvalidateWindowData(WC_VEHICLE_VIEW, v->index);
+	InvalidateWindowData(WC_VEHICLE_VIEW, this->index);
 
 	if (v->current_order.IsType(OT_GOTO_DEPOT)) {
-		SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+		SetWindowDirty(WC_VEHICLE_VIEW, this->index);
 
 		const Order *real_order = v->GetOrder(this->cur_real_order_index);
 

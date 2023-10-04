@@ -578,9 +578,9 @@ std::tuple<CommandCost, GroupID> CmdAddVehicleGroup(DoCommandFlag flags, GroupID
 			}
 
 			SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
-			SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, cs->index);
 			SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
-			InvalidateWindowData(WC_VEHICLE_VIEW, v->index);
+			InvalidateWindowData(WC_VEHICLE_VIEW, cs->index);
 			InvalidateWindowData(WC_VEHICLE_DETAILS, cs->index);
 		}
 

@@ -256,7 +256,7 @@ void InvalidateConsistOrder(const Consist *cs, int data)
 	 * to invalidate either. */
 	if (cs == nullptr) return;
 
-	SetWindowDirty(WC_VEHICLE_VIEW, cs->Front()->index);
+	SetWindowDirty(WC_VEHICLE_VIEW, cs->index);
 
 	if (data != 0) {
 		/* Calls SetDirty() too */
@@ -1768,7 +1768,7 @@ void RemoveOrderFromAllVehicles(OrderType type, DestinationID destination, bool 
 		if ((v->type == VEH_AIRCRAFT && v->current_order.IsType(OT_GOTO_DEPOT) && !hangar ? OT_GOTO_STATION : v->current_order.GetType()) == type &&
 				(!hangar || v->type == VEH_AIRCRAFT) && v->current_order.GetDestination() == destination) {
 			v->current_order.MakeDummy();
-			SetWindowDirty(WC_VEHICLE_VIEW, v->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, v->GetConsist()->index);
 		}
 
 		/* Clear the order from the order-list */

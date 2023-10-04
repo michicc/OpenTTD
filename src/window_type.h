@@ -334,7 +334,7 @@ enum WindowClass {
 
 	/**
 	 * Vehicle view; %Window numbers:
-	 *   - #VehicleID = #VehicleViewWidgets
+	 *   - #ConsistID = #VehicleViewWidgets
 	 */
 	WC_VEHICLE_VIEW,
 
