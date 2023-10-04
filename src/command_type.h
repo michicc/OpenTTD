@@ -257,7 +257,7 @@ enum Commands : uint16_t {
 	CMD_WANT_ENGINE_PREVIEW,          ///< confirm the preview of an engine
 	CMD_ENGINE_CTRL,                  ///< control availability of the engine for companies
 
-	CMD_RENAME_VEHICLE,               ///< rename a whole vehicle
+	CMD_RENAME_CONSIST,               ///< rename a whole consist
 	CMD_RENAME_ENGINE,                ///< rename a engine (in the engine list)
 	CMD_RENAME_COMPANY,               ///< change the company name
 	CMD_RENAME_PRESIDENT,             ///< change the president name

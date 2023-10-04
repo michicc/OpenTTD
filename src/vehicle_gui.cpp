@@ -3182,7 +3182,7 @@ public:
 		if (str == nullptr) return;
 
 		const Consist *cs = Consist::Get(this->window_number);
-		Command<CMD_RENAME_VEHICLE>::Post(STR_ERROR_CAN_T_RENAME_TRAIN +cs->type, cs->Front()->index, str);
+		Command<CMD_RENAME_CONSIST>::Post(STR_ERROR_CAN_T_RENAME_TRAIN + cs->type, cs->index, str);
 	}
 
 	void OnMouseOver([[maybe_unused]] Point pt, WidgetID widget) override

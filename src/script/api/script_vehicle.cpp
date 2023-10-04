@@ -256,7 +256,7 @@
 	EnforcePreconditionEncodedText(false, text);
 	EnforcePreconditionCustomError(false, ::Utf8StringLength(text) < MAX_LENGTH_VEHICLE_NAME_CHARS, ScriptError::ERR_PRECONDITION_STRING_TOO_LONG);
 
-	return ScriptObject::Command<CMD_RENAME_VEHICLE>::Do(vehicle_id, text);
+	return ScriptObject::Command<CMD_RENAME_CONSIST>::Do(::Vehicle::Get(vehicle_id)->GetConsist()->index, text);
 }
 
 /* static */ TileIndex ScriptVehicle::GetLocation(VehicleID vehicle_id)
