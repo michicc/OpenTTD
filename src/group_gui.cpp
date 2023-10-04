@@ -894,7 +894,7 @@ public:
 					case GB_NONE: {
 						const Vehicle *v = vehgroup.GetSingleVehicle();
 						if (!VehicleClicked(v) && vindex == v->index) {
-							ShowVehicleViewWindow(v);
+							ShowConsistViewWindow(v->GetConsist());
 						}
 						break;
 					}
@@ -904,7 +904,7 @@ public:
 							const Vehicle *v = vehgroup.vehicles_begin[0];
 							if (vindex == v->index) {
 								if (vehgroup.NumVehicles() == 1) {
-									ShowVehicleViewWindow(v);
+									ShowConsistViewWindow(v->GetConsist());
 								} else {
 									ShowVehicleListWindow(v);
 								}

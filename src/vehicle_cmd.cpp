@@ -655,10 +655,12 @@ CommandCost CmdStartStopVehicle(DoCommandFlag flags, VehicleID veh_id, bool eval
 		v->vehstatus ^= VS_STOPPED;
 		if (v->type != VEH_TRAIN) v->cur_speed = 0; // trains can stop 'slowly'
 		v->MarkDirty();
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, v->index, WID_VV_START_STOP);
 		SetWindowDirty(WC_VEHICLE_DEPOT, v->tile);
 		SetWindowClassesDirty(GetWindowClassForVehicleType(v->type));
-		InvalidateWindowData(WC_VEHICLE_VIEW, v->index);
+		if (Consist *cs = v->GetConsist(); cs != nullptr) {
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
+			InvalidateWindowData(WC_VEHICLE_VIEW, cs->index);
+		}
 	}
 	return CommandCost();
 }

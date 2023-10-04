@@ -290,7 +290,7 @@ uint Vehicle::Crash(bool)
 
 	/* Dirty some windows */
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->GetConsist()->index, WID_VV_START_STOP);
 	SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 	SetWindowDirty(WC_VEHICLE_DEPOT, this->tile);
 
@@ -816,7 +816,6 @@ void Vehicle::PreDestructor()
 	}
 
 	if (this->IsPrimaryVehicle()) {
-		CloseWindowById(WC_VEHICLE_VIEW, this->index);
 		SetWindowDirty(WC_COMPANY, this->owner);
 	}
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
@@ -1253,7 +1252,7 @@ bool Vehicle::HandleBreakdown()
 			}
 
 			this->MarkDirty(); // Update graphics after speed is zeroed
-			SetWindowDirty(WC_VEHICLE_VIEW, this->index);
+			SetWindowDirty(WC_VEHICLE_VIEW, this->GetConsist()->index);
 			SetWindowDirty(WC_VEHICLE_DETAILS, this->GetConsist()->index);
 
 			FALLTHROUGH;
@@ -1266,7 +1265,7 @@ bool Vehicle::HandleBreakdown()
 				if (--this->breakdown_delay == 0) {
 					this->breakdown_ctr = 0;
 					this->MarkDirty();
-					SetWindowDirty(WC_VEHICLE_VIEW, this->index);
+					SetWindowDirty(WC_VEHICLE_VIEW, this->GetConsist()->index);
 				}
 			}
 			return true;
@@ -2017,7 +2016,7 @@ void Vehicle::BeginLoading()
 	PrepareUnload(this);
 
 	SetWindowDirty(GetWindowClassForVehicleType(this->type), this->owner);
-	SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+	SetWindowWidgetDirty(WC_VEHICLE_VIEW, cs->index, WID_VV_START_STOP);
 	SetWindowDirty(WC_VEHICLE_DETAILS, cs->index);
 	SetWindowDirty(WC_STATION_VIEW, this->last_station_visited);
 
@@ -2174,7 +2173,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 			if (flags & DC_EXEC) {
 				this->current_order.SetDepotOrderType(ODTF_MANUAL);
 				this->current_order.SetDepotActionType(halt_in_depot ? ODATF_SERVICE_ONLY : ODATFB_HALT);
-				SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+				SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->GetConsist()->index, WID_VV_START_STOP);
 			}
 			return CommandCost();
 		}
@@ -2191,7 +2190,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 			}
 
 			this->current_order.MakeDummy();
-			SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+			SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->GetConsist()->index, WID_VV_START_STOP);
 		}
 		return CommandCost();
 	}
@@ -2211,7 +2210,7 @@ CommandCost Vehicle::SendToDepot(DoCommandFlag flags, DepotCommand command)
 		this->SetDestTile(closestDepot.location);
 		this->current_order.MakeGoToDepot(closestDepot.destination, ODTF_MANUAL);
 		if ((command & DepotCommand::Service) == DepotCommand::None) this->current_order.SetDepotActionType(ODATFB_HALT);
-		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->index, WID_VV_START_STOP);
+		SetWindowWidgetDirty(WC_VEHICLE_VIEW, this->GetConsist()->index, WID_VV_START_STOP);
 
 		/* If there is no depot in front and the train is not already reversing, reverse automatically (trains only) */
 		if (this->type == VEH_TRAIN && (closestDepot.reverse ^ HasBit(Train::From(this)->flags, VRF_REVERSING))) {

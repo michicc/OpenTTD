@@ -34,8 +34,6 @@
 
 #include "safeguards.h"
 
-extern void ChangeVehicleViewWindow(VehicleID from_index, VehicleID to_index);
-
 /**
  * Figure out if two engines got at least one type of cargo in common (refitting if needed)
  * @param engine_a one of the EngineIDs
@@ -433,11 +431,11 @@ static CommandCost CopyHeadSpecificThings(Vehicle *old_head, Vehicle *new_head, 
 
 		/* Switch vehicle windows/news to the new vehicle, so they are not closed/deleted when the old vehicle is sold */
 		ConsistID cid = new_head->GetConsist()->index;
+		InvalidateWindowData(WC_VEHICLE_VIEW, cid, VIWD_AUTOREPLACE);
 		InvalidateWindowData(WC_VEHICLE_ORDERS, cid, VIWD_AUTOREPLACE);
 		InvalidateWindowData(WC_VEHICLE_REFIT, cid, VIWD_AUTOREPLACE);
 		InvalidateWindowData(WC_VEHICLE_DETAILS, cid, VIWD_AUTOREPLACE);
 		InvalidateWindowData(WC_VEHICLE_TIMETABLE, cid, VIWD_AUTOREPLACE);
-		ChangeVehicleViewWindow(old_head->index, new_head->index);
 
 		old_head->SetConsist(nullptr);
 	}
