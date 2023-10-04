@@ -1085,18 +1085,18 @@ CommandCost CmdSendVehicleToDepot(DoCommandFlag flags, VehicleID veh_id, DepotCo
 }
 
 /**
- * Give a custom name to your vehicle
+ * Give a custom name to your consist
  * @param flags type of operation
- * @param veh_id vehicle ID to name
+ * @param cons_id consist ID to name
  * @param text the new name or an empty string when resetting to the default
  * @return the cost of this operation or an error
  */
-CommandCost CmdRenameVehicle(DoCommandFlag flags, VehicleID veh_id, const std::string &text)
+CommandCost CmdRenameConsist(DoCommandFlag flags, ConsistID cons_id, const std::string &text)
 {
-	Vehicle *v = Vehicle::GetIfValid(veh_id);
-	if (v == nullptr || v->GetConsist() == nullptr || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	Consist *cs = Consist::GetIfValid(cons_id);
+	if (cs == nullptr) return CMD_ERROR;
 
-	CommandCost ret = CheckOwnership(v->owner);
+	CommandCost ret = CheckOwnership(cs->owner);
 	if (ret.Failed()) return ret;
 
 	bool reset = text.empty();
@@ -1108,11 +1108,11 @@ CommandCost CmdRenameVehicle(DoCommandFlag flags, VehicleID veh_id, const std::s
 
 	if (flags & DC_EXEC) {
 		if (reset) {
-			v->GetConsist()->name.clear();
+			cs->name.clear();
 		} else {
-			v->GetConsist()->name = text;
+			cs->name = text;
 		}
-		InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 1);
+		InvalidateWindowClassesData(GetWindowClassForVehicleType(cs->type), 1);
 		MarkWholeScreenDirty();
 	}
 
