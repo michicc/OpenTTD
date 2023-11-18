@@ -47,6 +47,8 @@ struct CargoSourceSink {
 	std::array<uint, NUM_CARGO> cargo_links_weight;
 	/** NOSAVE: Desired link count for each cargo. */
 	std::array<uint16_t, NUM_CARGO> num_links_expected;
+	/** NOSAVE: Incoming link count for each cargo. */
+	std::array<uint, NUM_CARGO> num_incoming_links;
 
 	virtual ~CargoSourceSink();
 
@@ -71,5 +73,6 @@ struct CargoSourceSink {
 
 
 void UpdateCargoLinks();
+void RebuildCargoLinkCounts();
 
 #endif /* CARGODEST_BASE_H */

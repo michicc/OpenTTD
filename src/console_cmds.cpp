@@ -2524,6 +2524,7 @@ DEF_CONSOLE_CMD(ConResetCargoDestinations)
 	}
 
 	/* Rebuild destination links. */
+	RebuildCargoLinkCounts();
 	UpdateCargoLinks();
 
 	return true;
