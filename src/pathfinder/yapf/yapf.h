@@ -99,4 +99,15 @@ bool YapfTrainCheckReverse(const Train *v);
  */
 bool YapfTrainFindNearestSafeTile(const Train *v, TileIndex tile, Trackdir td, bool override_railtype);
 
+/**
+ * Find the best cargo routing from a station to a destination.
+ *
+ * @param cid      Cargo type to route.
+ * @param stations Set of possible originating stations.
+ * @param src      Source tile where the cargo is generated at or INVALID_TILE if already in flight.
+ * @param dests    Set of possible destination stations.
+ * @return Pair containing the station and order ID of the best route to the destination or (INVALID_STATION, INVALID_ORDER) if no route was found.
+ */
+std::pair<StationID, OrderID> YapfChooseCargoRoute(CargoID cid, const StationList *stations, TileIndex src, const StationList *dests);
+
 #endif /* YAPF_H */
