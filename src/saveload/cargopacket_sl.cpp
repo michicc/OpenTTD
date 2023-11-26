@@ -132,6 +132,9 @@ SaveLoadTable GetCargoPacketDesc()
 		SLE_CONDVAR(CargoPacket, source_id,       SLE_UINT16, SLV_125, SL_MAX_VERSION),
 		SLE_CONDVAR(CargoPacket, travelled.x, SLE_INT16, SLV_CARGO_TRAVELLED, SL_MAX_VERSION),
 		SLE_CONDVAR(CargoPacket, travelled.y, SLE_INT16, SLV_CARGO_TRAVELLED, SL_MAX_VERSION),
+		SLE_VAR(CargoPacket, dest_xy,         SLE_UINT32),
+		SLE_VAR(CargoPacket, dest_type,       SLE_UINT8),
+		SLE_VAR(CargoPacket, dest_id,         SLE_UINT16),
 	};
 	return _cargopacket_desc;
 }

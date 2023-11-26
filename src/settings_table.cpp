@@ -503,6 +503,28 @@ static void CargodestModeChanged(int32_t)
 		}
 	}
 
+	/* Clear destinations for cargoes that aren't routed anymore. */
+	for (Station *st : Station::Iterate()) {
+		for (CargoID cid = 0; cid < NUM_CARGO; cid++) {
+			if (_settings_game.cargo.GetDistributionType(cid) != DT_FIXED) {
+				const StationCargoPacketMap *packets = st->goods[cid].cargo.Packets();
+				for (StationCargoList::ConstIterator it(packets->begin()); it != packets->end(); it++) {
+					CargoPacket *cp = *it;
+					cp->dest_id = INVALID_SOURCE;
+				}
+				st->goods[cid].cargo.InvalidateCache();
+			}
+		}
+	}
+	for (Vehicle *v : Vehicle::Iterate()) {
+		if (_settings_game.cargo.GetDistributionType(v->cargo_type) != DT_FIXED) {
+			for (VehicleCargoList::ConstIterator it(v->cargo.Packets()->begin()); it != v->cargo.Packets()->end(); it++) {
+				(*it)->dest_id = INVALID_SOURCE;
+			}
+			v->cargo.InvalidateCache();
+		}
+	}
+
 	/* Update remaining links. */
 	RebuildCargoLinkCounts();
 	UpdateCargoLinks();

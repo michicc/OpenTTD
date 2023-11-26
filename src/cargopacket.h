@@ -56,6 +56,10 @@ private:
 	SourceID source_id{INVALID_SOURCE}; ///< Index of industry/town/HQ, INVALID_SOURCE if unknown/invalid.
 	SourceType source_type{SourceType::Industry}; ///< Type of \c source_id.
 
+	TileIndex dest_xy{INVALID_TILE};            ///< Destination tile or INVALID_TILE if no specific destination
+	SourceType dest_type{SourceType::Industry}; ///< Type of \c dest_id.
+	SourceID dest_id{INVALID_SOURCE};           ///< Index of the destination, INVALID_SOURCE if no destination.
+
 #ifdef WITH_ASSERT
 	bool in_vehicle{false}; ///< NOSAVE: Whether this cargo is in a vehicle or not.
 #endif /* WITH_ASSERT */
@@ -69,12 +73,13 @@ private:
 	friend class StationCargoList;
 	/** We want this to be saved, right? */
 	friend SaveLoadTable GetCargoPacketDesc();
+	friend void CargodestModeChanged(int32_t);
 public:
 	/** Maximum number of items in a single cargo packet. */
 	static const uint16_t MAX_COUNT = UINT16_MAX;
 
 	CargoPacket();
-	CargoPacket(StationID first_station, uint16_t count, SourceType source_type, SourceID source_id);
+	CargoPacket(StationID first_station, uint16_t count, SourceType source_type, SourceID source_id, TileIndex dest_xy = INVALID_TILE, SourceType dest_type = SourceType::Industry, SourceID dest_id = INVALID_SOURCE);
 	CargoPacket(uint16_t count, uint16_t periods_in_transit, StationID first_station, TileIndex source_xy, Money feeder_share);
 	CargoPacket(uint16_t count, Money feeder_share, CargoPacket &original);
 
@@ -268,6 +273,33 @@ public:
 	inline StationID GetNextHop() const
 	{
 		return this->next_hop;
+	}
+
+	/**
+	 * Gets the coordinates of the cargo's destination.
+	 * @return The destination tile.
+	 */
+	inline TileIndex DestinationXY() const
+	{
+		return this->dest_xy;
+	}
+
+	/**
+	 * Gets the ID of the destination of the cargo.
+	 * @return The destination ID.
+	 */
+	inline SourceID DestinationID() const
+	{
+		return this->dest_id;
+	}
+
+	/**
+	 * Gets the type of the destination of the cargo.
+	 * @return The destination type.
+	 */
+	inline SourceType DestinationType() const
+	{
+		return this->dest_type;
 	}
 
 	static void InvalidateAllFrom(SourceType src_type, SourceID src);
@@ -516,7 +548,10 @@ public:
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->source_type == cp2->source_type &&
 				cp1->first_station == cp2->first_station &&
-				cp1->source_id == cp2->source_id;
+				cp1->source_id == cp2->source_id &&
+				cp1->dest_xy == cp2->dest_xy &&
+				cp1->dest_type == cp2->dest_type &&
+				cp1->dest_id == cp2->dest_id;
 	}
 };
 
@@ -631,7 +666,10 @@ public:
 				cp1->periods_in_transit == cp2->periods_in_transit &&
 				cp1->source_type == cp2->source_type &&
 				cp1->first_station == cp2->first_station &&
-				cp1->source_id == cp2->source_id;
+				cp1->source_id == cp2->source_id &&
+				cp1->dest_xy == cp2->dest_xy &&
+				cp1->dest_type == cp2->dest_type &&
+				cp1->dest_id == cp2->dest_id;
 	}
 };
 

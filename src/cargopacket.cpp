@@ -37,13 +37,19 @@ CargoPacket::CargoPacket()
  * @param count         Number of cargo entities to put in this packet.
  * @param source_type   'Type' of source the packet comes from (for subsidies).
  * @param source_id     Actual source of the packet (for subsidies).
+ * @param dest_xy     Destination location of the packet.
+ * @param dest_type   'Type' of the destination.
+ * @param dest_id     Actual destination of the packet.
  * @pre count != 0
  */
-CargoPacket::CargoPacket(StationID first_station,uint16_t count, SourceType source_type, SourceID source_id) :
+CargoPacket::CargoPacket(StationID first_station, uint16_t count, SourceType source_type, SourceID source_id, TileIndex dest_xy, SourceType dest_type, SourceID dest_id) :
 		count(count),
 		source_id(source_id),
 		source_type(source_type),
-		first_station(first_station)
+		first_station(first_station),
+		dest_xy(dest_xy),
+		dest_type(dest_type),
+		dest_id(dest_id)
 {
 	assert(count != 0);
 }
@@ -56,6 +62,9 @@ CargoPacket::CargoPacket(StationID first_station,uint16_t count, SourceType sour
  * @param first_station      Station the cargo was initially loaded.
  * @param source_xy          Station location the cargo was initially loaded.
  * @param feeder_share       Feeder share the packet has already accumulated.
+ * @param dest_xy     Destination location of the packet.
+ * @param dest_type   'Type' of the destination.
+ * @param dest_id     Actual destination of the packet.
  */
 CargoPacket::CargoPacket(uint16_t count, uint16_t periods_in_transit, StationID first_station, TileIndex source_xy, Money feeder_share) :
 		count(count),
@@ -82,6 +91,9 @@ CargoPacket::CargoPacket(uint16_t count, Money feeder_share, CargoPacket &origin
 		travelled(original.travelled),
 		source_id(original.source_id),
 		source_type(original.source_type),
+		dest_xy(original.dest_xy),
+		dest_type(original.dest_type),
+		dest_id(original.dest_id),
 #ifdef WITH_ASSERT
 		in_vehicle(original.in_vehicle),
 #endif /* WITH_ASSERT */
