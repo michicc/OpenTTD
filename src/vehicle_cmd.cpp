@@ -682,7 +682,7 @@ CommandCost CmdMassStartStopVehicle(DoCommandFlag flags, TileIndex tile, bool do
 	if (!IsCompanyBuildableVehicleType(vli.vtype)) return CMD_ERROR;
 
 	if (vehicle_list_window) {
-		if (!GenerateVehicleSortList(&list, vli)) return CMD_ERROR;
+		if (!GenerateVehicleSortList(list, vli)) return CMD_ERROR;
 	} else {
 		if (!IsDepotTile(tile) || !IsTileOwner(tile, _current_company)) return CMD_ERROR;
 		/* Get the list of vehicles in the depot */
@@ -1039,7 +1039,7 @@ static CommandCost SendAllVehiclesToDepot(DoCommandFlag flags, bool service, con
 {
 	VehicleList list;
 
-	if (!GenerateVehicleSortList(&list, vli)) return CMD_ERROR;
+	if (!GenerateVehicleSortList(list, vli)) return CMD_ERROR;
 
 	/* Send all the vehicles to a depot */
 	bool had_success = false;

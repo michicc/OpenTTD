@@ -13,6 +13,7 @@
 #include "vehicle_type.h"
 #include "company_type.h"
 #include "tile_type.h"
+#include "consist_type.h"
 
 /** Vehicle List type flags */
 enum VehicleListType : byte {
@@ -52,8 +53,11 @@ struct VehicleListIdentifier {
 
 /** A list of vehicles. */
 typedef std::vector<const Vehicle *> VehicleList;
+/** A list of consists. */
+typedef std::vector<const Consist *> ConsistList;
 
-bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &identifier);
+bool GenerateVehicleSortList(VehicleList &list, const VehicleListIdentifier &identifier);
+bool GenerateVehicleSortList(ConsistList &list, const VehicleListIdentifier &identifier);
 void BuildDepotVehicleList(VehicleType type, TileIndex tile, VehicleList *engine_list, VehicleList *wagon_list, bool individual_wagons = false);
 uint GetUnitNumberDigits(VehicleList &vehicles);
 

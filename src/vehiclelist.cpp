@@ -106,41 +106,40 @@ void BuildDepotVehicleList(VehicleType type, TileIndex tile, VehicleList *engine
 }
 
 /**
- * Generate a list of vehicles based on window type.
- * @param list Pointer to list to add vehicles to
+ * Generate a list of consisrs based on window type.
+ * @param list List to add consists to
  * @param vli  The identifier of this vehicle list.
  * @return false if invalid list is requested
  */
-bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli)
+bool GenerateVehicleSortList(ConsistList &list, const VehicleListIdentifier &vli)
 {
-	list->clear();
+	list.clear();
 
 	switch (vli.type) {
 		case VL_STATION_LIST:
 			FindVehiclesWithOrder(
 				[&vli](const Vehicle *v) { return v->type == vli.vtype; },
 				[&vli](const Order *order) { return (order->IsType(OT_GOTO_STATION) || order->IsType(OT_GOTO_WAYPOINT) || order->IsType(OT_IMPLICIT)) && order->GetDestination() == vli.index; },
-				[&list](const Vehicle *v) { list->push_back(v); }
+				[&list](const Vehicle *v) { list.push_back(v->GetConsist()); }
 			);
 			break;
 
 		case VL_SHARED_ORDERS: {
-			/* Add all vehicles from this vehicle's shared order list */
-			const Vehicle *v = Vehicle::GetIfValid(vli.index);
-			if (v == nullptr || v->type != vli.vtype || !v->IsPrimaryVehicle()) return false;
+			/* Add all consists from this consist's shared order list */
+			const Consist *cs = Consist::GetIfValid(vli.index);
+			if (cs == nullptr || cs->type != vli.type) return false;
 
-			for (; v != nullptr; v = v->NextShared()) {
-				list->push_back(v);
+			for (const Vehicle *v = cs->Front(); v != nullptr; v = v->NextShared()) {
+				list.push_back(v->GetConsist());
 			}
 			break;
 		}
 
 		case VL_GROUP_LIST:
 			if (vli.index != ALL_GROUP) {
-				for (const Vehicle *v : Vehicle::Iterate()) {
-					if (v->type == vli.vtype && v->IsPrimaryVehicle() &&
-							v->owner == vli.company && GroupIsInGroup(v->group_id, vli.index)) {
-						list->push_back(v);
+				for (const Consist *cs : Consist::Iterate()) {
+					if (cs->type == vli.vtype && cs->owner == vli.company && GroupIsInGroup(cs->Front()->group_id, vli.index)) {
+						list.push_back(cs);
 					}
 				}
 				break;
@@ -148,9 +147,9 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			FALLTHROUGH;
 
 		case VL_STANDARD:
-			for (const Vehicle *v : Vehicle::Iterate()) {
-				if (v->type == vli.vtype && v->owner == vli.company && v->IsPrimaryVehicle()) {
-					list->push_back(v);
+			for (const Consist *cs : Consist::Iterate()) {
+				if (cs->type == vli.vtype && cs->owner == vli.company) {
+					list.push_back(cs);
 				}
 			}
 			break;
@@ -159,13 +158,33 @@ bool GenerateVehicleSortList(VehicleList *list, const VehicleListIdentifier &vli
 			FindVehiclesWithOrder(
 				[&vli](const Vehicle *v) { return v->type == vli.vtype; },
 				[&vli](const Order *order) { return order->IsType(OT_GOTO_DEPOT) && !(order->GetDepotActionType() & ODATFB_NEAREST_DEPOT) && order->GetDestination() == vli.index; },
-				[&list](const Vehicle *v) { list->push_back(v); }
+				[&list](const Vehicle *v) { list.push_back(v->GetConsist()); }
 			);
 			break;
 
 		default: return false;
 	}
 
-	list->shrink_to_fit();
+	list.shrink_to_fit();
+	return true;
+}
+
+/**
+ * Generate a list of vehicles based on window type.
+ * @param list List to add vehicles to
+ * @param vli  The identifier of this vehicle list.
+ * @return false if invalid list is requested
+ */
+bool GenerateVehicleSortList(VehicleList &list, const VehicleListIdentifier &vli)
+{
+	list.clear();
+
+	ConsistList clist;
+	if (!GenerateVehicleSortList(clist, vli)) return false;
+
+	for (const Consist *cs : clist) {
+		list.push_back(cs->Front());
+	}
+	list.shrink_to_fit();
 	return true;
 }

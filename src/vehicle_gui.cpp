@@ -190,7 +190,7 @@ void BaseVehicleListWindow::BuildVehicleList()
 
 	this->vehgroups.clear();
 
-	GenerateVehicleSortList(&this->vehicles, this->vli);
+	GenerateVehicleSortList(this->vehicles, this->vli);
 
 	CargoTypes used = 0;
 	for (const Vehicle *v : this->vehicles) {
@@ -2190,7 +2190,7 @@ void ShowVehicleListWindow(CompanyID company, VehicleType vehicle_type)
 
 void ShowVehicleListWindow(const Vehicle *v)
 {
-	ShowVehicleListWindowLocal(v->owner, VL_SHARED_ORDERS, v->type, v->FirstShared()->index);
+	ShowVehicleListWindowLocal(v->owner, VL_SHARED_ORDERS, v->type, v->FirstShared()->GetConsist()->index);
 }
 
 void ShowVehicleListWindow(CompanyID company, VehicleType vehicle_type, StationID station)
