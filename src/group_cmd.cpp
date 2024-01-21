@@ -538,7 +538,7 @@ std::tuple<CommandCost, GroupID> CmdAddVehicleGroup(DoCommandFlag flags, GroupID
 
 	VehicleList list;
 	if (veh_id == INVALID_VEHICLE && vli.Valid()) {
-		if (!GenerateVehicleSortList(&list, vli) || list.empty()) return { CMD_ERROR, INVALID_GROUP };
+		if (!GenerateVehicleSortList(list, vli) || list.empty()) return { CMD_ERROR, INVALID_GROUP };
 	} else {
 		Vehicle *v = Vehicle::GetIfValid(veh_id);
 		if (v == nullptr) return { CMD_ERROR, INVALID_GROUP };
