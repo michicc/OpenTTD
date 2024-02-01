@@ -123,19 +123,18 @@ void AfterLoadCompanyStats()
 			}
 		}
 
-		switch (GetTileType(tile)) {
-			case MP_ROAD: {
-				/* Iterate all present road types as each can have a different owner. */
-				for (RoadTramType rtt : _roadtramtypes) {
-					RoadType rt = GetRoadType(tile, rtt);
-					if (rt == INVALID_ROADTYPE) continue;
-					c = Company::GetIfValid(IsRoadDepot(tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rtt));
-					/* Depots have two road bits. */
-					if (c != nullptr) c->infrastructure.road[rt] += IsNormalRoad(tile) ? CountBits(GetRoadBits(tile, rtt)) : 2;
-				}
-				break;
+		for (const Tile *road_tile : RoadTileIterator::Iterate(tile)) {
+			/* Iterate all present road types as each can have a different owner. */
+			for (RoadTramType rtt : _roadtramtypes) {
+				RoadType rt = GetRoadType(road_tile, rtt);
+				if (rt == INVALID_ROADTYPE) continue;
+				c = Company::GetIfValid(IsRoadDepot(road_tile) ? GetTileOwner(tile) : GetRoadOwner(tile, rtt));
+				/* Depots have two road bits. */
+				if (c != nullptr) c->infrastructure.road[rt] += IsNormalRoad(road_tile) ? CountBits(GetRoadBits(tile, rtt)) : 2;
 			}
+		}
 
+		switch (GetTileType(tile)) {
 			case MP_STATION:
 				c = Company::GetIfValid(GetTileOwner(tile));
 				if (c != nullptr && GetStationType(tile) != STATION_AIRPORT && !IsBuoy(tile)) c->infrastructure.station++;

@@ -24,12 +24,17 @@ enum RoadTileType {
 	ROAD_TILE_DEPOT  = 2, ///< Depot (one entrance)
 };
 
+/** Iterator to iterate road tiles at a tile index. */
+typedef TileTypeIterator<MP_ROAD> RoadTileIterator;
+
+static inline Tile *GetRoadTileByType(TileIndex tile, RoadTramType rtt);
+
 /**
  * Test whether a tile can have road/tram types.
  * @param t Tile to query.
  * @return true if tile can be queried about road/tram types.
  */
-static inline bool MayHaveRoad(TileIndex t)
+static inline bool MayHaveRoad(const Tile *t)
 {
 	switch (GetTileType(t)) {
 		case MP_ROAD:
@@ -40,6 +45,16 @@ static inline bool MayHaveRoad(TileIndex t)
 		default:
 			return false;
 	}
+}
+
+/**
+ * Check if a tile pointer points to a valid road tile.
+ * @param t Tile pointer to check.
+ * @return True if the tile points to a road tile.
+ */
+static inline bool IsRoadTile(const Tile *t)
+{
+	return t != nullptr && IsTileType(t, MP_ROAD);
 }
 
 /**
@@ -55,24 +70,12 @@ static inline RoadTileType GetRoadTileType(const Tile *t)
 }
 
 /**
- * Get the type of the road tile.
- * @param t Tile to query.
- * @pre IsTileType(t, MP_ROAD)
- * @return The road tile type.
- */
-static inline RoadTileType GetRoadTileType(TileIndex t)
-{
-	assert(IsTileType(t, MP_ROAD));
-	return (RoadTileType)GB(_m[t].m5, 6, 2);
-}
-
-/**
  * Return whether a tile is a normal road.
  * @param t Tile to query.
  * @pre IsTileType(t, MP_ROAD)
  * @return True if normal road.
  */
-static inline bool IsNormalRoad(TileIndex t)
+static inline bool IsNormalRoad(const Tile *t)
 {
 	return GetRoadTileType(t) == ROAD_TILE_NORMAL;
 }
@@ -82,9 +85,19 @@ static inline bool IsNormalRoad(TileIndex t)
  * @param t Tile to query.
  * @return True if normal road tile.
  */
+static inline bool IsNormalRoadTile(const Tile *t)
+{
+	return IsRoadTile(t) && IsNormalRoad(t);
+}
+
+/**
+ * Return whether a tile is a normal road tile.
+ * @param t Tile to query.
+ * @return True if normal road tile.
+ */
 static inline bool IsNormalRoadTile(TileIndex t)
 {
-	return IsTileType(t, MP_ROAD) && IsNormalRoad(t);
+	return IsNormalRoadTile(GetTileByType(t, MP_ROAD));
 }
 
 /**
@@ -99,14 +112,13 @@ static inline bool IsRoadDepot(const Tile *t)
 }
 
 /**
- * Return whether a tile is a road depot.
+ * Return whether a tile is a road depot tile.
  * @param t Tile to query.
- * @pre IsTileType(t, MP_ROAD)
- * @return True if road depot.
+ * @return True if road depot tile.
  */
-static inline bool IsRoadDepot(TileIndex t)
+static inline bool IsRoadDepotTile(const Tile *t)
 {
-	return GetRoadTileType(t) == ROAD_TILE_DEPOT;
+	return IsRoadTile(t) && IsRoadDepot(t);
 }
 
 /**
@@ -116,7 +128,19 @@ static inline bool IsRoadDepot(TileIndex t)
  */
 static inline bool IsRoadDepotTile(TileIndex t)
 {
-	return IsTileType(t, MP_ROAD) && IsRoadDepot(t);
+	return IsRoadDepotTile(GetTileByType(t, MP_ROAD));
+}
+
+/**
+ * Get the actual tile for a road depot.
+ * @param t Tile index to get the depot tile for.
+ * @pre IsRoadDepotTile()
+ * @return Pointer to the actual road depot tile.
+ */
+static inline Tile *GetRoadDepotTile(TileIndex t)
+{
+	assert(IsRoadDepotTile(t));
+	return GetTileByType(t, MP_ROAD);
 }
 
 /**
@@ -128,7 +152,7 @@ static inline bool IsRoadDepotTile(TileIndex t)
  */
 static inline RoadBits GetRoadBits(TileIndex t, RoadTramType rtt)
 {
-	assert(IsNormalRoad(t));
+	assert(IsNormalRoadTile(t));
 	if (rtt == RTT_TRAM) return (RoadBits)GB(_m[t].m3, 0, 4);
 	return (RoadBits)GB(_m[t].m5, 0, 4);
 }
@@ -153,7 +177,7 @@ static inline RoadBits GetAllRoadBits(TileIndex tile)
  */
 static inline void SetRoadBits(TileIndex t, RoadBits r, RoadTramType rtt)
 {
-	assert(IsNormalRoad(t)); // XXX incomplete
+	assert(IsNormalRoadTile(t)); // XXX incomplete
 	if (rtt == RTT_TRAM) {
 		SB(_m[t].m3, 0, 4, r);
 	} else {
@@ -161,16 +185,33 @@ static inline void SetRoadBits(TileIndex t, RoadBits r, RoadTramType rtt)
 	}
 }
 
-static inline RoadType GetRoadTypeRoad(TileIndex t)
+static inline RoadType GetRoadTypeRoad(const Tile *t)
 {
 	assert(MayHaveRoad(t));
+	return (RoadType)GB(t->m4, 0, 6);
+}
+
+static inline RoadType GetRoadTypeRoad(TileIndex t)
+{
+	assert(MayHaveRoad(_m.ToTile(t)));
 	return (RoadType)GB(_m[t].m4, 0, 6);
+}
+
+static inline RoadType GetRoadTypeTram(const Tile *t)
+{
+	assert(MayHaveRoad(t));
+	return (RoadType)GB(t->m8, 6, 6);
 }
 
 static inline RoadType GetRoadTypeTram(TileIndex t)
 {
-	assert(MayHaveRoad(t));
+	assert(MayHaveRoad(_m.ToTile(t)));
 	return (RoadType)GB(_m[t].m8, 6, 6);
+}
+
+static inline RoadType GetRoadType(const Tile *t, RoadTramType rtt)
+{
+	return (rtt == RTT_TRAM) ? GetRoadTypeTram(t) : GetRoadTypeRoad(t);
 }
 
 static inline RoadType GetRoadType(TileIndex t, RoadTramType rtt)
@@ -186,7 +227,12 @@ static inline RoadType GetRoadType(TileIndex t, RoadTramType rtt)
 static inline RoadTypes GetPresentRoadTypes(TileIndex t)
 {
 	RoadTypes result = ROADTYPES_NONE;
-	if (MayHaveRoad(t)) {
+	for (const Tile *road_t : RoadTileIterator::Iterate(t)) {
+		if (GetRoadTypeRoad(road_t) != INVALID_ROADTYPE) SetBit(result, GetRoadTypeRoad(t));
+		if (GetRoadTypeTram(road_t) != INVALID_ROADTYPE) SetBit(result, GetRoadTypeTram(t));
+	}
+
+	if (MayHaveRoad(_m.ToTile(t))) {
 		if (GetRoadTypeRoad(t) != INVALID_ROADTYPE) SetBit(result, GetRoadTypeRoad(t));
 		if (GetRoadTypeTram(t) != INVALID_ROADTYPE) SetBit(result, GetRoadTypeTram(t));
 	}
@@ -209,9 +255,23 @@ static inline bool HasRoadTypeTram(TileIndex t)
  * @param tram True to check tram, false to check road.
  * @return True if the tile has the specified road type.
  */
-static inline bool HasTileRoadType(TileIndex t, RoadTramType rtt)
+static inline bool HasTileRoadType(const Tile *t, RoadTramType rtt)
 {
 	return GetRoadType(t, rtt) != INVALID_ROADTYPE;
+}
+
+/**
+ * Get a road tile with a specific road type.
+ * @param tile Tile index.
+ * @param rtt  Road type to search for.
+ * @return Pointer to the road tile having the road type or nullptr if no such tile exists.
+ */
+static inline Tile *GetRoadTileByType(TileIndex tile, RoadTramType rtt)
+{
+	for (Tile *road_t : RoadTileIterator::Iterate(tile)) {
+		if (HasTileRoadType(road_t, rtt)) return road_t;
+	}
+	return nullptr;
 }
 
 /**
@@ -222,7 +282,6 @@ static inline bool HasTileRoadType(TileIndex t, RoadTramType rtt)
  */
 static inline bool HasTileAnyRoadType(TileIndex t, RoadTypes rts)
 {
-	if (!MayHaveRoad(t)) return false;
 	return (GetPresentRoadTypes(t) & rts);
 }
 
@@ -234,7 +293,7 @@ static inline bool HasTileAnyRoadType(TileIndex t, RoadTypes rts)
  */
 static inline Owner GetRoadOwner(TileIndex t, RoadTramType rtt)
 {
-	assert(MayHaveRoad(t));
+	assert(MayHaveRoad(_m.ToTile(t)));
 	if (rtt == RTT_ROAD) return (Owner)GB(IsNormalRoadTile(t) ? _m[t].m1 : _m[t].m7, 0, 5);
 
 	/* Trams don't need OWNER_TOWN, and remapping OWNER_NONE
@@ -268,7 +327,7 @@ static inline void SetRoadOwner(TileIndex t, RoadTramType rtt, Owner o)
  */
 static inline bool IsRoadOwner(TileIndex t, RoadTramType rtt, Owner o)
 {
-	assert(HasTileRoadType(t, rtt));
+	assert(HasTileRoadType(_m.ToTile(t), rtt));
 	return (GetRoadOwner(t, rtt) == o);
 }
 
@@ -280,7 +339,7 @@ static inline bool IsRoadOwner(TileIndex t, RoadTramType rtt, Owner o)
  */
 static inline bool HasTownOwnedRoad(TileIndex t)
 {
-	return HasTileRoadType(t, RTT_ROAD) && IsRoadOwner(t, RTT_ROAD, OWNER_TOWN);
+	return HasTileRoadType(_m.ToTile(t), RTT_ROAD) && IsRoadOwner(t, RTT_ROAD, OWNER_TOWN);
 }
 
 /**
@@ -301,7 +360,7 @@ static inline bool IsValidDisallowedRoadDirections(DisallowedRoadDirections drt)
  */
 static inline DisallowedRoadDirections GetDisallowedRoadDirections(TileIndex t)
 {
-	assert(IsNormalRoad(t));
+	assert(IsNormalRoadTile(t));
 	return (DisallowedRoadDirections)GB(_m[t].m5, 4, 2);
 }
 
@@ -312,7 +371,7 @@ static inline DisallowedRoadDirections GetDisallowedRoadDirections(TileIndex t)
  */
 static inline void SetDisallowedRoadDirections(TileIndex t, DisallowedRoadDirections drd)
 {
-	assert(IsNormalRoad(t));
+	assert(IsNormalRoadTile(t));
 	assert(drd < DRD_END);
 	SB(_m[t].m5, 4, 2, drd);
 }
@@ -432,7 +491,7 @@ static inline void TerminateRoadWorks(TileIndex t)
  */
 static inline DiagDirection GetRoadDepotDirection(TileIndex t)
 {
-	assert(IsRoadDepot(t));
+	assert(IsRoadDepotTile(t));
 	return (DiagDirection)GB(_m[t].m5, 0, 2);
 }
 
@@ -446,7 +505,7 @@ RoadBits GetAnyRoadBits(TileIndex tile, RoadTramType rtt, bool straight_tunnel_b
  */
 static inline void SetRoadTypeRoad(TileIndex t, RoadType rt)
 {
-	assert(MayHaveRoad(t));
+	assert(MayHaveRoad(_m.ToTile(t)));
 	assert(rt == INVALID_ROADTYPE || RoadTypeIsRoad(rt));
 	SB(_m[t].m4, 0, 6, rt);
 }
@@ -458,7 +517,7 @@ static inline void SetRoadTypeRoad(TileIndex t, RoadType rt)
  */
 static inline void SetRoadTypeTram(TileIndex t, RoadType rt)
 {
-	assert(MayHaveRoad(t));
+	assert(MayHaveRoad(_m.ToTile(t)));
 	assert(rt == INVALID_ROADTYPE || RoadTypeIsTram(rt));
 	SB(_m[t].m8, 6, 6, rt);
 }

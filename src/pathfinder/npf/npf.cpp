@@ -289,7 +289,7 @@ static void NPFMarkTile(TileIndex tile)
 			SetClearDensity(tile, 0);
 			MarkTileDirtyByTile(tile);
 		}
-	} else if (IsTileType(tile, MP_ROAD) && !IsRoadDepot(tile)) {
+	} else if (HasTileByType(tile, MP_ROAD) && !IsRoadDepotTile(tile)) {
 		SetRoadside(tile, ROADSIDE_BARREN);
 		MarkTileDirtyByTile(tile);
 	}

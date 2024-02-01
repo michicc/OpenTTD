@@ -27,20 +27,21 @@
 {
 	if (!::IsValidTile(tile)) return false;
 	if (::HasTileByType(tile, MP_RAILWAY)) return false;
+	if (::HasTileByType(tile, MP_ROAD)) {
+		/* Tram bits aren't considered buildable */
+		if (::GetRoadTileByType(tile, RTT_TRAM) != nullptr) return false;
+		/* Depots aren't considered buildable */
+		if (::IsRoadDepotTile(tile)) return false;
+		if (!HasExactlyOneBit(::GetRoadBits(tile, RTT_ROAD))) return false;
+		if (::IsRoadOwner(tile, RTT_ROAD, OWNER_TOWN)) return true;
+		if (::IsRoadOwner(tile, RTT_ROAD, ScriptObject::GetCompany())) return true;
+		return false;
+	}
 
 	switch (::GetTileType(tile)) {
 		default: return false;
 		case MP_CLEAR: return true;
 		case MP_WATER: return IsCoast(tile);
-		case MP_ROAD:
-			/* Tram bits aren't considered buildable */
-			if (::GetRoadTypeTram(tile) != INVALID_ROADTYPE) return false;
-			/* Depots and crossings aren't considered buildable */
-			if (::GetRoadTileType(tile) != ROAD_TILE_NORMAL) return false;
-			if (!HasExactlyOneBit(::GetRoadBits(tile, RTT_ROAD))) return false;
-			if (::IsRoadOwner(tile, RTT_ROAD, OWNER_TOWN)) return true;
-			if (::IsRoadOwner(tile, RTT_ROAD, ScriptObject::GetCompany())) return true;
-			return false;
 	}
 }
 

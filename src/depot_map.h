@@ -87,9 +87,11 @@ static inline DepotID GetDepotIndex(TileIndex t)
 {
 	if (IsRailDepotTile(t)) {
 		return GetDepotIndex(GetRailDepotTile(t));
+	} else if (IsRoadDepotTile(t)) {
+		return GetDepotIndex(GetRoadDepotTile(t));
 	} else {
 		/* Hangars don't have a Depot class, thus store no DepotID. */
-		assert(IsRailDepotTile(t) || IsRoadDepotTile(t) || IsShipDepotTile(t));
+		assert(IsShipDepotTile(t));
 		return _m[t].m2;
 	}
 }
