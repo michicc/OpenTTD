@@ -616,7 +616,7 @@ static CommandCost ClearTile_Trees(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, num * _price[PR_CLEAR_TREES]);
 }
 
-static void GetTileDesc_Trees(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Trees(TileIndex, Tile tile, TileDesc *td)
 {
 	TreeType tt = GetTreeType(tile);
 
