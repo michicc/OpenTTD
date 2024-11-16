@@ -932,7 +932,7 @@ CommandCost CmdCustomNewsItem(DoCommandFlag flags, NewsType type, NewsReferenceT
 	switch (reftype1) {
 		case NR_NONE: break;
 		case NR_TILE:
-			if (!IsValidTile(reference)) return CMD_ERROR;
+			if (!IsValidTile((TileIndex)reference)) return CMD_ERROR;
 			break;
 
 		case NR_VEHICLE:

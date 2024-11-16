@@ -68,7 +68,7 @@ enum LockPart {
 	LOCK_PART_UPPER  = 2, ///< Upper part of a lock.
 };
 
-bool IsPossibleDockingTile(Tile t);
+bool IsPossibleDockingTile(TileIndex t);
 
 /**
  * Get the water tile type of a tile.
@@ -275,9 +275,9 @@ inline DiagDirection GetShipDepotDirection(Tile t)
  * @return Tile containing the other section of the depot.
  * @pre IsShipDepotTile(t)
  */
-inline TileIndex GetOtherShipDepotTile(Tile t)
+inline TileIndex GetOtherShipDepotTile(TileIndex t)
 {
-	return TileIndex(t) + (GetShipDepotPart(t) != DEPOT_PART_NORTH ? -1 : 1) * TileOffsByAxis(GetShipDepotAxis(t));
+	return t + (GetShipDepotPart(t) != DEPOT_PART_NORTH ? -1 : 1) * TileOffsByAxis(GetShipDepotAxis(t));
 }
 
 /**
@@ -286,7 +286,7 @@ inline TileIndex GetOtherShipDepotTile(Tile t)
  * @return The northern tile of the depot.
  * @pre IsShipDepotTile(t)
  */
-inline TileIndex GetShipDepotNorthTile(Tile t)
+inline TileIndex GetShipDepotNorthTile(TileIndex t)
 {
 	assert(IsShipDepot(t));
 	TileIndex tile2 = GetOtherShipDepotTile(t);
@@ -503,11 +503,11 @@ inline void MakeLockTile(Tile t, Owner o, LockPart part, DiagDirection dir, Wate
  * @param wc_upper Original water class of the upper part.
  * @param wc_middle Original water class of the middle part.
  */
-inline void MakeLock(Tile t, Owner o, DiagDirection d, WaterClass wc_lower, WaterClass wc_upper, WaterClass wc_middle)
+inline void MakeLock(TileIndex t, Owner o, DiagDirection d, WaterClass wc_lower, WaterClass wc_upper, WaterClass wc_middle)
 {
 	TileIndexDiff delta = TileOffsByDiagDir(d);
-	Tile lower_tile = TileIndex(t) - delta;
-	Tile upper_tile = TileIndex(t) + delta;
+	Tile lower_tile = t - delta;
+	Tile upper_tile = t + delta;
 
 	/* Keep the current waterclass and owner for the tiles.
 	 * It allows to restore them after the lock is deleted */

@@ -16,15 +16,12 @@
 #include "direction_func.h"
 
 /**
- * Wrapper class to abstract away the way the tiles are stored. It is
- * intended to be used to access the "map" data of a single tile.
- *
- * The wrapper is expected to be fully optimized away by the compiler, even
- * with low optimization levels except when completely disabling it.
+ * Size related data of the map.
  */
-class Tile {
+struct Map {
 private:
-	friend struct Map;
+	friend class Tile;
+
 	/**
 	 * Data that is stored per tile.
 	 * Look at docs/landscape.html for the exact meaning of the members.
@@ -42,164 +39,12 @@ private:
 		uint16_t m8 = 0; ///< General purpose
 	};
 
-	static std::unique_ptr<TileBase[]> base_tiles; ///< Pointer to the tile-array.
-
-	TileIndex tile; ///< The tile to access the map data for.
-
-public:
-	/**
-	 * Create the tile wrapper for the given tile.
-	 * @param tile The tile to access the map for.
-	 */
-	debug_inline Tile(TileIndex tile) : tile(tile) {}
-
-	/**
-	 * Create the tile wrapper for the given tile.
-	 * @param tile The tile to access the map for.
-	 */
-	Tile(uint tile) : tile(tile) {}
-
-	/**
-	 * Implicit conversion to the TileIndex.
-	 */
-	debug_inline constexpr operator TileIndex() const { return this->tile; }
-
-	/**
-	 * Implicit conversion to the uint for bounds checking.
-	 */
-	debug_inline constexpr operator uint() const { return this->tile.base(); }
-
-	/**
-	 * The type (bits 4..7), bridges (2..3), rainforest/desert (0..1)
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &type()
-	{
-		return base_tiles[this->tile.base()].type;
-	}
-
-	/**
-	 * The height of the northern corner
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the height for.
-	 * @return reference to the byte holding the height.
-	 */
-	debug_inline uint8_t &height()
-	{
-		return base_tiles[this->tile.base()].height;
-	}
-
-	/**
-	 * Primarily used for ownership information
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m1()
-	{
-		return base_tiles[this->tile.base()].m1;
-	}
-
-	/**
-	 * Primarily used for indices to towns, industries and stations
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the uint16_t holding the data.
-	 */
-	debug_inline uint16_t &m2()
-	{
-		return base_tiles[this->tile.base()].m2;
-	}
-
-	/**
-	 * General purpose
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m3()
-	{
-		return base_tiles[this->tile.base()].m3;
-	}
-
-	/**
-	 * General purpose
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m4()
-	{
-		return base_tiles[this->tile.base()].m4;
-	}
-
-	/**
-	 * General purpose
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m5()
-	{
-		return base_tiles[this->tile.base()].m5;
-	}
-
-	/**
-	 * General purpose
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m6()
-	{
-		return base_tiles[this->tile.base()].m6;
-	}
-
-	/**
-	 * Primarily used for newgrf support
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the byte holding the data.
-	 */
-	debug_inline uint8_t &m7()
-	{
-		return base_tiles[this->tile.base()].m7;
-	}
-
-	/**
-	 * General purpose
-	 *
-	 * Look at docs/landscape.html for the exact meaning of the data.
-	 * @param tile The tile to get the data for.
-	 * @return reference to the uint16_t holding the data.
-	 */
-	debug_inline uint16_t &m8()
-	{
-		return base_tiles[this->tile.base()].m8;
-	}
-};
-
-/**
- * Size related data of the map.
- */
-struct Map {
-private:
 	/**
 	 * Iterator to iterate all Tiles
 	 */
+	template <class Tvalue>
 	struct Iterator {
-		typedef Tile value_type;
+		typedef Tvalue value_type;
 		typedef Tile *pointer;
 		typedef Tile &reference;
 		typedef size_t difference_type;
@@ -208,7 +53,7 @@ private:
 		explicit Iterator(TileIndex index) : index(index) {}
 		bool operator==(const Iterator &other) const { return this->index == other.index; }
 		bool operator!=(const Iterator &other) const { return !(*this == other); }
-		Tile operator*() const { return this->index; }
+		value_type operator*() const { return this->index; }
 		Iterator & operator++() { this->index++; return *this; }
 	private:
 		TileIndex index;
@@ -217,9 +62,10 @@ private:
 	/*
 	 * Iterable ensemble of all Tiles
 	 */
+	template <class Tvalue>
 	struct IterateWrapper {
-		Iterator begin() { return Iterator(TileIndex{}); }
-		Iterator end() { return Iterator(TileIndex{Map::Size()}); }
+		Iterator<Tvalue> begin() { return Iterator<Tvalue>(TileIndex{}); }
+		Iterator<Tvalue> end() { return Iterator<Tvalue>(TileIndex{Map::Size()}); }
 		bool empty() { return false; }
 	};
 
@@ -229,6 +75,8 @@ private:
 	static uint size_y;    ///< Size of the map along the Y
 	static uint size;      ///< The number of tiles on the map
 	static uint tile_mask; ///< _map_size - 1 (to mask the mapsize)
+
+	static std::unique_ptr<TileBase[]> base_tiles; ///< Pointer to the tile-array.
 
 public:
 	static void Allocate(uint size_x, uint size_y);
@@ -343,14 +191,176 @@ public:
 	 */
 	static bool IsInitialized()
 	{
-		return Tile::base_tiles != nullptr;
+		return Map::base_tiles != nullptr;
 	}
 
 	/**
-	 * Returns an iterable ensemble of all Tiles
-	 * @return an iterable ensemble of all Tiles
+	 * Returns an iterable ensemble of all primary Tiles
+	 * @return an iterable ensemble of all primary Tiles
 	 */
-	static IterateWrapper Iterate() { return IterateWrapper(); }
+	static IterateWrapper<Tile> Iterate() { return IterateWrapper<Tile>(); }
+
+	/**
+	 * Returns an iterable ensemble of all TileIndexes
+	 * @return an iterable ensemble of all TileIndexes
+	 */
+	static IterateWrapper<TileIndex> IterateIndex() { return IterateWrapper<TileIndex>(); }
+};
+
+/**
+ * Wrapper class to abstract away the way the tiles are stored. It is
+ * intended to be used to access the "map" data of a single tile.
+ *
+ * The wrapper is expected to be fully optimized away by the compiler, even
+ * with low optimization levels except when completely disabling it.
+ */
+class Tile {
+private:
+	TileIndex tile; ///< The tile to access the map data for.
+
+public:
+	/**
+	 * Create the tile wrapper for the given tile.
+	 * @param tile The tile to access the map for.
+	 */
+	debug_inline Tile(TileIndex tile) : tile(tile) {}
+
+	/**
+	 * Create the tile wrapper for the given tile.
+	 * @param tile The tile to access the map for.
+	 */
+	Tile(uint tile) : tile(tile) {}
+
+	/**
+	 * Check if the tile reference is a valid on-map tile.
+	 * @return True if the tile is valid.
+	 */
+	debug_inline bool IsValid() const
+	{
+		return this->tile < Map::Size();
+	}
+
+	/**
+	 * The type (bits 4..7), bridges (2..3), rainforest/desert (0..1)
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &type()
+	{
+		return Map::base_tiles[this->tile.base()].type;
+	}
+
+	/**
+	 * The height of the northern corner
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the height for.
+	 * @return reference to the byte holding the height.
+	 */
+	debug_inline uint8_t &height()
+	{
+		return Map::base_tiles[this->tile.base()].height;
+	}
+
+	/**
+	 * Primarily used for ownership information
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m1()
+	{
+		return Map::base_tiles[this->tile.base()].m1;
+	}
+
+	/**
+	 * Primarily used for indices to towns, industries and stations
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the uint16_t holding the data.
+	 */
+	debug_inline uint16_t &m2()
+	{
+		return Map::base_tiles[this->tile.base()].m2;
+	}
+
+	/**
+	 * General purpose
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m3()
+	{
+		return Map::base_tiles[this->tile.base()].m3;
+	}
+
+	/**
+	 * General purpose
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m4()
+	{
+		return Map::base_tiles[this->tile.base()].m4;
+	}
+
+	/**
+	 * General purpose
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m5()
+	{
+		return Map::base_tiles[this->tile.base()].m5;
+	}
+
+	/**
+	 * General purpose
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m6()
+	{
+		return Map::base_tiles[this->tile.base()].m6;
+	}
+
+	/**
+	 * Primarily used for newgrf support
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the byte holding the data.
+	 */
+	debug_inline uint8_t &m7()
+	{
+		return Map::base_tiles[this->tile.base()].m7;
+	}
+
+	/**
+	 * General purpose
+	 *
+	 * Look at docs/landscape.html for the exact meaning of the data.
+	 * @param tile The tile to get the data for.
+	 * @return reference to the uint16_t holding the data.
+	 */
+	debug_inline uint16_t &m8()
+	{
+		return Map::base_tiles[this->tile.base()].m8;
+	}
+
+	constexpr bool operator ==(const Tile &other) const noexcept { return this->tile == other.tile; }
 };
 
 /**

@@ -103,7 +103,7 @@ static void ConvertRoadTypes()
 	}
 	if (!needs_conversion) return;
 
-	for (TileIndex t : Map::Iterate()) {
+	for (Tile t : Map::Iterate()) {
 		switch (GetTileType(t)) {
 			case MP_ROAD:
 				if (RoadType rt = GetRoadTypeRoad(t); rt != INVALID_ROADTYPE) SetRoadTypeRoad(t, roadtype_conversion_map[rt]);
