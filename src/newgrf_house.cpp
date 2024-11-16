@@ -608,7 +608,7 @@ void AnimateNewHouseConstruction(TileIndex tile)
 	}
 }
 
-bool CanDeleteHouse(TileIndex tile)
+bool CanDeleteHouse(TileIndex index, Tile tile)
 {
 	const HouseSpec *hs = HouseSpec::Get(GetHouseType(tile));
 
@@ -619,7 +619,7 @@ bool CanDeleteHouse(TileIndex tile)
 	}
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_DENY_DESTRUCTION)) {
-		uint16_t callback_res = GetHouseCallback(CBID_HOUSE_DENY_DESTRUCTION, 0, 0, GetHouseType(tile), Town::GetByTile(tile), tile);
+		uint16_t callback_res = GetHouseCallback(CBID_HOUSE_DENY_DESTRUCTION, 0, 0, GetHouseType(tile), Town::GetByTile(tile), index);
 		return (callback_res == CALLBACK_FAILED || !ConvertBooleanCallback(hs->grf_prop.grffile, CBID_HOUSE_DENY_DESTRUCTION, callback_res));
 	} else {
 		return !(hs->extra_flags & BUILDING_IS_PROTECTED);

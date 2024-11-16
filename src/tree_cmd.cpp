@@ -599,21 +599,21 @@ static Foundation GetFoundation_Trees(TileIndex, Slope)
 	return FOUNDATION_NONE;
 }
 
-static CommandCost ClearTile_Trees(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Trees(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	uint num;
 
 	if (Company::IsValidID(_current_company)) {
-		Town *t = ClosestTownFromTile(tile, _settings_game.economy.dist_local_authority);
+		Town *t = ClosestTownFromTile(index, _settings_game.economy.dist_local_authority);
 		if (t != nullptr) ChangeTownRating(t, RATING_TREE_DOWN_STEP, RATING_TREE_MINIMUM, flags);
 	}
 
 	num = GetTreeCount(tile);
 	if (IsInsideMM(GetTreeType(tile), TREE_RAINFOREST, TREE_CACTUS)) num *= 4;
 
-	if (flags & DC_EXEC) DoClearSquare(tile);
+	if (flags & DC_EXEC) DoClearSquare(index);
 
-	return CommandCost(EXPENSES_CONSTRUCTION, num * _price[PR_CLEAR_TREES]);
+	return {CommandCost(EXPENSES_CONSTRUCTION, num * _price[PR_CLEAR_TREES]), false};
 }
 
 static void GetTileDesc_Trees(TileIndex, Tile tile, TileDesc *td)

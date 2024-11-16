@@ -527,18 +527,38 @@ void DrawFoundation(TileInfo *ti, Foundation f)
 	}
 }
 
-void DoClearSquare(TileIndex tile)
+/**
+ * Make a clear tile with grass ground.
+ * @param tile The tile to make a clear grass tile.
+ */
+void MakeClearGrass(Tile tile)
+{
+	MakeClear(tile, CLEAR_GRASS, _generating_world ? 3 : 0);
+}
+
+void DoClearSquare(TileIndex index)
 {
 	/* If the tile can have animation and we clear it, delete it from the animated tile list. */
-	if (MayAnimateTile(tile)) DeleteAnimatedTile(tile, true);
+	if (MayAnimateTile(index)) DeleteAnimatedTile(index, true);
 
-	bool remove = IsDockingTile(tile);
+	Tile tile = index;
+	bool is_docking = IsDockingTile(tile);
+
+	/* Remove all associated tiles. */
+	++tile;
+	while (tile) {
+		is_docking |= IsDockingTile(tile);
+		tile = Tile::Remove(index, tile);
+	}
+
+	tile = index; // Map might have re-allocated.
 	MakeClear(tile, CLEAR_GRASS, _generating_world ? 3 : 0);
-	MarkTileDirtyByTile(tile);
-	if (remove) RemoveDockingTile(tile);
+	tile.SetAssociated(false);
+	MarkTileDirtyByTile(index);
+	if (is_docking) RemoveDockingTile(index);
 
-	ClearNeighbourNonFloodingStates(tile);
-	InvalidateWaterRegion(tile);
+	ClearNeighbourNonFloodingStates(index);
+	InvalidateWaterRegion(index);
 }
 
 /**
@@ -670,7 +690,13 @@ CommandCost CmdLandscapeClear(DoCommandFlag flags, TileIndex tile)
 			return CommandCost(STR_ERROR_CAN_T_BUILD_ON_WATER);
 		}
 	} else {
-		cost.AddCost(_tile_type_procs[GetTileType(tile)]->clear_tile_proc(tile, flags));
+		/* Get costs from all associated tiles. */
+		Tile cur = tile;
+		while (cur) {
+			auto [tile_cost, deleted] = _tile_type_procs[GetTileType(cur)]->clear_tile_proc(tile, cur, flags); // Modifies cur if tile was deleted.
+			cost.AddCost(tile_cost);
+			if (!deleted) ++cur;
+		}
 	}
 
 	if (flags & DC_EXEC) {

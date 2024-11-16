@@ -547,27 +547,27 @@ CommandCost CmdBuildCanal(DoCommandFlag flags, TileIndex tile, TileIndex start_t
 }
 
 
-static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Water(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	switch (GetWaterTileType(tile)) {
 		case WATER_TILE_CLEAR: {
-			if (flags & DC_NO_WATER) return CommandCost(STR_ERROR_CAN_T_BUILD_ON_WATER);
+			if (flags & DC_NO_WATER) return {CommandCost(STR_ERROR_CAN_T_BUILD_ON_WATER), false};
 
 			Money base_cost = IsCanal(tile) ? _price[PR_CLEAR_CANAL] : _price[PR_CLEAR_WATER];
 			/* Make sure freeform edges are allowed or it's not an edge tile. */
-			if (!_settings_game.construction.freeform_edges && (!IsInsideMM(TileX(tile), 1, Map::MaxX() - 1) ||
-					!IsInsideMM(TileY(tile), 1, Map::MaxY() - 1))) {
-				return CommandCost(STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP);
+			if (!_settings_game.construction.freeform_edges && (!IsInsideMM(TileX(index), 1, Map::MaxX() - 1) ||
+					!IsInsideMM(TileY(index), 1, Map::MaxY() - 1))) {
+				return {CommandCost(STR_ERROR_TOO_CLOSE_TO_EDGE_OF_MAP), false};
 			}
 
 			/* Make sure no vehicle is on the tile */
-			CommandCost ret = EnsureNoVehicleOnGround(tile);
-			if (ret.Failed()) return ret;
+			CommandCost ret = EnsureNoVehicleOnGround(index);
+			if (ret.Failed()) return {ret, false};
 
 			Owner owner = GetTileOwner(tile);
 			if (owner != OWNER_WATER && owner != OWNER_NONE) {
-				ret = CheckTileOwnership(tile);
-				if (ret.Failed()) return ret;
+				ret = CheckTileOwnership(index);
+				if (ret.Failed()) return {ret, false};
 			}
 
 			if (flags & DC_EXEC) {
@@ -575,30 +575,32 @@ static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
 					Company::Get(owner)->infrastructure.water--;
 					DirtyCompanyInfrastructureWindows(owner);
 				}
-				DoClearSquare(tile);
-				MarkCanalsAndRiversAroundDirty(tile);
-				ClearNeighbourNonFloodingStates(tile);
+				MakeClearGrass(index);
+				MarkTileDirtyByTile(index);
+				MarkCanalsAndRiversAroundDirty(index);
+				ClearNeighbourNonFloodingStates(index);
 			}
 
-			return CommandCost(EXPENSES_CONSTRUCTION, base_cost);
+			return {CommandCost(EXPENSES_CONSTRUCTION, base_cost), false};
 		}
 
 		case WATER_TILE_COAST: {
-			Slope slope = GetTileSlope(tile);
+			Slope slope = GetTileSlope(index);
 
 			/* Make sure no vehicle is on the tile */
-			CommandCost ret = EnsureNoVehicleOnGround(tile);
-			if (ret.Failed()) return ret;
+			CommandCost ret = EnsureNoVehicleOnGround(index);
+			if (ret.Failed()) return {ret, false};
 
 			if (flags & DC_EXEC) {
-				DoClearSquare(tile);
-				MarkCanalsAndRiversAroundDirty(tile);
-				ClearNeighbourNonFloodingStates(tile);
+				MakeClearGrass(index);
+				MarkTileDirtyByTile(index);
+				MarkCanalsAndRiversAroundDirty(index);
+				ClearNeighbourNonFloodingStates(index);
 			}
 			if (IsSlopeWithOneCornerRaised(slope)) {
-				return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_WATER]);
+				return {CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_WATER]), false};
 			} else {
-				return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_ROUGH]);
+				return {CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_ROUGH]), false};
 			}
 		}
 
@@ -610,15 +612,15 @@ static CommandCost ClearTile_Water(TileIndex tile, DoCommandFlag flags)
 				{ { 1,  0}, {0, -1}, {-1, 0}, {0,  1} }, // LOCK_PART_UPPER
 			};
 
-			if (flags & DC_AUTO) return CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
-			if (_current_company == OWNER_WATER) return CMD_ERROR;
+			if (flags & DC_AUTO) return {CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED), false};
+			if (_current_company == OWNER_WATER) return {CMD_ERROR, false};
 			/* move to the middle tile.. */
-			return RemoveLock(tile + ToTileIndexDiff(_lock_tomiddle_offs[GetLockPart(tile)][GetLockDirection(tile)]), flags);
+			return {RemoveLock(index + ToTileIndexDiff(_lock_tomiddle_offs[GetLockPart(tile)][GetLockDirection(tile)]), flags), false};
 		}
 
 		case WATER_TILE_DEPOT:
-			if (flags & DC_AUTO) return CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
-			return RemoveShipDepot(tile, flags);
+			if (flags & DC_AUTO) return {CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED), false};
+			return {RemoveShipDepot(index, flags), false};
 
 		default:
 			NOT_REACHED();

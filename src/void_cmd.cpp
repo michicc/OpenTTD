@@ -39,9 +39,9 @@ static Foundation GetFoundation_Void(TileIndex, Slope)
 	return FOUNDATION_NONE;
 }
 
-static CommandCost ClearTile_Void(TileIndex, DoCommandFlag)
+static std::tuple<CommandCost, bool> ClearTile_Void(TileIndex, Tile &, DoCommandFlag)
 {
-	return CommandCost(STR_ERROR_OFF_EDGE_OF_MAP);
+	return {CommandCost(STR_ERROR_OFF_EDGE_OF_MAP), false};
 }
 
 

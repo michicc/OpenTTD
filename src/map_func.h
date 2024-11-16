@@ -449,6 +449,8 @@ public:
 	constexpr bool operator ==(const Tile &other) const noexcept { return this->tile == other.tile; }
 
 	explicit operator bool() const { return this->IsValid(); }
+
+	static Tile Remove(TileIndex index, Tile tile);
 };
 
 /**
