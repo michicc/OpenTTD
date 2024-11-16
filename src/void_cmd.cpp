@@ -51,10 +51,10 @@ static void GetTileDesc_Void(TileIndex, Tile, TileDesc *td)
 	td->owner[0] = OWNER_NONE;
 }
 
-static void TileLoop_Void(TileIndex tile)
+static bool TileLoop_Void(TileIndex index, Tile &tile)
 {
 	/* Floods adjacent edge tile to prevent maps without water. */
-	TileLoop_Water(tile);
+	return TileLoop_Water(index, tile);
 }
 
 static void ChangeTileOwner_Void(TileIndex, Owner, Owner)

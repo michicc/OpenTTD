@@ -1241,20 +1241,22 @@ static void DoDryUp(TileIndex tile)
  * Let a water tile floods its diagonal adjoining tiles
  * called from tunnelbridge_cmd, and by TileLoop_Industry() and TileLoop_Track()
  *
+ * @param index Tile index that is flooding
  * @param tile the water/shore tile that floods
+ * @return True if the tile was removed from the map.
  */
-void TileLoop_Water(TileIndex tile)
+bool TileLoop_Water(TileIndex index, Tile &tile)
 {
 	if (IsTileType(tile, MP_WATER)) {
-		AmbientSoundEffect(tile);
-		if (IsNonFloodingWaterTile(tile)) return;
+		AmbientSoundEffect(index);
+		if (IsNonFloodingWaterTile(tile)) return false;
 	}
 
-	switch (GetFloodingBehaviour(tile)) {
+	switch (GetFloodingBehaviour(index)) {
 		case FLOOD_ACTIVE: {
 			bool continue_flooding = false;
 			for (Direction dir = DIR_BEGIN; dir < DIR_END; dir++) {
-				TileIndex dest = AddTileIndexDiffCWrap(tile, TileIndexDiffCByDir(dir));
+				TileIndex dest = AddTileIndexDiffCWrap(index, TileIndexDiffCByDir(dir));
 				/* Contrary to drying up, flooding does not consider MP_VOID tiles. */
 				if (!IsValidTile(dest)) continue;
 				/* do not try to flood water tiles - increases performance a lot */
@@ -1281,21 +1283,21 @@ void TileLoop_Water(TileIndex tile)
 		}
 
 		case FLOOD_DRYUP: {
-			Slope slope_here = std::get<0>(GetFoundationSlope(tile)) & ~SLOPE_HALFTILE_MASK & ~SLOPE_STEEP;
+			Slope slope_here = std::get<0>(GetFoundationSlope(index)) & ~SLOPE_HALFTILE_MASK & ~SLOPE_STEEP;
 			for (Direction dir : SetBitIterator<Direction>(_flood_from_dirs[slope_here])) {
-				TileIndex dest = AddTileIndexDiffCWrap(tile, TileIndexDiffCByDir(dir));
+				TileIndex dest = AddTileIndexDiffCWrap(index, TileIndexDiffCByDir(dir));
 				/* Contrary to flooding, drying up does consider MP_VOID tiles. */
 				if (dest == INVALID_TILE) continue;
 
 				FloodingBehaviour dest_behaviour = GetFloodingBehaviour(dest);
-				if ((dest_behaviour == FLOOD_ACTIVE) || (dest_behaviour == FLOOD_PASSIVE)) return;
+				if ((dest_behaviour == FLOOD_ACTIVE) || (dest_behaviour == FLOOD_PASSIVE)) return false;
 			}
-			DoDryUp(tile);
+			DoDryUp(index);
 			break;
 		}
-
-		default: return;
 	}
+
+	return false;
 }
 
 void ConvertGroundTilesIntoWaterTiles()

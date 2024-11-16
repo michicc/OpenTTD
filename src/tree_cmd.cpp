@@ -687,45 +687,45 @@ static void TileLoopTreesAlps(TileIndex tile)
 	MarkTileDirtyByTile(tile);
 }
 
-static bool CanPlantExtraTrees(TileIndex tile)
+static bool CanPlantExtraTrees(Tile tile)
 {
 	return ((_settings_game.game_creation.landscape == LT_TROPIC && GetTropicZone(tile) == TROPICZONE_RAINFOREST) ?
 		(_settings_game.construction.extra_tree_placement == ETP_SPREAD_ALL || _settings_game.construction.extra_tree_placement == ETP_SPREAD_RAINFOREST) :
 		_settings_game.construction.extra_tree_placement == ETP_SPREAD_ALL);
 }
 
-static void TileLoop_Trees(TileIndex tile)
+static bool TileLoop_Trees(TileIndex index, Tile &tile)
 {
 	if (GetTreeGround(tile) == TREE_GROUND_SHORE) {
-		TileLoop_Water(tile);
+		TileLoop_Water(index, tile);
 	} else {
 		switch (_settings_game.game_creation.landscape) {
-			case LT_TROPIC: TileLoopTreesDesert(tile); break;
-			case LT_ARCTIC: TileLoopTreesAlps(tile);   break;
+			case LT_TROPIC: TileLoopTreesDesert(index); break;
+			case LT_ARCTIC: TileLoopTreesAlps(index);   break;
 		}
 	}
 
-	AmbientSoundEffect(tile);
+	AmbientSoundEffect(index);
 
 	/* TimerGameTick::counter is incremented by 256 between each call, so ignore lower 8 bits.
 	 * Also, we use a simple hash to spread the updates evenly over the map.
 	 * 11 and 9 are just some co-prime numbers for better spread.
 	 */
-	uint32_t cycle = 11 * TileX(tile) + 9 * TileY(tile) + (TimerGameTick::counter >> 8);
+	uint32_t cycle = 11 * TileX(index) + 9 * TileY(index) + (TimerGameTick::counter >> 8);
 
 	/* Handle growth of grass (under trees/on MP_TREES tiles) at every 8th processings, like it's done for grass on MP_CLEAR tiles. */
 	if ((cycle & 7) == 7 && GetTreeGround(tile) == TREE_GROUND_GRASS) {
 		uint density = GetTreeDensity(tile);
 		if (density < 3) {
 			SetTreeGroundDensity(tile, TREE_GROUND_GRASS, density + 1);
-			MarkTileDirtyByTile(tile);
+			MarkTileDirtyByTile(index);
 		}
 	}
 
-	if (_settings_game.construction.extra_tree_placement == ETP_NO_GROWTH_NO_SPREAD) return;
+	if (_settings_game.construction.extra_tree_placement == ETP_NO_GROWTH_NO_SPREAD) return false;
 
 	static const uint32_t TREE_UPDATE_FREQUENCY = 16;  // How many tile updates happen for one tree update
-	if (cycle % TREE_UPDATE_FREQUENCY != TREE_UPDATE_FREQUENCY - 1) return;
+	if (cycle % TREE_UPDATE_FREQUENCY != TREE_UPDATE_FREQUENCY - 1) return false;
 
 	switch (GetTreeGrowth(tile)) {
 		case TreeGrowthStage::Grown: // regular sized tree
@@ -752,21 +752,21 @@ static void TileLoop_Trees(TileIndex tile)
 
 						TreeType treetype = GetTreeType(tile);
 
-						tile += TileOffsByDir(static_cast<Direction>(Random() % DIR_END));
+						index += TileOffsByDir(static_cast<Direction>(Random() % DIR_END));
 
 						/* Cacti don't spread */
-						if (!CanPlantTreesOnTile(tile, false)) return;
+						if (!CanPlantTreesOnTile(index, false)) return false;
 
 						/* Don't plant trees, if ground was freshly cleared */
-						if (IsTileType(tile, MP_CLEAR) && GetClearGround(tile) == CLEAR_GRASS && GetClearDensity(tile) != 3) return;
+						if (IsTileType(index, MP_CLEAR) && GetClearGround(index) == CLEAR_GRASS && GetClearDensity(index) != 3) return false;
 
-						PlantTreesOnTile(tile, treetype, 0, TreeGrowthStage::Growing1);
+						PlantTreesOnTile(index, treetype, 0, TreeGrowthStage::Growing1);
 
 						break;
 					}
 
 					default:
-						return;
+						return false;
 				}
 			}
 			break;
@@ -809,7 +809,8 @@ static void TileLoop_Trees(TileIndex tile)
 			break;
 	}
 
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
+	return false;
 }
 
 /**
