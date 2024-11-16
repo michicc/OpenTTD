@@ -23,7 +23,7 @@
 
 #include "safeguards.h"
 
-static CommandCost ClearTile_Clear(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Clear(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	static const Price clear_price_table[] = {
 		PR_CLEAR_GRASS,
@@ -39,9 +39,12 @@ static CommandCost ClearTile_Clear(TileIndex tile, DoCommandFlag flags)
 		price.AddCost(_price[clear_price_table[GetClearGround(tile)]]);
 	}
 
-	if (flags & DC_EXEC) DoClearSquare(tile);
+	if (flags & DC_EXEC) {
+		MakeClearGrass(tile);
+		MarkTileDirtyByTile(index);
+	}
 
-	return price;
+	return {price, false};
 }
 
 void DrawClearLandTile(const TileInfo *ti, uint8_t set)

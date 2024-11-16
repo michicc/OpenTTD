@@ -1231,7 +1231,7 @@ static CommandCost RemoveRoadDepot(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_DEPOT_ROAD]);
 }
 
-static CommandCost ClearTile_Road(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Road(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	switch (GetRoadTileType(tile)) {
 		case ROAD_TILE_NORMAL: {
@@ -1243,42 +1243,42 @@ static CommandCost ClearTile_Road(TileIndex tile, DoCommandFlag flags)
 				for (RoadTramType rtt : _roadtramtypes) {
 					if (!MayHaveRoad(tile) || GetRoadType(tile, rtt) == INVALID_ROADTYPE) continue;
 
-					CommandCost tmp_ret = RemoveRoad(tile, flags, GetRoadBits(tile, rtt), rtt, true);
-					if (tmp_ret.Failed()) return tmp_ret;
+					CommandCost tmp_ret = RemoveRoad(index, flags, GetRoadBits(tile, rtt), rtt, true);
+					if (tmp_ret.Failed()) return {tmp_ret, false};
 					ret.AddCost(tmp_ret);
 				}
-				return ret;
+				return {ret, false};
 			}
-			return CommandCost(STR_ERROR_MUST_REMOVE_ROAD_FIRST);
+			return {CommandCost(STR_ERROR_MUST_REMOVE_ROAD_FIRST), false};
 		}
 
 		case ROAD_TILE_CROSSING: {
 			CommandCost ret(EXPENSES_CONSTRUCTION);
 
-			if (flags & DC_AUTO) return CommandCost(STR_ERROR_MUST_REMOVE_ROAD_FIRST);
+			if (flags & DC_AUTO) return {CommandCost(STR_ERROR_MUST_REMOVE_ROAD_FIRST), false};
 
 			/* Must iterate over the roadtypes in a reverse manner because
 			 * tram tracks must be removed before the road bits. */
 			for (RoadTramType rtt : { RTT_TRAM, RTT_ROAD }) {
 				if (!MayHaveRoad(tile) || GetRoadType(tile, rtt) == INVALID_ROADTYPE) continue;
 
-				CommandCost tmp_ret = RemoveRoad(tile, flags, GetCrossingRoadBits(tile), rtt, true);
-				if (tmp_ret.Failed()) return tmp_ret;
+				CommandCost tmp_ret = RemoveRoad(index, flags, GetCrossingRoadBits(tile), rtt, true);
+				if (tmp_ret.Failed()) return {tmp_ret, false};
 				ret.AddCost(tmp_ret);
 			}
 
 			if (flags & DC_EXEC) {
-				Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+				Command<CMD_LANDSCAPE_CLEAR>::Do(flags, index);
 			}
-			return ret;
+			return {ret, false};
 		}
 
 		default:
 		case ROAD_TILE_DEPOT:
 			if (flags & DC_AUTO) {
-				return CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
+				return {CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED), false};
 			}
-			return RemoveRoadDepot(tile, flags);
+			return {RemoveRoadDepot(index, flags), false};
 	}
 }
 

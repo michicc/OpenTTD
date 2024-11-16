@@ -1797,58 +1797,58 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 	return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_DEPOT_TRAIN]);
 }
 
-static CommandCost ClearTile_Track(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Track(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	CommandCost cost(EXPENSES_CONSTRUCTION);
 
 	if (flags & DC_AUTO) {
 		if (!IsTileOwner(tile, _current_company)) {
-			return CommandCost(STR_ERROR_AREA_IS_OWNED_BY_ANOTHER);
+			return {CommandCost(STR_ERROR_AREA_IS_OWNED_BY_ANOTHER), false};
 		}
 
 		if (IsPlainRail(tile)) {
-			return CommandCost(STR_ERROR_MUST_REMOVE_RAILROAD_TRACK);
+			return {CommandCost(STR_ERROR_MUST_REMOVE_RAILROAD_TRACK), false};
 		} else {
-			return CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
+			return {CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED), false};
 		}
 	}
 
 	switch (GetRailTileType(tile)) {
 		case RAIL_TILE_SIGNALS:
 		case RAIL_TILE_NORMAL: {
-			Slope tileh = GetTileSlope(tile);
+			Slope tileh = GetTileSlope(index);
 			/* Is there flat water on the lower halftile that gets cleared expensively? */
 			bool water_ground = (GetRailGroundType(tile) == RAIL_GROUND_WATER && IsSlopeWithOneCornerRaised(tileh));
 
 			TrackBits tracks = GetTrackBits(tile);
 			while (tracks != TRACK_BIT_NONE) {
 				Track track = RemoveFirstTrack(&tracks);
-				CommandCost ret = Command<CMD_REMOVE_SINGLE_RAIL>::Do(flags, tile, track);
-				if (ret.Failed()) return ret;
+				CommandCost ret = Command<CMD_REMOVE_SINGLE_RAIL>::Do(flags, index, track);
+				if (ret.Failed()) return {ret, false};
 				cost.AddCost(ret);
 			}
 
 			/* When bankrupting, don't make water dirty, there could be a ship on lower halftile.
 			 * Same holds for non-companies clearing the tile, e.g. disasters. */
 			if (water_ground && !(flags & DC_BANKRUPT) && Company::IsValidID(_current_company)) {
-				CommandCost ret = EnsureNoVehicleOnGround(tile);
-				if (ret.Failed()) return ret;
+				CommandCost ret = EnsureNoVehicleOnGround(index);
+				if (ret.Failed()) return {ret, false};
 
 				/* The track was removed, and left a coast tile. Now also clear the water. */
 				if (flags & DC_EXEC) {
-					DoClearSquare(tile);
+					DoClearSquare(index);
 				}
 				cost.AddCost(_price[PR_CLEAR_WATER]);
 			}
 
-			return cost;
+			return {cost, false};
 		}
 
 		case RAIL_TILE_DEPOT:
-			return RemoveTrainDepot(tile, flags);
+			return {RemoveTrainDepot(index, flags), false};
 
 		default:
-			return CMD_ERROR;
+			return {CMD_ERROR, false};
 	}
 }
 

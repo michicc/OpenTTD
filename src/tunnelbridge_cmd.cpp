@@ -1010,18 +1010,19 @@ static CommandCost DoClearBridge(TileIndex tile, DoCommandFlag flags)
 
 /**
  * Remove a tunnel or a bridge from the game.
+ * @param index Tile index the tile is associated to.
  * @param tile Tile containing one of the endpoints.
  * @param flags Command flags.
- * @return Succeeded or failed command.
+ * @return (Succeeded or failed command; tile deleted?)
  */
-static CommandCost ClearTile_TunnelBridge(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_TunnelBridge(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
 	if (IsTunnel(tile)) {
-		if (flags & DC_AUTO) return CommandCost(STR_ERROR_MUST_DEMOLISH_TUNNEL_FIRST);
-		return DoClearTunnel(tile, flags);
+		if (flags & DC_AUTO) return {CommandCost(STR_ERROR_MUST_DEMOLISH_TUNNEL_FIRST), false};
+		return {DoClearTunnel(index, flags), false};
 	} else { // IsBridge(tile)
-		if (flags & DC_AUTO) return CommandCost(STR_ERROR_MUST_DEMOLISH_BRIDGE_FIRST);
-		return DoClearBridge(tile, flags);
+		if (flags & DC_AUTO) return {CommandCost(STR_ERROR_MUST_DEMOLISH_BRIDGE_FIRST), false};
+		return {DoClearBridge(index, flags), false};
 	}
 }
 

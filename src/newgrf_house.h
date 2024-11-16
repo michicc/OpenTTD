@@ -105,7 +105,7 @@ uint16_t GetHouseCallback(CallbackID callback, uint32_t param1, uint32_t param2,
 		bool not_yet_constructed = false, uint8_t initial_random_bits = 0, CargoTypes watched_cargo_triggers = 0, int view = 0);
 void WatchedCargoCallback(TileIndex tile, CargoTypes trigger_cargoes);
 
-bool CanDeleteHouse(TileIndex tile);
+bool CanDeleteHouse(TileIndex index, Tile tile);
 
 bool NewHouseTileLoop(TileIndex tile);
 
