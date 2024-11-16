@@ -3109,7 +3109,7 @@ static void DrawTile_Station(TileInfo *ti)
 				tile_layout = GetStationGfx(ti->tile);
 
 				if (HasBit(statspec->callback_mask, CBM_STATION_DRAW_TILE_LAYOUT)) {
-					uint16_t callback = GetStationCallback(CBID_STATION_DRAW_TILE_LAYOUT, 0, 0, statspec, st, ti->tile);
+					uint16_t callback = GetStationCallback(CBID_STATION_DRAW_TILE_LAYOUT, 0, 0, statspec, st, ti->index);
 					if (callback != CALLBACK_FAILED) tile_layout = (callback & ~1) + GetRailStationAxis(ti->tile);
 				}
 
@@ -3177,10 +3177,10 @@ static void DrawTile_Station(TileInfo *ti)
 			/* Station has custom foundations.
 			 * Check whether the foundation continues beyond the tile's upper sides. */
 			uint edge_info = 0;
-			auto [slope, z] = GetFoundationPixelSlope(ti->tile);
-			if (!HasFoundationNW(ti->tile, slope, z)) SetBit(edge_info, 0);
-			if (!HasFoundationNE(ti->tile, slope, z)) SetBit(edge_info, 1);
-			SpriteID image = GetCustomStationFoundationRelocation(statspec, st, ti->tile, tile_layout, edge_info);
+			auto [slope, z] = GetFoundationPixelSlope(ti->index);
+			if (!HasFoundationNW(ti->index, slope, z)) SetBit(edge_info, 0);
+			if (!HasFoundationNE(ti->index, slope, z)) SetBit(edge_info, 1);
+			SpriteID image = GetCustomStationFoundationRelocation(statspec, st, ti->index, tile_layout, edge_info);
 			if (image == 0) goto draw_default_foundation;
 
 			if (HasBit(statspec->flags, SSF_EXTENDED_FOUNDATIONS)) {
@@ -3245,14 +3245,14 @@ draw_default_foundation:
 
 	if (IsBuoy(ti->tile)) {
 		DrawWaterClassGround(ti);
-		SpriteID sprite = GetCanalSprite(CF_BUOY, ti->tile);
+		SpriteID sprite = GetCanalSprite(CF_BUOY, ti->index);
 		if (sprite != 0) total_offset = sprite - SPR_IMG_BUOY;
 	} else if (IsDock(ti->tile) || (IsOilRig(ti->tile) && IsTileOnWater(ti->tile))) {
 		if (ti->tileh == SLOPE_FLAT) {
 			DrawWaterClassGround(ti);
 		} else {
 			assert(IsDock(ti->tile));
-			TileIndex water_tile = ti->tile + TileOffsByDiagDir(GetDockDirection(ti->tile));
+			TileIndex water_tile = ti->index + TileOffsByDiagDir(GetDockDirection(ti->tile));
 			WaterClass wc = HasTileWaterClass(water_tile) ? GetWaterClass(water_tile) : WATER_CLASS_INVALID;
 			if (wc == WATER_CLASS_SEA) {
 				DrawShoreTile(ti->tileh);
@@ -3280,7 +3280,7 @@ draw_default_foundation:
 			bool separate_ground = HasBit(statspec->flags, SSF_SEPARATE_GROUND);
 			uint32_t var10_values = layout->PrepareLayout(total_offset, rti->fallback_railtype, 0, 0, separate_ground);
 			for (uint8_t var10 : SetBitIterator(var10_values)) {
-				uint32_t var10_relocation = GetCustomStationRelocation(statspec, st, ti->tile, var10);
+				uint32_t var10_relocation = GetCustomStationRelocation(statspec, st, ti->index, var10);
 				layout->ProcessRegisters(var10, var10_relocation, separate_ground);
 			}
 			tmp_rail_layout.seq = layout->GetLayout(&tmp_rail_layout.ground);
@@ -3288,9 +3288,9 @@ draw_default_foundation:
 			total_offset = 0;
 		} else if (statspec != nullptr) {
 			/* Simple sprite layout */
-			ground_relocation = relocation = GetCustomStationRelocation(statspec, st, ti->tile, 0);
+			ground_relocation = relocation = GetCustomStationRelocation(statspec, st, ti->index, 0);
 			if (HasBit(statspec->flags, SSF_SEPARATE_GROUND)) {
-				ground_relocation = GetCustomStationRelocation(statspec, st, ti->tile, 1);
+				ground_relocation = GetCustomStationRelocation(statspec, st, ti->index, 1);
 			}
 			ground_relocation += rti->fallback_railtype;
 		}
@@ -3303,12 +3303,12 @@ draw_default_foundation:
 		PaletteID pal  = t->ground.pal;
 		RailTrackOffset overlay_offset;
 		if (rti != nullptr && rti->UsesOverlay() && SplitGroundSpriteForOverlay(ti, &image, &overlay_offset)) {
-			SpriteID ground = GetCustomRailSprite(rti, ti->tile, RTSG_GROUND);
+			SpriteID ground = GetCustomRailSprite(rti, ti->index, RTSG_GROUND);
 			DrawGroundSprite(image, PAL_NONE);
 			DrawGroundSprite(ground + overlay_offset, PAL_NONE);
 
 			if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasStationReservation(ti->tile)) {
-				SpriteID overlay = GetCustomRailSprite(rti, ti->tile, RTSG_OVERLAY);
+				SpriteID overlay = GetCustomRailSprite(rti, ti->index, RTSG_OVERLAY);
 				DrawGroundSprite(overlay + overlay_offset, PALETTE_CRASH);
 			}
 		} else {
@@ -3334,12 +3334,12 @@ draw_default_foundation:
 		StationGfx view = GetStationGfx(ti->tile);
 		StationType type = GetStationType(ti->tile);
 
-		const RoadStopSpec *stopspec = GetRoadStopSpec(ti->tile);
+		const RoadStopSpec *stopspec = GetRoadStopSpec(ti->index);
 		RoadStopDrawMode stop_draw_mode{};
 		if (stopspec != nullptr) {
 			stop_draw_mode = stopspec->draw_mode;
 			st = BaseStation::GetByTile(ti->tile);
-			RoadStopResolverObject object(stopspec, st, ti->tile, INVALID_ROADTYPE, type, view);
+			RoadStopResolverObject object(stopspec, st, ti->index, INVALID_ROADTYPE, type, view);
 			const SpriteGroup *group = object.Resolve();
 			if (group != nullptr && group->type == SGT_TILELAYOUT) {
 				if (HasBit(stopspec->flags, RSF_DRAW_MODE_REGISTER)) {
@@ -3373,7 +3373,7 @@ draw_default_foundation:
 			assert(road_rt != INVALID_ROADTYPE && tram_rt == INVALID_ROADTYPE);
 
 			if ((stopspec == nullptr || (stop_draw_mode & ROADSTOP_DRAW_MODE_ROAD) != 0) && road_rti->UsesOverlay()) {
-				SpriteID ground = GetCustomRoadSprite(road_rti, ti->tile, ROTSG_ROADSTOP);
+				SpriteID ground = GetCustomRoadSprite(road_rti, ti->index, ROTSG_ROADSTOP);
 				DrawGroundSprite(ground + view, PAL_NONE);
 			}
 		}

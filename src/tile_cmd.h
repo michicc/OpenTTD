@@ -44,7 +44,8 @@ struct TileInfo {
 	int x;          ///< X position of the tile in unit coordinates
 	int y;          ///< Y position of the tile in unit coordinates
 	Slope tileh;    ///< Slope of the tile
-	TileIndex tile; ///< Tile index
+	TileIndex index;///< Tile index
+	Tile tile;      ///< Tile pointer
 	int z;          ///< Height
 };
 

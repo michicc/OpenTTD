@@ -809,7 +809,7 @@ static void DrawWaterTileStruct(const TileInfo *ti, const DrawTileSeqStruct *dts
 
 	for (; !dtss->IsTerminator(); dtss++) {
 		uint tile_offs = offset + dtss->image.sprite;
-		if (feature < CF_END) tile_offs = GetCanalSpriteOffset(feature, ti->tile, tile_offs);
+		if (feature < CF_END) tile_offs = GetCanalSpriteOffset(feature, ti->index, tile_offs);
 		AddSortableSpriteToDraw(base + tile_offs, palette,
 			ti->x + dtss->delta_x, ti->y + dtss->delta_y,
 			dtss->size_x, dtss->size_y,
@@ -827,7 +827,7 @@ static void DrawWaterLock(const TileInfo *ti)
 	/* Draw ground sprite. */
 	SpriteID image = dts.ground.sprite;
 
-	SpriteID water_base = GetCanalSprite(CF_WATERSLOPE, ti->tile);
+	SpriteID water_base = GetCanalSprite(CF_WATERSLOPE, ti->index);
 	if (water_base == 0) {
 		/* Use default sprites. */
 		water_base = SPR_CANALS_BASE;
@@ -845,7 +845,7 @@ static void DrawWaterLock(const TileInfo *ti)
 
 	/* Draw structures. */
 	uint     zoffs = 0;
-	SpriteID base  = GetCanalSprite(CF_LOCKS, ti->tile);
+	SpriteID base  = GetCanalSprite(CF_LOCKS, ti->index);
 
 	if (base == 0) {
 		/* If no custom graphics, use defaults. */
@@ -871,7 +871,7 @@ static void DrawRiverWater(const TileInfo *ti)
 	uint     edges_offset = 0;
 
 	if (ti->tileh != SLOPE_FLAT || HasBit(_water_feature[CF_RIVER_SLOPE].flags, CFF_HAS_FLAT_SPRITE)) {
-		image = GetCanalSprite(CF_RIVER_SLOPE, ti->tile);
+		image = GetCanalSprite(CF_RIVER_SLOPE, ti->index);
 		if (image == 0) {
 			switch (ti->tileh) {
 				case SLOPE_NW: image = SPR_WATER_SLOPE_Y_DOWN; break;
@@ -892,14 +892,14 @@ static void DrawRiverWater(const TileInfo *ti)
 				default:       offset  = 0; break;
 			}
 
-			offset = GetCanalSpriteOffset(CF_RIVER_SLOPE, ti->tile, offset);
+			offset = GetCanalSpriteOffset(CF_RIVER_SLOPE, ti->index, offset);
 		}
 	}
 
 	DrawGroundSprite(image + offset, PAL_NONE);
 
 	/* Draw river edges if available. */
-	DrawWaterEdges(false, edges_offset, ti->tile);
+	DrawWaterEdges(false, edges_offset, ti->index);
 }
 
 void DrawShoreTile(Slope tileh)
@@ -922,8 +922,8 @@ void DrawShoreTile(Slope tileh)
 void DrawWaterClassGround(const TileInfo *ti)
 {
 	switch (GetWaterClass(ti->tile)) {
-		case WATER_CLASS_SEA:   DrawSeaWater(ti->tile); break;
-		case WATER_CLASS_CANAL: DrawCanalWater(ti->tile); break;
+		case WATER_CLASS_SEA:   DrawSeaWater(ti->index); break;
+		case WATER_CLASS_CANAL: DrawCanalWater(ti->index); break;
 		case WATER_CLASS_RIVER: DrawRiverWater(ti); break;
 		default: NOT_REACHED();
 	}

@@ -11,12 +11,23 @@
 #define MAP_FUNC_H
 
 #include "core/math_func.hpp"
+#include "core/bitmath_func.hpp"
 #include "tile_type.h"
 #include "map_type.h"
 #include "direction_func.h"
 
 debug_inline static uint TileX(TileIndex tile);
 debug_inline static uint TileY(TileIndex tile);
+
+/**
+ * Check if a tile type can have associated tiles.
+ * @param tt The tile type to check
+ * @return True if the type can have associated tiles
+ */
+static inline bool MayHaveAssociatedTile(TileType tt)
+{
+	return tt == MP_CLEAR || tt == MP_WATER;
+}
 
 /**
  * Size related data of the map.
@@ -229,6 +240,8 @@ private:
 
 	Tile(Map::TileBase *tile) : tile(tile) {}
 public:
+	debug_inline Tile() : tile(nullptr) {}
+
 	/**
 	 * Create the tile wrapper for the given tile.
 	 * @param tile The tile to access the map for.
@@ -377,7 +390,65 @@ public:
 		return this->tile->m8;
 	}
 
+	/**
+	 * Get the tiletype of a this tile.
+	 * @return The tiletype of the tile.
+	 * @pre IsValid()
+	 */
+	debug_inline TileType tile_type()
+	{
+		return static_cast<TileType>(GB(this->tile->type, 4, 4));
+	}
+
+	/**
+	 * Check if this tile has an associated tile following.
+	 * @return True if the next tile is associated with this tile.
+	 */
+	bool HasAssociated()
+	{
+		return MayHaveAssociatedTile(this->tile_type()) && HasBit(this->m8(), 14);
+	}
+
+	/**
+	 * Set the flag indicating if a tile has an associated tile.
+	 * @param has_associated True for has tile, false for has not.
+	 * @pre MayHaveAssociatedTile()
+	 */
+	void SetAssociated(bool has_associated)
+	{
+		assert(this->IsValid());
+		assert(MayHaveAssociatedTile(this->tile_type()));
+		AssignBit(this->m8(), 14, has_associated);
+	}
+
+	/**
+	 * Advance tile to the next associated tile.
+	 * @return Next associated tile if present or an invalid tile.
+	 */
+	Tile &operator ++()
+	{
+		if (this->IsValid() && this->HasAssociated()) {
+			++this->tile;
+		} else {
+			this->tile = nullptr;
+		}
+		return *this;
+	}
+
+	/**
+	 * Advance tile to the next associated tile.
+	 * @return Current tile.
+	 */
+	Tile operator ++(int)
+	{
+		Tile old(this->tile);
+		this->operator++();
+		return old;
+	}
+
 	constexpr bool operator ==(const Tile &other) const noexcept { return this->tile == other.tile; }
+
+	explicit operator bool() const { return this->IsValid(); }
 };
 
 /**
