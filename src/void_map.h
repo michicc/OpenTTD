@@ -15,9 +15,13 @@
 /**
  * Make a nice void tile ;)
  * @param t the tile to make void
+ * @pre !IsInnerTile(tile)
  */
-inline void MakeVoid(Tile t)
+inline void MakeVoid(TileIndex tile)
 {
+	assert(!IsInnerTile(tile));
+
+	Tile t(tile);
 	SetTileType(t, MP_VOID);
 	SetTileHeight(t, 0);
 	t.m1() = 0;

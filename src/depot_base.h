@@ -28,7 +28,7 @@ struct Depot : DepotPool::PoolItem<&_depot_pool> {
 	Depot(TileIndex xy = INVALID_TILE) : xy(xy) {}
 	~Depot();
 
-	static inline Depot *GetByTile(TileIndex tile)
+	static inline Depot *GetByTile(Tile tile)
 	{
 		return Depot::Get(GetDepotIndex(tile));
 	}

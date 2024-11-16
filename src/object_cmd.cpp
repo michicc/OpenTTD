@@ -52,7 +52,7 @@ uint16_t Object::counts[NUM_OBJECTS];
  * @param tile The tile to fetch the object for.
  * @return The object.
  */
-/* static */ Object *Object::GetByTile(TileIndex tile)
+/* static */ Object *Object::GetByTile(Tile tile)
 {
 	return Object::Get(GetObjectIndex(tile));
 }
