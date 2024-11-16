@@ -443,7 +443,7 @@ static void DrawTile_Object(TileInfo *ti)
 	/* Fall back for when the object doesn't exist anymore. */
 	if (!spec->IsEnabled()) type = OBJECT_TRANSMITTER;
 
-	if ((spec->flags & OBJECT_FLAG_HAS_NO_FOUNDATION) == 0) DrawFoundation(ti, GetFoundation_Object(ti->tile, ti->tileh));
+	if ((spec->flags & OBJECT_FLAG_HAS_NO_FOUNDATION) == 0) DrawFoundation(ti, GetFoundation_Object(ti->index, ti->tileh));
 
 	if (type < NEW_OBJECT_OFFSET) {
 		const DrawTileSprites *dts = nullptr;
@@ -451,7 +451,7 @@ static void DrawTile_Object(TileInfo *ti)
 		PaletteID palette = to == OWNER_NONE ? PAL_NONE : COMPANY_SPRITE_COLOUR(to);
 
 		if (type == OBJECT_HQ) {
-			TileIndex diff = ti->tile - Object::GetByTile(ti->tile)->location.tile;
+			TileIndex diff = ti->index - Object::GetByTile(ti->tile)->location.tile;
 			dts = &_object_hq[GetCompanyHQSize(ti->tile) << 2 | TileY(diff) << 1 | TileX(diff)];
 		} else {
 			dts = &_objects[type];

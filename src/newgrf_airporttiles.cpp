@@ -261,14 +261,14 @@ bool DrawNewAirportTile(TileInfo *ti, Station *st, const AirportTileSpec *airts)
 		bool draw_old_one = true;
 		if (HasBit(airts->callback_mask, CBM_AIRT_DRAW_FOUNDATIONS)) {
 			/* Called to determine the type (if any) of foundation to draw */
-			uint32_t callback_res = GetAirportTileCallback(CBID_AIRPTILE_DRAW_FOUNDATIONS, 0, 0, airts, st, ti->tile);
+			uint32_t callback_res = GetAirportTileCallback(CBID_AIRPTILE_DRAW_FOUNDATIONS, 0, 0, airts, st, ti->index);
 			if (callback_res != CALLBACK_FAILED) draw_old_one = ConvertBooleanCallback(airts->grf_prop.grffile, CBID_AIRPTILE_DRAW_FOUNDATIONS, callback_res);
 		}
 
 		if (draw_old_one) DrawFoundation(ti, FOUNDATION_LEVELED);
 	}
 
-	AirportTileResolverObject object(airts, ti->tile, st);
+	AirportTileResolverObject object(airts, ti->index, st);
 	const SpriteGroup *group = object.Resolve();
 	if (group == nullptr || group->type != SGT_TILELAYOUT) {
 		return false;
