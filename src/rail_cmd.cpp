@@ -2778,7 +2778,7 @@ static bool ClickTile_Track(TileIndex tile)
 	return true;
 }
 
-static void GetTileDesc_Track(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Track(TileIndex, Tile tile, TileDesc *td)
 {
 	const RailTypeInfo *rti = GetRailTypeInfo(GetRailType(tile));
 	td->rail_speed = rti->max_speed;

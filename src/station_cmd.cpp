@@ -3453,7 +3453,7 @@ static Foundation GetFoundation_Station(TileIndex, Slope tileh)
 	return FlatteningFoundation(tileh);
 }
 
-static void FillTileDescRoadStop(TileIndex tile, TileDesc *td)
+static void FillTileDescRoadStop(Tile tile, TileDesc *td)
 {
 	RoadType road_rt = GetRoadTypeRoad(tile);
 	RoadType tram_rt = GetRoadTypeTram(tile);
@@ -3491,7 +3491,7 @@ static void FillTileDescRoadStop(TileIndex tile, TileDesc *td)
 	}
 }
 
-void FillTileDescRailStation(TileIndex tile, TileDesc *td)
+void FillTileDescRailStation(Tile tile, TileDesc *td)
 {
 	const StationSpec *spec = GetStationSpec(tile);
 
@@ -3510,7 +3510,7 @@ void FillTileDescRailStation(TileIndex tile, TileDesc *td)
 	td->railtype = rti->strings.name;
 }
 
-void FillTileDescAirport(TileIndex tile, TileDesc *td)
+void FillTileDescAirport(Tile tile, TileDesc *td)
 {
 	const AirportSpec *as = Station::GetByTile(tile)->airport.GetSpec();
 	td->airport_class = AirportClass::Get(as->class_index)->name;
@@ -3528,7 +3528,7 @@ void FillTileDescAirport(TileIndex tile, TileDesc *td)
 	}
 }
 
-static void GetTileDesc_Station(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Station(TileIndex, Tile tile, TileDesc *td)
 {
 	td->owner[0] = GetTileOwner(tile);
 	td->build_date = BaseStation::GetByTile(tile)->build_date;

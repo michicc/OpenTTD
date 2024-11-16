@@ -567,9 +567,9 @@ void ChangeTileOwner(TileIndex tile, Owner old_owner, Owner new_owner)
 	_tile_type_procs[GetTileType(tile)]->change_tile_owner_proc(tile, old_owner, new_owner);
 }
 
-void GetTileDesc(TileIndex tile, TileDesc *td)
+void GetTileDesc(TileIndex index, Tile tile, TileDesc *td)
 {
-	_tile_type_procs[GetTileType(tile)]->get_tile_desc_proc(tile, td);
+	_tile_type_procs[GetTileType(tile)]->get_tile_desc_proc(index, tile, td);
 }
 
 /**
