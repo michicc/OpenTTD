@@ -600,20 +600,21 @@ static void TownGenerateCargoBinominal(Town *t, TownProductionEffect tpe, uint8_
  * Tile callback function.
  *
  * Tile callback function. Periodic tick handler for the tiles of a town.
+ * @param index Tile index that processed
  * @param tile been asked to do its stuff
  */
-static void TileLoop_Town(TileIndex tile)
+static bool TileLoop_Town(TileIndex index, Tile &tile)
 {
 	HouseID house_id = GetHouseType(tile);
 
 	/* NewHouseTileLoop returns false if Callback 21 succeeded, i.e. the house
 	 * doesn't exist any more, so don't continue here. */
-	if (house_id >= NEW_HOUSE_OFFSET && !NewHouseTileLoop(tile)) return;
+	if (house_id >= NEW_HOUSE_OFFSET && !NewHouseTileLoop(index)) return false;
 
 	if (!IsHouseCompleted(tile)) {
 		/* Construction is not completed, so we advance a construction stage. */
-		AdvanceHouseConstruction(tile);
-		return;
+		AdvanceHouseConstruction(index);
+		return false;
 	}
 
 	const HouseSpec *hs = HouseSpec::Get(house_id);
@@ -623,17 +624,17 @@ static void TileLoop_Town(TileIndex tile)
 			house_id < NEW_HOUSE_OFFSET &&
 			!LiftHasDestination(tile) &&
 			Chance16(1, 2)) {
-		AddAnimatedTile(tile);
+		AddAnimatedTile(index);
 	}
 
-	Town *t = Town::GetByTile(tile);
+	Town *t = Town::GetByTile(index);
 	uint32_t r = Random();
 
-	StationFinder stations(TileArea(tile, 1, 1));
+	StationFinder stations(TileArea(index, 1, 1));
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_PRODUCE_CARGO)) {
 		for (uint i = 0; i < 256; i++) {
-			uint16_t callback = GetHouseCallback(CBID_HOUSE_PRODUCE_CARGO, i, r, house_id, t, tile);
+			uint16_t callback = GetHouseCallback(CBID_HOUSE_PRODUCE_CARGO, i, r, house_id, t, index);
 
 			if (callback == CALLBACK_FAILED || callback == CALLBACK_HOUSEPRODCARGO_END) break;
 
@@ -658,7 +659,7 @@ static void TileLoop_Town(TileIndex tile)
 				/* Binomial distribution per tick, by a series of coin flips */
 				/* Reduce generation rate to a 1/4, using tile bits to spread out distribution.
 				 * As tick counter is incremented by 256 between each call, we ignore the lower 8 bits. */
-				if (GB(TimerGameTick::counter, 8, 2) == GB(tile.base(), 0, 2)) {
+				if (GB(TimerGameTick::counter, 8, 2) == GB(index.base(), 0, 2)) {
 					TownGenerateCargoBinominal(t, TPE_PASSENGERS, hs->population, stations);
 					TownGenerateCargoBinominal(t, TPE_MAIL, hs->mail_generation, stations);
 				}
@@ -673,12 +674,12 @@ static void TileLoop_Town(TileIndex tile)
 
 	if ((hs->building_flags & BUILDING_HAS_1_TILE) &&
 			HasBit(t->flags, TOWN_IS_GROWING) &&
-			CanDeleteHouse(tile) &&
+			CanDeleteHouse(index) &&
 			GetHouseAge(tile) >= hs->minimum_life &&
 			--t->time_until_rebuild == 0) {
 		t->time_until_rebuild = GB(r, 16, 8) + 192;
 
-		ClearTownHouse(t, tile);
+		ClearTownHouse(t, index);
 
 		/* Rebuild with another house? */
 		if (GB(r, 24, 8) >= 12) {
@@ -688,24 +689,25 @@ static void TileLoop_Town(TileIndex tile)
 			if (hs->building_flags & BUILDING_HAS_2_TILES) {
 				/* House tiles are always the most north tile. Move the new
 				 * house to the south if we are north of the city center. */
-				TileIndexDiffC grid_pos = TileIndexToTileIndexDiffC(t->xy, tile);
+				TileIndexDiffC grid_pos = TileIndexToTileIndexDiffC(t->xy, index);
 				int x = Clamp(grid_pos.x, 0, 1);
 				int y = Clamp(grid_pos.y, 0, 1);
 
 				if (hs->building_flags & TILE_SIZE_2x2) {
-					tile = TileAddXY(tile, x, y);
+					tile = TileAddXY(index, x, y);
 				} else if (hs->building_flags & TILE_SIZE_1x2) {
-					tile = TileAddXY(tile, 0, y);
+					tile = TileAddXY(index, 0, y);
 				} else if (hs->building_flags & TILE_SIZE_2x1) {
-					tile = TileAddXY(tile, x, 0);
+					tile = TileAddXY(index, x, 0);
 				}
 			}
 
-			TryBuildTownHouse(t, tile);
+			TryBuildTownHouse(t, index);
 		}
 	}
 
 	cur_company.Restore();
+	return false;
 }
 
 /**
