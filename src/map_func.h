@@ -26,7 +26,7 @@ class Tile {
 private:
 	friend struct Map;
 	/**
-	 * Data that is stored per tile. Also used TileExtended for this.
+	 * Data that is stored per tile.
 	 * Look at docs/landscape.html for the exact meaning of the members.
 	 */
 	struct TileBase {
@@ -37,22 +37,12 @@ private:
 		uint8_t m3 = 0; ///< General purpose
 		uint8_t m4 = 0; ///< General purpose
 		uint8_t m5 = 0; ///< General purpose
-	};
-
-	static_assert(sizeof(TileBase) == 8);
-
-	/**
-	 * Data that is stored per tile. Also used TileBase for this.
-	 * Look at docs/landscape.html for the exact meaning of the members.
-	 */
-	struct TileExtended {
 		uint8_t m6 = 0; ///< General purpose
 		uint8_t m7 = 0; ///< Primarily used for newgrf support
 		uint16_t m8 = 0; ///< General purpose
 	};
 
 	static std::unique_ptr<TileBase[]> base_tiles; ///< Pointer to the tile-array.
-	static std::unique_ptr<TileExtended[]> extended_tiles; ///< Pointer to the extended tile-array.
 
 	TileIndex tile; ///< The tile to access the map data for.
 
@@ -172,7 +162,7 @@ public:
 	 */
 	debug_inline uint8_t &m6()
 	{
-		return extended_tiles[this->tile.base()].m6;
+		return base_tiles[this->tile.base()].m6;
 	}
 
 	/**
@@ -184,7 +174,7 @@ public:
 	 */
 	debug_inline uint8_t &m7()
 	{
-		return extended_tiles[this->tile.base()].m7;
+		return base_tiles[this->tile.base()].m7;
 	}
 
 	/**
@@ -196,7 +186,7 @@ public:
 	 */
 	debug_inline uint16_t &m8()
 	{
-		return extended_tiles[this->tile.base()].m8;
+		return base_tiles[this->tile.base()].m8;
 	}
 };
 
