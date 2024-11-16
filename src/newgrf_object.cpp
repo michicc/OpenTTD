@@ -464,7 +464,7 @@ static void DrawTileLayout(const TileInfo *ti, const TileLayoutSpriteGroup *grou
 void DrawNewObjectTile(TileInfo *ti, const ObjectSpec *spec)
 {
 	Object *o = Object::GetByTile(ti->tile);
-	ObjectResolverObject object(spec, o, ti->tile);
+	ObjectResolverObject object(spec, o, ti->index);
 
 	const SpriteGroup *group = object.Resolve();
 	if (group == nullptr || group->type != SGT_TILELAYOUT) return;
