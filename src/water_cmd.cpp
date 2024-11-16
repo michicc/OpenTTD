@@ -170,7 +170,7 @@ CommandCost CmdBuildShipDepot(DoCommandFlag flags, TileIndex tile, Axis axis)
 	return cost;
 }
 
-bool IsPossibleDockingTile(Tile t)
+bool IsPossibleDockingTile(TileIndex t)
 {
 	assert(IsValidTile(t));
 	switch (GetTileType(t)) {
@@ -1300,7 +1300,7 @@ void TileLoop_Water(TileIndex tile)
 
 void ConvertGroundTilesIntoWaterTiles()
 {
-	for (const auto tile : Map::Iterate()) {
+	for (const auto tile : Map::IterateIndex()) {
 		auto [slope, z] = GetTileSlopeZ(tile);
 		if (IsTileType(tile, MP_CLEAR) && z == 0) {
 			/* Make both water for tiles at level 0

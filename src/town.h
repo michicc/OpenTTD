@@ -137,7 +137,7 @@ struct Town : TownPool::PoolItem<&_town_pool> {
 		return this->cached_name;
 	}
 
-	static inline Town *GetByTile(TileIndex tile)
+	static inline Town *GetByTile(Tile tile)
 	{
 		return Town::Get(GetTownIndex(tile));
 	}

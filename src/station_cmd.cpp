@@ -100,7 +100,7 @@ bool IsHangar(Tile t)
 	const AirportSpec *as = st->airport.GetSpec();
 
 	for (const auto &depot : as->depots) {
-		if (st->airport.GetRotatedTileFromOffset(depot.ti) == TileIndex(t)) return true;
+		if (Tile(st->airport.GetRotatedTileFromOffset(depot.ti)) == t) return true;
 	}
 
 	return false;
@@ -1319,7 +1319,7 @@ static StationSpec::TileFlags GetStationTileFlags(StationGfx gfx, const StationS
  * @param tile Tile to set flags on.
  * @param statspec Statspec of the tile.
  */
-void SetRailStationTileFlags(TileIndex tile, const StationSpec *statspec)
+void SetRailStationTileFlags(Tile tile, const StationSpec *statspec)
 {
 	const auto flags = GetStationTileFlags(GetStationGfx(tile), statspec);
 	SetStationTileBlocked(tile, HasFlag(flags, StationSpec::TileFlags::Blocked));
@@ -2622,7 +2622,7 @@ CommandCost CmdBuildAirport(DoCommandFlag flags, TileIndex tile, uint8_t airport
 			SetStationTileRandomBits(t, GB(Random(), 0, 4));
 			st->airport.Add(iter);
 
-			if (AirportTileSpec::Get(GetTranslatedAirportTileID(iter.GetStationGfx()))->animation.status != ANIM_STATUS_NO_ANIMATION) AddAnimatedTile(t);
+			if (AirportTileSpec::Get(GetTranslatedAirportTileID(iter.GetStationGfx()))->animation.status != ANIM_STATUS_NO_ANIMATION) AddAnimatedTile(iter);
 		}
 
 		/* Only call the animation trigger after all tiles have been built */

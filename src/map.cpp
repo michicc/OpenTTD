@@ -24,7 +24,7 @@
 /* static */ uint Map::size;      ///< The number of tiles on the map
 /* static */ uint Map::tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
-/* static */ std::unique_ptr<Tile::TileBase[]> Tile::base_tiles; ///< Base tiles of the map
+/* static */ std::unique_ptr<Map::TileBase[]> Map::base_tiles; ///< Base tiles of the map
 
 
 /**
@@ -52,7 +52,7 @@
 	Map::size = size_x * size_y;
 	Map::tile_mask = Map::size - 1;
 
-	Tile::base_tiles = std::make_unique<Tile::TileBase[]>(Map::size);
+	Map::base_tiles = std::make_unique<Map::TileBase[]>(Map::size);
 
 	AllocateWaterRegions();
 }
