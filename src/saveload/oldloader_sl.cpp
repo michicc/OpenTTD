@@ -47,7 +47,7 @@ void FixOldMapArray()
 {
 	/* TTO/TTD/TTDP savegames could have buoys at tile 0
 	 * (without assigned station struct) */
-	MakeSea(0);
+	MakeSea(TileIndex(0));
 }
 
 static void FixTTDMapArray()
@@ -524,7 +524,7 @@ static void ReadTTDPatchFlags()
 	if (_savegame_type == SGT_TTO) return;
 
 	/* TTDPatch misuses old map3 (now m3/m4) for flags.. read them! */
-	_old_vehicle_multiplier = Tile(0).m3();
+	_old_vehicle_multiplier = Tile(TileIndex(0)).m3();
 	/* Somehow.... there was an error in some savegames, so 0 becomes 1
 	 * and 1 becomes 2. The rest of the values are okay */
 	if (_old_vehicle_multiplier < 2) _old_vehicle_multiplier++;

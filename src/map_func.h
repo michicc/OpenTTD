@@ -15,6 +15,9 @@
 #include "map_type.h"
 #include "direction_func.h"
 
+debug_inline static uint TileX(TileIndex tile);
+debug_inline static uint TileY(TileIndex tile);
+
 class Tile;
 
 /**
@@ -23,6 +26,8 @@ class Tile;
 struct Map {
 private:
 	friend class Tile;
+	friend struct MAPRChunkHandler;
+	friend struct RawMapIterator;
 
 	/**
 	 * Data that is stored per tile.
@@ -78,10 +83,12 @@ private:
 	static uint size;      ///< The number of tiles on the map
 	static uint tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
-	static std::unique_ptr<TileBase[]> base_tiles; ///< Pointer to the tile-array.
+	static std::vector<std::vector<TileBase>> base_tiles; ///< Map array organized as an array of tile lines.
+	static std::vector<uint16_t> offsets;                 ///< Mapping of TileIndex to offset in tile line.
 
 public:
 	static void Allocate(uint size_x, uint size_y);
+	static size_t GetTotalTileCount();
 
 	/**
 	 * Logarithm of the map size along the X side.
@@ -193,7 +200,7 @@ public:
 	 */
 	static bool IsInitialized()
 	{
-		return Map::base_tiles != nullptr;
+		return !Map::base_tiles.empty();
 	}
 
 	/**
@@ -218,20 +225,30 @@ public:
  */
 class Tile {
 private:
-	TileIndex tile; ///< The tile to access the map data for.
+	friend struct RawMapIterator;
 
+	Map::TileBase *tile; ///< The tile to access the map data for.
+
+	Tile(Map::TileBase *tile) : tile(tile) {}
 public:
 	/**
 	 * Create the tile wrapper for the given tile.
 	 * @param tile The tile to access the map for.
 	 */
-	debug_inline Tile(TileIndex tile) : tile(tile) {}
+	debug_inline Tile(TileIndex tile) : Tile(tile.base()) {}
 
 	/**
 	 * Create the tile wrapper for the given tile.
-	 * @param tile The tile to access the map for.
+	 * @param tile_index The tile to access the map for.
 	 */
-	Tile(uint tile) : tile(tile) {}
+	Tile(TileIndex::BaseType tile_index)
+	{
+		if (tile_index < Map::Size()) {
+			this->tile = &Map::base_tiles[TileY(TileIndex{tile_index})][Map::offsets[tile_index]];
+		} else {
+			this->tile = nullptr;
+		}
+	}
 
 	/**
 	 * Check if the tile reference is a valid on-map tile.
@@ -239,7 +256,7 @@ public:
 	 */
 	debug_inline bool IsValid() const
 	{
-		return this->tile < Map::Size();
+		return this->tile != nullptr;
 	}
 
 	/**
@@ -251,7 +268,7 @@ public:
 	 */
 	debug_inline uint8_t &type()
 	{
-		return Map::base_tiles[this->tile.base()].type;
+		return this->tile->type;
 	}
 
 	/**
@@ -263,7 +280,7 @@ public:
 	 */
 	debug_inline uint8_t &height()
 	{
-		return Map::base_tiles[this->tile.base()].height;
+		return this->tile->height;
 	}
 
 	/**
@@ -275,7 +292,7 @@ public:
 	 */
 	debug_inline uint8_t &m1()
 	{
-		return Map::base_tiles[this->tile.base()].m1;
+		return this->tile->m1;
 	}
 
 	/**
@@ -287,7 +304,7 @@ public:
 	 */
 	debug_inline uint16_t &m2()
 	{
-		return Map::base_tiles[this->tile.base()].m2;
+		return this->tile->m2;
 	}
 
 	/**
@@ -299,7 +316,7 @@ public:
 	 */
 	debug_inline uint8_t &m3()
 	{
-		return Map::base_tiles[this->tile.base()].m3;
+		return this->tile->m3;
 	}
 
 	/**
@@ -311,7 +328,7 @@ public:
 	 */
 	debug_inline uint8_t &m4()
 	{
-		return Map::base_tiles[this->tile.base()].m4;
+		return this->tile->m4;
 	}
 
 	/**
@@ -323,7 +340,7 @@ public:
 	 */
 	debug_inline uint8_t &m5()
 	{
-		return Map::base_tiles[this->tile.base()].m5;
+		return this->tile->m5;
 	}
 
 	/**
@@ -335,7 +352,7 @@ public:
 	 */
 	debug_inline uint8_t &m6()
 	{
-		return Map::base_tiles[this->tile.base()].m6;
+		return this->tile->m6;
 	}
 
 	/**
@@ -347,7 +364,7 @@ public:
 	 */
 	debug_inline uint8_t &m7()
 	{
-		return Map::base_tiles[this->tile.base()].m7;
+		return this->tile->m7;
 	}
 
 	/**
@@ -359,7 +376,7 @@ public:
 	 */
 	debug_inline uint16_t &m8()
 	{
-		return Map::base_tiles[this->tile.base()].m8;
+		return this->tile->m8;
 	}
 
 	constexpr bool operator ==(const Tile &other) const noexcept { return this->tile == other.tile; }
