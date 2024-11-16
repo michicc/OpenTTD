@@ -132,6 +132,7 @@ void DrawFoundation(TileInfo *ti, Foundation f);
 bool HasFoundationNW(TileIndex tile, Slope slope_here, uint z_here);
 bool HasFoundationNE(TileIndex tile, Slope slope_here, uint z_here);
 
+void MakeClearGrass(Tile tile);
 void DoClearSquare(TileIndex tile);
 void RunTileLoop();
 

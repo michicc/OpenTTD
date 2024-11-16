@@ -380,6 +380,7 @@ inline bool IsDockingTile(Tile t)
  */
 inline void MakeShore(Tile t)
 {
+	if (!MayHaveAssociatedTile(t.tile_type())) ClrBit(t.m8(), 14); // Guard against garbage.
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, OWNER_WATER);
 	SetWaterClass(t, WATER_CLASS_SEA);
@@ -391,6 +392,7 @@ inline void MakeShore(Tile t)
 	SetWaterTileType(t, WATER_TILE_COAST);
 	SB(t.m6(), 2, 4, 0);
 	t.m7() = 0;
+	t.m8() &= 1 << 14; // Clear everything except the associated tile flag.
 }
 
 /**
@@ -402,6 +404,7 @@ inline void MakeShore(Tile t)
  */
 inline void MakeWater(Tile t, Owner o, WaterClass wc, uint8_t random_bits)
 {
+	if (!MayHaveAssociatedTile(t.tile_type())) ClrBit(t.m8(), 14); // Guard against garbage.
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, wc);
@@ -413,6 +416,7 @@ inline void MakeWater(Tile t, Owner o, WaterClass wc, uint8_t random_bits)
 	SetWaterTileType(t, WATER_TILE_CLEAR);
 	SB(t.m6(), 2, 4, 0);
 	t.m7() = 0;
+	t.m8() &= 1 << 14; // Clear everything except the associated tile flag.
 }
 
 /**
@@ -457,6 +461,7 @@ inline void MakeCanal(Tile t, Owner o, uint8_t random_bits)
  */
 inline void MakeShipDepot(Tile t, Owner o, DepotID did, DepotPart part, Axis a, WaterClass original_water_class)
 {
+	if (!MayHaveAssociatedTile(t.tile_type())) ClrBit(t.m8(), 14); // Guard against garbage.
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
@@ -468,6 +473,7 @@ inline void MakeShipDepot(Tile t, Owner o, DepotID did, DepotPart part, Axis a, 
 	SetWaterTileType(t, WATER_TILE_DEPOT);
 	SB(t.m6(), 2, 4, 0);
 	t.m7() = 0;
+	t.m8() &= 1 << 14; // Clear everything except the associated tile flag.
 }
 
 /**
@@ -481,6 +487,7 @@ inline void MakeShipDepot(Tile t, Owner o, DepotID did, DepotPart part, Axis a, 
  */
 inline void MakeLockTile(Tile t, Owner o, LockPart part, DiagDirection dir, WaterClass original_water_class)
 {
+	if (!MayHaveAssociatedTile(t.tile_type())) ClrBit(t.m8(), 14); // Guard against garbage.
 	SetTileType(t, MP_WATER);
 	SetTileOwner(t, o);
 	SetWaterClass(t, original_water_class);
@@ -492,6 +499,7 @@ inline void MakeLockTile(Tile t, Owner o, LockPart part, DiagDirection dir, Wate
 	SetWaterTileType(t, WATER_TILE_LOCK);
 	SB(t.m6(), 2, 4, 0);
 	t.m7() = 0;
+	t.m8() &= 1 << 14; // Clear everything except the associated tile flag.
 }
 
 /**

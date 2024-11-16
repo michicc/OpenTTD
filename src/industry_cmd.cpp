@@ -488,7 +488,7 @@ static void GetTileDesc_Industry(TileIndex, Tile tile, TileDesc *td)
 	}
 }
 
-static CommandCost ClearTile_Industry(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Industry(TileIndex, Tile &tile, DoCommandFlag flags)
 {
 	Industry *i = Industry::GetByTile(tile);
 	const IndustrySpec *indspec = GetIndustrySpec(i->type);
@@ -505,7 +505,7 @@ static CommandCost ClearTile_Industry(TileIndex tile, DoCommandFlag flags)
 				((indspec->behaviour & INDUSTRYBEH_BUILT_ONWATER) ||
 				HasBit(GetIndustryTileSpec(GetIndustryGfx(tile))->slopes_refused, 5)))) {
 		SetDParam(1, indspec->name);
-		return CommandCost(flags & DC_AUTO ? STR_ERROR_GENERIC_OBJECT_IN_THE_WAY : INVALID_STRING_ID);
+		return {CommandCost(flags & DC_AUTO ? STR_ERROR_GENERIC_OBJECT_IN_THE_WAY : INVALID_STRING_ID), false};
 	}
 
 	if (flags & DC_EXEC) {
@@ -513,7 +513,7 @@ static CommandCost ClearTile_Industry(TileIndex tile, DoCommandFlag flags)
 		Game::NewEvent(new ScriptEventIndustryClose(i->index));
 		delete i;
 	}
-	return CommandCost(EXPENSES_CONSTRUCTION, indspec->GetRemovalCost());
+	return {CommandCost(EXPENSES_CONSTRUCTION, indspec->GetRemovalCost()), false};
 }
 
 /**

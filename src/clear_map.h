@@ -258,6 +258,7 @@ inline void SetFence(Tile t, DiagDirection side, uint h)
  */
 inline void MakeClear(Tile t, ClearGround g, uint density)
 {
+	if (!MayHaveAssociatedTile(t.tile_type())) ClrBit(t.m8(), 14); // Guard against garbage.
 	SetTileType(t, MP_CLEAR);
 	t.m1() = 0;
 	SetTileOwner(t, OWNER_NONE);
@@ -267,7 +268,7 @@ inline void MakeClear(Tile t, ClearGround g, uint density)
 	SetClearGroundDensity(t, g, density); // Sets m5
 	t.m6() = 0;
 	t.m7() = 0;
-	t.m8() = 0;
+	t.m8() &= 1 << 14; // Clear everything except the associated tile flag.
 }
 
 

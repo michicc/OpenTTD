@@ -674,7 +674,7 @@ static bool TileLoop_Town(TileIndex index, Tile &tile)
 
 	if ((hs->building_flags & BUILDING_HAS_1_TILE) &&
 			HasBit(t->flags, TOWN_IS_GROWING) &&
-			CanDeleteHouse(index) &&
+			CanDeleteHouse(index, tile) &&
 			GetHouseAge(tile) >= hs->minimum_life &&
 			--t->time_until_rebuild == 0) {
 		t->time_until_rebuild = GB(r, 16, 8) + 192;
@@ -712,14 +712,15 @@ static bool TileLoop_Town(TileIndex index, Tile &tile)
 
 /**
  * Callback function to clear a house tile.
+ * @param index Tile index the tile is associated to.
  * @param tile The tile to clear.
  * @param flags Type of operation.
- * @return The cost of this operation or an error.
+ * @return (The cost of this operation or an error; tile deleted?)
  */
-static CommandCost ClearTile_Town(TileIndex tile, DoCommandFlag flags)
+static std::tuple<CommandCost, bool> ClearTile_Town(TileIndex index, Tile &tile, DoCommandFlag flags)
 {
-	if (flags & DC_AUTO) return CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED);
-	if (!CanDeleteHouse(tile)) return CMD_ERROR;
+	if (flags & DC_AUTO) return {CommandCost(STR_ERROR_BUILDING_MUST_BE_DEMOLISHED), false};
+	if (!CanDeleteHouse(index, tile)) return {CMD_ERROR, false};
 
 	const HouseSpec *hs = HouseSpec::Get(GetHouseType(tile));
 
@@ -734,22 +735,22 @@ static CommandCost ClearTile_Town(TileIndex tile, DoCommandFlag flags)
 			/* NewGRFs can add indestructible houses. */
 			if (rating > RATING_MAXIMUM) {
 				SetDParam(0, t->index);
-				return CommandCost(CMD_ERROR);
+				return {CommandCost(CMD_ERROR), false};
 			}
 			/* If town authority controls removal, check the company's rating. */
 			if (rating > t->ratings[_current_company] && _settings_game.difficulty.town_council_tolerance != TOWN_COUNCIL_PERMISSIVE) {
 				SetDParam(0, t->index);
-				return CommandCost(STR_ERROR_LOCAL_AUTHORITY_REFUSES_TO_ALLOW_THIS);
+				return {CommandCost(STR_ERROR_LOCAL_AUTHORITY_REFUSES_TO_ALLOW_THIS), false};
 			}
 		}
 	}
 
 	ChangeTownRating(t, -rating, RATING_HOUSE_MINIMUM, flags);
 	if (flags & DC_EXEC) {
-		ClearTownHouse(t, tile);
+		ClearTownHouse(t, index);
 	}
 
-	return cost;
+	return {cost, false};
 }
 
 static void AddProducedCargo_Town(TileIndex tile, CargoArray &produced)

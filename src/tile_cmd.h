@@ -88,7 +88,16 @@ typedef void DrawTileProc(TileInfo *ti);
  * @see GetSlopePixelZ
  */
 typedef int GetSlopeZProc(TileIndex tile, uint x, uint y, bool ground_vehicle);
-typedef CommandCost ClearTileProc(TileIndex tile, DoCommandFlag flags);
+
+/**
+ * Tile callback function signature for clear a tile.
+ *
+ * @param index Tile index that is being cleared.
+ * @param[in,out] tile The associated tile that is to be cleared.
+ * @param flags Command flags passed to the clear command (DC_EXEC, DC_QUERY_COST, etc.).
+ * @return Tuple: Error code or clearing cost / Indication if the current associated tile was removed from the map array.
+ */
+typedef std::tuple<CommandCost, bool> ClearTileProc(TileIndex index, Tile &tile, DoCommandFlag flags);
 
 /**
  * Tile callback function signature for obtaining cargo acceptance of a tile
