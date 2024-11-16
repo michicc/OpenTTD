@@ -100,10 +100,11 @@ typedef void AddAcceptedCargoProc(TileIndex tile, CargoArray &acceptance, CargoT
 
 /**
  * Tile callback function signature for obtaining a tile description
+ * @param index Index of the tile being queried.
  * @param tile Tile being queried
  * @param td   Storage pointer for returned tile description
  */
-typedef void GetTileDescProc(TileIndex tile, TileDesc *td);
+typedef void GetTileDescProc(TileIndex index, Tile tile, TileDesc *td);
 
 /**
  * Tile callback function signature for getting the possible tracks
@@ -178,7 +179,7 @@ extern const TileTypeProcs * const _tile_type_procs[16];
 TrackStatus GetTileTrackStatus(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side = INVALID_DIAGDIR);
 VehicleEnterTileStatus VehicleEnterTile(Vehicle *v, TileIndex tile, int x, int y);
 void ChangeTileOwner(TileIndex tile, Owner old_owner, Owner new_owner);
-void GetTileDesc(TileIndex tile, TileDesc *td);
+void GetTileDesc(TileIndex index, Tile tile, TileDesc *td);
 
 inline void AddAcceptedCargo(TileIndex tile, CargoArray &acceptance, CargoTypes *always_accepted)
 {

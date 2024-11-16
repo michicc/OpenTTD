@@ -45,7 +45,7 @@ static CommandCost ClearTile_Void(TileIndex, DoCommandFlag)
 }
 
 
-static void GetTileDesc_Void(TileIndex, TileDesc *td)
+static void GetTileDesc_Void(TileIndex, Tile, TileDesc *td)
 {
 	td->str = STR_EMPTY;
 	td->owner[0] = OWNER_NONE;

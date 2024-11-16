@@ -336,7 +336,7 @@ static const StringID _clear_land_str[] = {
 	STR_LAI_CLEAR_DESCRIPTION_DESERT
 };
 
-static void GetTileDesc_Clear(TileIndex tile, TileDesc *td)
+static void GetTileDesc_Clear(TileIndex, Tile tile, TileDesc *td)
 {
 	if (IsClearGround(tile, CLEAR_GRASS) && GetClearDensity(tile) == 0) {
 		td->str = STR_LAI_CLEAR_DESCRIPTION_BARE_LAND;
