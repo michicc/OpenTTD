@@ -24,7 +24,9 @@
 /* static */ uint Map::size;      ///< The number of tiles on the map
 /* static */ uint Map::tile_mask; ///< _map_size - 1 (to mask the mapsize)
 
-/* static */ std::unique_ptr<Map::TileBase[]> Map::base_tiles; ///< Base tiles of the map
+/* static */ std::vector<std::vector<Map::TileBase>> Map::base_tiles{};
+/* static */ std::vector<uint16_t> Map::offsets{};
+
 
 
 /**
@@ -52,11 +54,26 @@
 	Map::size = size_x * size_y;
 	Map::tile_mask = Map::size - 1;
 
-	Map::base_tiles = std::make_unique<Map::TileBase[]>(Map::size);
+	/* Allocate tiles. */
+	Map::base_tiles.clear();
+	Map::base_tiles.resize(size_y, std::vector<Map::TileBase>{ size_x });
+	/* Allocate offset array for each map line. */
+	Map::offsets.clear();
+	Map::offsets.resize(size_x * size_y);
+	for (uint i = 0; i < size_x * size_y; i++) {
+		Map::offsets[i] = i & (size_x - 1);
+	}
 
 	AllocateWaterRegions();
 }
 
+/**
+ * Get raw tile count.
+ */
+/* static */ size_t Map::GetTotalTileCount()
+{
+	return std::accumulate(Map::base_tiles.begin(), Map::base_tiles.end(), size_t{0}, [](size_t s, const std::vector<Map::TileBase> &t) { return s + t.size(); });
+}
 
 #ifdef _DEBUG
 TileIndex TileAdd(TileIndex tile, TileIndexDiff offset)
