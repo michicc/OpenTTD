@@ -26,7 +26,7 @@ enum FloodingBehaviour {
 FloodingBehaviour GetFloodingBehaviour(TileIndex tile);
 void ClearNeighbourNonFloodingStates(TileIndex tile);
 
-void TileLoop_Water(TileIndex tile);
+bool TileLoop_Water(TileIndex index, Tile &tile);
 bool FloodHalftile(TileIndex t);
 
 void ConvertGroundTilesIntoWaterTiles();

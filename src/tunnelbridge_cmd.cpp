@@ -1764,7 +1764,7 @@ static void GetTileDesc_TunnelBridge(TileIndex, Tile tile, TileDesc *td)
 }
 
 
-static void TileLoop_TunnelBridge(TileIndex tile)
+static bool TileLoop_TunnelBridge(TileIndex index, Tile &tile)
 {
 	bool snow_or_desert = HasTunnelBridgeSnowOrDesert(tile);
 	switch (_settings_game.game_creation.landscape) {
@@ -1772,10 +1772,10 @@ static void TileLoop_TunnelBridge(TileIndex tile)
 			/* As long as we do not have a snow density, we want to use the density
 			 * from the entry edge. For tunnels this is the lowest point for bridges the highest point.
 			 * (Independent of foundations) */
-			int z = IsBridge(tile) ? GetTileMaxZ(tile) : GetTileZ(tile);
+			int z = IsBridge(tile) ? GetTileMaxZ(index) : GetTileZ(index);
 			if (snow_or_desert != (z > GetSnowLine())) {
 				SetTunnelBridgeSnowOrDesert(tile, !snow_or_desert);
-				MarkTileDirtyByTile(tile);
+				MarkTileDirtyByTile(index);
 			}
 			break;
 		}
@@ -1783,13 +1783,14 @@ static void TileLoop_TunnelBridge(TileIndex tile)
 		case LT_TROPIC:
 			if (GetTropicZone(tile) == TROPICZONE_DESERT && !snow_or_desert) {
 				SetTunnelBridgeSnowOrDesert(tile, true);
-				MarkTileDirtyByTile(tile);
+				MarkTileDirtyByTile(index);
 			}
 			break;
 
 		default:
 			break;
 	}
+	return false;
 }
 
 static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)

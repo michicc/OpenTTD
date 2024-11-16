@@ -754,6 +754,21 @@ std::tuple<CommandCost, Money> CmdClearArea(DoCommandFlag flags, TileIndex tile,
 TileIndex _cur_tileloop_tile;
 
 /**
+ * Call the tile loop proc for all tile associated with a given tile index.
+ * @param index Tile index.
+ */
+static inline void CallTileLoopProc(TileIndex index)
+{
+	Tile tile(index);
+	do {
+		if (!_tile_type_procs[tile.tile_type()]->tile_loop_proc(index, tile)) { // Can modify tile.
+			/* Current tile was not deleted, see if there's something more. */
+			++tile;
+		}
+	} while (tile);
+}
+
+/**
  * Gradually iterate over all tiles on the map, calling their TileLoopProcs once every TILE_UPDATE_FREQUENCY ticks.
  */
 void RunTileLoop()
@@ -782,12 +797,12 @@ void RunTileLoop()
 
 	/* Manually update tile 0 every TILE_UPDATE_FREQUENCY ticks - the LFSR never iterates over it itself.  */
 	if (TimerGameTick::counter % TILE_UPDATE_FREQUENCY == 0) {
-		_tile_type_procs[GetTileType(TileIndex{})]->tile_loop_proc(TileIndex{});
+		CallTileLoopProc(TileIndex{});
 		count--;
 	}
 
 	while (count--) {
-		_tile_type_procs[GetTileType(tile)]->tile_loop_proc(tile);
+		CallTileLoopProc(tile);
 
 		/* Get the next tile in sequence using a Galois LFSR. */
 		tile = TileIndex{(tile.base() >> 1) ^ (-(int32_t)(tile.base() & 1) & feedback)};
