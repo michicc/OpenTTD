@@ -2078,11 +2078,11 @@ static bool TileLoop_Road(TileIndex index, Tile &tile)
 	return false;
 }
 
-static bool ClickTile_Road(TileIndex tile)
+static bool ClickTile_Road(TileIndex index, Tile tile)
 {
 	if (!IsRoadDepot(tile)) return false;
 
-	ShowDepotWindow(tile, VEH_ROAD);
+	ShowDepotWindow(index, VEH_ROAD);
 	return true;
 }
 
