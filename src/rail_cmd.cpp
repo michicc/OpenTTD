@@ -2770,11 +2770,11 @@ static TrackStatus GetTileTrackStatus_Track(TileIndex tile, TransportType mode, 
 	return CombineTrackStatus(TrackBitsToTrackdirBits(trackbits), red_signals);
 }
 
-static bool ClickTile_Track(TileIndex tile)
+static bool ClickTile_Track(TileIndex index, Tile tile)
 {
 	if (!IsRailDepot(tile)) return false;
 
-	ShowDepotWindow(tile, VEH_TRAIN);
+	ShowDepotWindow(index, VEH_TRAIN);
 	return true;
 }
 

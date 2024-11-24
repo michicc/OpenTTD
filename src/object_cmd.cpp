@@ -733,7 +733,7 @@ static TrackStatus GetTileTrackStatus_Object(TileIndex, TransportType, uint, Dia
 	return 0;
 }
 
-static bool ClickTile_Object(TileIndex tile)
+static bool ClickTile_Object(TileIndex, Tile tile)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return false;
 
