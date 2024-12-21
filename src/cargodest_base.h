@@ -81,4 +81,6 @@ void UpdateCargoLinks();
 void RebuildCargoLinkCounts();
 const CargoLink *GetRandomCargoLink(const CargoSourceSink *source, CargoID cid, bool allow_self, bool allow_random = false, SourceType dst_type = SourceType::Undefined);
 
+//RouteLink *FindRouteLinkForCargo(Station *st, CargoID cid, const struct CargoPacket *cp, OrderID order = INVALID_ORDER, bool *found = NULL);
+
 #endif /* CARGODEST_BASE_H */

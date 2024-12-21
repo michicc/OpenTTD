@@ -66,6 +66,7 @@ private:
 
 	StationID first_station{INVALID_STATION}; ///< The station where the cargo came from first.
 	StationID next_hop{INVALID_STATION}; ///< Station where the cargo wants to go next.
+	OrderID next_order{INVALID_ORDER};   ///< Order which the cargo wants to use to \c next_hop.
 
 	/** The CargoList caches, thus needs to know about it. */
 	template <class Tinst, class Tcont> friend class CargoList;
