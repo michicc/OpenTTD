@@ -261,11 +261,22 @@ std::tuple<CommandCost, Money, TileIndex> CmdTerraformLand(DoCommandFlag flags, 
 				tile_flags &= ~DC_EXEC;
 				tile_flags |= DC_NO_MODIFY_TOWN_RATING;
 			}
-			CommandCost cost;
+			CommandCost cost(EXPENSES_CONSTRUCTION);
 			if (indirectly_cleared) {
 				cost = Command<CMD_LANDSCAPE_CLEAR>::Do(tile_flags, t);
 			} else {
-				cost = _tile_type_procs[GetTileType(t)]->terraform_tile_proc(t, tile_flags, z_min, tileh);
+				bool clear_tile = false;
+				for (Tile cur = t; cur.IsValid(); ++cur) {
+					auto res = _tile_type_procs[GetTileType(t)]->terraform_tile_proc(t, cur, tile_flags, z_min, tileh);;
+					if (res.Succeeded() || res.GetErrorMessage() != INVALID_STRING_ID) {
+						cost.AddCost(res);
+					} else {
+						clear_tile = true;
+					}
+				}
+
+				/* Try clearing the tile if terraforming failed. */
+				if (clear_tile) cost = Command<CMD_LANDSCAPE_CLEAR>::Do(tile_flags, t);
 			}
 			old_generating_world.Restore();
 			if (cost.Failed()) {

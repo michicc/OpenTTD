@@ -1414,12 +1414,12 @@ static VehicleEnterTileStatus VehicleEnter_Water(Vehicle *, TileIndex, int, int)
 	return VETSB_CONTINUE;
 }
 
-static CommandCost TerraformTile_Water(TileIndex tile, DoCommandFlag flags, int, Slope)
+static CommandCost TerraformTile_Water(TileIndex, Tile tile, DoCommandFlag, int, Slope)
 {
 	/* Canals can't be terraformed */
 	if (IsWaterTile(tile) && IsCanal(tile)) return CommandCost(STR_ERROR_MUST_DEMOLISH_CANAL_FIRST);
 
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 
