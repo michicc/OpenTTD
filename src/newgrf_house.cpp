@@ -591,12 +591,12 @@ struct HouseAnimationBase : public AnimationBase<HouseAnimationBase, HouseSpec, 
 	static const HouseCallbackMask cbm_animation_next_frame = CBM_HOUSE_ANIMATION_NEXT_FRAME;
 };
 
-void AnimateNewHouseTile(TileIndex tile)
+void AnimateNewHouseTile(TileIndex index, Tile tile)
 {
 	const HouseSpec *hs = HouseSpec::Get(GetHouseType(tile));
 	if (hs == nullptr) return;
 
-	HouseAnimationBase::AnimateTile(hs, Town::GetByTile(tile), tile, HasFlag(hs->extra_flags, CALLBACK_1A_RANDOM_BITS));
+	HouseAnimationBase::AnimateTile(hs, Town::GetByTile(tile), index, tile, HasFlag(hs->extra_flags, CALLBACK_1A_RANDOM_BITS));
 }
 
 void AnimateNewHouseConstruction(TileIndex tile)
@@ -604,7 +604,7 @@ void AnimateNewHouseConstruction(TileIndex tile)
 	const HouseSpec *hs = HouseSpec::Get(GetHouseType(tile));
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_CONSTRUCTION_STATE_CHANGE)) {
-		HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_CONSTRUCTION_STATE_CHANGE, hs, Town::GetByTile(tile), tile, 0, 0);
+		HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_CONSTRUCTION_STATE_CHANGE, hs, Town::GetByTile(tile), tile, Tile(tile), 0, 0);
 	}
 }
 
@@ -632,7 +632,7 @@ static void AnimationControl(TileIndex tile, uint16_t random_bits)
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_ANIMATION_START_STOP)) {
 		uint32_t param = (hs->extra_flags & SYNCHRONISED_CALLBACK_1B) ? (GB(Random(), 0, 16) | random_bits << 16) : Random();
-		HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_ANIMATION_START_STOP, hs, Town::GetByTile(tile), tile, param, 0);
+		HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_ANIMATION_START_STOP, hs, Town::GetByTile(tile), tile, Tile(tile), param, 0);
 	}
 }
 
@@ -742,7 +742,7 @@ void DoWatchedCargoCallback(TileIndex tile, TileIndex origin, CargoTypes trigger
 {
 	TileIndexDiffC diff = TileIndexToTileIndexDiffC(origin, tile);
 	uint32_t cb_info = random << 16 | (uint8_t)diff.y << 8 | (uint8_t)diff.x;
-	HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_WATCHED_CARGO_ACCEPTED, HouseSpec::Get(GetHouseType(tile)), Town::GetByTile(tile), tile, 0, cb_info, trigger_cargoes);
+	HouseAnimationBase::ChangeAnimationFrame(CBID_HOUSE_WATCHED_CARGO_ACCEPTED, HouseSpec::Get(GetHouseType(tile)), Town::GetByTile(tile), tile, Tile(tile), 0, cb_info, trigger_cargoes);
 }
 
 /**

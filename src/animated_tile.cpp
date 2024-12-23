@@ -62,9 +62,14 @@ void AddAnimatedTile(TileIndex tile, bool mark_dirty)
 	/* Tile is already animated so nothing needs to happen. */
 	if (state == AnimatedTileState::Animated) return;
 
+	/* Walk the full tile to check if any associated tile has an animation state. */
+
+
 	/* Tile has no previous animation state, so add to the tile list. If the state is anything
 	 * other than None (e.g. Deleted) then the tile will still be in the list and does not need to be added again. */
-	if (state == AnimatedTileState::None) _animated_tiles.push_back(tile);
+	if (state == AnimatedTileState::None) {
+		_animated_tiles.push_back(tile);
+	}
 
 	SetAnimatedTileState(tile, AnimatedTileState::Animated);
 }

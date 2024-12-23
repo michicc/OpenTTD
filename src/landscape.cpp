@@ -538,18 +538,20 @@ void MakeClearGrass(Tile tile)
 
 void DoClearSquare(TileIndex index)
 {
-	/* If the tile can have animation and we clear it, delete it from the animated tile list. */
-	if (MayAnimateTile(index)) DeleteAnimatedTile(index, true);
-
 	Tile tile = index;
 	bool is_docking = IsDockingTile(tile);
+	bool can_animate = MayAnimateTile(tile);
 
 	/* Remove all associated tiles. */
 	++tile;
 	while (tile) {
+		can_animate |= MayAnimateTile(tile);
 		is_docking |= IsDockingTile(tile);
 		tile = Tile::Remove(index, tile);
 	}
+
+	/* If the tile can have animation and we clear it, delete it from the animated tile list. */
+	if (can_animate) DeleteAnimatedTile(index, true);
 
 	tile = index; // Map might have re-allocated.
 	MakeClear(tile, CLEAR_GRASS, _generating_world ? 3 : 0);

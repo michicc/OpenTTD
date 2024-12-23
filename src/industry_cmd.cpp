@@ -547,115 +547,115 @@ static bool TransportIndustryGoods(TileIndex tile)
 	return moved_cargo;
 }
 
-static void AnimateSugarSieve(TileIndex tile)
+static void AnimateSugarSieve(TileIndex index, Tile tile)
 {
 	uint8_t m = GetAnimationFrame(tile) + 1;
 
 	if (_settings_client.sound.ambient) {
 		switch (m & 7) {
-			case 2: SndPlayTileFx(SND_2D_SUGAR_MINE_1, tile); break;
-			case 6: SndPlayTileFx(SND_29_SUGAR_MINE_2, tile); break;
+			case 2: SndPlayTileFx(SND_2D_SUGAR_MINE_1, index); break;
+			case 6: SndPlayTileFx(SND_29_SUGAR_MINE_2, index); break;
 		}
 	}
 
 	if (m >= 96) {
 		m = 0;
-		DeleteAnimatedTile(tile);
+		DeleteAnimatedTile(index);
 	}
 	SetAnimationFrame(tile, m);
 
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimateToffeeQuarry(TileIndex tile)
+static void AnimateToffeeQuarry(TileIndex index, Tile tile)
 {
 	uint8_t m = GetAnimationFrame(tile);
 
 	if (_industry_anim_offs_toffee[m] == 0xFF && _settings_client.sound.ambient) {
-		SndPlayTileFx(SND_30_TOFFEE_QUARRY, tile);
+		SndPlayTileFx(SND_30_TOFFEE_QUARRY, index);
 	}
 
 	if (++m >= 70) {
 		m = 0;
-		DeleteAnimatedTile(tile);
+		DeleteAnimatedTile(index);
 	}
 	SetAnimationFrame(tile, m);
 
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimateBubbleCatcher(TileIndex tile)
+static void AnimateBubbleCatcher(TileIndex index, Tile tile)
 {
 	uint8_t m = GetAnimationFrame(tile);
 
 	if (++m >= 40) {
 		m = 0;
-		DeleteAnimatedTile(tile);
+		DeleteAnimatedTile(index);
 	}
 	SetAnimationFrame(tile, m);
 
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimatePowerPlantSparks(TileIndex tile)
+static void AnimatePowerPlantSparks(TileIndex index, Tile tile)
 {
 	uint8_t m = GetAnimationFrame(tile);
 	if (m == 6) {
 		SetAnimationFrame(tile, 0);
-		DeleteAnimatedTile(tile);
+		DeleteAnimatedTile(index);
 	} else {
 		SetAnimationFrame(tile, m + 1);
 	}
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimateToyFactory(TileIndex tile)
+static void AnimateToyFactory(TileIndex index, Tile tile)
 {
 	uint8_t m = GetAnimationFrame(tile) + 1;
 
 	switch (m) {
-		case  1: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2C_TOY_FACTORY_1, tile); break;
-		case 23: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2B_TOY_FACTORY_2, tile); break;
-		case 28: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2A_TOY_FACTORY_3, tile); break;
+		case  1: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2C_TOY_FACTORY_1, index); break;
+		case 23: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2B_TOY_FACTORY_2, index); break;
+		case 28: if (_settings_client.sound.ambient) SndPlayTileFx(SND_2A_TOY_FACTORY_3, index); break;
 		default:
 			if (m >= 50) {
 				int n = GetIndustryAnimationLoop(tile) + 1;
 				m = 0;
 				if (n >= 8) {
 					n = 0;
-					DeleteAnimatedTile(tile);
+					DeleteAnimatedTile(index);
 				}
 				SetIndustryAnimationLoop(tile, n);
 			}
 	}
 
 	SetAnimationFrame(tile, m);
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimatePlasticFountain(TileIndex tile, IndustryGfx gfx)
+static void AnimatePlasticFountain(TileIndex index, Tile tile, IndustryGfx gfx)
 {
 	gfx = (gfx < GFX_PLASTIC_FOUNTAIN_ANIMATED_8) ? gfx + 1 : GFX_PLASTIC_FOUNTAIN_ANIMATED_1;
 	SetIndustryGfx(tile, gfx);
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimateOilWell(TileIndex tile, IndustryGfx gfx)
+static void AnimateOilWell(TileIndex index, Tile tile, IndustryGfx gfx)
 {
 	bool b = Chance16(1, 7);
 	uint8_t m = GetAnimationFrame(tile) + 1;
 	if (m == 4 && (m = 0, ++gfx) == GFX_OILWELL_ANIMATED_3 + 1 && (gfx = GFX_OILWELL_ANIMATED_1, b)) {
 		SetIndustryGfx(tile, GFX_OILWELL_NOT_ANIMATED);
 		SetIndustryConstructionStage(tile, 3);
-		DeleteAnimatedTile(tile);
+		DeleteAnimatedTile(index);
 	} else {
 		SetAnimationFrame(tile, m);
 		SetIndustryGfx(tile, gfx);
 	}
-	MarkTileDirtyByTile(tile);
+	MarkTileDirtyByTile(index);
 }
 
-static void AnimateMineTower(TileIndex tile)
+static void AnimateMineTower(TileIndex index, Tile tile)
 {
 	int state = TimerGameTick::counter & 0x7FF;
 
@@ -666,7 +666,7 @@ static void AnimateMineTower(TileIndex tile)
 			uint8_t m = GetAnimationFrame(tile);
 			if (!(m & 0x40)) {
 				SetAnimationFrame(tile, m | 0x40);
-				if (_settings_client.sound.ambient) SndPlayTileFx(SND_0B_MINE, tile);
+				if (_settings_client.sound.ambient) SndPlayTileFx(SND_0B_MINE, index);
 			}
 			if (state & 7) return;
 		} else {
@@ -675,7 +675,7 @@ static void AnimateMineTower(TileIndex tile)
 		uint8_t m = (GetAnimationFrame(tile) + 1) | 0x40;
 		if (m > 0xC2) m = 0xC0;
 		SetAnimationFrame(tile, m);
-		MarkTileDirtyByTile(tile);
+		MarkTileDirtyByTile(index);
 	} else if (state >= 0x200 && state < 0x3A0) {
 		int i = (state < 0x220 || state >= 0x380) ? 7 : 3;
 		if (state & i) return;
@@ -683,57 +683,57 @@ static void AnimateMineTower(TileIndex tile)
 		uint8_t m = (GetAnimationFrame(tile) & 0xBF) - 1;
 		if (m < 0x80) m = 0x82;
 		SetAnimationFrame(tile, m);
-		MarkTileDirtyByTile(tile);
+		MarkTileDirtyByTile(index);
 	}
 }
 
-static void AnimateTile_Industry(TileIndex tile)
+static void AnimateTile_Industry(TileIndex index, Tile tile)
 {
 	IndustryGfx gfx = GetIndustryGfx(tile);
 
 	if (GetIndustryTileSpec(gfx)->animation.status != ANIM_STATUS_NO_ANIMATION) {
-		AnimateNewIndustryTile(tile);
+		AnimateNewIndustryTile(index, tile);
 		return;
 	}
 
 	switch (gfx) {
 	case GFX_SUGAR_MINE_SIEVE:
-		if ((TimerGameTick::counter & 1) == 0) AnimateSugarSieve(tile);
+		if ((TimerGameTick::counter & 1) == 0) AnimateSugarSieve(index, tile);
 		break;
 
 	case GFX_TOFFEE_QUARY:
-		if ((TimerGameTick::counter & 3) == 0) AnimateToffeeQuarry(tile);
+		if ((TimerGameTick::counter & 3) == 0) AnimateToffeeQuarry(index, tile);
 		break;
 
 	case GFX_BUBBLE_CATCHER:
-		if ((TimerGameTick::counter & 1) == 0) AnimateBubbleCatcher(tile);
+		if ((TimerGameTick::counter & 1) == 0) AnimateBubbleCatcher(index, tile);
 		break;
 
 	case GFX_POWERPLANT_SPARKS:
-		if ((TimerGameTick::counter & 3) == 0) AnimatePowerPlantSparks(tile);
+		if ((TimerGameTick::counter & 3) == 0) AnimatePowerPlantSparks(index, tile);
 		break;
 
 	case GFX_TOY_FACTORY:
-		if ((TimerGameTick::counter & 1) == 0) AnimateToyFactory(tile);
+		if ((TimerGameTick::counter & 1) == 0) AnimateToyFactory(index, tile);
 		break;
 
 	case GFX_PLASTIC_FOUNTAIN_ANIMATED_1: case GFX_PLASTIC_FOUNTAIN_ANIMATED_2:
 	case GFX_PLASTIC_FOUNTAIN_ANIMATED_3: case GFX_PLASTIC_FOUNTAIN_ANIMATED_4:
 	case GFX_PLASTIC_FOUNTAIN_ANIMATED_5: case GFX_PLASTIC_FOUNTAIN_ANIMATED_6:
 	case GFX_PLASTIC_FOUNTAIN_ANIMATED_7: case GFX_PLASTIC_FOUNTAIN_ANIMATED_8:
-		if ((TimerGameTick::counter & 3) == 0) AnimatePlasticFountain(tile, gfx);
+		if ((TimerGameTick::counter & 3) == 0) AnimatePlasticFountain(index, tile, gfx);
 		break;
 
 	case GFX_OILWELL_ANIMATED_1:
 	case GFX_OILWELL_ANIMATED_2:
 	case GFX_OILWELL_ANIMATED_3:
-		if ((TimerGameTick::counter & 7) == 0) AnimateOilWell(tile, gfx);
+		if ((TimerGameTick::counter & 7) == 0) AnimateOilWell(index, tile, gfx);
 		break;
 
 	case GFX_COAL_MINE_TOWER_ANIMATED:
 	case GFX_COPPER_MINE_TOWER_ANIMATED:
 	case GFX_GOLD_MINE_TOWER_ANIMATED:
-		AnimateMineTower(tile);
+		AnimateMineTower(index, tile);
 		break;
 	}
 }
