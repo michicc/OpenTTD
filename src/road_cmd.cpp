@@ -1931,21 +1931,6 @@ void UpdateNearestTownForRoadTiles(bool invalidate)
 	}
 }
 
-static int GetSlopePixelZ_Road(TileIndex tile, uint x, uint y, bool)
-{
-
-	if (IsNormalRoad(tile)) {
-		auto [tileh, z] = GetTilePixelSlope(tile);
-		if (tileh == SLOPE_FLAT) return z;
-
-		Foundation f = GetRoadFoundation(tileh, GetAllRoadBits(tile));
-		z += ApplyPixelFoundationToSlope(f, tileh);
-		return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-	} else {
-		return GetTileMaxPixelZ(tile);
-	}
-}
-
 static Foundation GetFoundation_Road(TileIndex tile, Slope tileh)
 {
 	if (IsNormalRoad(tile)) {
@@ -2617,7 +2602,6 @@ CommandCost CmdConvertRoad(DoCommandFlag flags, TileIndex tile, TileIndex area_s
 /** Tile callback functions for road tiles */
 extern const TileTypeProcs _tile_type_road_procs = {
 	DrawTile_Road,           // draw_tile_proc
-	GetSlopePixelZ_Road,     // get_slope_z_proc
 	ClearTile_Road,          // clear_tile_proc
 	nullptr,                    // add_accepted_cargo_proc
 	GetTileDesc_Road,        // get_tile_desc_proc

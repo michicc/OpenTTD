@@ -38,6 +38,7 @@
 #include "terraform_cmd.h"
 #include "station_func.h"
 #include "pathfinder/water_regions.h"
+#include "tunnelbridge.h"
 
 #include "table/strings.h"
 #include "table/sprites.h"
@@ -303,8 +304,13 @@ uint GetPartialPixelZ(int x, int y, Slope corners)
 int GetSlopePixelZ(int x, int y, bool ground_vehicle)
 {
 	TileIndex tile = TileVirtXY(x, y);
+	if (IsTileType(tile, MP_TUNNELBRIDGE)) {
+		/* Special case for bridge/tunnel tiles as vehicles don't follow the landscape there. */
+		return GetTunnelBridgeSlopePixelZ(tile, x, y, ground_vehicle);
+	}
 
-	return _tile_type_procs[GetTileType(tile)]->get_slope_z_proc(tile, x, y, ground_vehicle);
+	auto [tileh, z] = GetFoundationPixelSlope(tile);
+	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
 }
 
 /**
@@ -320,7 +326,8 @@ int GetSlopePixelZOutsideMap(int x, int y)
 	if (IsInsideBS(x, 0, Map::SizeX() * TILE_SIZE) && IsInsideBS(y, 0, Map::SizeY() * TILE_SIZE)) {
 		return GetSlopePixelZ(x, y, false);
 	} else {
-		return _tile_type_procs[MP_VOID]->get_slope_z_proc(INVALID_TILE, x, y, false);
+		auto [tileh, z] = GetTilePixelSlopeOutsideMap(x >> 4, y >> 4);
+		return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
 	}
 }
 
