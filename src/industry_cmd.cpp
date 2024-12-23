@@ -388,11 +388,6 @@ static void DrawTile_Industry(TileInfo *ti)
 	}
 }
 
-static int GetSlopePixelZ_Industry(TileIndex tile, uint, uint, bool)
-{
-	return GetTileMaxPixelZ(tile);
-}
-
 static Foundation GetFoundation_Industry(TileIndex tile, Slope tileh)
 {
 	IndustryGfx gfx = GetIndustryGfx(tile);
@@ -3187,7 +3182,6 @@ static CommandCost TerraformTile_Industry(TileIndex index, Tile tile, DoCommandF
 
 extern const TileTypeProcs _tile_type_industry_procs = {
 	DrawTile_Industry,           // draw_tile_proc
-	GetSlopePixelZ_Industry,     // get_slope_z_proc
 	ClearTile_Industry,          // clear_tile_proc
 	AddAcceptedCargo_Industry,   // add_accepted_cargo_proc
 	GetTileDesc_Industry,        // get_tile_desc_proc

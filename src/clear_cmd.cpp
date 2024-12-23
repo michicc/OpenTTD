@@ -130,13 +130,6 @@ static void DrawTile_Clear(TileInfo *ti)
 	DrawBridgeMiddle(ti);
 }
 
-static int GetSlopePixelZ_Clear(TileIndex tile, uint x, uint y, bool)
-{
-	auto [tileh, z] = GetTilePixelSlope(tile);
-
-	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-}
-
 static Foundation GetFoundation_Clear(TileIndex, Slope)
 {
 	return FOUNDATION_NONE;
@@ -362,7 +355,6 @@ static CommandCost TerraformTile_Clear(TileIndex, Tile, DoCommandFlag, int, Slop
 
 extern const TileTypeProcs _tile_type_clear_procs = {
 	DrawTile_Clear,           ///< draw_tile_proc
-	GetSlopePixelZ_Clear,     ///< get_slope_z_proc
 	ClearTile_Clear,          ///< clear_tile_proc
 	nullptr,                     ///< add_accepted_cargo_proc
 	GetTileDesc_Clear,        ///< get_tile_desc_proc

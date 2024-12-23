@@ -25,15 +25,6 @@ static void DrawTile_Void(TileInfo *ti)
 }
 
 
-static int GetSlopePixelZ_Void(TileIndex, uint x, uint y, bool)
-{
-	/* This function may be called on tiles outside the map, don't assume
-	 * that 'tile' is a valid tile index. See GetSlopePixelZOutsideMap. */
-	auto [tileh, z] = GetTilePixelSlopeOutsideMap(x >> 4, y >> 4);
-
-	return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-}
-
 static Foundation GetFoundation_Void(TileIndex, Slope)
 {
 	return FOUNDATION_NONE;
@@ -74,7 +65,6 @@ static CommandCost TerraformTile_Void(TileIndex, Tile, DoCommandFlag, int, Slope
 
 extern const TileTypeProcs _tile_type_void_procs = {
 	DrawTile_Void,            // draw_tile_proc
-	GetSlopePixelZ_Void,      // get_slope_z_proc
 	ClearTile_Void,           // clear_tile_proc
 	nullptr,                     // add_accepted_cargo_proc
 	GetTileDesc_Void,         // get_tile_desc_proc

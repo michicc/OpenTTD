@@ -491,17 +491,6 @@ static void DrawTile_Object(TileInfo *ti)
 	DrawBridgeMiddle(ti);
 }
 
-static int GetSlopePixelZ_Object(TileIndex tile, uint x, uint y, bool)
-{
-	if (IsObjectType(tile, OBJECT_OWNED_LAND)) {
-		auto [tileh, z] = GetTilePixelSlope(tile);
-
-		return z + GetPartialPixelZ(x & 0xF, y & 0xF, tileh);
-	} else {
-		return GetTileMaxPixelZ(tile);
-	}
-}
-
 static Foundation GetFoundation_Object(TileIndex tile, Slope tileh)
 {
 	return IsObjectType(tile, OBJECT_OWNED_LAND) ? FOUNDATION_NONE : FlatteningFoundation(tileh);
@@ -948,7 +937,6 @@ static CommandCost TerraformTile_Object(TileIndex index, Tile tile, DoCommandFla
 
 extern const TileTypeProcs _tile_type_object_procs = {
 	DrawTile_Object,             // draw_tile_proc
-	GetSlopePixelZ_Object,       // get_slope_z_proc
 	ClearTile_Object,            // clear_tile_proc
 	AddAcceptedCargo_Object,     // add_accepted_cargo_proc
 	GetTileDesc_Object,          // get_tile_desc_proc
