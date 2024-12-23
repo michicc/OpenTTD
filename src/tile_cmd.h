@@ -126,7 +126,16 @@ typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex index, Tile tile);
 typedef void AnimateTileProc(TileIndex index, Tile tile);
 typedef bool TileLoopProc(TileIndex index, Tile &tile);
-typedef void ChangeTileOwnerProc(TileIndex tile, Owner old_owner, Owner new_owner);
+
+/**
+ * Change the owner of a tile.
+ * @param index Index of the tile being operated on.
+ * @param[in,out] tile Tile where the owner is changed. If the tile is removed from the map array, this will return the after-delete tile pointer.
+ * @param old_owner Current owner of the tile.
+ * @param new_owner New owner of the tile.
+ * @return True if the current associated tile was removed from the map array.
+ */
+typedef bool ChangeTileOwnerProc(TileIndex index, Tile &tile, Owner old_owner, Owner new_owner);
 
 /** @see VehicleEnterTileStatus to see what the return values mean */
 typedef VehicleEnterTileStatus VehicleEnterTileProc(Vehicle *v, TileIndex tile, int x, int y);

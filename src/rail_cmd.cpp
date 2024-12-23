@@ -2858,9 +2858,9 @@ static void GetTileDesc_Track(TileIndex, Tile tile, TileDesc *td)
 	}
 }
 
-static void ChangeTileOwner_Track(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Track(TileIndex index, Tile &tile, Owner old_owner, Owner new_owner)
 {
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return false;
 
 	if (new_owner != INVALID_OWNER) {
 		/* Update company infrastructure counts. No need to dirty windows here, we'll redraw the whole screen anyway. */
@@ -2881,8 +2881,9 @@ static void ChangeTileOwner_Track(TileIndex tile, Owner old_owner, Owner new_own
 		}
 
 		SetTileOwner(tile, new_owner);
+		return false;
 	} else {
-		Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC | DC_BANKRUPT, tile);
+		return std::get<1>(ClearTile_Track(index, tile, DC_EXEC | DC_BANKRUPT));
 	}
 }
 

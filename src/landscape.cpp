@@ -593,7 +593,11 @@ TrackStatus GetTileTrackStatus(TileIndex tile, TransportType mode, uint sub_mode
  */
 void ChangeTileOwner(TileIndex tile, Owner old_owner, Owner new_owner)
 {
-	_tile_type_procs[GetTileType(tile)]->change_tile_owner_proc(tile, old_owner, new_owner);
+	Tile t(tile);
+	while (t.IsValid()) {
+		bool deleted = _tile_type_procs[t.tile_type()]->change_tile_owner_proc(tile, t, old_owner, new_owner); // Modifies t if tile was deleted.
+		if (!deleted) ++t;
+	}
 }
 
 void GetTileDesc(TileIndex index, Tile tile, TileDesc *td)

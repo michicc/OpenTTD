@@ -343,9 +343,9 @@ static void GetTileDesc_Clear(TileIndex, Tile tile, TileDesc *td)
 	td->owner[0] = GetTileOwner(tile);
 }
 
-static void ChangeTileOwner_Clear(TileIndex, Owner, Owner)
+static bool ChangeTileOwner_Clear(TileIndex, Tile &, Owner, Owner)
 {
-	return;
+	return false;
 }
 
 static CommandCost TerraformTile_Clear(TileIndex, Tile, DoCommandFlag, int, Slope)
