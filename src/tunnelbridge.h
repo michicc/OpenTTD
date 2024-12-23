@@ -46,4 +46,6 @@ inline void SetTunnelBridgeOwner(TileIndex begin, TileIndex end, Owner owner)
 
 extern TileIndex _build_tunnel_endtile;
 
+int GetTunnelBridgeSlopePixelZ(TileIndex tile, uint x, uint y, bool ground_vehicle);
+
 #endif /* TUNNELBRIDGE_H */
