@@ -265,12 +265,12 @@ struct IndustryAnimationBase : public AnimationBase<IndustryAnimationBase, Indus
 	static const IndustryTileCallbackMask cbm_animation_next_frame = CBM_INDT_ANIM_NEXT_FRAME;
 };
 
-void AnimateNewIndustryTile(TileIndex tile)
+void AnimateNewIndustryTile(TileIndex index, Tile tile)
 {
 	const IndustryTileSpec *itspec = GetIndustryTileSpec(GetIndustryGfx(tile));
 	if (itspec == nullptr) return;
 
-	IndustryAnimationBase::AnimateTile(itspec, Industry::GetByTile(tile), tile, (itspec->special_flags & INDTILE_SPECIAL_NEXTFRAME_RANDOMBITS) != 0);
+	IndustryAnimationBase::AnimateTile(itspec, Industry::GetByTile(tile), index, tile, (itspec->special_flags & INDTILE_SPECIAL_NEXTFRAME_RANDOMBITS) != 0);
 }
 
 bool StartStopIndustryTileAnimation(TileIndex tile, IndustryAnimationTrigger iat, uint32_t random)
@@ -279,7 +279,7 @@ bool StartStopIndustryTileAnimation(TileIndex tile, IndustryAnimationTrigger iat
 
 	if (!HasBit(itspec->animation.triggers, iat)) return false;
 
-	IndustryAnimationBase::ChangeAnimationFrame(CBID_INDTILE_ANIM_START_STOP, itspec, Industry::GetByTile(tile), tile, random, iat);
+	IndustryAnimationBase::ChangeAnimationFrame(CBID_INDTILE_ANIM_START_STOP, itspec, Industry::GetByTile(tile), tile, Tile(tile), random, iat);
 	return true;
 }
 

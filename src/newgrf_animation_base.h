@@ -19,8 +19,8 @@
 
 template <typename Tobj>
 struct TileAnimationFrameAnimationHelper {
-	static uint8_t Get(Tobj *, TileIndex tile) { return GetAnimationFrame(tile); }
-	static bool Set(Tobj *, TileIndex tile, uint8_t frame)
+	static uint8_t Get(Tobj *, TileIndex, Tile tile) { return GetAnimationFrame(tile); }
+	static bool Set(Tobj *, TileIndex, Tile tile, uint8_t frame)
 	{
 		uint8_t prev_frame = GetAnimationFrame(tile);
 		if (prev_frame == frame) return false;
@@ -45,18 +45,19 @@ struct AnimationBase {
 	 * Animate a single tile.
 	 * @param spec        Specification related to the tile.
 	 * @param obj         Object related to the tile.
+	 * @param index       TileIndex to animate changes for.
 	 * @param tile        Tile to animate changes for.
 	 * @param random_animation Whether to pass random bits to the "next frame" callback.
 	 * @param extra_data  Custom extra callback data.
 	 */
-	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex tile, bool random_animation, Textra extra_data = 0)
+	static void AnimateTile(const Tspec *spec, Tobj *obj, TileIndex index, Tile tile, bool random_animation, Textra extra_data = 0)
 	{
 		assert(spec != nullptr);
 
 		/* Acquire the animation speed from the NewGRF. */
 		uint8_t animation_speed = spec->animation.speed;
 		if (HasBit(spec->callback_mask, Tbase::cbm_animation_speed)) {
-			uint16_t callback = GetCallback(Tbase::cb_animation_speed, 0, 0, spec, obj, tile, extra_data);
+			uint16_t callback = GetCallback(Tbase::cb_animation_speed, 0, 0, spec, obj, index, extra_data);
 			if (callback != CALLBACK_FAILED) {
 				if (callback >= 0x100 && spec->grf_prop.grffile->grf_version >= 8) ErrorUnknownCallbackResult(spec->grf_prop.grfid, Tbase::cb_animation_speed, callback);
 				animation_speed = Clamp(callback & 0xFF, 0, 16);
@@ -69,20 +70,20 @@ struct AnimationBase {
 		 * maximum, corresponding to around 33 minutes. */
 		if (TimerGameTick::counter % (1ULL << animation_speed) != 0) return;
 
-		uint8_t frame      = Tframehelper::Get(obj, tile);
+		uint8_t frame      = Tframehelper::Get(obj, index, tile);
 		uint8_t num_frames = spec->animation.frames;
 
 		bool frame_set_by_callback = false;
 
 		if (HasBit(spec->callback_mask, Tbase::cbm_animation_next_frame)) {
-			uint16_t callback = GetCallback(Tbase::cb_animation_next_frame, random_animation ? Random() : 0, 0, spec, obj, tile, extra_data);
+			uint16_t callback = GetCallback(Tbase::cb_animation_next_frame, random_animation ? Random() : 0, 0, spec, obj, index, extra_data);
 
 			if (callback != CALLBACK_FAILED) {
 				frame_set_by_callback = true;
 
 				switch (callback & 0xFF) {
 					case 0xFF:
-						DeleteAnimatedTile(tile);
+						DeleteAnimatedTile(index);
 						break;
 
 					case 0xFE:
@@ -96,7 +97,7 @@ struct AnimationBase {
 
 				/* If the lower 7 bits of the upper byte of the callback
 				 * result are not empty, it is a sound effect. */
-				if (GB(callback, 8, 7) != 0 && _settings_client.sound.ambient) PlayTileSound(spec->grf_prop.grffile, GB(callback, 8, 7), tile);
+				if (GB(callback, 8, 7) != 0 && _settings_client.sound.ambient) PlayTileSound(spec->grf_prop.grffile, GB(callback, 8, 7), index);
 			}
 		}
 
@@ -108,12 +109,12 @@ struct AnimationBase {
 				frame = 0;
 			} else {
 				/* This animation doesn't loop, so stay here */
-				DeleteAnimatedTile(tile);
+				DeleteAnimatedTile(index);
 			}
 		}
 
-		bool changed = Tframehelper::Set(obj, tile, frame);
-		if (changed) MarkTileDirtyByTile(tile);
+		bool changed = Tframehelper::Set(obj, index, tile, frame);
+		if (changed) MarkTileDirtyByTile(index);
 	}
 
 	/**
@@ -123,28 +124,29 @@ struct AnimationBase {
 	 * @param cb          The callback to actually call.
 	 * @param spec        Specification related to the tile.
 	 * @param obj         Object related to the tile.
+	 * @param index       TileIndex to consider animation changes for.
 	 * @param tile        Tile to consider animation changes for.
 	 * @param random_bits Random bits for this update. To be passed as parameter to the NewGRF.
 	 * @param trigger     What triggered this update? To be passed as parameter to the NewGRF.
 	 * @param extra_data  Custom extra data for callback processing.
 	 */
-	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex tile, uint32_t random_bits, uint32_t trigger, Textra extra_data = 0)
+	static void ChangeAnimationFrame(CallbackID cb, const Tspec *spec, Tobj *obj, TileIndex index, Tile tile, uint32_t random_bits, uint32_t trigger, Textra extra_data = 0)
 	{
-		uint16_t callback = GetCallback(cb, random_bits, trigger, spec, obj, tile, extra_data);
+		uint16_t callback = GetCallback(cb, random_bits, trigger, spec, obj, index, extra_data);
 		if (callback == CALLBACK_FAILED) return;
 
 		switch (callback & 0xFF) {
 			case 0xFD: /* Do nothing. */         break;
-			case 0xFE: AddAnimatedTile(tile, false); break;
-			case 0xFF: DeleteAnimatedTile(tile); break;
+			case 0xFE: AddAnimatedTile(index, false); break;
+			case 0xFF: DeleteAnimatedTile(index); break;
 			default:
-				bool changed = Tframehelper::Set(obj, tile, callback);
-				AddAnimatedTile(tile, changed);
+				bool changed = Tframehelper::Set(obj, index, tile, callback);
+				AddAnimatedTile(index, changed);
 				break;
 		}
 
 		/* If the lower 7 bits of the upper byte of the callback
 		 * result are not empty, it is a sound effect. */
-		if (GB(callback, 8, 7) != 0 && _settings_client.sound.ambient) PlayTileSound(spec->grf_prop.grffile, GB(callback, 8, 7), tile);
+		if (GB(callback, 8, 7) != 0 && _settings_client.sound.ambient) PlayTileSound(spec->grf_prop.grffile, GB(callback, 8, 7), index);
 	}
 };

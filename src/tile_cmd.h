@@ -137,7 +137,7 @@ typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, TransportType mode, u
  */
 typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex index, Tile tile);
-typedef void AnimateTileProc(TileIndex tile);
+typedef void AnimateTileProc(TileIndex index, Tile tile);
 typedef bool TileLoopProc(TileIndex index, Tile &tile);
 typedef void ChangeTileOwnerProc(TileIndex tile, Owner old_owner, Owner new_owner);
 
@@ -210,16 +210,17 @@ inline void AddProducedCargo(TileIndex tile, CargoArray &produced)
  * @param tile Tile to test.
  * @returns True iff the type of the tile has a handler for tile animation.
  */
-inline bool MayAnimateTile(TileIndex tile)
+inline bool MayAnimateTile(Tile tile)
 {
 	return _tile_type_procs[GetTileType(tile)]->animate_tile_proc != nullptr;
 }
 
 inline void AnimateTile(TileIndex tile)
 {
-	AnimateTileProc *proc = _tile_type_procs[GetTileType(tile)]->animate_tile_proc;
-	assert(proc != nullptr);
-	proc(tile);
+	for (Tile t = tile; t.IsValid(); ++t) {
+		AnimateTileProc *proc = _tile_type_procs[t.tile_type()]->animate_tile_proc;
+		if (proc != nullptr) proc(tile, t);
+	}
 }
 
 inline bool ClickTile(TileIndex tile)
