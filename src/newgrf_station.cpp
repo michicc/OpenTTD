@@ -870,12 +870,12 @@ struct StationAnimationBase : public AnimationBase<StationAnimationBase, Station
 	static const StationCallbackMask cbm_animation_next_frame = CBM_STATION_ANIMATION_NEXT_FRAME;
 };
 
-void AnimateStationTile(TileIndex tile)
+void AnimateStationTile(TileIndex index, Tile tile)
 {
 	const StationSpec *ss = GetStationSpec(tile);
 	if (ss == nullptr) return;
 
-	StationAnimationBase::AnimateTile(ss, BaseStation::GetByTile(tile), tile, HasBit(ss->flags, SSF_CB141_RANDOM_BITS));
+	StationAnimationBase::AnimateTile(ss, BaseStation::GetByTile(tile), index, tile, HasBit(ss->flags, SSF_CB141_RANDOM_BITS));
 }
 
 void TriggerStationAnimation(BaseStation *st, TileIndex trigger_tile, StationAnimationTrigger trigger, CargoType cargo_type)
@@ -906,7 +906,7 @@ void TriggerStationAnimation(BaseStation *st, TileIndex trigger_tile, StationAni
 				} else {
 					cargo = ss->grf_prop.grffile->cargo_map[cargo_type];
 				}
-				StationAnimationBase::ChangeAnimationFrame(CBID_STATION_ANIM_START_STOP, ss, st, tile, (random_bits << 16) | GB(Random(), 0, 16), (uint8_t)trigger | (cargo << 8));
+				StationAnimationBase::ChangeAnimationFrame(CBID_STATION_ANIM_START_STOP, ss, st, tile, Tile(tile), (random_bits << 16) | GB(Random(), 0, 16), (uint8_t)trigger | (cargo << 8));
 			}
 		}
 	}

@@ -178,8 +178,7 @@ void DrawRoadStopTile(int x, int y, RoadType roadtype, const RoadStopSpec *spec,
 
 uint16_t GetRoadStopCallback(CallbackID callback, uint32_t param1, uint32_t param2, const RoadStopSpec *roadstopspec, BaseStation *st, TileIndex tile, RoadType roadtype, StationType type, uint8_t view);
 
-void AnimateRoadStopTile(TileIndex tile);
-uint8_t GetRoadStopTileAnimationSpeed(TileIndex tile);
+void AnimateRoadStopTile(TileIndex index, Tile tile);
 void TriggerRoadStopAnimation(BaseStation *st, TileIndex tile, StationAnimationTrigger trigger, CargoType cargo_type = INVALID_CARGO);
 void TriggerRoadStopRandomisation(Station *st, TileIndex tile, RoadStopRandomTrigger trigger, CargoType cargo_type = INVALID_CARGO);
 
@@ -187,7 +186,7 @@ bool GetIfNewStopsByType(RoadStopType rs, RoadType roadtype);
 bool GetIfClassHasNewStopsByType(const RoadStopClass *roadstopclass, RoadStopType rs, RoadType roadtype);
 bool GetIfStopIsForType(const RoadStopSpec *roadstopspec, RoadStopType rs, RoadType roadtype);
 
-const RoadStopSpec *GetRoadStopSpec(TileIndex t);
+const RoadStopSpec *GetRoadStopSpec(Tile t);
 int AllocateSpecToRoadStop(const RoadStopSpec *statspec, BaseStation *st, bool exec);
 void DeallocateSpecFromRoadStop(BaseStation *st, uint8_t specindex);
 void RoadStopUpdateCachedTriggers(BaseStation *st);

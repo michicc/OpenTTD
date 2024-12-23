@@ -98,7 +98,7 @@ void DecreaseBuildingCount(Town *t, HouseID house_id);
 std::span<const uint> GetBuildingHouseIDCounts();
 
 void DrawNewHouseTile(TileInfo *ti, HouseID house_id);
-void AnimateNewHouseTile(TileIndex tile);
+void AnimateNewHouseTile(TileIndex index, Tile tile);
 void AnimateNewHouseConstruction(TileIndex tile);
 
 uint16_t GetHouseCallback(CallbackID callback, uint32_t param1, uint32_t param2, HouseID house_id, Town *town, TileIndex tile,

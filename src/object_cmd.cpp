@@ -741,9 +741,9 @@ static bool ClickTile_Object(TileIndex, Tile tile)
 	return true;
 }
 
-static void AnimateTile_Object(TileIndex tile)
+static void AnimateTile_Object(TileIndex index, Tile tile)
 {
-	AnimateNewObjectTile(tile);
+	AnimateNewObjectTile(index, tile);
 }
 
 /**
