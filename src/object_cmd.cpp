@@ -864,9 +864,9 @@ void GenerateObjects()
 	}
 }
 
-static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_owner)
+static bool ChangeTileOwner_Object(TileIndex index, Tile &tile, Owner old_owner, Owner new_owner)
 {
-	if (!IsTileOwner(tile, old_owner)) return;
+	if (!IsTileOwner(tile, old_owner)) return false;
 
 	bool do_clear = false;
 
@@ -896,8 +896,10 @@ static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_ow
 	if (do_clear) {
 		ReallyClearObjectTile(Object::GetByTile(tile));
 		/* When clearing objects, they may turn into canal, which may require transferring ownership. */
-		ChangeTileOwner(tile, old_owner, new_owner);
+		ChangeTileOwner(index, old_owner, new_owner);
 	}
+
+	return false;
 }
 
 static CommandCost TerraformTile_Object(TileIndex index, Tile tile, DoCommandFlag, int z_new, Slope tileh_new)

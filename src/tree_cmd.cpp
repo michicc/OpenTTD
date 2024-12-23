@@ -870,9 +870,10 @@ static TrackStatus GetTileTrackStatus_Trees(TileIndex, TransportType, uint, Diag
 	return 0;
 }
 
-static void ChangeTileOwner_Trees(TileIndex, Owner, Owner)
+static bool ChangeTileOwner_Trees(TileIndex, Tile &, Owner, Owner)
 {
 	/* not used */
+	return false;
 }
 
 void InitializeTrees()

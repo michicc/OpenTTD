@@ -903,9 +903,10 @@ static TrackStatus GetTileTrackStatus_Town(TileIndex, TransportType, uint, DiagD
 	return 0;
 }
 
-static void ChangeTileOwner_Town(TileIndex, Owner, Owner)
+static bool ChangeTileOwner_Town(TileIndex, Tile &, Owner, Owner)
 {
 	/* not used */
+	return false;
 }
 
 static bool GrowTown(Town *t);
