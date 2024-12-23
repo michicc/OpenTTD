@@ -48,9 +48,10 @@ static bool TileLoop_Void(TileIndex index, Tile &tile)
 	return TileLoop_Water(index, tile);
 }
 
-static void ChangeTileOwner_Void(TileIndex, Owner, Owner)
+static bool ChangeTileOwner_Void(TileIndex, Tile &, Owner, Owner)
 {
 	/* not used */
+	return false;
 }
 
 static TrackStatus GetTileTrackStatus_Void(TileIndex, TransportType, uint, DiagDirection)
