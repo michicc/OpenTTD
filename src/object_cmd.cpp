@@ -911,13 +911,13 @@ static void ChangeTileOwner_Object(TileIndex tile, Owner old_owner, Owner new_ow
 	}
 }
 
-static CommandCost TerraformTile_Object(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new)
+static CommandCost TerraformTile_Object(TileIndex index, Tile tile, DoCommandFlag, int z_new, Slope tileh_new)
 {
 	ObjectType type = GetObjectType(tile);
 
 	if (type == OBJECT_OWNED_LAND) {
 		/* Owned land remains unsold */
-		CommandCost ret = CheckTileOwnership(tile);
+		CommandCost ret = CheckTileOwnership(index);
 		if (ret.Succeeded()) return CommandCost();
 	} else if (AutoslopeEnabled() && type != OBJECT_TRANSMITTER && type != OBJECT_LIGHTHOUSE) {
 		/* Behaviour:
@@ -926,15 +926,15 @@ static CommandCost TerraformTile_Object(TileIndex tile, DoCommandFlag flags, int
 		 *  - Allow autoslope by default.
 		 *  - Disallow autoslope if callback succeeds and returns non-zero.
 		 */
-		Slope tileh_old = GetTileSlope(tile);
+		Slope tileh_old = GetTileSlope(index);
 		/* TileMaxZ must not be changed. Slopes must not be steep. */
-		if (!IsSteepSlope(tileh_old) && !IsSteepSlope(tileh_new) && (GetTileMaxZ(tile) == z_new + GetSlopeMaxZ(tileh_new))) {
+		if (!IsSteepSlope(tileh_old) && !IsSteepSlope(tileh_new) && (GetTileMaxZ(index) == z_new + GetSlopeMaxZ(tileh_new))) {
 			const ObjectSpec *spec = ObjectSpec::Get(type);
 
 			/* Call callback 'disable autosloping for objects'. */
 			if (HasBit(spec->callback_mask, CBM_OBJ_AUTOSLOPE)) {
 				/* If the callback fails, allow autoslope. */
-				uint16_t res = GetObjectCallback(CBID_OBJECT_AUTOSLOPE, 0, 0, spec, Object::GetByTile(tile), tile);
+				uint16_t res = GetObjectCallback(CBID_OBJECT_AUTOSLOPE, 0, 0, spec, Object::GetByTile(tile), index);
 				if (res == CALLBACK_FAILED || !ConvertBooleanCallback(spec->grf_prop.grffile, CBID_OBJECT_AUTOSLOPE, res)) return CommandCost(EXPENSES_CONSTRUCTION, _price[PR_BUILD_FOUNDATION]);
 			} else if (spec->IsEnabled()) {
 				/* allow autoslope */
@@ -943,7 +943,7 @@ static CommandCost TerraformTile_Object(TileIndex tile, DoCommandFlag flags, int
 		}
 	}
 
-	return Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile);
+	return CommandCost(INVALID_STRING_ID); // Dummy error
 }
 
 extern const TileTypeProcs _tile_type_object_procs = {

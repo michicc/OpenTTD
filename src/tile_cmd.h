@@ -154,13 +154,14 @@ typedef Foundation GetFoundationProc(TileIndex tile, Slope tileh);
  *
  * @note The terraforming has not yet taken place. So GetTileZ() and GetTileSlope() refer to the landscape before the terraforming operation.
  *
+ * @param index     The TileIndex being terraformed.
  * @param tile      The involved tile.
  * @param flags     Command flags passed to the terraform command (DC_EXEC, DC_QUERY_COST, etc.).
  * @param z_new     TileZ after terraforming.
  * @param tileh_new Slope after terraforming.
  * @return Error code or extra cost for terraforming (like clearing land, building foundations, etc., but not the terraforming itself.)
  */
-typedef CommandCost TerraformTileProc(TileIndex tile, DoCommandFlag flags, int z_new, Slope tileh_new);
+typedef CommandCost TerraformTileProc(TileIndex index, Tile tile, DoCommandFlag flags, int z_new, Slope tileh_new);
 
 /**
  * Set of callback functions for performing tile operations of a given tile type.
