@@ -2919,7 +2919,7 @@ int TicksToLeaveDepot(const Train *v)
  * Tile callback routine when vehicle enters tile
  * @see vehicle_enter_tile_proc
  */
-static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int x, int y)
+static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex index, Tile tile, int x, int y)
 {
 	/* This routine applies only to trains in depot tiles. */
 	if (u->type != VEH_TRAIN || !IsRailDepotTile(tile)) return VETSB_CONTINUE;
@@ -2959,7 +2959,7 @@ static VehicleEnterTileStatus VehicleEnter_Track(Vehicle *u, TileIndex tile, int
 		v->vehstatus |= VS_HIDDEN;
 		v->direction = ReverseDir(v->direction);
 		if (v->Next() == nullptr) VehicleEnterDepot(v->First());
-		v->tile = tile;
+		v->tile = index;
 
 		InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
 		return VETSB_ENTERED_WORMHOLE;
