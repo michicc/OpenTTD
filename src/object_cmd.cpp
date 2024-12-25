@@ -717,7 +717,7 @@ static bool TileLoop_Object(TileIndex index, Tile &tile)
 }
 
 
-static TrackStatus GetTileTrackStatus_Object(TileIndex, TransportType, uint, DiagDirection)
+static TrackStatus GetTileTrackStatus_Object(TileIndex, Tile, TransportType, uint, DiagDirection)
 {
 	return 0;
 }

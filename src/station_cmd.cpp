@@ -3560,7 +3560,7 @@ static void GetTileDesc_Station(TileIndex, Tile tile, TileDesc *td)
 }
 
 
-static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_Station(TileIndex index, Tile tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TrackBits trackbits = TRACK_BIT_NONE;
 
@@ -3576,9 +3576,9 @@ static TrackStatus GetTileTrackStatus_Station(TileIndex tile, TransportType mode
 			if (IsBuoy(tile)) {
 				trackbits = TRACK_BIT_ALL;
 				/* remove tracks that connect NE map edge */
-				if (TileX(tile) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
+				if (TileX(index) == 0) trackbits &= ~(TRACK_BIT_X | TRACK_BIT_UPPER | TRACK_BIT_RIGHT);
 				/* remove tracks that connect NW map edge */
-				if (TileY(tile) == 0) trackbits &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
+				if (TileY(index) == 0) trackbits &= ~(TRACK_BIT_Y | TRACK_BIT_LEFT | TRACK_BIT_UPPER);
 			}
 			break;
 
