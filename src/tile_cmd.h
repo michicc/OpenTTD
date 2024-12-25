@@ -110,12 +110,13 @@ typedef void GetTileDescProc(TileIndex index, Tile tile, TileDesc *td);
  *
  * see track_func.h for usage of TrackStatus.
  *
+ * @param index    the index of the tile to get the track status from
  * @param tile     the tile to get the track status from
  * @param mode     the mode of transportation
  * @param sub_mode used to differentiate between different kinds within the mode
  * @return the track status information
  */
-typedef TrackStatus GetTileTrackStatusProc(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side);
+typedef TrackStatus GetTileTrackStatusProc(TileIndex index, Tile tile, TransportType mode, uint sub_mode, DiagDirection side);
 
 /**
  * Tile callback function signature for obtaining the produced cargo of a tile.

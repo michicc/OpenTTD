@@ -951,7 +951,7 @@ static bool ClickTile_Industry(TileIndex, Tile tile)
 	return true;
 }
 
-static TrackStatus GetTileTrackStatus_Industry(TileIndex, TransportType, uint, DiagDirection)
+static TrackStatus GetTileTrackStatus_Industry(TileIndex, Tile, TransportType, uint, DiagDirection)
 {
 	return 0;
 }
