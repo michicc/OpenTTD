@@ -73,8 +73,10 @@ struct TileDesc {
 /**
  * Tile callback function signature for drawing a tile and its contents to the screen
  * @param ti Information about the tile to draw
+ * @param draw_halftile True if the halftile part of the tile should be drawn
+ * @param halftile_corner A valid corner if the tile has a halftile foundation
  */
-typedef void DrawTileProc(TileInfo *ti);
+typedef void DrawTileProc(TileInfo *ti, bool draw_halftile, Corner halftile_corner);
 
 /**
  * Tile callback function signature for clear a tile.
@@ -142,7 +144,7 @@ typedef bool ChangeTileOwnerProc(TileIndex index, Tile &tile, Owner old_owner, O
 
 /** @see VehicleEnterTileStatus to see what the return values mean */
 typedef VehicleEnterTileStatus VehicleEnterTileProc(Vehicle *v, TileIndex index, Tile tile, int x, int y);
-typedef Foundation GetFoundationProc(TileIndex tile, Slope tileh);
+typedef Foundation GetFoundationProc(TileIndex index, Tile tile, Slope tileh);
 
 /**
  * Tile callback function signature of the terraforming callback.

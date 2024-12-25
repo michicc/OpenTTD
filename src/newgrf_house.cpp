@@ -552,19 +552,6 @@ static void DrawTileLayout(const TileInfo *ti, const TileLayoutSpriteGroup *grou
 
 void DrawNewHouseTile(TileInfo *ti, HouseID house_id)
 {
-	const HouseSpec *hs = HouseSpec::Get(house_id);
-
-	if (ti->tileh != SLOPE_FLAT) {
-		bool draw_old_one = true;
-		if (HasBit(hs->callback_mask, CBM_HOUSE_DRAW_FOUNDATIONS)) {
-			/* Called to determine the type (if any) of foundation to draw for the house tile */
-			uint32_t callback_res = GetHouseCallback(CBID_HOUSE_DRAW_FOUNDATIONS, 0, 0, house_id, Town::GetByTile(ti->index), ti->index);
-			if (callback_res != CALLBACK_FAILED) draw_old_one = ConvertBooleanCallback(hs->grf_prop.grffile, CBID_HOUSE_DRAW_FOUNDATIONS, callback_res);
-		}
-
-		if (draw_old_one) DrawFoundation(ti, FOUNDATION_LEVELED);
-	}
-
 	HouseResolverObject object(house_id, ti->index, Town::GetByTile(ti->index));
 
 	const SpriteGroup *group = object.Resolve();
