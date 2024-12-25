@@ -54,7 +54,7 @@ static bool ChangeTileOwner_Void(TileIndex, Tile &, Owner, Owner)
 	return false;
 }
 
-static TrackStatus GetTileTrackStatus_Void(TileIndex, TransportType, uint, DiagDirection)
+static TrackStatus GetTileTrackStatus_Void(TileIndex, Tile, TransportType, uint, DiagDirection)
 {
 	return 0;
 }

@@ -1794,7 +1794,7 @@ static bool TileLoop_TunnelBridge(TileIndex index, Tile &tile)
 	return false;
 }
 
-static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex tile, TransportType mode, uint sub_mode, DiagDirection side)
+static TrackStatus GetTileTrackStatus_TunnelBridge(TileIndex, Tile tile, TransportType mode, uint sub_mode, DiagDirection side)
 {
 	TransportType transport_type = GetTunnelBridgeTransportType(tile);
 	if (transport_type != mode || (transport_type == TRANSPORT_ROAD && !HasTileRoadType(tile, (RoadTramType)sub_mode))) return 0;
