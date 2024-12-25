@@ -12,7 +12,7 @@
 
 #include "tile_cmd.h"
 
-void DrawHillyLandTile(const TileInfo *ti);
-void DrawClearLandTile(const TileInfo *ti, uint8_t set);
+void DrawHillyLandTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner);
+void DrawClearLandTile(const TileInfo *ti, uint8_t set, bool draw_halftile, Corner halftile_corner);
 
 #endif /* CLEAR_FUNC_H */

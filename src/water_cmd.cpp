@@ -40,6 +40,7 @@
 #include "water_cmd.h"
 #include "landscape_cmd.h"
 #include "pathfinder/water_regions.h"
+#include "clear_func.h"
 
 #include "table/strings.h"
 
@@ -904,21 +905,31 @@ static void DrawRiverWater(const TileInfo *ti)
 	DrawWaterEdges(false, edges_offset, ti->index);
 }
 
-void DrawShoreTile(Slope tileh)
+/**
+ * Draws shore on a given tile.
+ * @param ti The Tileinfo to draw the tile for.
+ * @param draw_halftile Are we drawing the upper part of a half-tile?
+ * @param halftile_corner The corner where the upper half-tile is or CORNER_INVALID if no half-tile.
+ */
+void DrawShoreTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
-	/* Converts the enum Slope into an offset based on SPR_SHORE_BASE.
-	 * This allows to calculate the proper sprite to display for this Slope */
-	static const uint8_t tileh_to_shoresprite[32] = {
-		0, 1, 2, 3, 4, 16, 6, 7, 8, 9, 17, 11, 12, 13, 14, 0,
-		0, 0, 0, 0, 0,  0, 0, 0, 0, 0,  0,  5,  0, 10, 15, 0,
-	};
+	if (!draw_halftile) {
+		/* Converts the enum Slope into an offset based on SPR_SHORE_BASE.
+		 * This allows to calculate the proper sprite to display for this Slope */
+		static const uint8_t tileh_to_shoresprite[32] = {
+			0, 1, 2, 3, 4, 16, 6, 7, 8, 9, 17, 11, 12, 13, 14, 0,
+			0, 0, 0, 0, 0,  0, 0, 0, 0, 0,  0,  5,  0, 10, 15, 0,
+		};
 
-	assert(!IsHalftileSlope(tileh)); // Halftile slopes need to get handled earlier.
-	assert(tileh != SLOPE_FLAT);     // Shore is never flat
+		assert(!IsHalftileSlope(ti->tileh)); // Halftile slopes need to get handled earlier.
+		assert(ti->tileh != SLOPE_FLAT);     // Shore is never flat
+		assert((ti->tileh != SLOPE_EW) && (ti->tileh != SLOPE_NS)); // No suitable sprites for current flooding behaviour
 
-	assert((tileh != SLOPE_EW) && (tileh != SLOPE_NS)); // No suitable sprites for current flooding behaviour
-
-	DrawGroundSprite(SPR_SHORE_BASE + tileh_to_shoresprite[tileh], PAL_NONE);
+		DrawGroundSprite(SPR_SHORE_BASE + tileh_to_shoresprite[ti->tileh], PAL_NONE);
+	} else {
+		/* Draw higher halftile-overlay using clear land graphics. */
+		DrawClearLandTile(ti, 3, draw_halftile, halftile_corner);
+	}
 }
 
 void DrawWaterClassGround(const TileInfo *ti)
@@ -931,7 +942,7 @@ void DrawWaterClassGround(const TileInfo *ti)
 	}
 }
 
-static void DrawTile_Water(TileInfo *ti)
+static void DrawTile_Water(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	switch (GetWaterTileType(ti->tile)) {
 		case WATER_TILE_CLEAR:
@@ -940,7 +951,7 @@ static void DrawTile_Water(TileInfo *ti)
 			break;
 
 		case WATER_TILE_COAST: {
-			DrawShoreTile(ti->tileh);
+			DrawShoreTile(ti, draw_halftile, halftile_corner);
 			DrawBridgeMiddle(ti);
 			break;
 		}
@@ -964,7 +975,7 @@ void DrawShipDepotSprite(int x, int y, Axis axis, DepotPart part)
 }
 
 
-static Foundation GetFoundation_Water(TileIndex, Slope)
+static Foundation GetFoundation_Water(TileIndex, Tile, Slope)
 {
 	return FOUNDATION_NONE;
 }

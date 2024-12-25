@@ -47,21 +47,57 @@ static std::tuple<CommandCost, bool> ClearTile_Clear(TileIndex index, Tile &tile
 	return {price, false};
 }
 
-void DrawClearLandTile(const TileInfo *ti, uint8_t set)
+static inline std::tuple<uint, const SubSprite *> GetHigherHalftileSubsprite(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
-	DrawGroundSprite(SPR_FLAT_BARE_LAND + SlopeToSpriteOffset(ti->tileh) + set * 19, PAL_NONE);
+	if (draw_halftile) {
+		/* Use the sloped sprites with three corners raised. They probably best fit the lightning for the higher half-tile. */
+		Slope fake_slope = SlopeWithThreeCornersRaised(OppositeCorner(halftile_corner));
+		return {SlopeToSpriteOffset(fake_slope), GetHalftileSubSprite(halftile_corner)};
+	} else {
+		return {SlopeToSpriteOffset(ti->tileh), nullptr};
+	}
 }
 
-void DrawHillyLandTile(const TileInfo *ti)
+void DrawClearLandTile(const TileInfo *ti, uint8_t set, bool draw_halftile, Corner halftile_corner)
 {
-	if (ti->tileh != SLOPE_FLAT) {
-		DrawGroundSprite(SPR_FLAT_ROUGH_LAND + SlopeToSpriteOffset(ti->tileh), PAL_NONE);
+	auto [offset, subsprite] = GetHigherHalftileSubsprite(ti, draw_halftile, halftile_corner);
+	DrawGroundSprite(SPR_FLAT_BARE_LAND + offset + set * 19, PAL_NONE, subsprite);
+}
+
+void DrawHillyLandTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
+{
+	auto [offset, subsprite] = GetHigherHalftileSubsprite(ti, draw_halftile, halftile_corner);
+	if (ti->tileh != SLOPE_FLAT || draw_halftile) {
+		DrawGroundSprite(SPR_FLAT_ROUGH_LAND + offset, PAL_NONE, subsprite);
 	} else {
 		DrawGroundSprite(_landscape_clear_sprites_rough[GB(TileHash(ti->x, ti->y), 0, 3)], PAL_NONE);
 	}
 }
 
-static void DrawClearLandFence(const TileInfo *ti)
+static void DrawRockLandTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
+{
+	SpriteID rocks = HasGrfMiscBit(GMB_SECOND_ROCKY_TILE_SET) && (TileHash(ti->x, ti->y) & 1) ? SPR_FLAT_ROCKY_LAND_2 : SPR_FLAT_ROCKY_LAND_1;
+	auto [offset, subsprite] = GetHigherHalftileSubsprite(ti, draw_halftile, halftile_corner);
+	DrawGroundSprite(rocks + offset, PAL_NONE, subsprite);
+}
+
+static void DrawSnowDesertTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
+{
+	/* If the tile has snow, increase the density for the higher halftile by one to match the surrounding tiles. */
+	uint density = GetClearDensity(ti->tile);
+	if (draw_halftile && IsSnowTile(ti->tile) && density < 3) density++;
+
+	auto [offset, subsprite] = GetHigherHalftileSubsprite(ti, draw_halftile, halftile_corner);
+	DrawGroundSprite(_clear_land_sprites_snow_desert[density] + offset, PAL_NONE, subsprite);
+}
+
+static void DrawFieldTile(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
+{
+	auto [offset, subsprite] = GetHigherHalftileSubsprite(ti, draw_halftile, halftile_corner);
+	DrawGroundSprite(_clear_land_sprites_farmland[GetFieldType(ti->tile)] + offset, PAL_NONE, subsprite);
+}
+
+static void DrawClearLandFence(const TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	/* combine fences into one sprite object */
 	StartSpriteCombine();
@@ -69,68 +105,78 @@ static void DrawClearLandFence(const TileInfo *ti)
 	int maxz = GetSlopeMaxPixelZ(ti->tileh);
 
 	uint fence_nw = GetFence(ti->tile, DIAGDIR_NW);
-	if (fence_nw != 0) {
-		int z = GetSlopePixelZInCorner(ti->tileh, CORNER_W);
-		SpriteID sprite = _clear_land_fence_sprites[fence_nw - 1] + _fence_mod_by_tileh_nw[ti->tileh];
-		AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x, ti->y - 16, 16, 32, maxz - z + 4, ti->z + z, false, 0, 16, -z);
-	}
-
 	uint fence_ne = GetFence(ti->tile, DIAGDIR_NE);
-	if (fence_ne != 0) {
-		int z = GetSlopePixelZInCorner(ti->tileh, CORNER_E);
-		SpriteID sprite = _clear_land_fence_sprites[fence_ne - 1] + _fence_mod_by_tileh_ne[ti->tileh];
-		AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x - 16, ti->y, 32, 16, maxz - z + 4, ti->z + z, false, 16, 0, -z);
-	}
-
 	uint fence_sw = GetFence(ti->tile, DIAGDIR_SW);
 	uint fence_se = GetFence(ti->tile, DIAGDIR_SE);
 
+	if (IsValidCorner(halftile_corner)) {
+		/* Tile has a half-tile foundation. Draw a fence that touches the half-tile corner only when
+		 * the half-tile is drawn and fences that don't touch only when the normal tile is drawn. */
+		if (!(draw_halftile ^ (halftile_corner != CORNER_N && halftile_corner != CORNER_W))) fence_nw = 0;
+		if (!(draw_halftile ^ (halftile_corner != CORNER_N && halftile_corner != CORNER_E))) fence_ne = 0;
+		if (!(draw_halftile ^ (halftile_corner != CORNER_S && halftile_corner != CORNER_W))) fence_sw = 0;
+		if (!(draw_halftile ^ (halftile_corner != CORNER_S && halftile_corner != CORNER_E))) fence_se = 0;
+	}
+	Slope s = IsHalftileSlope(ti->tileh) ? SLOPE_ELEVATED : ti->tileh;
+
+	if (fence_nw != 0) {
+		int z = GetSlopePixelZInCorner(ti->tileh, CORNER_W);
+		SpriteID sprite = _clear_land_fence_sprites[fence_nw - 1] + _fence_mod_by_tileh_nw[s];
+		AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x, ti->y - 16, 16, 32, maxz - z + 4, ti->z + z, false, 0, 16, -z);
+	}
+
+	if (fence_ne != 0) {
+		int z = GetSlopePixelZInCorner(ti->tileh, CORNER_E);
+		SpriteID sprite = _clear_land_fence_sprites[fence_ne - 1] + _fence_mod_by_tileh_ne[s];
+		AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x - 16, ti->y, 32, 16, maxz - z + 4, ti->z + z, false, 16, 0, -z);
+	}
+
 	if (fence_sw != 0 || fence_se != 0) {
-		int z = GetSlopePixelZInCorner(ti->tileh, CORNER_S);
+		int z = GetSlopePixelZInCorner(s, CORNER_S);
 
 		if (fence_sw != 0) {
-			SpriteID sprite = _clear_land_fence_sprites[fence_sw - 1] + _fence_mod_by_tileh_sw[ti->tileh];
+			SpriteID sprite = _clear_land_fence_sprites[fence_sw - 1] + _fence_mod_by_tileh_sw[s];
 			AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x, ti->y, 16, 16, maxz - z + 4, ti->z + z, false, 0, 0, -z);
 		}
 
 		if (fence_se != 0) {
-			SpriteID sprite = _clear_land_fence_sprites[fence_se - 1] + _fence_mod_by_tileh_se[ti->tileh];
+			SpriteID sprite = _clear_land_fence_sprites[fence_se - 1] + _fence_mod_by_tileh_se[s];
 			AddSortableSpriteToDraw(sprite, PAL_NONE, ti->x, ti->y, 16, 16, maxz - z + 4, ti->z + z, false, 0, 0, -z);
 		}
 	}
 	EndSpriteCombine();
 }
 
-static void DrawTile_Clear(TileInfo *ti)
+static void DrawTile_Clear(TileInfo *ti, bool draw_halftile, Corner halftile_corner)
 {
 	switch (GetClearGround(ti->tile)) {
 		case CLEAR_GRASS:
-			DrawClearLandTile(ti, GetClearDensity(ti->tile));
+			DrawClearLandTile(ti, GetClearDensity(ti->tile), draw_halftile, halftile_corner);
 			break;
 
 		case CLEAR_ROUGH:
-			DrawHillyLandTile(ti);
+			DrawHillyLandTile(ti, draw_halftile, halftile_corner);
 			break;
 
 		case CLEAR_ROCKS:
-			DrawGroundSprite((HasGrfMiscBit(GMB_SECOND_ROCKY_TILE_SET) && (TileHash(ti->x, ti->y) & 1) ? SPR_FLAT_ROCKY_LAND_2 : SPR_FLAT_ROCKY_LAND_1) + SlopeToSpriteOffset(ti->tileh), PAL_NONE);
+			DrawRockLandTile(ti, draw_halftile, halftile_corner);
 			break;
 
 		case CLEAR_FIELDS:
-			DrawGroundSprite(_clear_land_sprites_farmland[GetFieldType(ti->tile)] + SlopeToSpriteOffset(ti->tileh), PAL_NONE);
-			DrawClearLandFence(ti);
+			DrawFieldTile(ti, draw_halftile, halftile_corner);
+			DrawClearLandFence(ti, draw_halftile, halftile_corner);
 			break;
 
 		case CLEAR_SNOW:
 		case CLEAR_DESERT:
-			DrawGroundSprite(_clear_land_sprites_snow_desert[GetClearDensity(ti->tile)] + SlopeToSpriteOffset(ti->tileh), PAL_NONE);
+			DrawSnowDesertTile(ti, draw_halftile, halftile_corner);
 			break;
 	}
 
 	DrawBridgeMiddle(ti);
 }
 
-static Foundation GetFoundation_Clear(TileIndex, Slope)
+static Foundation GetFoundation_Clear(TileIndex, Tile, Slope)
 {
 	return FOUNDATION_NONE;
 }
@@ -155,7 +201,7 @@ static void UpdateFences(TileIndex tile)
 /** Convert to or from snowy tiles. */
 static void TileLoopClearAlps(TileIndex tile)
 {
-	int k = GetTileZ(tile) - GetSnowLine() + 1;
+	int k = std::get<1>(GetFoundationSlope(tile)) - GetSnowLine() + 1;
 
 	if (!IsSnowTile(tile)) {
 		/* Below the snow line, do nothing if no snow. */
