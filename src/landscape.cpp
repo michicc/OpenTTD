@@ -83,6 +83,20 @@ extern const uint8_t _slope_to_sprite_offset[32] = {
 	0, 0, 0, 0, 0, 0, 0, 16, 0, 0,  0, 17,  0, 15, 18, 0,
 };
 
+/* SubSprite for drawing the track halftile of 'three-corners-raised'-sloped rail sprites. */
+static const int INF = 1000; // big number compared to tilesprite size
+extern const SubSprite _halftile_sub_sprite[8] = {
+	{ -INF    , -INF   , 32 - 33, INF     }, // CORNER_W, clip 33 pixels from right
+	{ -INF    ,  0 +  7, INF    , INF     }, // CORNER_S, clip 7 pixels from top
+	{ -31 + 33, -INF   , INF    , INF     }, // CORNER_E, clip 33 pixels from left
+	{ -INF    , -INF   , INF    , 30 - 23 }, // CORNER_N, clip 23 pixels from bottom
+	/* Subsprites for sprites that are offset by -TILE_HEIGHT, for example track sprites. */
+	{ -INF    , -INF   , 32 - 33, INF     }, // CORNER_W, clip 33 pixels from right
+	{ -INF    ,  0 + 15, INF    , INF     }, // CORNER_S, clip 15 pixels from top
+	{ -31 + 33, -INF   , INF    , INF     }, // CORNER_E, clip 33 pixels from left
+	{ -INF    , -INF   , INF    , 30 - 15 }, // CORNER_N, clip 15 pixels from bottom
+};
+
 static const uint TILE_UPDATE_FREQUENCY_LOG = 8;  ///< The logarithm of how many ticks it takes between tile updates (log base 2).
 static const uint TILE_UPDATE_FREQUENCY = 1 << TILE_UPDATE_FREQUENCY_LOG;  ///< How many ticks it takes between tile updates (has to be a power of 2).
 
