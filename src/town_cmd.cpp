@@ -749,7 +749,7 @@ static std::tuple<CommandCost, bool> ClearTile_Town(TileIndex index, Tile &tile,
 	return {cost, false};
 }
 
-static void AddProducedCargo_Town(TileIndex tile, CargoArray &produced)
+static void AddProducedCargo_Town(TileIndex index, Tile tile, CargoArray &produced)
 {
 	HouseID house_id = GetHouseType(tile);
 	const HouseSpec *hs = HouseSpec::Get(house_id);
@@ -757,7 +757,7 @@ static void AddProducedCargo_Town(TileIndex tile, CargoArray &produced)
 
 	if (HasBit(hs->callback_mask, CBM_HOUSE_PRODUCE_CARGO)) {
 		for (uint i = 0; i < 256; i++) {
-			uint16_t callback = GetHouseCallback(CBID_HOUSE_PRODUCE_CARGO, i, 0, house_id, t, tile);
+			uint16_t callback = GetHouseCallback(CBID_HOUSE_PRODUCE_CARGO, i, 0, house_id, t, index);
 
 			if (callback == CALLBACK_FAILED || callback == CALLBACK_HOUSEPRODCARGO_END) break;
 
@@ -796,7 +796,7 @@ static void AddAcceptedCargoSetMask(CargoType cargo, uint amount, CargoArray &ac
 
 /**
  * Determine accepted cargo for a house.
- * @param tile Tile of house, or INVALID_TILE if not yet built.
+ * @param tile Tile index of house, or INVALID_TILE if not yet built.
  * @param house HouseID of house.
  * @param hs HouseSpec of house.
  * @param t Town that house belongs to, or nullptr if not yet built.
@@ -845,10 +845,10 @@ void AddAcceptedCargoOfHouse(TileIndex tile, HouseID house, const HouseSpec *hs,
 	}
 }
 
-static void AddAcceptedCargo_Town(TileIndex tile, CargoArray &acceptance, CargoTypes &always_accepted)
+static void AddAcceptedCargo_Town(TileIndex index, Tile tile, CargoArray &acceptance, CargoTypes &always_accepted)
 {
 	HouseID house = GetHouseType(tile);
-	AddAcceptedCargoOfHouse(tile, house, HouseSpec::Get(house), Town::GetByTile(tile), acceptance, always_accepted);
+	AddAcceptedCargoOfHouse(index, house, HouseSpec::Get(house), Town::GetByTile(tile), acceptance, always_accepted);
 }
 
 /**

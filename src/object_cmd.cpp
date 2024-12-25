@@ -608,7 +608,7 @@ static std::tuple<CommandCost, bool> ClearTile_Object(TileIndex index, Tile &til
 	return {cost, false};
 }
 
-static void AddAcceptedCargo_Object(TileIndex tile, CargoArray &acceptance, CargoTypes &always_accepted)
+static void AddAcceptedCargo_Object(TileIndex, Tile tile, CargoArray &acceptance, CargoTypes &always_accepted)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return;
 
@@ -637,7 +637,7 @@ static void AddAcceptedCargo_Object(TileIndex tile, CargoArray &acceptance, Carg
 	}
 }
 
-static void AddProducedCargo_Object(TileIndex tile, CargoArray &produced)
+static void AddProducedCargo_Object(TileIndex, Tile tile, CargoArray &produced)
 {
 	if (!IsObjectType(tile, OBJECT_HQ)) return;
 
