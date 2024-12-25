@@ -88,11 +88,12 @@ typedef std::tuple<CommandCost, bool> ClearTileProc(TileIndex index, Tile &tile,
 
 /**
  * Tile callback function signature for obtaining cargo acceptance of a tile
+ * @param index           The index of the queried tile
  * @param tile            Tile queried for its accepted cargo
  * @param acceptance      Storage destination of the cargo acceptance in 1/8
  * @param always_accepted Bitmask of always accepted cargo types
  */
-typedef void AddAcceptedCargoProc(TileIndex tile, CargoArray &acceptance, CargoTypes &always_accepted);
+typedef void AddAcceptedCargoProc(TileIndex index, Tile tile, CargoArray &acceptance, CargoTypes &always_accepted);
 
 /**
  * Tile callback function signature for obtaining a tile description
@@ -120,10 +121,11 @@ typedef TrackStatus GetTileTrackStatusProc(TileIndex index, Tile tile, Transport
 
 /**
  * Tile callback function signature for obtaining the produced cargo of a tile.
+ * @param index     Index of the tile being queried
  * @param tile      Tile being queried
  * @param produced  Destination array for produced cargo
  */
-typedef void AddProducedCargoProc(TileIndex tile, CargoArray &produced);
+typedef void AddProducedCargoProc(TileIndex index, Tile tile, CargoArray &produced);
 typedef bool ClickTileProc(TileIndex index, Tile tile);
 typedef void AnimateTileProc(TileIndex index, Tile tile);
 typedef bool TileLoopProc(TileIndex index, Tile &tile);
@@ -189,17 +191,21 @@ void GetTileDesc(TileIndex index, Tile tile, TileDesc *td);
 
 inline void AddAcceptedCargo(TileIndex tile, CargoArray &acceptance, CargoTypes *always_accepted)
 {
-	AddAcceptedCargoProc *proc = _tile_type_procs[GetTileType(tile)]->add_accepted_cargo_proc;
-	if (proc == nullptr) return;
 	CargoTypes dummy = 0; // use dummy bitmask so there don't need to be several 'always_accepted != nullptr' checks
-	proc(tile, acceptance, always_accepted == nullptr ? dummy : *always_accepted);
+	for (Tile t = tile; t.IsValid(); ++t) {
+		if (auto proc = _tile_type_procs[t.tile_type()]->add_accepted_cargo_proc; proc != nullptr) {
+			proc(tile, t, acceptance, always_accepted == nullptr ? dummy : *always_accepted);
+		}
+	}
 }
 
 inline void AddProducedCargo(TileIndex tile, CargoArray &produced)
 {
-	AddProducedCargoProc *proc = _tile_type_procs[GetTileType(tile)]->add_produced_cargo_proc;
-	if (proc == nullptr) return;
-	proc(tile, produced);
+	for (Tile t = tile; t.IsValid(); ++t) {
+		if (auto proc = _tile_type_procs[t.tile_type()]->add_produced_cargo_proc; proc != nullptr) {
+			proc(tile, t, produced);
+		}
+	}
 }
 
 /**
