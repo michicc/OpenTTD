@@ -32,7 +32,7 @@ inline bool HasRailCatenaryDrawn(RailType rt)
 	return HasRailCatenary(rt) && !IsInvisibilitySet(TO_CATENARY) && !_settings_game.vehicle.disable_elrails;
 }
 
-void DrawRailCatenary(const TileInfo *ti);
+void DrawRailCatenary(const TileInfo *ti, bool draw_halftile = false, Corner halftile_corner = CORNER_INVALID);
 void DrawRailCatenaryOnTunnel(const TileInfo *ti);
 void DrawRailCatenaryOnBridge(const TileInfo *ti);
 

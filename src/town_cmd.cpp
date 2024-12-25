@@ -264,7 +264,7 @@ static inline DiagDirection RandomDiagDir()
  * Draw a house and its tile. This is a tile callback routine.
  * @param ti TileInfo of the tile to draw
  */
-static void DrawTile_Town(TileInfo *ti)
+static void DrawTile_Town(TileInfo *ti, bool, Corner)
 {
 	HouseID house_id = GetHouseType(ti->tile);
 
@@ -282,8 +282,6 @@ static void DrawTile_Town(TileInfo *ti)
 
 	/* Retrieve pointer to the draw town tile struct */
 	const DrawBuildingsTileStruct *dcts = &_town_draw_tile_data[house_id << 4 | TileHash2Bit(ti->x, ti->y) << 2 | GetHouseBuildingStage(ti->tile)];
-
-	if (ti->tileh != SLOPE_FLAT) DrawFoundation(ti, FOUNDATION_LEVELED);
 
 	DrawGroundSprite(dcts->ground.sprite, dcts->ground.pal);
 
@@ -315,10 +313,11 @@ static void DrawTile_Town(TileInfo *ti)
 
 /**
  * Get the foundation for a house. This is a tile callback routine.
+ * @param index The index of the tile to find a foundation for.
  * @param tile The tile to find a foundation for.
  * @param tileh The slope of the tile.
  */
-static Foundation GetFoundation_Town(TileIndex tile, Slope tileh)
+static Foundation GetFoundation_Town(TileIndex index, Tile tile, Slope tileh)
 {
 	HouseID hid = GetHouseType(tile);
 
@@ -329,7 +328,7 @@ static Foundation GetFoundation_Town(TileIndex tile, Slope tileh)
 	if (hid >= NEW_HOUSE_OFFSET) {
 		const HouseSpec *hs = HouseSpec::Get(hid);
 		if (hs->grf_prop.spritegroup[0] != nullptr && HasBit(hs->callback_mask, CBM_HOUSE_DRAW_FOUNDATIONS)) {
-			uint32_t callback_res = GetHouseCallback(CBID_HOUSE_DRAW_FOUNDATIONS, 0, 0, hid, Town::GetByTile(tile), tile);
+			uint32_t callback_res = GetHouseCallback(CBID_HOUSE_DRAW_FOUNDATIONS, 0, 0, hid, Town::GetByTile(tile), index);
 			if (callback_res != CALLBACK_FAILED && !ConvertBooleanCallback(hs->grf_prop.grffile, CBID_HOUSE_DRAW_FOUNDATIONS, callback_res)) return FOUNDATION_NONE;
 		}
 	}

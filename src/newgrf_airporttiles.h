@@ -87,6 +87,7 @@ private:
 void AnimateAirportTile(TileIndex index, Tile tile);
 void AirportTileAnimationTrigger(Station *st, TileIndex tile, AirpAnimationTrigger trigger, CargoType cargo_type = INVALID_CARGO);
 void AirportAnimationTrigger(Station *st, AirpAnimationTrigger trigger, CargoType cargo_type = INVALID_CARGO);
+bool HasNewAirportTileDefaultFoundation(TileIndex tile, Station *st, const AirportTileSpec *airts);
 bool DrawNewAirportTile(TileInfo *ti, Station *st, const AirportTileSpec *airts);
 
 #endif /* NEWGRF_AIRPORTTILES_H */
