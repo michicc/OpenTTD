@@ -61,7 +61,7 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 			if (IsValidTile(neighbor_tile)) {
 				switch (GetTileType(neighbor_tile)) {
 					/* Always connective ones */
-					case MP_CLEAR: case MP_TREES:
+					case MP_CLEAR:
 						connective = true;
 						break;
 

@@ -100,7 +100,7 @@ inline void SetWaterTileType(Tile t, WaterTileType type)
  */
 inline bool HasTileWaterClass(Tile t)
 {
-	return IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT) || IsTileType(t, MP_TREES);
+	return IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_INDUSTRY) || IsTileType(t, MP_OBJECT);
 }
 
 /**
@@ -210,7 +210,7 @@ inline bool IsCoast(Tile t)
  */
 inline bool IsCoastTile(Tile t)
 {
-	return (IsTileType(t, MP_WATER) && IsCoast(t)) || (IsTileType(t, MP_TREES) && GetWaterClass(t) != WATER_CLASS_INVALID);
+	return IsTileType(t, MP_WATER) && IsCoast(t);
 }
 
 /**
