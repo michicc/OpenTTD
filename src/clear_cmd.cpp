@@ -172,8 +172,6 @@ static void DrawTile_Clear(TileInfo *ti, bool draw_halftile, Corner halftile_cor
 			DrawSnowDesertTile(ti, draw_halftile, halftile_corner);
 			break;
 	}
-
-	DrawBridgeMiddle(ti);
 }
 
 static Foundation GetFoundation_Clear(TileIndex, Tile, Slope)
