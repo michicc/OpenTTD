@@ -2112,7 +2112,7 @@ static CommandCost TownCanBePlacedHere(TileIndex tile)
 	}
 
 	/* Can only build on clear flat areas, possibly with trees. */
-	if ((!IsTileType(tile, MP_CLEAR) && !IsTileType(tile, MP_TREES)) || !IsTileFlat(tile)) {
+	if (!IsTileType(tile, MP_CLEAR) || !IsTileFlat(tile)) {
 		return CommandCost(STR_ERROR_SITE_UNSUITABLE);
 	}
 
@@ -2326,7 +2326,7 @@ static bool FindFurthestFromWater(TileIndex tile, void *user_data)
  */
 static bool FindNearestEmptyLand(TileIndex tile, void *)
 {
-	return IsTileType(tile, MP_CLEAR);
+	return IsTileType(tile, MP_CLEAR) && !Tile::HasAssociated(tile);
 }
 
 /**
@@ -3432,7 +3432,7 @@ static bool SearchTileForStatue(TileIndex tile, void *user_data)
 	if (IsBridgeAbove(tile)) return false;
 
 	/* A clear-able open space is always preferred. */
-	if ((IsTileType(tile, MP_CLEAR) || IsTileType(tile, MP_TREES)) && CheckClearTile(tile)) {
+	if (IsTileType(tile, MP_CLEAR) && CheckClearTile(tile)) {
 		statue_data->best_position = tile;
 		return true;
 	}
