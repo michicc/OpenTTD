@@ -1394,8 +1394,6 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 		/* Add helper BB for sprite sorting that separates the tunnel from things beside of it. */
 		AddSortableSpriteToDraw(SPR_EMPTY_BOUNDING_BOX, PAL_NONE, ti->x,              ti->y,              BB_data[6], BB_data[7], TILE_HEIGHT, ti->z);
 		AddSortableSpriteToDraw(SPR_EMPTY_BOUNDING_BOX, PAL_NONE, ti->x + BB_data[4], ti->y + BB_data[5], BB_data[6], BB_data[7], TILE_HEIGHT, ti->z);
-
-		DrawBridgeMiddle(ti);
 	} else { // IsBridge(ti->tile)
 		const PalSpriteID *psid;
 		int base_offset;
@@ -1497,8 +1495,6 @@ static void DrawTile_TunnelBridge(TileInfo *ti, bool draw_halftile, Corner halft
 				DrawRailCatenary(ti);
 			}
 		}
-
-		DrawBridgeMiddle(ti);
 	}
 }
 
