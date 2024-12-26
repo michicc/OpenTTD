@@ -35,7 +35,7 @@ static std::tuple<CommandCost, bool> ClearTile_Clear(TileIndex index, Tile &tile
 	};
 	CommandCost price(EXPENSES_CONSTRUCTION);
 
-	if (!IsClearGround(tile, CLEAR_GRASS) || GetClearDensity(tile) != 0) {
+	if (!Tile::HasType(index, MP_TREES) && (!IsClearGround(tile, CLEAR_GRASS) || GetClearDensity(tile) != 0)) {
 		price.AddCost(_price[clear_price_table[GetClearGround(tile)]]);
 	}
 

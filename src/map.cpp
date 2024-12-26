@@ -76,6 +76,53 @@
 }
 
 /**
+ * Add a new tile to the map.
+ * @param index Tile index where to add a tile to.
+ * @param type Type of the new tile.
+ * @param insert_after Associated sub-tile to insert the new tile after, or an invalid tile to insert after the last sub-tile.
+ * @param raw_alloc If true, associated tile flags and tile data will not be initialized. Used for saveload code.
+ * @return Newly added tile.
+ * @pre \c insert_after is either invalid or associated with the tile index.
+ */
+/* static */ Tile Tile::New(TileIndex index, TileType type, Tile insert_after, bool raw_alloc)
+{
+	[[maybe_unused]] auto check_tile = [](TileIndex i, Tile check) -> bool {
+		/* Check if the tile belongs to the tile index. */
+		for (Tile t = i; t.IsValid(); ++t) {
+			if (t == check) return true;
+		}
+		return false;
+	};
+	assert(!insert_after.IsValid() || check_tile(index, insert_after));
+
+	/* Insert at the end if nothing is specified. */
+	if (!insert_after.IsValid()) {
+		insert_after = index;
+		while (insert_after.HasAssociated()) ++insert_after;
+	}
+
+	bool has_next = insert_after.HasAssociated();
+	if (!raw_alloc) insert_after.SetAssociated(true);
+
+	/* Fixup tile offsets. */
+	uint count = Map::size_x - TileX(index);
+	for (uint i = 1; i < count; i++) {
+		Map::offsets[index.base() + i]++;
+	}
+
+	/* Insert new tile. */
+	auto &line = Map::base_tiles[TileY(index)];
+	Tile new_tile(std::addressof(*line.emplace(line.begin() + (insert_after.tile - line.data()) + 1)));
+
+	if (!raw_alloc) {
+		SetTileType(new_tile, type);
+		if (has_next) new_tile.SetAssociated(true);
+	}
+
+	return new_tile;
+}
+
+/**
  * Remove a tile from the map.
  * @param index Tile index from where to remove a tile.
  * @param to_remove Associated sub-tile to remove.

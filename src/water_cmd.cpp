@@ -598,7 +598,9 @@ static std::tuple<CommandCost, bool> ClearTile_Water(TileIndex index, Tile &tile
 				MarkCanalsAndRiversAroundDirty(index);
 				ClearNeighbourNonFloodingStates(index);
 			}
-			if (IsSlopeWithOneCornerRaised(slope)) {
+			if (Tile::HasType(index, MP_TREES)) {
+				return {CommandCost(EXPENSES_CONSTRUCTION), false};
+			} else if (IsSlopeWithOneCornerRaised(slope)) {
 				return {CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_WATER]), false};
 			} else {
 				return {CommandCost(EXPENSES_CONSTRUCTION, _price[PR_CLEAR_ROUGH]), false};
@@ -1117,9 +1119,6 @@ FloodingBehaviour GetFloodingBehaviour(TileIndex tile)
 			}
 			return FLOOD_NONE;
 
-		case MP_TREES:
-			return (GetTreeGround(tile) == TREE_GROUND_SHORE ? FLOOD_DRYUP : FLOOD_NONE);
-
 		case MP_VOID:
 			return FLOOD_ACTIVE;
 
@@ -1150,16 +1149,15 @@ static void DoFloodTile(TileIndex target)
 				break;
 			}
 
-			case MP_TREES:
-				if (!IsSlopeWithOneCornerRaised(tileh)) {
-					SetTreeGroundDensity(target, TREE_GROUND_SHORE, 3);
+			case MP_CLEAR:
+				if (!IsSlopeWithOneCornerRaised(tileh) && Tile::HasType(target, MP_TREES)) {
+					/* Slope with trees, convert to shore. */
+					MakeShore(target);
 					MarkTileDirtyByTile(target);
 					flooded = true;
 					break;
 				}
-				[[fallthrough]];
 
-			case MP_CLEAR:
 				if (Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, target).Succeeded()) {
 					MakeShore(target);
 					MarkTileDirtyByTile(target);
@@ -1220,15 +1218,11 @@ static void DoDryUp(TileIndex tile)
 			MarkTileDirtyByTile(tile);
 			break;
 
-		case MP_TREES:
-			SetTreeGroundDensity(tile, TREE_GROUND_GRASS, 3);
-			MarkTileDirtyByTile(tile);
-			break;
-
 		case MP_WATER:
 			assert(IsCoast(tile));
 
-			if (Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile).Succeeded()) {
+			/* Don't clear trees on coastal tiles. */
+			if (Tile::HasType(tile, MP_TREES) || Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile).Succeeded()) {
 				MakeClear(tile, CLEAR_GRASS, 3);
 				MarkTileDirtyByTile(tile);
 			}
@@ -1270,9 +1264,6 @@ bool TileLoop_Water(TileIndex index, Tile &tile)
 
 				/* This neighbour tile might be floodable later if the tile is cleared, so allow flooding to continue. */
 				continue_flooding = true;
-
-				/* TREE_GROUND_SHORE is the sign of a previous flood. */
-				if (IsTileType(dest, MP_TREES) && GetTreeGround(dest) == TREE_GROUND_SHORE) continue;
 
 				auto [slope_dest, z_dest] = GetFoundationSlope(dest);
 				if (z_dest > 0) continue;

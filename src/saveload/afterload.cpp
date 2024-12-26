@@ -132,8 +132,8 @@ void SetWaterClassDependingOnSurroundings(TileIndex t, bool include_invalid_wate
 				break;
 
 			case MP_TREES:
-				/* trees on shore */
-				has_water |= (GB(neighbour.m2(), 4, 2) == TREE_GROUND_SHORE);
+				/* This function is only called for old savegames which still have trees on shore as MP_TREES tiles. */
+				has_water |= (GB(neighbour.m2(), 4, 2) == 3 /* TREE_GROUND_SHORE */);
 				break;
 
 			default: break;
@@ -216,6 +216,46 @@ static void UpdateVoidTiles()
 static inline RailType UpdateRailType(RailType rt, RailType min)
 {
 	return rt >= min ? (RailType)(rt + 1): rt;
+}
+
+/* Decompose the tile into ground and additional sub-tiles. */
+static void DecomposeTile(TileIndex index)
+{
+	switch (GetTileType(index)) {
+		case MP_TREES: {
+			Tile new_tile = Tile::New(index, MP_TREES, index, true);
+			Tile old_tile(new_tile.tile - 1);
+
+			/* Copy old tile to the new tile. */
+			*new_tile.tile = *old_tile.tile;
+			ClrBit(new_tile.m8(), 14); // Clear out any garbage in the associated tile flag.
+
+			/* Make new ground tile. */
+			uint ground_type = GB(new_tile.m2(), 6, 3);
+			uint density = GB(new_tile.m2(), 4, 2);
+			switch (ground_type) {
+				case 0: // Clear land
+				case 1: // Rough land
+					MakeClear(old_tile, (ClearGround)ground_type, density);
+					break;
+				case 2: // Snow or desert
+					MakeClear(old_tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, density);
+					if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(old_tile, density);
+					break;
+				case 3: // Shore tile
+					MakeShore(old_tile);
+					break;
+				case 4: // Rough snow
+					MakeClear(old_tile, CLEAR_ROUGH, 3);
+					MakeSnow(old_tile, density);
+					break;
+				default: SlErrorCorrupt("Invalid ground type for tree tile");
+			}
+			old_tile.SetAssociated(true);
+
+			break;
+		}
+	}
 }
 
 /**
@@ -1770,8 +1810,8 @@ bool AfterLoadGame()
 	if (IsSavegameVersionBefore(SLV_81)) {
 		for (auto t : Map::Iterate()) {
 			if (GetTileType(t) == MP_TREES) {
-				TreeGround groundType = (TreeGround)GB(t.m2(), 4, 2);
-				if (groundType != TREE_GROUND_SNOW_DESERT) SB(t.m2(), 6, 2, 3);
+				uint groundType = GB(t.m2(), 4, 2);
+				if (groundType != 2 /* TREE_GROUND_SNOW_DESERT */) SB(t.m2(), 6, 2, 3);
 			}
 		}
 	}
@@ -2977,6 +3017,45 @@ bool AfterLoadGame()
 		}
 	}
 
+	/* Update structures for multitile docks */
+	if (IsSavegameVersionBefore(SLV_MULTITILE_DOCKS)) {
+		for (const auto ti : Map::IterateIndex()) {
+			const Tile t(ti);
+			/* Clear docking tile flag from relevant tiles as it
+			 * was not previously cleared. */
+			if (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) {
+				SetDockingTile(t, false);
+			}
+			/* Add docks and oilrigs to Station::ship_station. */
+			if (IsTileType(t, MP_STATION)) {
+				if (IsDock(t) || IsOilRig(t)) Station::GetByTile(t)->ship_station.Add(ti);
+			}
+		}
+	}
+
+	if (IsSavegameVersionBeforeOrAt(SLV_ENDING_YEAR)) {
+		/* Reset roadtype/streetcartype info for non-road bridges. */
+		for (const auto t : Map::Iterate()) {
+			if (IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) != TRANSPORT_ROAD) {
+				SetRoadTypes(t, INVALID_ROADTYPE, INVALID_ROADTYPE);
+			}
+		}
+	}
+
+	if (IsSavegameVersionBeforeOrAt(SLV_MULTITRACK_LEVEL_CROSSINGS)) {
+		/* Reset unused tree counters to reduce the savegame size. */
+		for (auto t : Map::Iterate()) {
+			if (IsTileType(t, MP_TREES)) {
+				SB(t.m2(), 0, 4, 0);
+			}
+		}
+	}
+
+	/* Decompose all tiles into their base tile components. */
+	for (TileIndex t : Map::IterateIndex()) {
+		DecomposeTile(t);
+	}
+
 	/* Beyond this point, tile types which can be accessed by vehicles must be in a valid state. */
 
 	/* Update all vehicles: Phase 2 */
@@ -3159,42 +3238,10 @@ bool AfterLoadGame()
 		for (Industry *ind : Industry::Iterate()) if (ind->neutral_station != nullptr) ind->neutral_station->industry = ind;
 	}
 
-	if (IsSavegameVersionBefore(SLV_TREES_WATER_CLASS)) {
-		/* Update water class for trees. */
-		for (const auto t : Map::Iterate()) {
-			if (IsTileType(t, MP_TREES)) SetWaterClass(t, GetTreeGround(t) == TREE_GROUND_SHORE ? WATER_CLASS_SEA : WATER_CLASS_INVALID);
-		}
-	}
-
-	/* Update structures for multitile docks */
-	if (IsSavegameVersionBefore(SLV_MULTITILE_DOCKS)) {
-		for (const auto ti : Map::IterateIndex()) {
-			const Tile t(ti);
-			/* Clear docking tile flag from relevant tiles as it
-			 * was not previously cleared. */
-			if (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) {
-				SetDockingTile(t, false);
-			}
-			/* Add docks and oilrigs to Station::ship_station. */
-			if (IsTileType(t, MP_STATION)) {
-				if (IsDock(t) || IsOilRig(t)) Station::GetByTile(t)->ship_station.Add(ti);
-			}
-		}
-	}
-
 	if (IsSavegameVersionBefore(SLV_REPAIR_OBJECT_DOCKING_TILES)) {
 		/* Placing objects on docking tiles was not updating adjacent station's docking tiles. */
 		for (Station *st : Station::Iterate()) {
 			if (st->ship_station.tile != INVALID_TILE) UpdateStationDockingTiles(st);
-		}
-	}
-
-	if (IsSavegameVersionBeforeOrAt(SLV_ENDING_YEAR)) {
-		/* Reset roadtype/streetcartype info for non-road bridges. */
-		for (const auto t : Map::Iterate()) {
-			if (IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) != TRANSPORT_ROAD) {
-				SetRoadTypes(t, INVALID_ROADTYPE, INVALID_ROADTYPE);
-			}
 		}
 	}
 
@@ -3268,15 +3315,6 @@ bool AfterLoadGame()
 					u->UpdatePosition();
 				}
 				RoadVehLeaveDepot(rv, false);
-			}
-		}
-
-		if (IsSavegameVersionBeforeOrAt(SLV_MULTITRACK_LEVEL_CROSSINGS)) {
-			/* Reset unused tree counters to reduce the savegame size. */
-			for (auto t : Map::Iterate()) {
-				if (IsTileType(t, MP_TREES)) {
-					SB(t.m2(), 0, 4, 0);
-				}
 			}
 		}
 

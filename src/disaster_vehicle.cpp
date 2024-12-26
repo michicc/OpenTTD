@@ -79,7 +79,6 @@ static void DisasterClearSquare(TileIndex tile)
 			break;
 		}
 
-		case MP_TREES:
 		case MP_CLEAR:
 			DoClearSquare(tile);
 			break;

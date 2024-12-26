@@ -235,6 +235,7 @@ public:
 class Tile {
 private:
 	friend struct RawMapIterator;
+	friend void DecomposeTile(TileIndex index);
 
 	Map::TileBase *tile; ///< The tile to access the map data for.
 
@@ -401,12 +402,45 @@ public:
 	}
 
 	/**
+	 * Get the tile with a specific tile type associated with a tile index.
+	 * @param tile Tile index to query.
+	 * @param type Tile type to search for.
+	 * @return The associated tile having the asked tile type or an invalid \c Tile if no such tile exists.
+	 */
+	debug_inline static Tile GetByType(TileIndex tile, TileType type)
+	{
+		Tile t = tile;
+		while (t.IsValid() && t.tile_type() != type) ++t;
+		return t;
+	}
+
+	/**
+	 * Check if a tile index has an associated tile with a given type.
+	 * @param tile Tile index to query.
+	 * @param type Tile type to search for.
+	 * @return Whether such a tile exists.
+	 */
+	debug_inline static bool HasType(TileIndex tile, TileType type)
+	{
+		return GetByType(tile, type).IsValid();
+	}
+
+	/**
 	 * Check if this tile has an associated tile following.
 	 * @return True if the next tile is associated with this tile.
 	 */
 	bool HasAssociated()
 	{
 		return MayHaveAssociatedTile(this->tile_type()) && HasBit(this->m8(), 14);
+	}
+
+	/**
+	 * Check if this tile index has any associated tiles.
+	 * @return True if the tile is associated with any tiles.
+	 */
+	static bool HasAssociated(TileIndex tile)
+	{
+		return Tile(tile).HasAssociated();
 	}
 
 	/**
@@ -450,6 +484,7 @@ public:
 
 	explicit operator bool() const { return this->IsValid(); }
 
+	static Tile New(TileIndex index, TileType type, Tile insert_after = INVALID_TILE, bool raw_alloc = false);
 	static Tile Remove(TileIndex index, Tile tile);
 };
 
