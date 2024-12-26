@@ -478,6 +478,17 @@ inline bool HasOnewaySignalBlockingTrackdir(Tile tile, Trackdir td)
 			!HasSignalOnTrackdir(tile, td) && IsOnewaySignal(tile, TrackdirToTrack(td));
 }
 
+/**
+ * Is a block signal present along the trackdir?
+ * @param tile the tile to check
+ * @param td the trackdir to check
+ */
+inline bool HasBlockSignalOnTrackdir(Tile tile, Trackdir td)
+{
+	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
+		!IsPbsSignal(GetSignalType(tile, TrackdirToTrack(td)));
+}
+
 
 RailType GetTileRailType(Tile tile);
 
