@@ -414,17 +414,18 @@ static const ScriptRailSignalData _possible_trackdirs[5][NUM_TRACK_DIRECTIONS] =
 /* static */ ScriptRail::SignalType ScriptRail::GetSignalType(TileIndex tile, TileIndex front)
 {
 	if (ScriptMap::DistanceManhattan(tile, front) != 1) return SIGNALTYPE_NONE;
-	if (!::IsTileType(tile, MP_RAILWAY) || !::HasSignals(tile)) return SIGNALTYPE_NONE;
+	Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY);
+	if (!rail_tile || !::HasSignals(rail_tile)) return SIGNALTYPE_NONE;
 
 	int data_index = 2 + (::TileX(front) - ::TileX(tile)) + 2 * (::TileY(front) - ::TileY(tile));
 
 	for (int i = 0; i < NUM_TRACK_DIRECTIONS; i++) {
 		const Track &track = _possible_trackdirs[data_index][i].track;
 		if (!(::TrackToTrackBits(track) & GetRailTracks(tile))) continue;
-		if (!HasSignalOnTrack(tile, track)) continue;
-		if (!HasSignalOnTrackdir(tile, _possible_trackdirs[data_index][i].trackdir)) continue;
-		SignalType st = (SignalType)::GetSignalType(tile, track);
-		if (HasSignalOnTrackdir(tile, ::ReverseTrackdir(_possible_trackdirs[data_index][i].trackdir))) st = (SignalType)(st | SIGNALTYPE_TWOWAY);
+		if (!HasSignalOnTrack(rail_tile, track)) continue;
+		if (!HasSignalOnTrackdir(rail_tile, _possible_trackdirs[data_index][i].trackdir)) continue;
+		SignalType st = (SignalType)::GetSignalType(rail_tile, track);
+		if (HasSignalOnTrackdir(rail_tile, ::ReverseTrackdir(_possible_trackdirs[data_index][i].trackdir))) st = (SignalType)(st | SIGNALTYPE_TWOWAY);
 		return st;
 	}
 
