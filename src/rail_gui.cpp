@@ -109,18 +109,20 @@ static void GenericPlaceRail(TileIndex tile, Track track)
 
 /**
  * Try to add an additional rail-track at the entrance of a depot
- * @param tile  Tile to use for adding the rail-track
+ * @param index Tile index to use for adding the rail-track
  * @param dir   Direction to check for already present tracks
  * @param track Track to add
  * @see CcRailDepot()
  */
-static void PlaceExtraDepotRail(TileIndex tile, DiagDirection dir, Track track)
+static void PlaceExtraDepotRail(TileIndex index, DiagDirection dir, Track track)
 {
+	Tile tile = Tile::GetByType(index, MP_RAILWAY);
+	if (!tile.IsValid()) return;
 	if (GetRailTileType(tile) == RAIL_TILE_DEPOT) return;
 	if (GetRailTileType(tile) == RAIL_TILE_SIGNALS && !_settings_client.gui.auto_remove_signals) return;
 	if ((GetTrackBits(tile) & DiagdirReachesTracks(dir)) == 0) return;
 
-	Command<CMD_BUILD_SINGLE_RAIL>::Post(tile, _cur_railtype, track, _settings_client.gui.auto_remove_signals);
+	Command<CMD_BUILD_SINGLE_RAIL>::Post(index, _cur_railtype, track, _settings_client.gui.auto_remove_signals);
 }
 
 /** Additional pieces of track to add at the entrance of a depot. */
@@ -146,11 +148,11 @@ void CcRailDepot(Commands, const CommandCost &result, TileIndex tile, RailType, 
 
 	tile += TileOffsByDiagDir(dir);
 
-	if (IsTileType(tile, MP_RAILWAY)) {
+	if (Tile::HasType(tile, MP_RAILWAY)) {
 		PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir], _place_depot_extra_track[dir]);
 
 		/* Don't place the rail straight out of the depot of there is another depot across from it. */
-		Tile double_depot_tile = tile + TileOffsByDiagDir(dir);
+		TileIndex double_depot_tile = tile + TileOffsByDiagDir(dir);
 		bool is_double_depot = IsValidTile(double_depot_tile) && IsRailDepotTile(double_depot_tile);
 		if (!is_double_depot) PlaceExtraDepotRail(tile, _place_depot_extra_dir[dir + 4], _place_depot_extra_track[dir + 4]);
 

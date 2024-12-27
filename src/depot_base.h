@@ -33,6 +33,11 @@ struct Depot : DepotPool::PoolItem<&_depot_pool> {
 		return Depot::Get(GetDepotIndex(tile));
 	}
 
+	static inline Depot *GetByTile(TileIndex tile)
+	{
+		return Depot::Get(GetDepotIndex(tile));
+	}
+
 	/**
 	 * Is the "type" of depot the same as the given depot,
 	 * i.e. are both a rail, road or ship depots?
