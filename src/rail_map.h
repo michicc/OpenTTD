@@ -59,7 +59,7 @@ debug_inline static bool IsPlainRail(Tile t)
  */
 debug_inline static bool IsPlainRailTile(Tile t)
 {
-	return IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
+	return t.IsValid() && IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
 }
 
 
@@ -462,8 +462,18 @@ inline void SetSignalStateByTrackdir(Tile tile, Trackdir trackdir, SignalState s
  */
 inline bool HasPbsSignalOnTrackdir(Tile tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
+	return tile && IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
 			IsPbsSignal(GetSignalType(tile, TrackdirToTrack(td)));
+}
+
+/**
+ * Is a pbs signal present along the trackdir?
+ * @param index the tile to check
+ * @param td the trackdir to check
+ */
+inline bool HasPbsSignalOnTrackdir(TileIndex index, Trackdir td)
+{
+	return HasPbsSignalOnTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
 }
 
 /**
@@ -474,8 +484,19 @@ inline bool HasPbsSignalOnTrackdir(Tile tile, Trackdir td)
  */
 inline bool HasOnewaySignalBlockingTrackdir(Tile tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, ReverseTrackdir(td)) &&
+	return tile && IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, ReverseTrackdir(td)) &&
 			!HasSignalOnTrackdir(tile, td) && IsOnewaySignal(tile, TrackdirToTrack(td));
+}
+
+/**
+ * Is a one-way signal blocking the trackdir? A one-way signal on the
+ * trackdir against will block, but signals on both trackdirs won't.
+ * @param index the tile to check
+ * @param td the trackdir to check
+ */
+inline bool HasOnewaySignalBlockingTrackdir(TileIndex index, Trackdir td)
+{
+	return HasOnewaySignalBlockingTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
 }
 
 /**
@@ -485,8 +506,18 @@ inline bool HasOnewaySignalBlockingTrackdir(Tile tile, Trackdir td)
  */
 inline bool HasBlockSignalOnTrackdir(Tile tile, Trackdir td)
 {
-	return IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
+	return tile && IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, td) &&
 		!IsPbsSignal(GetSignalType(tile, TrackdirToTrack(td)));
+}
+
+/**
+ * Is a block signal present along the trackdir?
+ * @param index the tile to check
+ * @param td the trackdir to check
+ */
+inline bool HasBlockSignalOnTrackdir(TileIndex index, Trackdir td)
+{
+	return HasBlockSignalOnTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
 }
 
 

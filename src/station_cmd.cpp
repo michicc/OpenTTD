@@ -919,8 +919,9 @@ static CommandCost CheckFlatLandRailStation(TileIndex tile_cur, TileIndex north_
 	} else {
 		/* If we are building a station with a valid railtype, we may be able to overbuild an existing rail tile. */
 		if (rt != INVALID_RAILTYPE && IsPlainRailTile(tile_cur)) {
+			Tile rail_tile = Tile::GetByType(tile_cur, MP_RAILWAY);
 			/* Don't overbuild signals. */
-			if (HasSignals(tile_cur)) return CommandCost(STR_ERROR_MUST_REMOVE_SIGNALS_FIRST);
+			if (HasSignals(rail_tile)) return CommandCost(STR_ERROR_MUST_REMOVE_SIGNALS_FIRST);
 
 			/* The current rail type must have power on the to-be-built type (e.g. convert normal rail to electrified rail). */
 			if (HasPowerOnRail(GetRailType(tile_cur), rt)) {

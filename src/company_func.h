@@ -14,6 +14,7 @@
 #include "company_type.h"
 #include "gfx_type.h"
 #include "vehicle_type.h"
+#include "map_func.h"
 
 bool CheckTakeoverVehicleLimit(CompanyID cbig, CompanyID small);
 void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner);
@@ -32,7 +33,7 @@ bool CheckCompanyHasMoney(CommandCost &cost);
 void SubtractMoneyFromCompany(const CommandCost &cost);
 void SubtractMoneyFromCompanyFract(CompanyID company, const CommandCost &cost);
 CommandCost CheckOwnership(Owner owner, TileIndex tile = {});
-CommandCost CheckTileOwnership(TileIndex tile);
+CommandCost CheckTileOwnership(TileIndex index, Tile tile = INVALID_TILE);
 
 extern CompanyID _local_company;
 extern CompanyID _current_company;
