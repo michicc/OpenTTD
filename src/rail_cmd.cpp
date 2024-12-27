@@ -985,11 +985,11 @@ CommandCost CmdBuildTrainDepot(DoCommandFlag flags, TileIndex tile, RailType rai
 
 	/* Allow the user to rotate the depot instead of having to destroy it and build it again */
 	bool rotate_existing_depot = false;
-	if (IsRailDepotTile(tile) && railtype == GetRailType(tile)) {
-		CommandCost ret = CheckTileOwnership(tile);
+	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); IsRailDepotTile(rail) && railtype == GetRailType(rail)) {
+		CommandCost ret = CheckTileOwnership(tile, rail);
 		if (ret.Failed()) return ret;
 
-		if (dir == GetRailDepotDirection(tile)) return CommandCost();
+		if (dir == GetRailDepotDirection(rail)) return CommandCost();
 
 		ret = EnsureNoVehicleOnGround(tile);
 		if (ret.Failed()) return ret;
@@ -1008,7 +1008,7 @@ CommandCost CmdBuildTrainDepot(DoCommandFlag flags, TileIndex tile, RailType rai
 
 	if (flags & DC_EXEC) {
 		if (rotate_existing_depot) {
-			SetRailDepotExitDirection(tile, dir);
+			SetRailDepotExitDirection(GetRailDepotTile(tile), dir);
 		} else {
 			Depot *d = new Depot(tile);
 			d->build_date = TimerGameCalendar::date;
@@ -1767,14 +1767,14 @@ CommandCost CmdConvertRail(DoCommandFlag flags, TileIndex tile, TileIndex area_s
 	return found_convertible_track ? cost : error;
 }
 
-static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
+static CommandCost RemoveTrainDepot(TileIndex index, Tile tile, DoCommandFlag flags)
 {
 	if (_current_company != OWNER_WATER) {
-		CommandCost ret = CheckTileOwnership(tile);
+		CommandCost ret = CheckTileOwnership(index, tile);
 		if (ret.Failed()) return ret;
 	}
 
-	CommandCost ret = EnsureNoVehicleOnGround(tile);
+	CommandCost ret = EnsureNoVehicleOnGround(index);
 	if (ret.Failed()) return ret;
 
 	if (flags & DC_EXEC) {
@@ -1784,7 +1784,7 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 		Train *v = nullptr;
 
 		if (HasDepotReservation(tile)) {
-			v = GetTrainForReservation(tile, DiagDirToDiagTrack(dir));
+			v = GetTrainForReservation(index, DiagDirToDiagTrack(dir));
 			if (v != nullptr) FreeTrainTrackReservation(v);
 		}
 
@@ -1792,9 +1792,9 @@ static CommandCost RemoveTrainDepot(TileIndex tile, DoCommandFlag flags)
 		DirtyCompanyInfrastructureWindows(owner);
 
 		delete Depot::GetByTile(tile);
-		DoClearSquare(tile);
-		AddSideToSignalBuffer(tile, dir, owner);
-		YapfNotifyTrackLayoutChange(tile, DiagDirToDiagTrack(dir));
+		DoClearSquare(index);
+		AddSideToSignalBuffer(index, dir, owner);
+		YapfNotifyTrackLayoutChange(index, DiagDirToDiagTrack(dir));
 		if (v != nullptr) TryPathReserve(v, true);
 	}
 
@@ -1849,7 +1849,7 @@ static std::tuple<CommandCost, bool> ClearTile_Track(TileIndex index, Tile &tile
 		}
 
 		case RAIL_TILE_DEPOT:
-			return {RemoveTrainDepot(index, flags), false};
+			return {RemoveTrainDepot(index, tile, flags), false};
 
 		default:
 			return {CMD_ERROR, false};
@@ -2881,7 +2881,7 @@ static const int8_t _deltacoord_leaveoffset[8] = {
  */
 int TicksToLeaveDepot(const Train *v)
 {
-	DiagDirection dir = GetRailDepotDirection(v->tile);
+	DiagDirection dir = GetRailDepotDirection(GetRailDepotTile(v->tile));
 	int length = v->CalcNextVehicleOffset();
 
 	switch (dir) {

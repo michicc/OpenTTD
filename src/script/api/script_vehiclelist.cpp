@@ -56,33 +56,32 @@ ScriptVehicleList_Depot::ScriptVehicleList_Depot(TileIndex tile)
 	DestinationID dest;
 	VehicleType type;
 
-	switch (GetTileType(tile)) {
-		case MP_STATION: // Aircraft
-			if (!IsAirport(tile)) return;
-			type = VEH_AIRCRAFT;
-			dest = GetStationIndex(tile);
-			break;
+	if (IsRailDepotTile(tile)) {
+		type = VEH_TRAIN;
+		dest = GetDepotIndex(GetRailDepotTile(tile));
+	} else {
+		switch (GetTileType(tile)) {
+			case MP_STATION: // Aircraft
+				if (!IsAirport(tile)) return;
+				type = VEH_AIRCRAFT;
+				dest = GetStationIndex(tile);
+				break;
 
-		case MP_RAILWAY:
-			if (!IsRailDepot(tile)) return;
-			type = VEH_TRAIN;
-			dest = GetDepotIndex(tile);
-			break;
+			case MP_ROAD:
+				if (!IsRoadDepot(tile)) return;
+				type = VEH_ROAD;
+				dest = GetDepotIndex(tile);
+				break;
 
-		case MP_ROAD:
-			if (!IsRoadDepot(tile)) return;
-			type = VEH_ROAD;
-			dest = GetDepotIndex(tile);
-			break;
+			case MP_WATER:
+				if (!IsShipDepot(tile)) return;
+				type = VEH_SHIP;
+				dest = GetDepotIndex(tile);
+				break;
 
-		case MP_WATER:
-			if (!IsShipDepot(tile)) return;
-			type = VEH_SHIP;
-			dest = GetDepotIndex(tile);
-			break;
-
-		default: // No depot
-			return;
+			default: // No depot
+				return;
+		}
 	}
 
 	bool is_deity = ScriptCompanyMode::IsDeity();
