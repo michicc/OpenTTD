@@ -62,6 +62,15 @@ debug_inline static bool IsPlainRailTile(Tile t)
 	return t.IsValid() && IsTileType(t, MP_RAILWAY) && IsPlainRail(t);
 }
 
+/**
+ * Checks whether the tile is a rail tile or rail tile with signals.
+ * @param t the tile to get the information from
+ * @return true if and only if the tile is normal rail (with or without signals)
+ */
+debug_inline static bool IsPlainRailTile(TileIndex t)
+{
+	return IsPlainRailTile(Tile::GetByType(t, MP_RAILWAY));
+}
 
 /**
  * Checks if a rail tile has signals.
@@ -104,7 +113,17 @@ debug_inline static bool IsRailDepot(Tile t)
  */
 debug_inline static bool IsRailDepotTile(Tile t)
 {
-	return IsTileType(t, MP_RAILWAY) && IsRailDepot(t);
+	return t.IsValid() && IsTileType(t, MP_RAILWAY) && IsRailDepot(t);
+}
+
+/**
+ * Is this tile rail tile and a rail depot?
+ * @param t the tile to get the information from
+ * @return true if and only if the tile is a rail depot
+ */
+debug_inline static bool IsRailDepotTile(TileIndex t)
+{
+	return IsRailDepotTile(Tile::GetByType(t, MP_RAILWAY));
 }
 
 /**
@@ -182,6 +201,18 @@ inline DiagDirection GetRailDepotDirection(Tile t)
 inline Track GetRailDepotTrack(Tile t)
 {
 	return DiagDirToDiagTrack(GetRailDepotDirection(t));
+}
+
+/**
+ * Get the actual associated sub-tile of a rail depot.
+ * @pre IsRailDepotTile(index)
+ * @param index The tile index to get the depot tile for.
+ * @return The depot sub-tile.
+ */
+inline Tile GetRailDepotTile(TileIndex index)
+{
+	assert(IsRailDepotTile(index));
+	return Tile::GetByType(index, MP_RAILWAY);
 }
 
 

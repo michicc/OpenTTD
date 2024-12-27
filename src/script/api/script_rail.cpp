@@ -21,6 +21,7 @@
 #include "../../rail_cmd.h"
 #include "../../station_cmd.h"
 #include "../../waypoint_cmd.h"
+#include "../../depot_map.h"
 
 #include "../../safeguards.h"
 
@@ -35,7 +36,7 @@
 {
 	if (!::IsValidTile(tile)) return false;
 
-	return (::IsTileType(tile, MP_RAILWAY) && !::IsRailDepot(tile)) ||
+	return (::Tile::HasType(tile, MP_RAILWAY) && !::IsRailDepotTile(tile)) ||
 			(::HasStationTileRail(tile) && !::IsStationTileBlocked(tile)) || ::IsLevelCrossingTile(tile);
 }
 
@@ -124,7 +125,7 @@
 {
 	if (!IsRailDepotTile(depot)) return INVALID_TILE;
 
-	return depot + ::TileOffsByDiagDir(::GetRailDepotDirection(depot));
+	return depot + ::TileOffsByDiagDir(::GetRailDepotDirection(::GetRailDepotTile(depot)));
 }
 
 /* static */ ScriptRail::RailTrack ScriptRail::GetRailStationDirection(TileIndex tile)
