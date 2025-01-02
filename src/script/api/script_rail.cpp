@@ -108,7 +108,7 @@
 {
 	if (!ScriptTile::HasTransportType(tile, ScriptTile::TRANSPORT_RAIL)) return RAILTYPE_INVALID;
 
-	return (RailType)::GetRailType(tile);
+	return (RailType)::GetTileRailType(tile);
 }
 
 /* static */ bool ScriptRail::ConvertRailType(TileIndex start_tile, TileIndex end_tile, ScriptRail::RailType convert_to)

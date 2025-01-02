@@ -462,7 +462,7 @@ public:
 		}
 		/* Check for speed limit imposed by railtype */
 		if (IsRailTT()) {
-			uint16_t rail_speed = GetRailTypeInfo(GetRailType(this->old_tile))->max_speed;
+			uint16_t rail_speed = GetRailTypeInfo(GetTileRailType(this->old_tile))->max_speed;
 			if (rail_speed > 0) max_speed = std::min<int>(max_speed, rail_speed);
 		}
 		if (IsRoadTT()) {
