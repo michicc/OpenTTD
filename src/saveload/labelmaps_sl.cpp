@@ -52,12 +52,12 @@ static void ConvertRailTypes()
 	}
 	if (!needs_conversion) return;
 
-	for (const auto t : Map::Iterate()) {
-		switch (GetTileType(t)) {
-			case MP_RAILWAY:
-				SetRailType(t, railtype_conversion_map[GetRailType(t)]);
-				break;
+	for (const auto t : Map::IterateIndex()) {
+		if (Tile rail = Tile::GetByType(t, MP_RAILWAY); rail.IsValid()) {
+			SetRailType(rail, railtype_conversion_map[GetRailType(rail)]);
+		}
 
+		switch (GetTileType(t)) {
 			case MP_ROAD:
 				if (IsLevelCrossing(t)) {
 					SetRailType(t, railtype_conversion_map[GetRailType(t)]);

@@ -552,7 +552,7 @@ inline bool HasBlockSignalOnTrackdir(TileIndex index, Trackdir td)
 }
 
 
-RailType GetTileRailType(Tile tile);
+RailType GetTileRailType(TileIndex tile);
 
 /** The ground 'under' the rail */
 enum RailGroundType {

@@ -152,12 +152,11 @@ extern const TrackdirBits _uphill_trackdirs[] = {
 /**
  * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
  */
-RailType GetTileRailType(Tile tile)
+RailType GetTileRailType(TileIndex tile)
 {
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			return GetRailType(tile);
+	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) return GetRailType(rail);
 
+	switch (GetTileType(tile)) {
 		case MP_ROAD:
 			/* rail/road crossing */
 			if (IsLevelCrossing(tile)) return GetRailType(tile);
