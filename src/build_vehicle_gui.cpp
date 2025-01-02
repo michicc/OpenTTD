@@ -1267,7 +1267,7 @@ struct BuildVehicleWindow : Window {
 				if (this->listview_mode) {
 					this->filter.railtype = INVALID_RAILTYPE;
 				} else {
-					this->filter.railtype = GetRailType(this->window_number);
+					this->filter.railtype = GetTileRailType(TileIndex(this->window_number));
 				}
 				break;
 

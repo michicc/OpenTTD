@@ -701,7 +701,7 @@ static uint32_t VehicleGetVariable(Vehicle *v, const VehicleScopeResolver *objec
 				const Train *t = Train::From(v);
 				bool is_powered_wagon = HasBit(t->flags, VRF_POWEREDWAGON);
 				const Train *u = is_powered_wagon ? t->First() : t; // for powered wagons the engine defines the type of engine (i.e. railtype)
-				RailType railtype = GetRailType(v->tile);
+				RailType railtype = GetTileRailType(v->tile);
 				bool powered = t->IsEngine() || is_powered_wagon;
 				bool has_power = HasPowerOnRail(u->railtype, railtype);
 

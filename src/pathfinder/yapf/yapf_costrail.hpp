@@ -39,7 +39,7 @@ protected:
 
 		TILE(TileIndex tile, Trackdir td) : tile(tile), rail_tile(Tile::GetByType(tile, MP_RAILWAY)), td(td)
 		{
-			rail_type = GetTileRailType(rail_tile ? rail_tile : tile);
+			rail_type = GetRailType(rail_tile ? rail_tile : tile);
 		}
 	};
 
