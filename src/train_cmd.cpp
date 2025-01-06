@@ -2413,7 +2413,8 @@ void FreeTrainTrackReservation(const Train *v)
 		if (Tile rail_tile = Tile::GetByType(ft.new_tile, MP_RAILWAY); rail_tile.IsValid()) {
 			if (HasSignalOnTrackdir(rail_tile, td) && !IsPbsSignal(GetSignalType(rail_tile, TrackdirToTrack(td)))) {
 				/* Conventional signal along trackdir: remove reservation and stop. */
-				UnreserveRailTrack(tile, TrackdirToTrack(td));
+				UnreserveTrack(rail_tile, TrackdirToTrack(td));
+				if (_settings_client.gui.show_track_reservation) MarkTileDirtyByTile(ft.new_tile);
 				break;
 			}
 			if (HasPbsSignalOnTrackdir(rail_tile, td)) {

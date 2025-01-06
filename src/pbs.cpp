@@ -21,14 +21,14 @@
  * @return the reserved trackbits. TRACK_BIT_NONE on nothing reserved or
  *     a tile without rail.
  */
-TrackBits GetReservedTrackbits(Tile t)
+TrackBits GetReservedTrackbits(TileIndex t)
 {
-	switch (GetTileType(t)) {
-		case MP_RAILWAY:
-			if (IsRailDepot(t)) return GetDepotReservationTrackBits(t);
-			if (IsPlainRail(t)) return GetRailReservationTrackBits(t);
-			break;
+	if (Tile rail = Tile::GetByType(t, MP_RAILWAY); rail.IsValid()) {
+		if (IsRailDepot(rail)) return GetDepotReservationTrackBits(rail);
+		if (IsPlainRail(rail)) return GetRailReservationTrackBits(rail);
+	}
 
+	switch (GetTileType(t)) {
 		case MP_ROAD:
 			if (IsLevelCrossing(t)) return GetCrossingReservationTrackBits(t);
 			break;
@@ -90,44 +90,44 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 		}
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			if (IsPlainRail(tile)) return TryReserveTrack(tile, t);
-			if (IsRailDepot(tile)) {
-				if (!HasDepotReservation(tile)) {
-					SetDepotReservation(tile, true);
-					MarkTileDirtyByTile(tile); // some GRFs change their appearance when tile is reserved
+	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+		if (IsPlainRail(rail)) return TryReserveTrack(rail, t);
+		if (IsRailDepot(rail)) {
+			if (!HasDepotReservation(rail)) {
+				SetDepotReservation(rail, true);
+				MarkTileDirtyByTile(tile); // some GRFs change their appearance when tile is reserved
+				return true;
+			}
+		}
+	} else {
+		switch (GetTileType(tile)) {
+			case MP_ROAD:
+				if (IsLevelCrossing(tile) && !HasCrossingReservation(tile)) {
+					SetCrossingReservation(tile, true);
+					UpdateLevelCrossing(tile, false);
 					return true;
 				}
-			}
-			break;
+				break;
 
-		case MP_ROAD:
-			if (IsLevelCrossing(tile) && !HasCrossingReservation(tile)) {
-				SetCrossingReservation(tile, true);
-				UpdateLevelCrossing(tile, false);
-				return true;
-			}
-			break;
+			case MP_STATION:
+				if (HasStationRail(tile) && !HasStationReservation(tile)) {
+					SetRailStationReservation(tile, true);
+					if (trigger_stations && IsRailStation(tile)) TriggerStationRandomisation(nullptr, tile, SRT_PATH_RESERVATION);
+					MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
+					return true;
+				}
+				break;
 
-		case MP_STATION:
-			if (HasStationRail(tile) && !HasStationReservation(tile)) {
-				SetRailStationReservation(tile, true);
-				if (trigger_stations && IsRailStation(tile)) TriggerStationRandomisation(nullptr, tile, SRT_PATH_RESERVATION);
-				MarkTileDirtyByTile(tile); // some GRFs need redraw after reserving track
-				return true;
-			}
-			break;
+			case MP_TUNNELBRIDGE:
+				if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL && !GetTunnelBridgeReservationTrackBits(tile)) {
+					SetTunnelBridgeReservation(tile, true);
+					return true;
+				}
+				break;
 
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL && !GetTunnelBridgeReservationTrackBits(tile)) {
-				SetTunnelBridgeReservation(tile, true);
-				return true;
-			}
-			break;
-
-		default:
-			break;
+			default:
+				break;
+		}
 	}
 	return false;
 }
@@ -149,36 +149,36 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 		}
 	}
 
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			if (IsRailDepot(tile)) {
-				SetDepotReservation(tile, false);
-				MarkTileDirtyByTile(tile);
+	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+		if (IsRailDepot(rail)) {
+			SetDepotReservation(rail, false);
+			MarkTileDirtyByTile(tile);
+		} else if (IsPlainRail(rail)) {
+			UnreserveTrack(rail, t);
+		}
+	} else {
+		switch (GetTileType(tile)) {
+			case MP_ROAD:
+				if (IsLevelCrossing(tile)) {
+					SetCrossingReservation(tile, false);
+					UpdateLevelCrossing(tile);
+				}
 				break;
-			}
-			if (IsPlainRail(tile)) UnreserveTrack(tile, t);
-			break;
 
-		case MP_ROAD:
-			if (IsLevelCrossing(tile)) {
-				SetCrossingReservation(tile, false);
-				UpdateLevelCrossing(tile);
-			}
-			break;
+			case MP_STATION:
+				if (HasStationRail(tile)) {
+					SetRailStationReservation(tile, false);
+					MarkTileDirtyByTile(tile);
+				}
+				break;
 
-		case MP_STATION:
-			if (HasStationRail(tile)) {
-				SetRailStationReservation(tile, false);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
+			case MP_TUNNELBRIDGE:
+				if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) SetTunnelBridgeReservation(tile, false);
+				break;
 
-		case MP_TUNNELBRIDGE:
-			if (GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL) SetTunnelBridgeReservation(tile, false);
-			break;
-
-		default:
-			break;
+			default:
+				break;
+		}
 	}
 }
 
@@ -337,13 +337,14 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
 	/* Follow the path from tile to both ends, one of the end tiles should
 	 * have a train on it. We need FollowReservation to ignore one-way signals
 	 * here, as one of the two search directions will be the "wrong" way. */
+	Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY);
 	for (int i = 0; i < 2; ++i, trackdir = ReverseTrackdir(trackdir)) {
 		/* If the tile has a one-way block signal in the current trackdir, skip the
 		 * search in this direction as the reservation can't come from this side.*/
-		if (HasOnewaySignalBlockingTrackdir(tile, ReverseTrackdir(trackdir)) && !HasPbsSignalOnTrackdir(tile, trackdir)) continue;
+		if (HasOnewaySignalBlockingTrackdir(rail_tile, ReverseTrackdir(trackdir)) && !HasPbsSignalOnTrackdir(rail_tile, trackdir)) continue;
 
 		FindTrainOnTrackInfo ftoti;
-		ftoti.res = FollowReservation(GetTileOwner(tile), rts, tile, trackdir, true);
+		ftoti.res = FollowReservation(GetTileOwner(rail_tile.IsValid() ? rail_tile : tile), rts, tile, trackdir, true);
 
 		FindVehicleOnPos(ftoti.res.tile, &ftoti, FindTrainOnTrackEnum);
 		if (ftoti.best != nullptr) return ftoti.best;
