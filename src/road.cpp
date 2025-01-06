@@ -26,16 +26,17 @@
 /**
  * Return if the tile is a valid tile for a crossing.
  *
- * @param tile the current tile
+ * @param index the current tile
  * @param ax the axis of the road over the rail
  * @return true if it is a valid tile
  */
-static bool IsPossibleCrossing(const TileIndex tile, Axis ax)
+static bool IsPossibleCrossing(const TileIndex index, Axis ax)
 {
-	return (IsTileType(tile, MP_RAILWAY) &&
+	Tile tile = Tile::GetByType(index, MP_RAILWAY);
+	return (tile.IsValid() &&
 		GetRailTileType(tile) == RAIL_TILE_NORMAL &&
 		GetTrackBits(tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
-		std::get<0>(GetFoundationSlope(tile)) == SLOPE_FLAT);
+		std::get<0>(GetFoundationSlope(index)) == SLOPE_FLAT);
 }
 
 /**
@@ -59,38 +60,38 @@ RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb)
 			const RoadBits mirrored_rb = MirrorRoadBits(target_rb);
 
 			if (IsValidTile(neighbor_tile)) {
-				switch (GetTileType(neighbor_tile)) {
-					/* Always connective ones */
-					case MP_CLEAR:
-						connective = true;
-						break;
-
-					/* The conditionally connective ones */
-					case MP_TUNNELBRIDGE:
-					case MP_STATION:
-					case MP_ROAD:
-						if (IsNormalRoadTile(neighbor_tile)) {
-							/* Always connective */
+				if (Tile::HasType(tile, MP_RAILWAY)) {
+					connective = IsPossibleCrossing(neighbor_tile, DiagDirToAxis(dir));
+				} else {
+					switch (GetTileType(neighbor_tile)) {
+						/* Always connective ones */
+						case MP_CLEAR:
 							connective = true;
-						} else {
-							const RoadBits neighbor_rb = GetAnyRoadBits(neighbor_tile, RTT_ROAD) | GetAnyRoadBits(neighbor_tile, RTT_TRAM);
+							break;
 
-							/* Accept only connective tiles */
-							connective = (neighbor_rb & mirrored_rb) != ROAD_NONE;
-						}
-						break;
+						/* The conditionally connective ones */
+						case MP_TUNNELBRIDGE:
+						case MP_STATION:
+						case MP_ROAD:
+							if (IsNormalRoadTile(neighbor_tile)) {
+								/* Always connective */
+								connective = true;
+							} else {
+								const RoadBits neighbor_rb = GetAnyRoadBits(neighbor_tile, RTT_ROAD) | GetAnyRoadBits(neighbor_tile, RTT_TRAM);
 
-					case MP_RAILWAY:
-						connective = IsPossibleCrossing(neighbor_tile, DiagDirToAxis(dir));
-						break;
+								/* Accept only connective tiles */
+								connective = (neighbor_rb & mirrored_rb) != ROAD_NONE;
+							}
+							break;
 
-					case MP_WATER:
-						/* Check for real water tile */
-						connective = !IsWater(neighbor_tile);
-						break;
+						case MP_WATER:
+							/* Check for real water tile */
+							connective = !IsWater(neighbor_tile);
+							break;
 
-					/* The definitely not connective ones */
-					default: break;
+						/* The definitely not connective ones */
+						default: break;
+					}
 				}
 			}
 

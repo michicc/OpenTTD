@@ -240,7 +240,7 @@ protected:
 	inline bool QueryNewTileTrackStatus()
 	{
 		if (IsRailTT() && IsPlainRailTile(this->new_tile)) {
-			this->new_td_bits = (TrackdirBits)(GetTrackBits(this->new_tile) * 0x101);
+			this->new_td_bits = (TrackdirBits)(GetTrackBits(Tile::GetByType(this->new_tile, MP_RAILWAY)) * 0x101);
 		} else if (IsRoadTT()) {
 			this->new_td_bits = GetTrackdirBitsForRoad(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
 		} else {
