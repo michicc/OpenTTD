@@ -415,6 +415,19 @@ static inline bool ValParamTrackOrientation(Track track)
 }
 
 /**
+ * Check whether some of tracks are reserved on a tile.
+ * @param tile The tile to test.
+ * @param tracks The tracks to test.
+ * @return True if at least on of tracks is reserved.
+ * @pre IsPlainRailTile(tile)
+ */
+static bool HasRailReservationTrackBits(Tile tile, TrackBits tracks)
+{
+	assert(IsPlainRailTile(tile));
+	return (GetRailReservationTrackBits(tile) & tracks) != TRACK_BIT_NONE;
+}
+
+/**
  * Build a single piece of rail
  * @param flags operation to perform
  * @param tile tile  to build on
@@ -1107,7 +1120,7 @@ CommandCost CmdBuildSingleSignal(DoCommandFlag flags, TileIndex tile_index, Trac
 		/* The new/changed signal could block our path. As this can lead to
 		 * stale reservations, we clear the path reservation here and try
 		 * to redo it later on. */
-		if (HasReservedTracks(tile, TrackToTrackBits(track))) {
+		if (HasRailReservationTrackBits(tile, TrackToTrackBits(track))) {
 			v = GetTrainForReservation(tile_index, track);
 			if (v != nullptr) FreeTrainTrackReservation(v);
 		}
@@ -1480,7 +1493,7 @@ CommandCost CmdRemoveSingleSignal(DoCommandFlag flags, TileIndex tile_index, Tra
 	/* Do it? */
 	if (flags & DC_EXEC) {
 		Train *v = nullptr;
-		if (HasReservedTracks(tile, TrackToTrackBits(track))) {
+		if (HasRailReservationTrackBits(tile, TrackToTrackBits(track))) {
 			v = GetTrainForReservation(tile_index, track);
 		} else if (IsPbsSignal(GetSignalType(tile, track))) {
 			/* PBS signal, might be the end of a path reservation. */
@@ -2205,7 +2218,7 @@ static void DrawTrackBitsOverlay(TileInfo *ti, TrackBits track, const RailTypeIn
 		}
 
 		DrawTrackSprite(ground + offset, PAL_NONE, ti, fake_slope);
-		if (_settings_client.gui.show_track_reservation && HasReservedTracks(ti->index, track)) {
+		if (_settings_client.gui.show_track_reservation && HasRailReservationTrackBits(ti->tile, track)) {
 			DrawTrackSprite(overlay + offset, PALETTE_CRASH, ti, fake_slope);
 		}
 	}
@@ -2356,7 +2369,7 @@ static void DrawTrackBits(TileInfo *ti, TrackBits track, bool draw_halftile, Cor
 		}
 		DrawGroundSprite(image, pal, GetHalftileSubSprite(halftile_corner));
 
-		if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasReservedTracks(ti->tile, CornerToTrackBits(halftile_corner))) {
+		if (_game_mode != GM_MENU && _settings_client.gui.show_track_reservation && HasRailReservationTrackBits(ti->tile, CornerToTrackBits(halftile_corner))) {
 			static const uint8_t _corner_to_track_sprite[] = {3, 1, 2, 0};
 			DrawGroundSprite(_corner_to_track_sprite[halftile_corner] + rti->base_sprites.single_n, PALETTE_CRASH, nullptr, 0, -(int)TILE_HEIGHT);
 		}

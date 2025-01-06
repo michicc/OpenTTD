@@ -242,7 +242,7 @@
 	if (IsRailStationTile(tile) || IsRailWaypointTile(tile)) return ::TrackToTrackBits(::GetRailStationTrack(tile));
 	if (IsLevelCrossingTile(tile)) return ::GetCrossingRailBits(tile);
 	if (IsRailDepotTile(tile)) return ::TRACK_BIT_NONE;
-	return ::GetTrackBits(tile);
+	return ::GetTrackBits(::Tile::GetByType(tile, MP_RAILWAY));
 }
 
 /* static */ bool ScriptRail::BuildRailTrack(TileIndex tile, RailTrack rail_track)
