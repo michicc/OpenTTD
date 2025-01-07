@@ -28,6 +28,8 @@
 	EnforceDeityOrCompanyModeValid(false);
 	if (!::IsValidTile(tile)) return false;
 
+	if (::Tile::HasType(tile, MP_RAILWAY)) return false;
+
 	switch (::GetTileType(tile)) {
 		default: return false;
 		case MP_CLEAR: return true;

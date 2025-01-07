@@ -81,6 +81,7 @@ static void GenerateRockyArea(TileIndex end, TileIndex start)
 	TileArea ta(start, end);
 
 	for (TileIndex tile : ta) {
+		if (Tile::HasType(tile, MP_RAILWAY)) continue;
 		if (IsTileType(tile, MP_CLEAR)) {
 			Tile trees = Tile::GetByType(tile, MP_TREES);
 			if (trees) Tile::Remove(tile, trees);

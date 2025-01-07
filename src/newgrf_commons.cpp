@@ -425,6 +425,7 @@ TileIndex GetNearbyTile(uint8_t parameter, TileIndex tile, bool signed_offsets, 
 uint32_t GetNearbyTileInformation(TileIndex tile, bool grf_version8)
 {
 	TileType tile_type = GetTileType(tile);
+	if (Tile::HasType(tile, MP_RAILWAY)) tile_type = MP_RAILWAY;
 
 	/* Only consider trees not on shore as a tree tile. */
 	if (tile_type != MP_WATER && Tile::HasType(tile, MP_TREES)) tile_type = MP_TREES;
