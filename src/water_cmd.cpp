@@ -1141,32 +1141,22 @@ static void DoFloodTile(TileIndex target)
 	Slope tileh = GetTileSlope(target);
 	if (tileh != SLOPE_FLAT) {
 		/* make coast.. */
-		switch (GetTileType(target)) {
-			case MP_RAILWAY: {
-				if (!IsPlainRail(target)) break;
+		if (Tile::HasType(target, MP_RAILWAY)) {
+			if (IsPlainRailTile(target)) {
 				FloodVehicles(target);
 				flooded = FloodHalftile(target);
-				break;
 			}
-
-			case MP_CLEAR:
-				if (!IsSlopeWithOneCornerRaised(tileh) && Tile::HasType(target, MP_TREES)) {
-					/* Slope with trees, convert to shore. */
-					MakeShore(target);
-					MarkTileDirtyByTile(target);
-					flooded = true;
-					break;
-				}
-
-				if (Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, target).Succeeded()) {
-					MakeShore(target);
-					MarkTileDirtyByTile(target);
-					flooded = true;
-				}
-				break;
-
-			default:
-				break;
+		} else if (IsTileType(target, MP_CLEAR)) {
+			if (!IsSlopeWithOneCornerRaised(tileh) && Tile::HasType(target, MP_TREES)) {
+				/* Slope with trees, convert to shore. */
+				MakeShore(target);
+				MarkTileDirtyByTile(target);
+				flooded = true;
+			} else if (Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, target).Succeeded()) {
+				MakeShore(target);
+				MarkTileDirtyByTile(target);
+				flooded = true;
+			}
 		}
 	} else {
 		/* Flood vehicles */

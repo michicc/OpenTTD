@@ -166,7 +166,7 @@ static CommandCost IsValidTileForWaypoint(TileIndex tile, Axis axis, StationID *
 
 	if (GetAxisForNewRailWaypoint(tile) != axis) return CommandCost(STR_ERROR_NO_SUITABLE_RAILROAD_TRACK);
 
-	Owner owner = GetTileOwner(tile);
+	Owner owner = GetTileOwner(Tile::HasType(tile, MP_RAILWAY) ? Tile::GetByType(tile, MP_RAILWAY) : tile);
 	CommandCost ret = CheckOwnership(owner);
 	if (ret.Succeeded()) ret = EnsureNoVehicleOnGround(tile);
 	if (ret.Failed()) return ret;
@@ -274,7 +274,7 @@ CommandCost CmdBuildRailWaypoint(DoCommandFlag flags, TileIndex start_tile, Axis
 			/* Move existing (recently deleted) waypoint to the new location */
 			wp->xy = start_tile;
 		}
-		wp->owner = GetTileOwner(start_tile);
+		wp->owner = GetTileOwner(Tile::HasType(start_tile, MP_RAILWAY) ? Tile::GetByType(start_tile, MP_RAILWAY) : start_tile);
 
 		wp->rect.BeforeAddRect(start_tile, width, height, StationRect::ADD_TRY);
 
