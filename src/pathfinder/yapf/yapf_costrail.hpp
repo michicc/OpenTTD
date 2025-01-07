@@ -542,7 +542,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			if (segment_cost > MAX_SEGMENT_COST) {
 				/* Potentially in the infinite loop (or only very long segment?). We should
 				 * not force it to finish prematurely unless we are on a regular tile. */
-				if (IsTileType(tf->new_tile, MP_RAILWAY)) {
+				if (Tile::HasType(tf->new_tile, MP_RAILWAY)) {
 					end_segment_reason |= ESRB_SEGMENT_TOO_LONG;
 					break;
 				}

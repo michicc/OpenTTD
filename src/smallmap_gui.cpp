@@ -589,11 +589,18 @@ uint32_t GetSmallMapOwnerPixels(TileIndex tile, TileType t, IncludeHeightmap inc
 		case MP_VOID:     return MKCOLOUR_XXXX(PC_BLACK);
 		case MP_INDUSTRY: return MKCOLOUR_XXXX(PC_DARK_GREY);
 		case MP_HOUSE:    return MKCOLOUR_XXXX(PC_DARK_RED);
-		default:          o = GetTileOwner(tile); break;
-		/* FIXME: For MP_ROAD there are multiple owners.
-		 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
-		 * even if there are no ROADTYPE_ROAD bits on the tile.
-		 */
+		default: {
+			if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+				o = GetTileOwner(rail);
+			} else {
+				o = GetTileOwner(tile); break;
+				/* FIXME: For MP_ROAD there are multiple owners.
+				 * GetTileOwner returns the rail owner (level crossing) resp. the owner of ROADTYPE_ROAD (normal road),
+				 * even if there are no ROADTYPE_ROAD bits on the tile.
+				 */
+			}
+			break;
+		}
 	}
 
 	if ((o < MAX_COMPANIES && !_legend_land_owners[_company_to_list_pos[o]].show_on_map) || o == OWNER_NONE || o == OWNER_WATER) {
@@ -1330,6 +1337,7 @@ protected:
 			TileType ttype = GetTileType(ti);
 
 			if (Tile::HasType(ti, MP_TREES)) ttype = MP_TREES;
+			if (Tile::HasType(ti, MP_RAILWAY)) ttype = MP_RAILWAY;
 
 			switch (ttype) {
 				case MP_TUNNELBRIDGE: {

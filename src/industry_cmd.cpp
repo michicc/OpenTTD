@@ -995,6 +995,7 @@ static const uint8_t _plantfarmfield_type[] = {1, 1, 1, 1, 1, 3, 3, 4, 4, 4, 5, 
  */
 static bool IsSuitableForFarmField(TileIndex tile, bool allow_fields)
 {
+	if (Tile::HasType(tile, MP_RAILWAY)) return false;
 	if (IsTileType(tile, MP_CLEAR)) {
 		return !IsClearGround(tile, CLEAR_SNOW) && !IsClearGround(tile, CLEAR_DESERT) && (allow_fields || !IsClearGround(tile, CLEAR_FIELDS));
 	}
@@ -1592,7 +1593,7 @@ static bool CheckCanTerraformSurroundingTiles(TileIndex tile, uint height, int i
 	for (TileIndex tile_walk : ta) {
 		uint curh = TileHeight(tile_walk);
 		/* Is the tile clear? */
-		if (GetTileType(tile_walk) != MP_CLEAR) return false;
+		if (GetTileType(tile_walk) != MP_CLEAR || Tile::HasType(tile_walk, MP_RAILWAY)) return false;
 
 		/* Don't allow too big of a change if this is the sub-tile check */
 		if (internal != 0 && Delta(curh, height) > 1) return false;
