@@ -360,7 +360,7 @@ inline bool HasTileWaterGround(Tile t)
  */
 inline void SetDockingTile(Tile t, bool b)
 {
-	assert(IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
+	assert(IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE));
 	AssignBit(t.m1(), 7, b);
 }
 
@@ -370,7 +370,7 @@ inline void SetDockingTile(Tile t, bool b)
  */
 inline bool IsDockingTile(Tile t)
 {
-	return (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) && HasBit(t.m1(), 7);
+	return (IsTileType(t, MP_WATER) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) && HasBit(t.m1(), 7);
 }
 
 

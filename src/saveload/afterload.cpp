@@ -127,8 +127,8 @@ void SetWaterClassDependingOnSurroundings(TileIndex t, bool include_invalid_wate
 				break;
 
 			case MP_RAILWAY:
-				/* Shore or flooded halftile */
-				has_water |= (GetRailGroundType(neighbour) == RAIL_GROUND_WATER);
+				/* Shore or flooded halftile. Only called for old savegames which still have this as MP_RAILWAY tiles. */
+				has_water |= (GB(neighbour.m4(), 0, 4) == 13 /* RAIL_GROUND_WATER */);
 				break;
 
 			case MP_TREES:
@@ -251,6 +251,36 @@ static void DecomposeTile(TileIndex index)
 					break;
 				default: SlErrorCorrupt("Invalid ground type for tree tile");
 			}
+			old_tile.SetAssociated(true);
+
+			break;
+		}
+
+		case MP_RAILWAY: {
+			Tile new_tile = Tile::New(index, MP_RAILWAY, index, true);
+			Tile old_tile(new_tile.tile - 1);
+
+			/* Copy old tile to the new tile. */
+			*new_tile.tile = *old_tile.tile;
+			ClrBit(new_tile.m8(), 14); // Clear out any garbage in the associated tile flag.
+
+			/* Make new ground tile. */
+			uint ground_type = GB(new_tile.m4(), 0, 4);
+			RailFenceType fences = RAIL_FENCE_NONE;
+			if (ground_type == 12 /* RAIL_GROUND_ICE_DESERT */ || ground_type == 14 /* RAIL_GROUND_HALF_SNOW */) {
+				MakeClear(old_tile, _settings_game.game_creation.landscape == LT_TROPIC ? CLEAR_DESERT : CLEAR_GRASS, 3);
+				if (_settings_game.game_creation.landscape == LT_ARCTIC) MakeSnow(old_tile, ground_type == 14 ? 0 : 3);
+			} else if (ground_type == 13 /* RAIL_GROUND_WATER */) {
+				bool is_docking_tile = HasBit(old_tile.m1(), 7);
+				MakeShore(old_tile);
+				SetDockingTile(old_tile, is_docking_tile);
+			} else {
+				/* Some kind of clear grass. */
+				MakeClear(old_tile, CLEAR_GRASS, ground_type > 0 ? 3 : 0);
+				fences = IsInsideMM(ground_type, 1, 12) ? static_cast<RailFenceType>(ground_type - 1) : RAIL_FENCE_NONE;
+			}
+			SetRailFenceType(new_tile, fences);
+
 			old_tile.SetAssociated(true);
 
 			break;
@@ -3020,11 +3050,11 @@ bool AfterLoadGame()
 	/* Update structures for multitile docks */
 	if (IsSavegameVersionBefore(SLV_MULTITILE_DOCKS)) {
 		for (const auto ti : Map::IterateIndex()) {
-			const Tile t(ti);
+			Tile t(ti);
 			/* Clear docking tile flag from relevant tiles as it
 			 * was not previously cleared. */
 			if (IsTileType(t, MP_WATER) || IsTileType(t, MP_RAILWAY) || IsTileType(t, MP_STATION) || IsTileType(t, MP_TUNNELBRIDGE)) {
-				SetDockingTile(t, false);
+				ClrBit(t.m1(), 7); // Can't use SetDockingTile(t, false) due to assert!
 			}
 			/* Add docks and oilrigs to Station::ship_station. */
 			if (IsTileType(t, MP_STATION)) {

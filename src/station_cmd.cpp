@@ -3312,6 +3312,7 @@ static void DrawTile_Station(TileInfo *ti, bool draw_halftile, Corner halftile_c
 		} else {
 			image += HasBit(image, SPRITE_MODIFIER_CUSTOM_SPRITE) ? ground_relocation : total_offset;
 			if (HasBit(pal, SPRITE_MODIFIER_CUSTOM_SPRITE)) pal += ground_relocation;
+			DrawGroundSprite(SPR_FLAT_GRASS_TILE, PAL_NONE);
 			DrawGroundSprite(image, GroundSpritePaletteTransform(image, pal, palette));
 
 			/* PBS debugging, draw reserved tracks darker */

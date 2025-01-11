@@ -657,19 +657,6 @@ bool IsWateredTile(TileIndex tile, Direction from)
 					}
 			}
 
-		case MP_RAILWAY:
-			if (GetRailGroundType(tile) == RAIL_GROUND_WATER) {
-				assert(IsPlainRail(tile));
-				switch (GetTileSlope(tile)) {
-					case SLOPE_W: return (from == DIR_SE) || (from == DIR_E) || (from == DIR_NE);
-					case SLOPE_S: return (from == DIR_NE) || (from == DIR_N) || (from == DIR_NW);
-					case SLOPE_E: return (from == DIR_NW) || (from == DIR_W) || (from == DIR_SW);
-					case SLOPE_N: return (from == DIR_SW) || (from == DIR_S) || (from == DIR_SE);
-					default: return false;
-				}
-			}
-			return false;
-
 		case MP_STATION:
 			if (IsOilRig(tile)) {
 				/* Do not draw waterborders inside of industries.
@@ -1113,12 +1100,6 @@ FloodingBehaviour GetFloodingBehaviour(TileIndex tile)
 		case MP_OBJECT:
 			return (GetWaterClass(tile) == WATER_CLASS_SEA) ? FLOOD_ACTIVE : FLOOD_NONE;
 
-		case MP_RAILWAY:
-			if (GetRailGroundType(tile) == RAIL_GROUND_WATER) {
-				return (IsSlopeWithOneCornerRaised(GetTileSlope(tile)) ? FLOOD_ACTIVE : FLOOD_DRYUP);
-			}
-			return FLOOD_NONE;
-
 		case MP_VOID:
 			return FLOOD_ACTIVE;
 
@@ -1191,34 +1172,27 @@ static void DoDryUp(TileIndex tile)
 {
 	Backup<CompanyID> cur_company(_current_company, OWNER_WATER);
 
-	switch (GetTileType(tile)) {
-		case MP_RAILWAY:
-			assert(IsPlainRail(tile));
-			assert(GetRailGroundType(tile) == RAIL_GROUND_WATER);
+	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+		assert(IsPlainRail(rail));
+		RailFenceType new_fences;
+		switch (GetTrackBits(rail)) {
+			case TRACK_BIT_UPPER: new_fences = RAIL_FENCE_HORIZ1; break;
+			case TRACK_BIT_LOWER: new_fences = RAIL_FENCE_HORIZ2; break;
+			case TRACK_BIT_LEFT:  new_fences = RAIL_FENCE_VERT1;  break;
+			case TRACK_BIT_RIGHT: new_fences = RAIL_FENCE_VERT2;  break;
+			default: NOT_REACHED();
+		}
+		SetRailFenceType(rail, new_fences);
+		if (IsTileType(tile, MP_WATER)) MakeClear(tile, CLEAR_GRASS, 3);
+		MarkTileDirtyByTile(tile);
+	} else if (IsTileType(tile, MP_WATER)) {
+		assert(IsCoast(tile));
 
-			RailGroundType new_ground;
-			switch (GetTrackBits(tile)) {
-				case TRACK_BIT_UPPER: new_ground = RAIL_GROUND_FENCE_HORIZ1; break;
-				case TRACK_BIT_LOWER: new_ground = RAIL_GROUND_FENCE_HORIZ2; break;
-				case TRACK_BIT_LEFT:  new_ground = RAIL_GROUND_FENCE_VERT1;  break;
-				case TRACK_BIT_RIGHT: new_ground = RAIL_GROUND_FENCE_VERT2;  break;
-				default: NOT_REACHED();
-			}
-			SetRailGroundType(tile, new_ground);
+		/* Don't clear trees on coastal tiles. */
+		if (Tile::HasType(tile, MP_TREES) || Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile).Succeeded()) {
+			MakeClear(tile, CLEAR_GRASS, 3);
 			MarkTileDirtyByTile(tile);
-			break;
-
-		case MP_WATER:
-			assert(IsCoast(tile));
-
-			/* Don't clear trees on coastal tiles. */
-			if (Tile::HasType(tile, MP_TREES) || Command<CMD_LANDSCAPE_CLEAR>::Do(DC_EXEC, tile).Succeeded()) {
-				MakeClear(tile, CLEAR_GRASS, 3);
-				MarkTileDirtyByTile(tile);
-			}
-			break;
-
-		default: NOT_REACHED();
+		}
 	}
 
 	cur_company.Restore();
