@@ -135,6 +135,12 @@
  <p>Some tile types only occur as associated sub-tiles of a main tile.</p>
  <p></p>
  <ul>
+  <li><a href="#Class1"><span style="font-weight: bold;">Railway tracks:</span></a><br>
+   <ul>
+    <li>Base tile is <a href="#Class0">Ground</a> or <a href="#Class6">Water</a>.</li>
+    <li>No other sub-tile is allowed.</li>
+   </ul>
+  </li>
   <li><a href="#Class4"><span style="font-weight: bold;">Trees:</span></a><br>
    <ul>
     <li>Base tile is <a href="#Class0">Ground</a> or <a href="#Class6">Water</a>.</li>
@@ -291,81 +297,61 @@
       </table>
      </li>
      <li>m4 bits 7..4: see signals</li>
-     <li>m4 bits 3..0: Ground type (values with fences are not valid for depots and checkpoints)
+     <li>m4 bits 3..0: Fence type (only "no fences" is valid for depots and checkpoints)
       <table>
        <tr>
         <td nowrap valign=top><tt>0</tt>&nbsp; </td>
-        <td align=left>on bare land</td>
+        <td align=left>no fences</td>
        </tr>
 
        <tr>
         <td nowrap valign=top><tt>1</tt>&nbsp; </td>
-        <td align=left>on grass, no fences</td>
-       </tr>
-
-       <tr>
-        <td nowrap valign=top><tt>2</tt>&nbsp; </td>
         <td align=left>fence on the NW side</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>3</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>2</tt>&nbsp; </td>
         <td align=left>fence on the SE side</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>4</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>3</tt>&nbsp; </td>
         <td align=left>fences on the NW and SE sides</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>5</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>4</tt>&nbsp; </td>
         <td align=left>fence on the NE side</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>6</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>5</tt>&nbsp; </td>
         <td align=left>fence on the SW side</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>7</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>6</tt>&nbsp; </td>
         <td align=left>fences on the NE and SW sides</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>8</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>7</tt>&nbsp; </td>
         <td align=left>fence on the E side (track in the W corner)</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>9</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>8</tt>&nbsp; </td>
         <td align=left>fence on the W side (track in the E corner)</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>A</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>9</tt>&nbsp; </td>
         <td align=left>fence on the S side (track in the N corner)</td>
        </tr>
 
        <tr>
-        <td nowrap valign=top><tt>B</tt>&nbsp; </td>
+        <td nowrap valign=top><tt>A</tt>&nbsp; </td>
         <td align=left>fence on the N side (track in the S corner)</td>
-       </tr>
-
-       <tr>
-        <td nowrap valign=top><tt>C</tt>&nbsp; </td>
-        <td align=left>on snow or desert</td>
-       </tr>
-
-       <tr>
-        <td nowrap valign=top><tt>D</tt>&nbsp; </td>
-        <td align=left>on grass with fence and shore or water on the free halftile</td>
-       </tr>
-
-       <tr>
-        <td nowrap valign=top><tt>E</tt>&nbsp; </td>
-        <td align=left>higher part on foundation with snow, lower without snow</td>
        </tr>
       </table>
      </li>

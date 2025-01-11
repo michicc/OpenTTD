@@ -554,53 +554,50 @@ inline bool HasBlockSignalOnTrackdir(TileIndex index, Trackdir td)
 
 RailType GetTileRailType(TileIndex tile);
 
-/** The ground 'under' the rail */
-enum RailGroundType {
-	RAIL_GROUND_BARREN       =  0, ///< Nothing (dirt)
-	RAIL_GROUND_GRASS        =  1, ///< Grassy
-	RAIL_GROUND_FENCE_NW     =  2, ///< Grass with a fence at the NW edge
-	RAIL_GROUND_FENCE_SE     =  3, ///< Grass with a fence at the SE edge
-	RAIL_GROUND_FENCE_SENW   =  4, ///< Grass with a fence at the NW and SE edges
-	RAIL_GROUND_FENCE_NE     =  5, ///< Grass with a fence at the NE edge
-	RAIL_GROUND_FENCE_SW     =  6, ///< Grass with a fence at the SW edge
-	RAIL_GROUND_FENCE_NESW   =  7, ///< Grass with a fence at the NE and SW edges
-	RAIL_GROUND_FENCE_VERT1  =  8, ///< Grass with a fence at the eastern side
-	RAIL_GROUND_FENCE_VERT2  =  9, ///< Grass with a fence at the western side
-	RAIL_GROUND_FENCE_HORIZ1 = 10, ///< Grass with a fence at the southern side
-	RAIL_GROUND_FENCE_HORIZ2 = 11, ///< Grass with a fence at the northern side
-	RAIL_GROUND_ICE_DESERT   = 12, ///< Icy or sandy
-	RAIL_GROUND_WATER        = 13, ///< Grass with a fence and shore or water on the free halftile
-	RAIL_GROUND_HALF_SNOW    = 14, ///< Snow only on higher part of slope (steep or one corner raised)
+/** The type of fences around the rail. */
+enum RailFenceType {
+	RAIL_FENCE_NONE   =  0, ///< No fences
+	RAIL_FENCE_NW     =  1, ///< Grass with a fence at the NW edge
+	RAIL_FENCE_SE     =  2, ///< Grass with a fence at the SE edge
+	RAIL_FENCE_SENW   =  3, ///< Grass with a fence at the NW and SE edges
+	RAIL_FENCE_NE     =  4, ///< Grass with a fence at the NE edge
+	RAIL_FENCE_SW     =  5, ///< Grass with a fence at the SW edge
+	RAIL_FENCE_NESW   =  6, ///< Grass with a fence at the NE and SW edges
+	RAIL_FENCE_VERT1  =  7, ///< Grass with a fence at the eastern side
+	RAIL_FENCE_VERT2  =  8, ///< Grass with a fence at the western side
+	RAIL_FENCE_HORIZ1 =  9, ///< Grass with a fence at the southern side
+	RAIL_FENCE_HORIZ2 = 10, ///< Grass with a fence at the northern side
 };
 
-inline void SetRailGroundType(Tile t, RailGroundType rgt)
+inline void SetRailFenceType(Tile t, RailFenceType rft)
 {
-	SB(t.m4(), 0, 4, rgt);
+	SB(t.m4(), 0, 4, rft);
 }
 
-inline RailGroundType GetRailGroundType(Tile t)
+inline RailFenceType GetRailFenceType(Tile t)
 {
-	return (RailGroundType)GB(t.m4(), 0, 4);
-}
-
-inline bool IsSnowRailGround(Tile t)
-{
-	return GetRailGroundType(t) == RAIL_GROUND_ICE_DESERT;
+	return static_cast<RailFenceType>(GB(t.m4(), 0, 4));
 }
 
 
-inline void MakeRailNormal(Tile t, Owner o, TrackBits b, RailType r)
+inline Tile MakeRailNormal(Tile t, Owner o, TrackBits b, RailType r)
 {
 	SetTileType(t, MP_RAILWAY);
 	SetTileOwner(t, o);
-	SetDockingTile(t, false);
 	t.m2() = 0;
 	t.m3() = 0;
 	t.m4() = 0;
 	t.m5() = RAIL_TILE_NORMAL << 6 | b;
-	SB(t.m6(), 2, 4, 0);
+	t.m6() = 0;
 	t.m7() = 0;
-	t.m8() = r;
+	SetRailType(t, r);
+	return t;
+}
+
+inline Tile MakeRailNormal(TileIndex index, Owner o, TrackBits b, RailType r)
+{
+	Tile rail = Tile::New(index, MP_RAILWAY);
+	return MakeRailNormal(rail, o, b, r);
 }
 
 /**
@@ -616,24 +613,23 @@ inline void SetRailDepotExitDirection(Tile tile, DiagDirection dir)
 
 /**
  * Make a rail depot.
- * @param tile      Tile to make a depot on.
+ * @param index     Tile to make a depot on.
  * @param owner     New owner of the depot.
  * @param depot_id  New depot ID.
  * @param dir       Direction of the depot exit.
  * @param rail_type Rail type of the depot.
  */
-inline void MakeRailDepot(Tile tile, Owner owner, DepotID depot_id, DiagDirection dir, RailType rail_type)
+inline void MakeRailDepot(TileIndex index, Owner owner, DepotID depot_id, DiagDirection dir, RailType rail_type)
 {
-	SetTileType(tile, MP_RAILWAY);
+	Tile tile = Tile::New(index, MP_RAILWAY);
 	SetTileOwner(tile, owner);
-	SetDockingTile(tile, false);
 	tile.m2() = depot_id;
 	tile.m3() = 0;
 	tile.m4() = 0;
 	tile.m5() = RAIL_TILE_DEPOT << 6 | dir;
-	SB(tile.m6(), 2, 4, 0);
+	tile.m6() = 0;
 	tile.m7() = 0;
-	tile.m8() = rail_type;
+	SetRailType(tile, rail_type);
 }
 
 #endif /* RAIL_MAP_H */
