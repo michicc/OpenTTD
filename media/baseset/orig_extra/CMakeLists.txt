@@ -19,6 +19,7 @@ if(GRFCODEC_FOUND)
                          ${CMAKE_CURRENT_SOURCE_DIR}/fix_gui_icons.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/orig_extra.nfo
                          ${CMAKE_CURRENT_SOURCE_DIR}/shore.nfo
+                         ${CMAKE_CURRENT_SOURCE_DIR}/track_noground.nfo
         PNG_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/rivers/arctic_brown.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/rivers/arctic_snowy.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/rivers/rapids.png
@@ -32,6 +33,7 @@ if(GRFCODEC_FOUND)
                          ${CMAKE_CURRENT_SOURCE_DIR}/fix_graphics.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/fix_gui_icons.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/shore.png
+                         ${CMAKE_CURRENT_SOURCE_DIR}/track_noground.png
                          # We share some files with 'openttd' grf
                          ${CMAKE_CURRENT_SOURCE_DIR}/../openttd/airports.png
                          ${CMAKE_CURRENT_SOURCE_DIR}/../openttd/canals.png

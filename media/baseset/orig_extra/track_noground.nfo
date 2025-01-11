@@ -1,0 +1,411 @@
+// This file is part of OpenTTD.
+// OpenTTD is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+// OpenTTD is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details. You should have received a copy of the GNU General Public License along with OpenTTD. If not, see <http://www.gnu.org/licenses/>.
+//
+   -1 * 0	 0C "Rail graphics without ground"
+
+// Rail temperate
+   -1 * 6	 07 83 01 \7! 00 \b19
+   -1 * 8	 0A 02 \b12 \w1011 \b6 \w1031
+   -1 sprites/track_noground.png 8bpp  18    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  98    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 178    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 258    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 338    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 418    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 498    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 578    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 658    8  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2   56  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82   56  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162   56  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 242   56  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 322   56  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402   56  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482   56  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 562   56  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642   56  64  31 -31   0 normal
+
+// Rail snow
+   -1 * 6	 07 83 01 \7> 01 \b19
+   -1 * 8	 0A 02 \b12 \w1037 \b6 \w1057
+   -1 sprites/track_noground.png 8bpp 722   56  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  120  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  168  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp  82  168  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 162  168  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  168  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  168  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 402  168  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  168  64  31 -31   0 normal
+
+// Monorail temperate
+   -1 * 6	 07 83 01 \7! 00 \b19
+   -1 * 8	 0A 02 \b12 \w1093 \b6 \w1113
+   -1 sprites/track_noground.png 8bpp 562  168  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  168  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  168  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  232  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  232  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 722  232  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp   2  296  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  296  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  296  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 242  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  296  64  31 -31   0 normal
+
+// Monorail snow
+   -1 * 6	 07 83 01 \7> 01 \b19
+   -1 * 8	 0A 02 \b12 \w1119 \b6 \w1139
+   -1 sprites/track_noground.png 8bpp 402  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  296  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  360  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  360  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 562  360  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 642  360  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  360  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  424  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp  82  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  424  64  31 -31   0 normal
+
+// Maglev temperate
+   -1 * 6	 07 83 01 \7! 00 \b19
+   -1 * 8	 0A 02 \b12 \w1175 \b6 \w1195
+   -1 sprites/track_noground.png 8bpp 242  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  424  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  488  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  488  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  488  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  488  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  488  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 402  488  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 482  488  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  488  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  488  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 722  488  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  552  64  31 -31   0 normal
+
+// Maglev snow
+   -1 * 6	 07 83 01 \7> 01 \b19
+   -1 * 8	 0A 02 \b12 \w1201 \b6 \w1221
+   -1 sprites/track_noground.png 8bpp  82  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  552  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  600  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  600  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  600  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 242  600  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 322  600  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  600  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  600  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 562  600  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  600  64  31 -31   0 normal
+
+   -1 * 6	 07 83 01 \7! 01 \b57
+// Monorail arctic
+   -1 * 8	0A 02 \b12 \w1093 \b6 \w1113
+   -1 sprites/track_noground.png 8bpp 722  600  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  664  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  712  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp  82  712  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 162  712  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  712  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  712  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 402  712  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  712  64  31 -31   0 normal
+
+// Rail arctic
+   -1 * 8	0A 02 \b12 \w1011 \b6 \w1031
+   -1 sprites/track_noground.png 8bpp 562  712  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  712  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  712  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  776  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  776  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 722  776  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp   2  840  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  840  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  840  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 242  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  840  64  31 -31   0 normal
+
+// Maglev arctic
+   -1 * 8	0A 02 \b12 \w1175 \b6 \w1195
+   -1 sprites/track_noground.png 8bpp 402  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  840  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  904  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  904  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 562  904  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 642  904  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  904  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2  968  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp  82  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162  968  64  31 -31   0 normal
+
+   -1 * 6	 07 83 01 \7! 02 \b114
+// Monorail tropic
+   -1 * 8	0A 02 \b12 \w1093 \b6 \w1113
+   -1 sprites/track_noground.png 8bpp 242  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722  968  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1032  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1032  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1032  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1032  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1032  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 402 1032  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 482 1032  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1032  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1032  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 722 1032  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1096  64  31 -31   0 normal
+
+// Rail tropic
+   -1 * 8	0A 02 \b12 \w1011 \b6 \w1031
+   -1 sprites/track_noground.png 8bpp  82 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1096  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1144  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1144  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1144  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 242 1144  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 322 1144  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1144  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1144  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 562 1144  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1144  64  31 -31   0 normal
+
+// Maglev tropic
+   -1 * 8	0A 02 \b12 \w1175 \b6 \w1195
+   -1 sprites/track_noground.png 8bpp 722 1144  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1208  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1256  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp  82 1256  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 162 1256  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1256  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1256  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 402 1256  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1256  64  31 -31   0 normal
+
+// Rail desert
+   -1 * 8	 0A 02 \b12 \w1037 \b6 \w1057
+   -1 sprites/track_noground.png 8bpp 562 1256  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1256  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1256  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1320  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1320  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 722 1320  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp   2 1384  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1384  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1384  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 242 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1384  64  31 -31   0 normal
+
+// Monorail desert
+   -1 * 8	 0A 02 \b12 \w1119 \b6 \w1139
+   -1 sprites/track_noground.png 8bpp 402 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1384  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1448  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1448  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 562 1448  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 642 1448  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1448  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1512  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp  82 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1512  64  31 -31   0 normal
+
+// Maglev desert
+   -1 * 8	 0A 02 \b12 \w1201 \b6 \w1221
+   -1 sprites/track_noground.png 8bpp 242 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1512  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1576  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1576  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1576  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1576  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1576  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 402 1576  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 482 1576  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1576  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1576  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 722 1576  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1640  64  31 -31   0 normal
+
+   -1 * 6	 07 83 01 \7! 03 \b57
+// Rail toyland
+   -1 * 8	 0A 02 \b12 \w1011 \b6 \w1031
+   -1 sprites/track_noground.png 8bpp  82 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1640  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1688  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1688  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1688  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 242 1688  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 322 1688  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1688  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1688  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 562 1688  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1688  64  31 -31   0 normal
+
+// Monorail toyland
+   -1 * 8	0A 02 \b12 \w1093 \b6 \w1113
+   -1 sprites/track_noground.png 8bpp 722 1688  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1752  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1800  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp  82 1800  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 162 1800  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1800  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1800  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 402 1800  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1800  64  31 -31   0 normal
+
+// Maglev toyland
+   -1 * 8	0A 02 \b12 \w1175 \b6 \w1195
+   -1 sprites/track_noground.png 8bpp 562 1800  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1800  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 722 1800  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp   2 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 242 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 402 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 482 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 562 1864  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 642 1864  64  31 -31   0 normal
+
+   -1 sprites/track_noground.png 8bpp 722 1864  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp   2 1928  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp  82 1928  64  23 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 162 1928  64  39 -31  -8 normal
+   -1 sprites/track_noground.png 8bpp 242 1928  64  31 -31   0 normal
+   -1 sprites/track_noground.png 8bpp 322 1928  64  31 -31   0 normal
