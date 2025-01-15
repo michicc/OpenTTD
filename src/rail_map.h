@@ -318,6 +318,18 @@ inline TrackBits GetDepotReservationTrackBits(Tile t)
 	return HasDepotReservation(t) ? TrackToTrackBits(GetRailDepotTrack(t)) : TRACK_BIT_NONE;
 }
 
+/**
+ * Get the reserved track bits for any rail tile
+ * @pre IsTileType(t, MP_RAILWAY)
+ * @param t the tile
+ * @return reserved track bits
+ */
+inline TrackBits GetReservedRailTracks(Tile t)
+{
+	assert(IsTileType(t, MP_RAILWAY));
+	return IsRailDepot(t) ? GetDepotReservationTrackBits(t) : GetRailReservationTrackBits(t);
+}
+
 
 inline bool IsPbsSignal(SignalType s)
 {
