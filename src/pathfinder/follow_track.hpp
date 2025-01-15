@@ -41,6 +41,7 @@ struct CFollowTrackT
 	TileIndex old_tile; ///< the origin (vehicle moved from) before move
 	Trackdir old_td; ///< the trackdir (the vehicle was on) before move
 	TileIndex new_tile; ///< the new tile (the vehicle has entered)
+	Tile new_sub_tile; ///< the associated sub-tile of the new tile index that contains the track
 	TrackdirBits new_td_bits; ///< the new set of available trackdirs
 	DiagDirection exitdir; ///< exit direction (leaving the old tile)
 	bool is_tunnel; ///< last turn passed tunnel
@@ -78,6 +79,7 @@ struct CFollowTrackT
 		this->old_tile = INVALID_TILE;
 		this->old_td = INVALID_TRACKDIR;
 		this->new_tile = INVALID_TILE;
+		this->new_sub_tile = {};
 		this->new_td_bits = TRACKDIR_BIT_NONE;
 		this->exitdir = INVALID_DIAGDIR;
 		this->is_station = false;
@@ -219,6 +221,7 @@ protected:
 					this->is_bridge = true;
 					this->new_tile = GetOtherBridgeEnd(this->old_tile);
 				}
+				this->new_sub_tile = this->new_tile;
 				this->tiles_skipped = GetTunnelBridgeLength(this->new_tile, this->old_tile);
 				return;
 			}
@@ -227,6 +230,10 @@ protected:
 
 		/* normal or station tile, do one step */
 		this->new_tile = TileAddByDiagDir(this->old_tile, this->exitdir);
+		this->new_sub_tile = this->new_tile;
+		if (IsRailTT() && Tile::HasType(this->new_tile, MP_RAILWAY)) {
+			this->new_sub_tile = GetRailTileFromDiagDir(this->new_tile, this->exitdir);
+		}
 
 		/* special handling for stations */
 		if (IsRailTT() && HasStationTileRail(this->new_tile)) {
@@ -239,8 +246,8 @@ protected:
 	/** stores track status (available trackdirs) for the new tile into new_td_bits */
 	inline bool QueryNewTileTrackStatus()
 	{
-		if (IsRailTT() && IsPlainRailTile(this->new_tile)) {
-			this->new_td_bits = (TrackdirBits)(GetTrackBits(Tile::GetByType(this->new_tile, MP_RAILWAY)) * 0x101);
+		if (IsRailTT() && IsPlainRailTile(this->new_sub_tile)) {
+			this->new_td_bits = (TrackdirBits)(GetTrackBits(this->new_sub_tile) * 0x101);
 		} else if (IsRoadTT()) {
 			this->new_td_bits = GetTrackdirBitsForRoad(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
 		} else {
@@ -316,9 +323,11 @@ protected:
 			}
 		}
 		if (IsRailTT()) {
-			Tile rail = Tile::GetByType(this->new_tile, MP_RAILWAY);
-			if (IsRailDepotTile(rail)) {
-				DiagDirection exitdir = GetRailDepotDirection(rail);
+			/* rail transport has to have a valid sub-tile. */
+			assert(this->new_sub_tile.IsValid());
+
+			if (IsRailDepotTile(this->new_sub_tile)) {
+				DiagDirection exitdir = GetRailDepotDirection(this->new_sub_tile);
 				if (ReverseDiagDir(exitdir) != this->exitdir) {
 					this->err = EC_NO_WAY;
 					return false;
@@ -326,16 +335,14 @@ protected:
 			}
 
 			/* rail transport is possible only on tiles with the same owner as vehicle */
-			if (GetTileOwner(rail ? rail : this->new_tile) != this->veh_owner) {
+			if (GetTileOwner(this->new_sub_tile) != this->veh_owner) {
 				/* different owner */
 				this->err = EC_NO_WAY;
 				return false;
 			}
-		}
-
-		/* rail transport is possible only on compatible rail types */
-		if (IsRailTT()) {
-			RailType rail_type = GetTileRailType(this->new_tile);
+		
+			/* rail transport is possible only on compatible rail types */
+			RailType rail_type = IsTileType(this->new_sub_tile, MP_RAILWAY) ? GetRailType(this->new_sub_tile) : GetTileRailType(this->new_tile);
 			if (!HasBit(this->railtypes, rail_type)) {
 				/* incompatible rail type */
 				this->err = EC_RAIL_ROAD_TYPE;
@@ -401,6 +408,7 @@ protected:
 			if (exitdir != this->exitdir) {
 				/* reverse */
 				this->new_tile = this->old_tile;
+				this->new_sub_tile = GetDepotTile(this->new_tile);
 				this->new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(this->old_td));
 				this->exitdir = exitdir;
 				this->tiles_skipped = 0;
@@ -416,6 +424,7 @@ protected:
 				(IsBayRoadStopTile(this->old_tile) && GetBayRoadStopDir(this->old_tile) == ReverseDiagDir(this->exitdir)))) {
 			/* reverse */
 			this->new_tile = this->old_tile;
+			this->new_sub_tile = this->new_tile;
 			this->new_td_bits = TrackdirToTrackdirBits(ReverseTrackdir(this->old_td));
 			this->exitdir = ReverseDiagDir(this->exitdir);
 			this->tiles_skipped = 0;
