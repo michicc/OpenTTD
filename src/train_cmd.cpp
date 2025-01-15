@@ -2024,7 +2024,8 @@ void ReverseTrainDirection(Train *v)
 	/* VehicleExitDir does not always produce the desired dir for depots and
 	 * tunnels/bridges that is needed for UpdateSignalsOnSegment. */
 	DiagDirection dir = VehicleExitDir(v->direction, v->track);
-	if (IsRailDepotTile(v->tile) || IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
+	if (IsRailDepotTile(v->tile)) dir = GetRailDepotDirection(GetRailDepotTile(v->tile));
+	if (IsTileType(v->tile, MP_TUNNELBRIDGE)) dir = INVALID_DIAGDIR;
 
 	if (UpdateSignalsOnSegment(v->tile, dir, v->owner) == SIGSEG_PBS || _settings_game.pf.reserve_paths) {
 		/* If we are currently on a tile with conventional signals, we can't treat the
@@ -2277,6 +2278,8 @@ static bool CheckTrainStayInDepot(Train *v)
 
 	SigSegState seg_state;
 
+	Tile depot_tile = GetRailDepotTile(v->tile);
+	DiagDirection depot_dir = GetRailDepotDirection(depot_tile);
 	if (v->force_proceed == TFP_NONE) {
 		/* force proceed was not pressed */
 		if (++v->wait_counter < 37) {
@@ -2286,20 +2289,20 @@ static bool CheckTrainStayInDepot(Train *v)
 
 		v->wait_counter = 0;
 
-		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
-		if (seg_state == SIGSEG_FULL || HasDepotReservation(GetDepotTile(v->tile))) {
+		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, depot_dir, v->owner);
+		if (seg_state == SIGSEG_FULL || HasDepotReservation(depot_tile)) {
 			/* Full and no PBS signal in block or depot reserved, can't exit. */
 			SetWindowClassesDirty(WC_TRAINS_LIST);
 			return true;
 		}
 	} else {
-		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
+		seg_state = _settings_game.pf.reserve_paths ? SIGSEG_PBS : UpdateSignalsOnSegment(v->tile, depot_dir, v->owner);
 	}
 
 	/* We are leaving a depot, but have to go to the exact same one; re-enter. */
 	if (v->current_order.IsType(OT_GOTO_DEPOT) && v->tile == v->dest_tile) {
 		/* Service when depot has no reservation. */
-		if (!HasDepotReservation(GetDepotTile(v->tile))) VehicleEnterDepot(v);
+		if (!HasDepotReservation(depot_tile)) VehicleEnterDepot(v);
 		return true;
 	}
 
@@ -2311,7 +2314,7 @@ static bool CheckTrainStayInDepot(Train *v)
 		return true;
 	}
 
-	SetDepotReservation(GetDepotTile(v->tile), true);
+	SetDepotReservation(depot_tile, true);
 	if (_settings_client.gui.show_track_reservation) MarkTileDirtyByTile(v->tile);
 
 	VehicleServiceInDepot(v);
@@ -2327,7 +2330,7 @@ static bool CheckTrainStayInDepot(Train *v)
 
 	v->UpdateViewport(true, true);
 	v->UpdatePosition();
-	UpdateSignalsOnSegment(v->tile, INVALID_DIAGDIR, v->owner);
+	UpdateSignalsOnSegment(v->tile, depot_dir, v->owner);
 	v->UpdateAcceleration();
 	InvalidateWindowData(WC_VEHICLE_DEPOT, v->tile);
 
@@ -3696,7 +3699,9 @@ static void DeleteLastWagon(Train *v)
 	}
 
 	/* Update signals */
-	if (IsTileType(tile, MP_TUNNELBRIDGE) || IsRailDepotTile(tile)) {
+	if (IsRailDepotTile(tile)) {
+		UpdateSignalsOnSegment(tile, GetRailDepotDirection(GetRailDepotTile(tile)), owner);
+	} else if (IsTileType(tile, MP_TUNNELBRIDGE)) {
 		UpdateSignalsOnSegment(tile, INVALID_DIAGDIR, owner);
 	} else {
 		SetSignalsOnBothDir(tile, track, owner);

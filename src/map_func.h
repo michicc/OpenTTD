@@ -402,6 +402,20 @@ public:
 	}
 
 	/**
+	 * Get the next associated sub-tile with a specific tile type.
+	 * @param type Tile type to search for.
+	 * @return The next associated tile having the asked tile type or an invalid \c Tile if no such tile exists.
+	 */
+	debug_inline Tile GetNextByType(TileType type)
+	{
+		Tile t = *this;
+		do {
+			++t;
+		} while (t.IsValid() && t.tile_type() != type);
+		return t;
+	}
+
+	/**
 	 * Get the tile with a specific tile type associated with a tile index.
 	 * @param tile Tile index to query.
 	 * @param type Tile type to search for.
@@ -486,6 +500,50 @@ public:
 
 	static Tile New(TileIndex index, TileType type, Tile insert_after = INVALID_TILE, bool raw_alloc = false);
 	static Tile Remove(TileIndex index, Tile tile);
+};
+
+template <TileType Ttile_type>
+struct AssociatedTileIterator {
+	struct Iterator {
+		typedef std::ptrdiff_t difference_type;
+		typedef Tile value_type;
+
+		explicit Iterator(Tile tile = {}) : tile(tile) { }
+
+		bool operator==(const Iterator &other) const { return this->tile == other.tile; }
+		bool operator!=(const Iterator &other) const { return !(this->tile == other.tile); }
+
+		Tile operator*() const { return this->tile; }
+
+		Iterator &operator++()
+		{
+			this->tile = this->tile.GetNextByType(Ttile_type);
+			return *this;
+		}
+		Iterator operator++(int)
+		{
+			Iterator cur{*this};
+			++*this;
+			return cur;
+		}
+	private:
+		Tile tile;
+	};
+
+	Iterator begin() const noexcept { return Iterator(start); }
+	Iterator end() const noexcept { return Iterator(); }
+	bool empty() const noexcept { return !start.IsValid(); }
+
+	/**
+	 * Create an iterator over all associated sub-tiles of a specific type at a tile index.
+	 * @param index Tile index to iterate.
+	 * @return The iterator.
+	 */
+	static AssociatedTileIterator Iterate(TileIndex index) { return AssociatedTileIterator(index); }
+private:
+	Tile start;
+
+	AssociatedTileIterator(TileIndex index) : start(Tile::GetByType(index, Ttile_type)) {}
 };
 
 /**
