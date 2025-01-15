@@ -58,7 +58,8 @@ private:
 
 	/** Element of set */
 	struct SSdata {
-		TileIndex tile;
+		TileIndex index;
+		Tile tile;
 		Tdir dir;
 	} data[items];
 
@@ -112,14 +113,14 @@ public:
 
 	/**
 	 * Tries to remove first instance of given tile and dir
-	 * @param tile tile
+	 * @param index tile
 	 * @param dir and dir to remove
 	 * @return element was found and removed
 	 */
-	bool Remove(TileIndex tile, Tdir dir)
+	bool Remove(TileIndex index, Tdir dir)
 	{
 		for (uint i = 0; i < this->n; i++) {
-			if (this->data[i].tile == tile && this->data[i].dir == dir) {
+			if (this->data[i].index == index && this->data[i].dir == dir) {
 				this->data[i] = this->data[--this->n];
 				return true;
 			}
@@ -130,14 +131,14 @@ public:
 
 	/**
 	 * Tries to find given tile and dir in the set
-	 * @param tile tile
+	 * @param index tile
 	 * @param dir and dir to find
 	 * @return true iff the tile & dir element was found
 	 */
-	bool IsIn(TileIndex tile, Tdir dir)
+	bool IsIn(TileIndex index, Tdir dir)
 	{
 		for (uint i = 0; i < this->n; i++) {
-			if (this->data[i].tile == tile && this->data[i].dir == dir) return true;
+			if (this->data[i].index == index && this->data[i].dir == dir) return true;
 		}
 
 		return false;
@@ -146,11 +147,12 @@ public:
 	/**
 	 * Adds tile & dir into the set, checks for full set
 	 * Sets the 'overflowed' flag if the set was full
-	 * @param tile tile
+	 * @param index tile index
+	 * @param tile associated sub-tile
 	 * @param dir and dir to add
 	 * @return true iff the item could be added (set wasn't full)
 	 */
-	bool Add(TileIndex tile, Tdir dir)
+	bool Add(TileIndex index, Tile tile, Tdir dir)
 	{
 		if (this->IsFull()) {
 			overflowed = true;
@@ -158,6 +160,7 @@ public:
 			return false; // set is full
 		}
 
+		this->data[this->n].index = index;
 		this->data[this->n].tile = tile;
 		this->data[this->n].dir = dir;
 		this->n++;
@@ -167,17 +170,19 @@ public:
 
 	/**
 	 * Reads the last added element into the set
-	 * @param tile pointer where tile is written to
-	 * @param dir pointer where dir is written to
+	 * @param[out] index returned tile index of the element.
+	 * @param[out] tile returned sub-tile of the element
+	 * @param[out] dir return direction of the element
 	 * @return false iff the set was empty
 	 */
-	bool Get(TileIndex *tile, Tdir *dir)
+	bool Get(TileIndex &index, Tile &tile, Tdir &dir)
 	{
 		if (this->n == 0) return false;
 
 		this->n--;
-		*tile = this->data[this->n].tile;
-		*dir = this->data[this->n].dir;
+		index = this->data[this->n].index;
+		tile = this->data[this->n].tile;
+		dir = this->data[this->n].dir;
 
 		return true;
 	}
@@ -196,6 +201,12 @@ static Vehicle *TrainOnTileEnum(Vehicle *v, void *)
 	return v;
 }
 
+/** Helper to get proper associated sub-tile for a diag dir. */
+static Tile GetAssociatedTileFromDiagDir(TileIndex index, DiagDirection diagdir)
+{
+	Tile rail = GetRailTileFromDiagDir(index, IsValidDiagDirection(diagdir) ? ReverseDiagDir(diagdir) : INVALID_DIAGDIR);
+	return rail ? rail : index;
+}
 
 /**
  * Perform some operations before adding data into Todo set
@@ -238,7 +249,7 @@ static inline bool MaybeAddToTodoSet(TileIndex t1, DiagDirection d1, TileIndex t
 {
 	if (!CheckAddToTodoSet(t1, d1, t2, d2)) return true;
 
-	return _tbdset.Add(t1, d1);
+	return _tbdset.Add(t1, GetAssociatedTileFromDiagDir(t1, d1), d1);
 }
 
 
@@ -271,14 +282,12 @@ static SigFlags ExploreSegment(Owner owner)
 	SigFlags flags = SF_NONE;
 
 	TileIndex index = INVALID_TILE; // Stop GCC from complaining about a possibly uninitialized variable (issue #8280).
+	Tile tile{};
 	DiagDirection enterdir = INVALID_DIAGDIR;
 
-	while (_tbdset.Get(&index, &enterdir)) { // tile and enterdir are initialized here, unless I'm mistaken.
+	while (_tbdset.Get(index, tile, enterdir)) { // tile and enterdir are initialized here, unless I'm mistaken.
 		TileIndex oldindex = index; // tile we are leaving
 		DiagDirection exitdir = enterdir == INVALID_DIAGDIR ? INVALID_DIAGDIR : ReverseDiagDir(enterdir); // expected new exit direction (for straight line)
-
-		Tile tile = Tile::GetByType(index, MP_RAILWAY);
-		if (!tile) tile = index;
 
 		switch (GetTileType(tile)) {
 			case MP_RAILWAY: {
@@ -329,7 +338,7 @@ static SigFlags ExploreSegment(Owner owner)
 							if (flags & SF_ENTER) flags |= SF_ENTER2;
 							flags |= SF_ENTER;
 
-							if (!_tbuset.Add(index, reversedir)) return flags | SF_FULL;
+							if (!_tbuset.Add(index, tile, reversedir)) return flags | SF_FULL;
 						}
 						if (HasSignalOnTrackdir(tile, trackdir) && !IsOnewaySignal(tile, track)) flags |= SF_PBS;
 
@@ -416,10 +425,10 @@ static SigFlags ExploreSegment(Owner owner)
 static void UpdateSignalsAroundSegment(SigFlags flags)
 {
 	TileIndex index = INVALID_TILE; // Stop GCC from complaining about a possibly uninitialized variable (issue #8280).
+	Tile tile{};
 	Trackdir trackdir = INVALID_TRACKDIR;
 
-	while (_tbuset.Get(&index, &trackdir)) {
-		Tile tile = Tile::GetByType(index, MP_RAILWAY);
+	while (_tbuset.Get(index, tile, trackdir)) {
 		assert(tile.IsValid() && HasSignalOnTrackdir(tile, trackdir));
 
 		Track track = TrackdirToTrack(trackdir);
@@ -457,7 +466,7 @@ static void UpdateSignalsAroundSegment(SigFlags flags)
 			if (IsPresignalExit(tile, TrackdirToTrack(trackdir))) {
 				/* for pre-signal exits, add block to the global set */
 				DiagDirection exitdir = TrackdirToExitdir(ReverseTrackdir(trackdir));
-				_globset.Add(index, exitdir); // do not check for full global set, first update all signals
+				_globset.Add(index, tile, exitdir); // do not check for full global set, first update all signals
 			}
 			SetSignalStateByTrackdir(tile, trackdir, newstate);
 			MarkTileDirtyByTile(index);
@@ -491,9 +500,10 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 	SigSegState state = SIGSEG_FREE; // value to return
 
 	TileIndex index = INVALID_TILE; // Stop GCC from complaining about a possibly uninitialized variable (issue #8280).
+	Tile tile{};
 	DiagDirection dir = INVALID_DIAGDIR;
 
-	while (_globset.Get(&index, &dir)) {
+	while (_globset.Get(index, tile, dir)) {
 		assert(_tbuset.IsEmpty());
 		assert(_tbdset.IsEmpty());
 
@@ -501,23 +511,26 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 		 * Other situations happen when data are from outside functions -
 		 * modification of railbits (including both rail building and removal),
 		 * train entering/leaving block, train leaving depot...
+		 * Outside data doesn't have tile sub-tile reference set, so look for it.
 		 */
-		Tile tile = Tile::GetByType(index, MP_RAILWAY);
-		if (!tile) tile = index;
+		if (!tile) tile = GetAssociatedTileFromDiagDir(index, dir);
+
 		switch (GetTileType(tile)) {
-			case MP_TUNNELBRIDGE:
+			case MP_TUNNELBRIDGE: {
 				/* 'optimization assert' - do not try to update signals when it is not needed */
 				assert(GetTunnelBridgeTransportType(tile) == TRANSPORT_RAIL);
 				assert(dir == INVALID_DIAGDIR || dir == ReverseDiagDir(GetTunnelBridgeDirection(tile)));
-				_tbdset.Add(index, INVALID_DIAGDIR);  // we can safely start from wormhole centre
-				_tbdset.Add(GetOtherTunnelBridgeEnd(index), INVALID_DIAGDIR);
+				_tbdset.Add(index, tile, INVALID_DIAGDIR);  // we can safely start from wormhole centre
+				TileIndex other = GetOtherTunnelBridgeEnd(index);
+				_tbdset.Add(other, other, INVALID_DIAGDIR);
 				break;
+			}
 
 			case MP_RAILWAY:
 				if (IsRailDepot(tile)) {
 					/* 'optimization assert' do not try to update signals in other cases */
 					assert(dir == INVALID_DIAGDIR || dir == GetRailDepotDirection(tile));
-					_tbdset.Add(index, INVALID_DIAGDIR); // start from depot inside
+					_tbdset.Add(index, tile, INVALID_DIAGDIR); // start from depot inside
 					break;
 				}
 				[[fallthrough]];
@@ -526,8 +539,10 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 			case MP_ROAD:
 				if ((TrackStatusToTrackBits(GetTileTrackStatus(index, TRANSPORT_RAIL, 0)) & _enterdir_to_trackbits[dir]) != TRACK_BIT_NONE) {
 					/* only add to set when there is some 'interesting' track */
-					_tbdset.Add(index, dir);
-					_tbdset.Add(index + TileOffsByDiagDir(dir), ReverseDiagDir(dir));
+					_tbdset.Add(index, tile, dir);
+					index += TileOffsByDiagDir(dir);
+					dir = ReverseDiagDir(dir);
+					_tbdset.Add(index, GetAssociatedTileFromDiagDir(index, dir), dir);
 					break;
 				}
 				[[fallthrough]];
@@ -537,7 +552,7 @@ static SigSegState UpdateSignalsInBuffer(Owner owner)
 				index = index + TileOffsByDiagDir(dir);
 				dir = ReverseDiagDir(dir);
 				if ((TrackStatusToTrackBits(GetTileTrackStatus(index, TRANSPORT_RAIL, 0)) & _enterdir_to_trackbits[dir]) != TRACK_BIT_NONE) {
-					_tbdset.Add(index, dir);
+					_tbdset.Add(index, GetAssociatedTileFromDiagDir(index, dir), dir);
 					break;
 				}
 				/* happens when removing a rail that wasn't connected at one or both sides */
@@ -609,8 +624,8 @@ void AddTrackToSignalBuffer(TileIndex tile, Track track, Owner owner)
 
 	_last_owner = owner;
 
-	_globset.Add(tile, _search_dir_1[track]);
-	_globset.Add(tile, _search_dir_2[track]);
+	_globset.Add(tile, INVALID_TILE, _search_dir_1[track]);
+	_globset.Add(tile, INVALID_TILE, _search_dir_2[track]);
 
 	if (_globset.Items() >= SIG_GLOB_UPDATE) {
 		/* too many items, force update */
@@ -634,7 +649,7 @@ void AddSideToSignalBuffer(TileIndex tile, DiagDirection side, Owner owner)
 
 	_last_owner = owner;
 
-	_globset.Add(tile, side);
+	_globset.Add(tile, INVALID_TILE, side);
 
 	if (_globset.Items() >= SIG_GLOB_UPDATE) {
 		/* too many items, force update */
@@ -656,7 +671,7 @@ void AddSideToSignalBuffer(TileIndex tile, DiagDirection side, Owner owner)
 SigSegState UpdateSignalsOnSegment(TileIndex tile, DiagDirection side, Owner owner)
 {
 	assert(_globset.IsEmpty());
-	_globset.Add(tile, side);
+	_globset.Add(tile, INVALID_TILE, side);
 
 	return UpdateSignalsInBuffer(owner);
 }

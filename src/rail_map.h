@@ -19,6 +19,9 @@
 #include "signal_type.h"
 
 
+/** Iterator to iterate rail tiles at a tile index. */
+using RailTileIterator = AssociatedTileIterator<MP_RAILWAY>;
+
 /** Different types of Rail-related tiles */
 enum RailTileType {
 	RAIL_TILE_NORMAL   = 0, ///< Normal rail tile without signals
@@ -579,6 +582,24 @@ inline RailFenceType GetRailFenceType(Tile t)
 	return static_cast<RailFenceType>(GB(t.m4(), 0, 4));
 }
 
+/**
+ * Find a rail tile at a specific tile index that has tracks reachable from a given side.
+ * @param index The tile index to check.
+ * @param diagdir The tile is entered from this direction.
+ * @return The rail tile or an invalid \c Tile if no reachable tile exists.
+ */
+inline Tile GetRailTileFromDiagDir(TileIndex index, DiagDirection diagdir)
+{
+	for (auto tile : RailTileIterator::Iterate(index)) {
+		if (IsRailDepot(tile)) {
+			if (diagdir == ReverseDiagDir(GetRailDepotDirection(tile))) return tile;
+		} else {
+			if ((TrackBitsToTrackdirBits(GetTrackBits(tile)) & DiagdirReachesTrackdirs(diagdir)) != TRACKDIR_BIT_NONE) return tile;
+		}
+	}
+
+	return {};
+}
 
 inline Tile MakeRailNormal(Tile t, Owner o, TrackBits b, RailType r)
 {
