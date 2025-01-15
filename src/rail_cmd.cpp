@@ -2489,19 +2489,9 @@ static Foundation GetFoundation_Track(TileIndex, Tile tile, Slope tileh)
 static bool TileLoop_Track(TileIndex index, Tile &tile)
 {
 	RailFenceType old_fences = GetRailFenceType(tile);
-	if (IsTileType(index, MP_CLEAR)) {
-		ClearGround cg = GetClearGround(index);
-		if (cg == CLEAR_DESERT || cg == CLEAR_SNOW) {
-			if (old_fences != RAIL_FENCE_NONE) {
-				SetRailFenceType(tile, RAIL_FENCE_NONE);
-				MarkTileDirtyByTile(index);
-			}
-			return false;
-		}
-	}
 
 	RailFenceType new_fences = RAIL_FENCE_NONE;
-	if (IsPlainRail(tile) && (!IsTileType(index, MP_CLEAR) || GetClearDensity(index) == 3)) { // wait until bottom is green
+	if (IsPlainRail(tile) && (!IsTileType(index, MP_CLEAR) || GetClearDensity(index) == 3 || GetClearGround(index) == CLEAR_DESERT || GetClearGround(index) == CLEAR_SNOW)) { // wait until bottom is green
 		/* determine direction of fence */
 		TrackBits rail = GetTrackBits(tile);
 
