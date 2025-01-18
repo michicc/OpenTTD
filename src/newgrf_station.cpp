@@ -309,7 +309,7 @@ TownScopeResolver *StationResolverObject::GetTown()
 			if (!HasBit(_svc.valid, 1)) { _svc.v41 = GetPlatformInfoHelper(this->tile, true,  false, false); SetBit(_svc.valid, 1); }
 			return _svc.v41;
 
-		case 0x42: return GetTerrainType(this->tile) | (GetReverseRailTypeTranslation(GetTileRailType(this->tile), this->statspec->grf_prop.grffile) << 8);
+		case 0x42: return GetTerrainType(this->tile) | (GetReverseRailTypeTranslation(GetTileRailType(this->tile, GetRailStationTrack(this->tile)), this->statspec->grf_prop.grffile) << 8);
 		case 0x43: return GetCompanyInfo(this->st->owner); // Station owner
 		case 0x44: return HasStationReservation(this->tile) ? 7 : 4; // PBS status
 		case 0x45:

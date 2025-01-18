@@ -190,10 +190,11 @@ public:
 	/**
 	 * Get the RailType that is used on a tile.
 	 * @param tile The tile to check.
+	 * @param front The tile from which side the tile to check is entered.
 	 * @pre ScriptTile::HasTransportType(tile, ScriptTile.TRANSPORT_RAIL).
 	 * @return The RailType that is used on a tile.
 	 */
-	static RailType GetRailType(TileIndex tile);
+	static RailType GetRailType(TileIndex tile, TileIndex front);
 
 	/**
 	 * Convert the tracks on all tiles within a rectangle to another RailType.

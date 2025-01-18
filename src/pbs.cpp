@@ -331,12 +331,12 @@ Train *GetTrainForReservation(TileIndex tile, Track track)
 	assert(HasReservedTracks(tile, TrackToTrackBits(track)));
 	Trackdir  trackdir = TrackToTrackdir(track);
 
-	RailTypes rts = GetRailTypeInfo(GetTileRailType(tile))->compatible_railtypes;
+	RailTypes rts = GetRailTypeInfo(GetTileRailType(tile, track))->compatible_railtypes;
 
 	/* Follow the path from tile to both ends, one of the end tiles should
 	 * have a train on it. We need FollowReservation to ignore one-way signals
 	 * here, as one of the two search directions will be the "wrong" way. */
-	Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY);
+	Tile rail_tile = GetRailTileFromTrack(tile, track);
 	for (int i = 0; i < 2; ++i, trackdir = ReverseTrackdir(trackdir)) {
 		/* If the tile has a one-way block signal in the current trackdir, skip the
 		 * search in this direction as the reservation can't come from this side.*/
@@ -395,7 +395,7 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 
 	/* Check for reachable tracks. */
 	ft.new_td_bits &= DiagdirReachesTrackdirs(ft.exitdir);
-	if (Rail90DegTurnDisallowed(GetTileRailType(ft.old_tile), GetRailType(ft.new_sub_tile), forbid_90deg)) ft.new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
+	if (Rail90DegTurnDisallowed(GetTileRailType(ft.old_tile, TrackdirToTrack(ft.old_td)), GetRailType(ft.new_sub_tile), forbid_90deg)) ft.new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
 	if (ft.new_td_bits == TRACKDIR_BIT_NONE) return include_line_end;
 
 	if (ft.new_td_bits != TRACKDIR_BIT_NONE && KillFirstBit(ft.new_td_bits) == TRACKDIR_BIT_NONE) {
@@ -439,7 +439,7 @@ bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bo
 
 	/* Check for reachable tracks. */
 	ft.new_td_bits &= DiagdirReachesTrackdirs(ft.exitdir);
-	if (Rail90DegTurnDisallowed(GetTileRailType(ft.old_tile), GetRailType(ft.new_sub_tile), forbid_90deg)) ft.new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
+	if (Rail90DegTurnDisallowed(GetTileRailType(ft.old_tile, TrackdirToTrack(ft.old_td)), GetRailType(ft.new_sub_tile), forbid_90deg)) ft.new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
 
 	reserved = IsTileType(ft.new_sub_tile, MP_RAILWAY) ? GetReservedRailTracks(ft.new_sub_tile) : GetReservedTrackbits(ft.new_tile);
 	return (reserved & TrackdirBitsToTrackBits(ft.new_td_bits)) == TRACK_BIT_NONE;
