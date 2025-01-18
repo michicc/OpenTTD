@@ -149,13 +149,9 @@ extern const TrackdirBits _uphill_trackdirs[] = {
 	TRACKDIR_BIT_X_NE | TRACKDIR_BIT_Y_SE, ///< 30 SLOPE_STEEP_E -> inclined for diagonal track
 };
 
-/**
- * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
- */
-RailType GetTileRailType(TileIndex tile)
+/** Helper for #GetTileRailType. */
+static RailType GetTileRailTypeCommon(Tile tile)
 {
-	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) return GetRailType(rail);
-
 	switch (GetTileType(tile)) {
 		case MP_ROAD:
 			/* rail/road crossing */
@@ -174,6 +170,32 @@ RailType GetTileRailType(TileIndex tile)
 			break;
 	}
 	return INVALID_RAILTYPE;
+}
+
+/**
+ * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
+ * @param tile Tile to query.
+ * @param track Get rail type of this track.
+ * @return The rail type or INVALID_RAILTYPE if no rail present.
+ */
+RailType GetTileRailType(TileIndex tile, Track track)
+{
+	if (Tile rail = GetRailTileFromTrack(tile, track); rail.IsValid()) return GetRailType(rail);
+
+	return GetTileRailTypeCommon(tile);
+}
+
+/**
+ * Return the rail type of tile, or INVALID_RAILTYPE if this is no rail tile.
+ * @param tile Tile to query.
+ * @param diagdir Get rail type of tracks reachable by entering in this direction.
+ * @return The rail type or INVALID_RAILTYPE if no rail present.
+ */
+RailType GetTileRailType(TileIndex tile, DiagDirection diagdir)
+{
+	if (Tile rail = GetRailTileFromDiagDir(tile, diagdir); rail.IsValid()) return GetRailType(rail);
+
+	return GetTileRailTypeCommon(tile);
 }
 
 /**

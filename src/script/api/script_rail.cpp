@@ -104,11 +104,14 @@
 	return ::HasPowerOnRail((::RailType)engine_rail_type, (::RailType)track_rail_type);
 }
 
-/* static */ ScriptRail::RailType ScriptRail::GetRailType(TileIndex tile)
+/* static */ ScriptRail::RailType ScriptRail::GetRailType(TileIndex tile, TileIndex front)
 {
 	if (!ScriptTile::HasTransportType(tile, ScriptTile::TRANSPORT_RAIL)) return RAILTYPE_INVALID;
+	if (!::IsValidTile(front)) return RAILTYPE_INVALID;
 
-	return (RailType)::GetTileRailType(tile);
+	DiagDirection dir = ::DiagdirBetweenTiles(front, tile);
+	if (!::IsValidDiagDirection(dir)) return RAILTYPE_INVALID;
+	return (RailType)::GetTileRailType(tile, dir);
 }
 
 /* static */ bool ScriptRail::ConvertRailType(TileIndex start_tile, TileIndex end_tile, ScriptRail::RailType convert_to)

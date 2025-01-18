@@ -137,7 +137,7 @@ static TrackBits MaskWireBits(TileIndex t, TrackBits tracks)
 		 * as needing no catenary. We make an exception for blocked station tiles with a matching
 		 * axis that still display wires to preserve visual continuity. */
 		TileIndex next_tile = TileAddByDiagDir(t, d);
-		RailType rt = GetTileRailType(next_tile);
+		RailType rt = GetTileRailType(next_tile, d);
 		if (rt == INVALID_RAILTYPE || !HasRailCatenary(rt) ||
 				((TrackStatusToTrackBits(GetTileTrackStatus(next_tile, TRANSPORT_RAIL, 0)) & DiagdirReachesTracks(d)) == TRACK_BIT_NONE &&
 				(!HasStationTileRail(next_tile) || GetRailStationAxis(next_tile) != DiagDirToAxis(d) || !CanStationTileHaveWires(next_tile)))) {

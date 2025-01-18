@@ -567,7 +567,9 @@ inline bool HasBlockSignalOnTrackdir(TileIndex index, Trackdir td)
 }
 
 
-RailType GetTileRailType(TileIndex tile);
+RailType GetTileRailType(TileIndex tile, Track track);
+RailType GetTileRailType(TileIndex tile, DiagDirection diagdir);
+
 
 /** The type of fences around the rail. */
 enum RailFenceType {
@@ -612,6 +614,26 @@ inline Tile GetRailTileFromDiagDir(TileIndex index, DiagDirection diagdir)
 
 	return {};
 }
+
+/**
+ * Find a rail tile at a specific tile index that has a specific track.
+ * @param tile The tile index to check.
+ * @param track The track to search for.
+ * @return The rail tile or an invalid \c Tile if no such tile exists.
+ */
+inline Tile GetRailTileFromTrack(TileIndex index, Track track)
+{
+	for (auto tile : RailTileIterator::Iterate(index)) {
+		if (IsRailDepot(tile)) {
+			if (GetRailDepotTrack(tile) == track) return tile;
+		} else {
+			if (HasTrack(tile, track)) return tile;
+		}
+	}
+
+	return {};
+}
+
 
 inline Tile MakeRailNormal(Tile t, Owner o, TrackBits b, RailType r)
 {

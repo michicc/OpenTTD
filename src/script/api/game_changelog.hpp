@@ -24,6 +24,7 @@
  *
  * Other changes:
  * \li GSBridge::GetBridgeID renamed to GSBridge::GetBridgeType
+ * \li GSRail::GetRailType now also needs a second tile parameter to indicate the side the tile is entered.
  *
  * \b 14.0
  *
