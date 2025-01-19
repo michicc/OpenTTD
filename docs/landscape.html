@@ -138,7 +138,7 @@
   <li><a href="#Class1"><span style="font-weight: bold;">Railway tracks:</span></a><br>
    <ul>
     <li>Base tile is <a href="#Class0">Ground</a> or <a href="#Class6">Water</a>.</li>
-    <li>No other sub-tile is allowed.</li>
+    <li>Multiple rail sub-tiles are allowed if all sub-tiles are track tiles and not depots. The track bits of sub-tiles are not allowed overlap.</li>
    </ul>
   </li>
   <li><a href="#Class4"><span style="font-weight: bold;">Trees:</span></a><br>
@@ -296,6 +296,7 @@
        </tr>
       </table>
      </li>
+     <li>m8 bit 14: Next tile is associated with this tile</li>
      <li>m4 bits 7..4: see signals</li>
      <li>m4 bits 3..0: Fence type (only "no fences" is valid for depots and checkpoints)
       <table>

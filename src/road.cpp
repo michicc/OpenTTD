@@ -32,11 +32,11 @@
  */
 static bool IsPossibleCrossing(const TileIndex index, Axis ax)
 {
-	Tile tile = Tile::GetByType(index, MP_RAILWAY);
-	return (tile.IsValid() &&
-		GetRailTileType(tile) == RAIL_TILE_NORMAL &&
-		GetTrackBits(tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X) &&
-		std::get<0>(GetFoundationSlope(index)) == SLOPE_FLAT);
+	bool possible = std::get<0>(GetFoundationSlope(index)) == SLOPE_FLAT;
+	for (Tile tile : RailTileIterator::Iterate(index)) {
+		possible &= GetRailTileType(tile) == RAIL_TILE_NORMAL && GetTrackBits(tile) == (ax == AXIS_X ? TRACK_BIT_Y : TRACK_BIT_X);
+	}
+	return possible;
 }
 
 /**

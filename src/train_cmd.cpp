@@ -2234,7 +2234,7 @@ static void CheckNextTrainTile(Train *v)
 	Trackdir td = v->GetVehicleTrackdir();
 
 	/* On a tile with a red non-pbs signal, don't look ahead. */
-	if (HasBlockSignalOnTrackdir(v->tile, td) && GetSignalStateByTrackdir(Tile::GetByType(v->tile, MP_RAILWAY), td) == SIGNAL_STATE_RED) return;
+	if (HasBlockSignalOnTrackdir(v->tile, td) && GetSignalStateByTrackdir(GetRailTileFromTrack(v->tile, TrackdirToTrack(td)), td) == SIGNAL_STATE_RED) return;
 
 	CFollowTrackRail ft(v);
 	if (!ft.Follow(v->tile, td)) return;
@@ -2714,7 +2714,7 @@ static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, 
 		if (track != INVALID_TRACK && HasPbsSignalOnTrackdir(tile, TrackEnterdirToTrackdir(track, enterdir))) {
 			do_track_reservation = true;
 			changed_signal = true;
-			SetSignalStateByTrackdir(Tile::GetByType(tile, MP_RAILWAY), TrackEnterdirToTrackdir(track, enterdir), SIGNAL_STATE_GREEN);
+			SetSignalStateByTrackdir(GetRailTileFromTrack(tile, track), TrackEnterdirToTrackdir(track, enterdir), SIGNAL_STATE_GREEN);
 		} else if (!do_track_reservation) {
 			return track;
 		}
@@ -2728,7 +2728,7 @@ static Track ChooseTrainTrack(Train *v, TileIndex tile, DiagDirection enterdir, 
 		if (res_dest.tile == INVALID_TILE) {
 			/* Reservation failed? */
 			if (mark_stuck) MarkTrainAsStuck(v);
-			if (changed_signal) SetSignalStateByTrackdir(Tile::GetByType(tile, MP_RAILWAY), TrackEnterdirToTrackdir(best_track, enterdir), SIGNAL_STATE_RED);
+			if (changed_signal) SetSignalStateByTrackdir(GetRailTileFromTrack(tile, best_track), TrackEnterdirToTrackdir(best_track, enterdir), SIGNAL_STATE_RED);
 			return FindFirstTrack(tracks);
 		}
 		if (res_dest.okay) {
@@ -3074,7 +3074,7 @@ static inline void AffectSpeedByZChange(Train *v, int old_z)
 
 static bool TrainMovedChangeSignals(TileIndex tile, DiagDirection dir)
 {
-	if (Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY); rail_tile.IsValid() && GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS) {
+	if (Tile rail_tile = GetRailTileFromDiagDir(tile, dir); rail_tile.IsValid() && GetRailTileType(rail_tile) == RAIL_TILE_SIGNALS) {
 		TrackdirBits tracks = TrackBitsToTrackdirBits(GetTrackBits(rail_tile)) & DiagdirReachesTrackdirs(dir);
 		Trackdir trackdir = FindFirstTrackdir(tracks);
 		if (UpdateSignalsOnSegment(tile, TrackdirToExitdir(trackdir), GetTileOwner(rail_tile)) == SIGSEG_PBS && HasSignalOnTrackdir(rail_tile, trackdir)) {
@@ -3343,10 +3343,11 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 				if (prev == nullptr) {
 					/* Currently the locomotive is active. Determine which one of the
 					 * available tracks to choose */
-					chosen_track = TrackToTrackBits(ChooseTrainTrack(v, gp.new_tile, enterdir, bits, false, nullptr, true));
+					Track track = ChooseTrainTrack(v, gp.new_tile, enterdir, bits, false, nullptr, true);
+					chosen_track = TrackToTrackBits(track);
 					assert(chosen_track & (bits | GetReservedTrackbits(gp.new_tile)));
 
-					Tile rail_tile = Tile::GetByType(gp.new_tile, MP_RAILWAY);
+					Tile rail_tile = GetRailTileFromTrack(gp.new_tile, track);
 					if (v->force_proceed != TFP_NONE && IsPlainRailTile(rail_tile) && HasSignals(rail_tile)) {
 						/* For each signal we find decrease the counter by one.
 						 * We start at two, so the first signal we pass decreases
@@ -3458,7 +3459,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 				if (!HasBit(r, VETS_ENTERED_WORMHOLE)) {
 					Track track = FindFirstTrack(chosen_track);
 					Trackdir tdir = TrackDirectionToTrackdir(track, chosen_dir);
-					Tile new_rail_tile = Tile::GetByType(gp.new_tile, MP_RAILWAY);
+					Tile new_rail_tile = GetRailTileFromTrack(gp.new_tile, track);
 					if (v->IsFrontEngine() && HasPbsSignalOnTrackdir(new_rail_tile, tdir)) {
 						SetSignalStateByTrackdir(new_rail_tile, tdir, SIGNAL_STATE_RED);
 						MarkTileDirtyByTile(gp.new_tile);

@@ -645,7 +645,7 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 
 	bool need_to_clear = false;
 
-	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+	if (Tile::HasType(tile, MP_RAILWAY)) {
 		if (IsSteepSlope(tileh)) {
 			return CommandCost(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
@@ -655,34 +655,36 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 			return CommandCost(STR_ERROR_LAND_SLOPED_IN_WRONG_DIRECTION);
 		}
 
-		if (!_settings_game.construction.crossing_with_competitor && company != OWNER_TOWN && company != OWNER_DEITY) {
-			CommandCost ret = CheckTileOwnership(tile, rail);
-			if (ret.Failed()) return ret;
-		}
+		Axis roaddir = INVALID_AXIS;
+		for (Tile rail : RailTileIterator::Iterate(tile)) {
+			if (!_settings_game.construction.crossing_with_competitor && company != OWNER_TOWN && company != OWNER_DEITY) {
+				CommandCost ret = CheckTileOwnership(tile, rail);
+				if (ret.Failed()) return ret;
+			}
 
-		if (GetRailTileType(rail) != RAIL_TILE_NORMAL) goto do_clear;
+			if (GetRailTileType(rail) != RAIL_TILE_NORMAL) goto do_clear;
+
+			if (RailNoLevelCrossings(GetRailType(rail))) {
+				return CommandCost(STR_ERROR_CROSSING_DISALLOWED_RAIL);
+			}
+
+			switch (GetTrackBits(rail)) {
+				case TRACK_BIT_X:
+					if (pieces & ROAD_X) goto do_clear;
+					roaddir = AXIS_Y;
+					break;
+
+				case TRACK_BIT_Y:
+					if (pieces & ROAD_Y) goto do_clear;
+					roaddir = AXIS_X;
+					break;
+
+				default: goto do_clear;
+			}
+		}
 
 		if (RoadNoLevelCrossing(rt)) {
 			return CommandCost(STR_ERROR_CROSSING_DISALLOWED_ROAD);
-		}
-
-		if (RailNoLevelCrossings(GetRailType(rail))) {
-			return CommandCost(STR_ERROR_CROSSING_DISALLOWED_RAIL);
-		}
-
-		Axis roaddir;
-		switch (GetTrackBits(rail)) {
-			case TRACK_BIT_X:
-				if (pieces & ROAD_X) goto do_clear;
-				roaddir = AXIS_Y;
-				break;
-
-			case TRACK_BIT_Y:
-				if (pieces & ROAD_Y) goto do_clear;
-				roaddir = AXIS_X;
-				break;
-
-			default: goto do_clear;
 		}
 
 		CommandCost ret = EnsureNoVehicleOnGround(tile);
@@ -690,6 +692,8 @@ CommandCost CmdBuildRoad(DoCommandFlag flags, TileIndex tile, RoadBits pieces, R
 
 		if (flags & DC_EXEC) {
 			Track railtrack = AxisToTrack(OtherAxis(roaddir));
+			/* If there is more than one associated rail sub-tile, the previous checks never succeed. */
+			Tile rail = Tile::GetByType(tile, MP_RAILWAY);
 			RailType rail_type = GetRailType(rail);
 			Owner rail_o = GetTileOwner(rail);
 			bool reserved = HasBit(GetRailReservationTrackBits(rail), railtrack);

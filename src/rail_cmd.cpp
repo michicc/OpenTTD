@@ -720,7 +720,7 @@ CommandCost CmdRemoveSingleRail(DoCommandFlag flags, TileIndex tile, Track track
 	if (!ValParamTrackOrientation(track)) return CMD_ERROR;
 	TrackBits trackbit = TrackToTrackBits(track);
 
-	if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); rail.IsValid()) {
+	if (Tile rail = GetRailTileFromTrack(tile, track); rail.IsValid()) {
 		cost = RemoveSingleRail(flags, tile, rail, track);
 	} else {
 		if (!IsTileType(tile, MP_ROAD)) return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
@@ -778,13 +778,12 @@ CommandCost CmdRemoveSingleRail(DoCommandFlag flags, TileIndex tile, Track track
  */
 bool FloodHalftile(TileIndex t)
 {
-	Tile rail = Tile::GetByType(t, MP_RAILWAY);
-	assert(IsPlainRailTile(rail));
+	assert(IsPlainRailTile(t)); // If one associated tile is plain rail, all tiles will be, so no need to check more.
 
 	bool flooded = false;
 
 	Slope tileh = GetTileSlope(t);
-	TrackBits rail_bits = GetTrackBits(rail);
+	TrackBits rail_bits = GetAllTrackBits(t);
 
 	if (IsSlopeWithOneCornerRaised(tileh)) {
 		TrackBits lower_track = CornerToTrackBits(OppositeCorner(GetHighestSlopeCorner(tileh)));
@@ -1074,12 +1073,12 @@ CommandCost CmdBuildSingleSignal(DoCommandFlag flags, TileIndex tile_index, Trac
 
 	if (ctrl_pressed) sigvar = (SignalVariant)(sigvar ^ SIG_SEMAPHORE);
 
+	if (!ValParamTrackOrientation(track)) return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+
 	/* You can only build signals on plain rail tiles, and the selected track must exist */
-	Tile tile = Tile::GetByType(tile_index, MP_RAILWAY);
-	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(tile) ||
-			!HasTrack(tile, track)) {
-		return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
-	}
+	Tile tile = GetRailTileFromTrack(tile_index, track);
+	if (!IsPlainRailTile(tile)) return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+
 	/* Protect against invalid signal copying */
 	if (signals_copy != 0 && (signals_copy & SignalOnTrack(track)) == 0) return CMD_ERROR;
 
@@ -1238,7 +1237,7 @@ static bool AdvanceSignalAutoFill(TileIndex &tile, Trackdir &trackdir, bool remo
 	/* Any left? It's a junction so we stop */
 	if (trackdirbits != TRACKDIR_BIT_NONE) return false;
 
-	if (Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY); rail_tile.IsValid()) {
+	if (Tile rail_tile = GetRailTileFromTrack(tile, TrackdirToTrack(trackdir)); rail_tile.IsValid()) {
 		if (IsRailDepot(rail_tile)) return false;
 		if (!remove && HasSignalOnTrack(rail_tile, TrackdirToTrack(trackdir))) return false;
 	} else {
@@ -1282,7 +1281,7 @@ static CommandCost CmdSignalTrackHelper(DoCommandFlag flags, TileIndex tile, Til
 	if (signal_density == 0 || signal_density > 20) return CMD_ERROR;
 	if (!remove && (sigtype > SIGTYPE_LAST || sigvar > SIG_SEMAPHORE)) return CMD_ERROR;
 
-	Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY);
+	Tile rail_tile = GetRailTileFromTrack(tile, track);
 	if (!IsPlainRailTile(rail_tile)) return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	TileIndex start_tile = tile;
 
@@ -1480,9 +1479,12 @@ CommandCost CmdBuildSignalTrack(DoCommandFlag flags, TileIndex tile, TileIndex e
  */
 CommandCost CmdRemoveSingleSignal(DoCommandFlag flags, TileIndex tile_index, Track track)
 {
-	Tile tile = Tile::GetByType(tile_index, MP_RAILWAY);
+	if (!ValParamTrackOrientation(track)) {
+		return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
+	}
 
-	if (!ValParamTrackOrientation(track) || !IsPlainRailTile(tile) || !HasTrack(tile, track)) {
+	Tile tile = GetRailTileFromTrack(tile_index, track);
+	if (!IsPlainRailTile(tile)) {
 		return CommandCost(STR_ERROR_THERE_IS_NO_RAILROAD_TRACK);
 	}
 	if (!HasSignalOnTrack(tile, track)) {
@@ -2505,7 +2507,9 @@ static bool TileLoop_Track(TileIndex index, Tile &tile)
 			if ((rail & dir_to_trackbits[d]) != TRACK_BIT_NONE) continue;
 
 			TileIndex tile2 = index + TileOffsByDiagDir(d);
-			Tile rail2 = Tile::GetByType(tile2, MP_RAILWAY);
+			/* Try to find a rail tile reachable from our tile. If no such tile exists, try for any rail tile. */
+			Tile rail2 = GetRailTileFromDiagDir(tile2, d);
+			if (!rail2) rail2 = Tile::GetByType(tile2, MP_RAILWAY);
 
 			/* Show fences if it's a house, industry, object, road, tunnelbridge or not owned by us. */
 			if (!IsValidTile(tile2) || IsTileType(tile2, MP_HOUSE) || IsTileType(tile2, MP_INDUSTRY) ||

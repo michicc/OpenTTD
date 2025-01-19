@@ -77,25 +77,9 @@ static inline TLG GetTLG(TileIndex t)
 	return (TLG)((HasBit(TileX(t), 0) << 1) + HasBit(TileY(t), 0));
 }
 
-/**
- * Finds which Electrified Rail Bits are present on a given tile.
- * @param t tile to check
- * @param override pointer to PCP override, can be nullptr
- * @return trackbits of tile if it is electrified
- */
-static TrackBits GetRailTrackBitsUniversal(TileIndex t, uint8_t *override)
+/** Common part of #GetRailTrackBitsUniversal and #GetSingleRailTrackBitsUniversal */
+static TrackBits GetRailTrackBitsUniversalHelper(TileIndex t, uint8_t *override)
 {
-	if (Tile rail = Tile::GetByType(t, MP_RAILWAY); rail.IsValid()) {
-		if (!HasRailCatenary(GetRailType(rail))) return TRACK_BIT_NONE;
-		switch (GetRailTileType(rail)) {
-			case RAIL_TILE_NORMAL:
-			case RAIL_TILE_SIGNALS:
-				return GetTrackBits(rail);
-			default:
-				return TRACK_BIT_NONE;
-		}
-	}
-
 	switch (GetTileType(t)) {
 		case MP_TUNNELBRIDGE:
 			if (GetTunnelBridgeTransportType(t) != TRANSPORT_RAIL) return TRACK_BIT_NONE;
@@ -118,6 +102,43 @@ static TrackBits GetRailTrackBitsUniversal(TileIndex t, uint8_t *override)
 		default:
 			return TRACK_BIT_NONE;
 	}
+}
+
+/**
+ * Get the electrified rail bits of a single (associated) sub-tile.
+ * @param t tile index to check
+ * @param rail tile to check
+ * @param override pointer to PCP override, can be nullptr
+ * @return trackbits of tile if it is electrified
+ */
+static TrackBits GetSingleRailTrackBitsUniversal(TileIndex t, Tile rail, uint8_t *override)
+{
+	if (IsTileType(rail, MP_RAILWAY)) {
+		if (!IsPlainRail(rail) || !HasRailCatenary(GetRailType(rail))) return TRACK_BIT_NONE;
+		return GetTrackBits(rail);
+	}
+
+	return GetRailTrackBitsUniversalHelper(t, override);
+}
+
+/**
+ * Finds which Electrified Rail Bits are present on a given tile.
+ * @param t tile to check
+ * @param override pointer to PCP override, can be nullptr
+ * @return trackbits of tile if it is electrified
+ */
+static TrackBits GetRailTrackBitsUniversal(TileIndex t, uint8_t *override)
+{
+	if (auto iter = RailTileIterator::Iterate(t); !iter.empty()) {
+		/* Gather the electrified tracks of all associated tiles. */
+		TrackBits tracks = TRACK_BIT_NONE;
+		for (Tile rail : iter) {
+			if (IsPlainRailTile(rail) && HasRailCatenary(GetRailType(rail))) tracks |= GetTrackBits(rail);
+		}
+		return tracks;
+	}
+
+	return GetRailTrackBitsUniversalHelper(t, override);
 }
 
 /**
@@ -305,7 +326,7 @@ static void DrawRailCatenaryRailway(const TileInfo *ti, bool draw_halftile, Corn
 	 * 2) on the "far" end of a bridge head (the one that connects to bridge middle),
 	 *    because that one is drawn on the bridge. Exception is for length 0 bridges
 	 *    which have no middle tiles */
-	trackconfig[TS_HOME] = GetRailTrackBitsUniversal(ti->index, &OverridePCP);
+	trackconfig[TS_HOME] = GetSingleRailTrackBitsUniversal(ti->index, ti->tile, &OverridePCP);
 	if (IsValidCorner(halftile_corner)) trackconfig[TS_HOME] &= draw_halftile ? CornerToTrackBits(halftile_corner) : ~CornerToTrackBits(halftile_corner);
 	wireconfig[TS_HOME] = MaskWireBits(ti->index, trackconfig[TS_HOME]);
 	/* If a track bit is present that is not in the main direction, the track is level */

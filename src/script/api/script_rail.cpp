@@ -245,7 +245,7 @@
 	if (IsRailStationTile(tile) || IsRailWaypointTile(tile)) return ::TrackToTrackBits(::GetRailStationTrack(tile));
 	if (IsLevelCrossingTile(tile)) return ::GetCrossingRailBits(tile);
 	if (IsRailDepotTile(tile)) return ::TRACK_BIT_NONE;
-	return ::GetTrackBits(::Tile::GetByType(tile, MP_RAILWAY));
+	return ::GetAllTrackBits(tile);
 }
 
 /* static */ bool ScriptRail::BuildRailTrack(TileIndex tile, RailTrack rail_track)
@@ -418,14 +418,14 @@ static const ScriptRailSignalData _possible_trackdirs[5][NUM_TRACK_DIRECTIONS] =
 /* static */ ScriptRail::SignalType ScriptRail::GetSignalType(TileIndex tile, TileIndex front)
 {
 	if (ScriptMap::DistanceManhattan(tile, front) != 1) return SIGNALTYPE_NONE;
-	Tile rail_tile = Tile::GetByType(tile, MP_RAILWAY);
+	Tile rail_tile = ::GetRailTileFromDiagDir(tile, DiagdirBetweenTiles(front, tile));
 	if (!rail_tile || !::HasSignals(rail_tile)) return SIGNALTYPE_NONE;
 
 	int data_index = 2 + (::TileX(front) - ::TileX(tile)) + 2 * (::TileY(front) - ::TileY(tile));
 
 	for (int i = 0; i < NUM_TRACK_DIRECTIONS; i++) {
 		const Track &track = _possible_trackdirs[data_index][i].track;
-		if (!(::TrackToTrackBits(track) & GetRailTracks(tile))) continue;
+		if (!(::TrackToTrackBits(track) & ::GetTrackBits(rail_tile))) continue;
 		if (!HasSignalOnTrack(rail_tile, track)) continue;
 		if (!HasSignalOnTrackdir(rail_tile, _possible_trackdirs[data_index][i].trackdir)) continue;
 		SignalType st = (SignalType)::GetSignalType(rail_tile, track);
