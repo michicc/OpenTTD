@@ -53,7 +53,7 @@ static void ConvertRailTypes()
 	if (!needs_conversion) return;
 
 	for (const auto t : Map::IterateIndex()) {
-		if (Tile rail = Tile::GetByType(t, MP_RAILWAY); rail.IsValid()) {
+		for (Tile rail : RailTileIterator::Iterate(t)) {
 			SetRailType(rail, railtype_conversion_map[GetRailType(rail)]);
 		}
 

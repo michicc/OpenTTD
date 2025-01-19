@@ -37,9 +37,10 @@ protected:
 
 		TILE() : tile(INVALID_TILE), rail_tile(), td(INVALID_TRACKDIR), rail_type(INVALID_RAILTYPE) { }
 
-		TILE(TileIndex tile, Trackdir td) : tile(tile), rail_tile(Tile::GetByType(tile, MP_RAILWAY)), td(td)
+		TILE(TileIndex tile, Trackdir td, Tile rail_tile = {}) : tile(tile), td(td)
 		{
-			rail_type = GetRailType(rail_tile ? rail_tile : tile);
+			this->rail_tile = rail_tile.IsValid() ? rail_tile : GetRailTileFromTrack(tile, TrackdirToTrack(td));
+			this->rail_type = GetRailType(this->rail_tile ? this->rail_tile : tile);
 		}
 	};
 
@@ -115,7 +116,9 @@ public:
 
 	inline int SwitchCost(TileIndex tile1, TileIndex tile2, DiagDirection exitdir)
 	{
-		if (Tile rail1 = Tile::GetByType(tile1, MP_RAILWAY), rail2 = Tile::GetByType(tile2, MP_RAILWAY); IsPlainRailTile(rail1) && IsPlainRailTile(rail2)) {
+		Tile rail1 = GetRailTileFromDiagDir(tile1, ReverseDiagDir(exitdir));
+		Tile rail2 = GetRailTileFromDiagDir(tile2, exitdir);
+		if (IsPlainRailTile(rail1) && IsPlainRailTile(rail2)) {
 			bool t1 = KillFirstBit(GetTrackBits(rail1) & DiagdirReachesTracks(ReverseDiagDir(exitdir))) != TRACK_BIT_NONE;
 			bool t2 = KillFirstBit(GetTrackBits(rail2) & DiagdirReachesTracks(exitdir)) != TRACK_BIT_NONE;
 			if (t1 && t2) return Yapf().PfGetSettings().rail_doubleslip_penalty;
@@ -358,7 +361,7 @@ public:
 					end_segment_reason = segment.end_segment_reason;
 					/* We will need also some information about the last signal (if it was red). */
 					if (segment.last_signal_tile != INVALID_TILE) {
-						Tile rail_tile = Tile::GetByType(segment.last_signal_tile, MP_RAILWAY);
+						Tile rail_tile = GetRailTileFromTrack(segment.last_signal_tile, TrackdirToTrack(segment.last_signal_td));
 						assert(rail_tile && HasSignalOnTrackdir(rail_tile, segment.last_signal_td));
 						SignalState sig_state = GetSignalStateByTrackdir(rail_tile, segment.last_signal_td);
 						bool is_red = (sig_state == SIGNAL_STATE_RED);
@@ -513,7 +516,7 @@ no_entry_cost: // jump here at the beginning if the node has no parent (it is th
 			}
 
 			/* Gather the next tile/trackdir/rail_type. */
-			TILE next(tf_local.new_tile, (Trackdir)FindFirstBit(tf_local.new_td_bits));
+			TILE next(tf_local.new_tile, (Trackdir)FindFirstBit(tf_local.new_td_bits), IsTileType(tf_local.new_sub_tile, MP_RAILWAY) ? tf_local.new_sub_tile : Tile());
 
 			if (TrackFollower::DoTrackMasking() && next.rail_tile) {
 				if (HasSignalOnTrackdir(next.rail_tile, next.td) && IsPbsSignal(GetSignalType(next.rail_tile, TrackdirToTrack(next.td)))) {

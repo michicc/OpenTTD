@@ -104,7 +104,7 @@ private:
 			}
 
 			/* Green path signal opposing the path? Turn to red. */
-			if (Tile rail = Tile::GetByType(tile, MP_RAILWAY); HasPbsSignalOnTrackdir(rail, rev_td) && GetSignalStateByTrackdir(rail, rev_td) == SIGNAL_STATE_GREEN) {
+			if (Tile rail = GetRailTileFromTrack(tile, TrackdirToTrack(rev_td)); HasPbsSignalOnTrackdir(rail, rev_td) && GetSignalStateByTrackdir(rail, rev_td) == SIGNAL_STATE_GREEN) {
 				this->signals_set_to_red.emplace_back(rail, rev_td);
 				SetSignalStateByTrackdir(rail, rev_td, SIGNAL_STATE_RED);
 				MarkTileDirtyByTile(tile);

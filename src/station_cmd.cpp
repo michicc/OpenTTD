@@ -920,6 +920,9 @@ static CommandCost CheckFlatLandRailStation(TileIndex tile_cur, TileIndex north_
 		/* If we are building a station with a valid railtype, we may be able to overbuild an existing rail tile. */
 		if (rt != INVALID_RAILTYPE && IsPlainRailTile(tile_cur)) {
 			Tile rail_tile = Tile::GetByType(tile_cur, MP_RAILWAY);
+			/* Can't have the right track if more than one rail sub-tile is present. */
+			if (rail_tile.GetNextByType(MP_RAILWAY).IsValid()) goto do_clear;
+
 			/* Don't overbuild signals. */
 			if (HasSignals(rail_tile)) return CommandCost(STR_ERROR_MUST_REMOVE_SIGNALS_FIRST);
 
@@ -946,6 +949,7 @@ static CommandCost CheckFlatLandRailStation(TileIndex tile_cur, TileIndex north_
 				}
 			}
 		}
+	do_clear:;
 		ret = Command<CMD_LANDSCAPE_CLEAR>::Do(flags, tile_cur);
 		if (ret.Failed()) return ret;
 		cost.AddCost(ret);
