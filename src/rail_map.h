@@ -218,6 +218,16 @@ inline Tile GetRailDepotTile(TileIndex index)
 	return Tile::GetByType(index, MP_RAILWAY);
 }
 
+/**
+ * Get the track bits of any rail tile.
+ * @pre IsTileType(t, MP_RAILWAY)
+ * @param t The tile
+ * @return The track bits of the tile
+ */
+inline TrackBits GetRailTrackBits(Tile t)
+{
+	return IsRailDepot(t) ? TrackToTrackBits(GetRailDepotTrack(t)) : GetTrackBits(t);
+}
 
 /**
  * Returns the reserved track bits of the tile
@@ -519,7 +529,10 @@ inline bool HasPbsSignalOnTrackdir(Tile tile, Trackdir td)
  */
 inline bool HasPbsSignalOnTrackdir(TileIndex index, Trackdir td)
 {
-	return HasPbsSignalOnTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
+	for (Tile tile : RailTileIterator::Iterate(index)) {
+		if (HasPbsSignalOnTrackdir(tile, td)) return true;
+	}
+	return false;
 }
 
 /**
@@ -542,7 +555,10 @@ inline bool HasOnewaySignalBlockingTrackdir(Tile tile, Trackdir td)
  */
 inline bool HasOnewaySignalBlockingTrackdir(TileIndex index, Trackdir td)
 {
-	return HasOnewaySignalBlockingTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
+	for (Tile tile : RailTileIterator::Iterate(index)) {
+		if (HasOnewaySignalBlockingTrackdir(tile, td)) return true;
+	}
+	return false;
 }
 
 /**
@@ -563,7 +579,10 @@ inline bool HasBlockSignalOnTrackdir(Tile tile, Trackdir td)
  */
 inline bool HasBlockSignalOnTrackdir(TileIndex index, Trackdir td)
 {
-	return HasBlockSignalOnTrackdir(Tile::GetByType(index, MP_RAILWAY), td);
+	for (Tile tile : RailTileIterator::Iterate(index)) {
+		if (HasBlockSignalOnTrackdir(tile, td)) return true;
+	}
+	return false;
 }
 
 
@@ -624,14 +643,24 @@ inline Tile GetRailTileFromDiagDir(TileIndex index, DiagDirection diagdir)
 inline Tile GetRailTileFromTrack(TileIndex index, Track track)
 {
 	for (auto tile : RailTileIterator::Iterate(index)) {
-		if (IsRailDepot(tile)) {
-			if (GetRailDepotTrack(tile) == track) return tile;
-		} else {
-			if (HasTrack(tile, track)) return tile;
-		}
+		if (HasBit(GetRailTrackBits(tile), track)) return tile;
 	}
 
 	return {};
+}
+
+/**
+ * Get all tracks on a given tile index.
+ * @param index The tile index to get the tracks for.
+ * @return All present tracks.
+ */
+inline TrackBits GetAllTrackBits(TileIndex index)
+{
+	TrackBits bits = TRACK_BIT_NONE;
+	for (Tile rail : RailTileIterator::Iterate(index)) {
+		bits |= GetRailTrackBits(rail);
+	}
+	return bits;
 }
 
 
