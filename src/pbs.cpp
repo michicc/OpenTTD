@@ -32,10 +32,6 @@ TrackBits GetReservedTrackbits(TileIndex t)
 	}
 
 	switch (GetTileType(t)) {
-		case MP_ROAD:
-			if (IsLevelCrossing(t)) return GetCrossingReservationTrackBits(t);
-			break;
-
 		case MP_STATION:
 			if (HasStationRail(t)) return GetStationReservationTrackBits(t);
 			break;
@@ -102,16 +98,13 @@ bool TryReserveRailTrack(TileIndex tile, Track t, bool trigger_stations)
 				return true;
 			}
 		}
+		if (IsLevelCrossing(rail) && TryReserveTrack(rail, t)) {
+			UpdateLevelCrossing(tile, false);
+			MarkTileDirtyByTile(tile); // crossing barred, make tile dirty
+			return true;
+		}
 	} else {
 		switch (GetTileType(tile)) {
-			case MP_ROAD:
-				if (IsLevelCrossing(tile) && !HasCrossingReservation(tile)) {
-					SetCrossingReservation(tile, true);
-					UpdateLevelCrossing(tile, false);
-					return true;
-				}
-				break;
-
 			case MP_STATION:
 				if (HasStationRail(tile) && !HasStationReservation(tile)) {
 					SetRailStationReservation(tile, true);
@@ -156,18 +149,14 @@ void UnreserveRailTrack(TileIndex tile, Track t)
 		if (IsRailDepot(rail)) {
 			SetDepotReservation(rail, false);
 			MarkTileDirtyByTile(tile);
+		} else if (IsLevelCrossing(rail)) {
+			UnreserveTrack(rail, t);
+			UpdateLevelCrossing(tile);
 		} else if (IsPlainRail(rail)) {
 			UnreserveTrack(rail, t);
 		}
 	} else {
 		switch (GetTileType(tile)) {
-			case MP_ROAD:
-				if (IsLevelCrossing(tile)) {
-					SetCrossingReservation(tile, false);
-					UpdateLevelCrossing(tile);
-				}
-				break;
-
 			case MP_STATION:
 				if (HasStationRail(tile)) {
 					SetRailStationReservation(tile, false);

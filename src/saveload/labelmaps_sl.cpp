@@ -58,12 +58,6 @@ static void ConvertRailTypes()
 		}
 
 		switch (GetTileType(t)) {
-			case MP_ROAD:
-				if (IsLevelCrossing(t)) {
-					SetRailType(t, railtype_conversion_map[GetRailType(t)]);
-				}
-				break;
-
 			case MP_STATION:
 				if (HasStationRail(t)) {
 					SetRailType(t, railtype_conversion_map[GetRailType(t)]);

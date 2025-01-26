@@ -246,7 +246,7 @@ protected:
 	/** stores track status (available trackdirs) for the new tile into new_td_bits */
 	inline bool QueryNewTileTrackStatus()
 	{
-		if (IsRailTT() && IsPlainRailTile(this->new_sub_tile)) {
+		if (IsRailTT() && IsNormalRailTile(this->new_sub_tile)) {
 			this->new_td_bits = (TrackdirBits)(GetTrackBits(this->new_sub_tile) * 0x101);
 		} else if (IsRoadTT()) {
 			this->new_td_bits = GetTrackdirBitsForRoad(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);

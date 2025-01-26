@@ -26,6 +26,7 @@ using RailTileIterator = AssociatedTileIterator<MP_RAILWAY>;
 enum RailTileType {
 	RAIL_TILE_NORMAL   = 0, ///< Normal rail tile without signals
 	RAIL_TILE_SIGNALS  = 1, ///< Normal rail tile with signals
+	RAIL_TILE_CROSSING = 2, ///< Level crossing
 	RAIL_TILE_DEPOT    = 3, ///< Depot (one entrance)
 };
 
@@ -76,6 +77,37 @@ debug_inline static bool IsPlainRailTile(TileIndex t)
 }
 
 /**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t the tile to get the information from
+ * @pre IsTileType(t, MP_RAILWAY)
+ * @return True if and only if this is not a rail depot.
+ */
+debug_inline static bool IsNormalRail(Tile t)
+{
+	return GetRailTileType(t) != RAIL_TILE_DEPOT;
+}
+
+/**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t the tile to get the information from
+ * @return True if and only if this is not a rail depot.
+ */
+debug_inline static bool IsNormalRailTile(Tile t)
+{
+	return t.IsValid() && IsTileType(t, MP_RAILWAY) && IsNormalRail(t);
+}
+
+/**
+ * Returns whether the tile is a normal rail tile, i.e. not a rail depot.
+ * @param t the tile to get the information from
+ * @return True if and only if this is not a rail depot.
+ */
+debug_inline static bool IsNormalRailTile(TileIndex t)
+{
+	return IsNormalRailTile(Tile::GetByType(t, MP_RAILWAY));
+}
+
+/**
  * Checks if a rail tile has signals.
  * @param t the tile to get the information from
  * @pre IsTileType(t, MP_RAILWAY)
@@ -96,6 +128,49 @@ inline void SetHasSignals(Tile tile, bool signals)
 {
 	assert(IsPlainRailTile(tile));
 	AssignBit(tile.m5(), 6, signals);
+}
+
+/**
+ * Is this tile a level crossing?
+ * @param t the tile to get the information from
+ * @pre IsTileType(t, MP_RAILWAY)
+ * @return True if and only if the tile is a level crossing.
+ */
+debug_inline static bool IsLevelCrossing(Tile t)
+{
+	return GetRailTileType(t) == RAIL_TILE_CROSSING;
+}
+
+/**
+ * Is this tile a rail tile and a level crossing?
+ * @param t the tile to get the information from
+ * @return True if and only if the tile is a level crossing.
+ */
+debug_inline static bool IsLevelCrossingTile(Tile t)
+{
+	return t.IsValid() && IsTileType(t, MP_RAILWAY) && IsLevelCrossing(t);
+}
+
+/**
+ * Is this tile a rail tile and a level crossing?
+ * @param t the tile to get the information from
+ * @return True if and only if the tile is a level crossing.
+ */
+debug_inline static bool IsLevelCrossingTile(TileIndex t)
+{
+	return IsLevelCrossingTile(Tile::GetByType(t, MP_RAILWAY));
+}
+
+/**
+ * Change tile type between normal rail and level crossing.
+ * @param t Tile to change.
+ * @param crossing Whether the tile should be a crossing or not.
+ * @pre GetRailTileType(t) == RAIL_TILE_CROSSING || GetRailTileType(t) == RAIL_TILE_NORM
+ */
+inline void SetLevelCrossing(Tile t, bool crossing)
+{
+	assert(GetRailTileType(t) == RAIL_TILE_CROSSING || GetRailTileType(t) == RAIL_TILE_NORMAL);
+	SB(t.m5(), 6, 2, crossing ? RAIL_TILE_CROSSING : RAIL_TILE_NORMAL);
 }
 
 /**
@@ -157,7 +232,7 @@ inline void SetRailType(Tile t, RailType r)
  */
 inline TrackBits GetTrackBits(Tile tile)
 {
-	assert(IsPlainRailTile(tile));
+	assert(IsNormalRailTile(tile));
 	return (TrackBits)GB(tile.m5(), 0, 6);
 }
 
@@ -168,7 +243,7 @@ inline TrackBits GetTrackBits(Tile tile)
  */
 inline void SetTrackBits(Tile t, TrackBits b)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	SB(t.m5(), 0, 6, b);
 }
 
@@ -176,12 +251,66 @@ inline void SetTrackBits(Tile t, TrackBits b)
  * Returns whether the given track is present on the given tile.
  * @param tile  the tile to check the track presence of
  * @param track the track to search for on the tile
- * @pre IsPlainRailTile(tile)
+ * @pre IsNormalRailTile(tile)
  * @return true if and only if the given track exists on the tile
  */
 inline bool HasTrack(Tile tile, Track track)
 {
 	return HasBit(GetTrackBits(tile), track);
+}
+
+/**
+ * Check if the level crossing is barred.
+ * @param t The tile to query.
+ * @pre IsLevelCrossing(t)
+ * @return True if the level crossing is barred.
+ */
+inline bool IsCrossingBarred(Tile t)
+{
+	assert(IsLevelCrossing(t));
+	return HasBit(t.m2(), 12);
+}
+
+/**
+ * Set the bar state of a level crossing.
+ * @param t The tile to modify.
+ * @param barred True if the crossing should be barred, false otherwise.
+ * @pre IsLevelCrossing(t)
+ */
+inline void SetCrossingBarred(Tile t, bool barred)
+{
+	assert(IsLevelCrossing(t));
+	AssignBit(t.m2(), 12, barred);
+}
+
+/**
+ * Unbar a level crossing.
+ * @param t The tile to change.
+ */
+inline void UnbarCrossing(Tile t)
+{
+	SetCrossingBarred(t, false);
+}
+
+/**
+ * Bar a level crossing.
+ * @param t The tile to change.
+ */
+inline void BarCrossing(Tile t)
+{
+	SetCrossingBarred(t, true);	
+}
+
+/**
+ * Get the actual associated sub-tile of a rail level crossing.
+ * @pre IsLevelCrossingTile(index)
+ * @param index The tile index to get the level crossing tile for.
+ * @return The level crossing sub-tile.
+ */
+inline Tile GetLevelCrossingTile(TileIndex index)
+{
+	assert(IsLevelCrossingTile(index));
+	return Tile::GetByType(index, MP_RAILWAY);
 }
 
 /**
@@ -231,13 +360,13 @@ inline TrackBits GetRailTrackBits(Tile t)
 
 /**
  * Returns the reserved track bits of the tile
- * @pre IsPlainRailTile(t)
+ * @pre IsNormalRailTile(t)
  * @param t the tile to query
  * @return the track bits
  */
 inline TrackBits GetRailReservationTrackBits(Tile t)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	uint8_t track_b = GB(t.m2(), 8, 3);
 	Track track = (Track)(track_b - 1);    // map array saves Track+1
 	if (track_b == 0) return TRACK_BIT_NONE;
@@ -246,13 +375,13 @@ inline TrackBits GetRailReservationTrackBits(Tile t)
 
 /**
  * Sets the reserved track bits of the tile
- * @pre IsPlainRailTile(t) && !TracksOverlap(b)
+ * @pre IsNormalRailTile(t) && !TracksOverlap(b)
  * @param t the tile to change
  * @param b the track bits
  */
 inline void SetTrackReservation(Tile t, TrackBits b)
 {
-	assert(IsPlainRailTile(t));
+	assert(IsNormalRailTile(t));
 	assert(b != INVALID_TRACK_BIT);
 	assert(!TracksOverlap(b));
 	Track track = RemoveFirstTrack(&b);
@@ -262,7 +391,7 @@ inline void SetTrackReservation(Tile t, TrackBits b)
 
 /**
  * Try to reserve a specific track on a tile
- * @pre IsPlainRailTile(t) && HasTrack(tile, t)
+ * @pre IsNormalRailTile(t) && HasTrack(tile, t)
  * @param tile the tile
  * @param t the rack to reserve
  * @return true if successful
@@ -281,7 +410,7 @@ inline bool TryReserveTrack(Tile tile, Track t)
 
 /**
  * Lift the reservation of a specific track on a tile
- * @pre IsPlainRailTile(t) && HasTrack(tile, t)
+ * @pre IsNormalRailTile(t) && HasTrack(tile, t)
  * @param tile the tile
  * @param t the track to free
  */
@@ -682,6 +811,27 @@ inline Tile MakeRailNormal(TileIndex index, Owner o, TrackBits b, RailType r)
 {
 	Tile rail = Tile::New(index, MP_RAILWAY);
 	return MakeRailNormal(rail, o, b, r);
+}
+
+
+/**
+ * Make a rail level crossing tile.
+ * @param index Tile to make a level crossing on.
+ * @param owner New owner of the rail.
+ * @param tracks Tracks on the tile, has be either TRACK_BIT_X or TRACK_BIT_Y
+ * @param rail_type Rail type of the crossing.
+ * @return The new rail tile.
+ * @pre assert(tracks == TRACK_BIT_X || tracks == TRACK_BIT_Y)
+ */
+inline Tile MakeLevelCrossing(TileIndex index, Owner owner, TrackBits tracks, RailType rail_type)
+{
+	assert(tracks == TRACK_BIT_X || tracks == TRACK_BIT_Y);
+
+	Tile tile = Tile::New(index, MP_RAILWAY);
+	SetTileOwner(tile, owner);
+	tile.m5() = RAIL_TILE_CROSSING << 6 | tracks;
+	SetRailType(tile, rail_type);
+	return tile;
 }
 
 /**

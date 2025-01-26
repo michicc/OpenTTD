@@ -1935,7 +1935,7 @@ static void SetDefaultRailGui()
 					count[GetRailType(rail)]++;
 				}
 
-				if (IsLevelCrossingTile(t) || HasStationTileRail(t) || (IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL)) {
+				if (HasStationTileRail(t) || (IsTileType(t, MP_TUNNELBRIDGE) && GetTunnelBridgeTransportType(t) == TRANSPORT_RAIL)) {
 					count[GetRailType(t)]++;
 				}
 			}
