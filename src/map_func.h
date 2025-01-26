@@ -26,7 +26,7 @@ debug_inline static uint TileY(TileIndex tile);
  */
 static inline bool MayHaveAssociatedTile(TileType tt)
 {
-	return tt == MP_CLEAR || tt == MP_WATER || tt == MP_RAILWAY;
+	return tt == MP_CLEAR || tt == MP_WATER || tt == MP_RAILWAY || tt == MP_ROAD;
 }
 
 /**
