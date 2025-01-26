@@ -12,11 +12,14 @@
 
 #include "tile_cmd.h"
 #include "road_type.h"
+#include "road_map.h"
 
 RoadBits CleanUpRoadBits(const TileIndex tile, RoadBits org_rb);
 
 CommandCost CheckAllowRemoveRoad(TileIndex tile, RoadBits remove, Owner owner, RoadTramType rtt, DoCommandFlag flags, bool town_check = true);
 
 void DrawRoadCatenary(const TileInfo *ti);
+
+bool DrawRoadAsSnowDesert(bool snow_or_desert, Roadside roadside);
 
 #endif /* ROAD_INTERNAL_H */

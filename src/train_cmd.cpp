@@ -1710,6 +1710,16 @@ static Vehicle *TrainApproachingCrossingEnum(Vehicle *v, void *data)
 	return t;
 }
 
+static Axis GetLevelCrossingRailAxis(Tile tile)
+{
+	Track track = FindFirstTrack(GetTrackBits(tile));
+	return track == TRACK_X ? AXIS_X : AXIS_Y;
+}
+
+static Axis GetLevelCrossingRoadAxis(Tile tile)
+{
+	return OtherAxis(GetLevelCrossingRailAxis(tile));
+}
 
 /**
  * Finds a vehicle approaching rail-road crossing
@@ -1717,52 +1727,52 @@ static Vehicle *TrainApproachingCrossingEnum(Vehicle *v, void *data)
  * @return true if a vehicle is approaching the crossing
  * @pre tile is a rail-road crossing
  */
-static bool TrainApproachingCrossing(TileIndex tile)
+static bool TrainApproachingCrossing(TileIndex index, Tile tile)
 {
-	assert(IsLevelCrossingTile(tile));
+	DiagDirection dir = AxisToDiagDir(GetLevelCrossingRailAxis(tile));
+	TileIndex tile_from = index + TileOffsByDiagDir(dir);
 
-	DiagDirection dir = AxisToDiagDir(GetCrossingRailAxis(tile));
-	TileIndex tile_from = tile + TileOffsByDiagDir(dir);
-
-	if (HasVehicleOnPos(tile_from, &tile, &TrainApproachingCrossingEnum)) return true;
+	if (HasVehicleOnPos(tile_from, &index, &TrainApproachingCrossingEnum)) return true;
 
 	dir = ReverseDiagDir(dir);
-	tile_from = tile + TileOffsByDiagDir(dir);
+	tile_from = index + TileOffsByDiagDir(dir);
 
-	return HasVehicleOnPos(tile_from, &tile, &TrainApproachingCrossingEnum);
+	return HasVehicleOnPos(tile_from, &index, &TrainApproachingCrossingEnum);
 }
 
 /**
  * Check if a level crossing should be barred.
- * @param tile The tile to check.
+ * @param index The tile index to check.
+ * @param tile The rail sub-tile to check.
  * @return True if the crossing should be barred, else false.
  */
-static inline bool CheckLevelCrossing(TileIndex tile)
+static inline bool CheckLevelCrossing(TileIndex index, Tile tile)
 {
 	/* reserved || train on crossing || train approaching crossing */
-	return HasCrossingReservation(tile) || TrainOnCrossing(tile) || TrainApproachingCrossing(tile);
+	return GetRailReservationTrackBits(tile) != TRACK_BIT_NONE || TrainOnCrossing(index) || TrainApproachingCrossing(index, tile);
 }
 
 /**
  * Sets a level crossing tile to the correct state.
- * @param tile Tile to update.
+ * @param index Tile index to update.
+ * @param tile Sub-tile to update.
  * @param sound Should we play sound?
  * @param force_barred Should we set the crossing to barred?
  * @pre tile is a rail-road crossing.
  */
-static void UpdateLevelCrossingTile(TileIndex tile, bool sound, bool force_barred)
+static void UpdateLevelCrossingTile(TileIndex index, Tile tile, bool sound, bool force_barred)
 {
 	assert(IsLevelCrossingTile(tile));
 	bool set_barred;
 
 	/* We force the crossing to be barred when an adjacent crossing is barred, otherwise let it decide for itself. */
-	set_barred = force_barred || CheckLevelCrossing(tile);
+	set_barred = force_barred || CheckLevelCrossing(index, tile);
 
 	/* The state has changed */
 	if (set_barred != IsCrossingBarred(tile)) {
-		if (set_barred && sound && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, tile);
+		if (set_barred && sound && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, index);
 		SetCrossingBarred(tile, set_barred);
-		MarkTileDirtyByTile(tile);
+		MarkTileDirtyByTile(index);
 	}
 }
 
@@ -1774,27 +1784,32 @@ static void UpdateLevelCrossingTile(TileIndex tile, bool sound, bool force_barre
  */
 void UpdateLevelCrossing(TileIndex tile, bool sound, bool force_bar)
 {
-	if (!IsLevelCrossingTile(tile)) return;
+	Tile rail = GetLevelCrossingTile(tile);
+	if (!IsLevelCrossingTile(rail)) return;
 
 	bool forced_state = force_bar;
 
-	const Axis axis = GetCrossingRoadAxis(tile);
+	const Axis axis = GetLevelCrossingRoadAxis(rail);
 	const DiagDirection dir1 = AxisToDiagDir(axis);
 	const DiagDirection dir2 = ReverseDiagDir(dir1);
 
 	/* Check if an adjacent crossing is barred. */
 	for (DiagDirection dir : { dir1, dir2 }) {
-		for (TileIndex t = tile; !forced_state && t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == axis; t = TileAddByDiagDir(t, dir)) {
-			forced_state |= CheckLevelCrossing(t);
+		for (TileIndex t = tile; !forced_state && t < Map::Size() && IsLevelCrossingTile(t); t = TileAddByDiagDir(t, dir)) {
+			Tile crossing = GetLevelCrossingTile(t);
+			if (GetLevelCrossingRoadAxis(crossing) != axis) break;
+			forced_state |= CheckLevelCrossing(t, crossing);
 		}
 	}
 
 	/* Now that we know whether all tiles in this crossing should be barred or open,
 	 * we need to update those tiles. We start with the tile itself, then look along the road axis. */
-	UpdateLevelCrossingTile(tile, sound, forced_state);
+	UpdateLevelCrossingTile(tile, rail, sound, forced_state);
 	for (DiagDirection dir : { dir1, dir2 }) {
-		for (TileIndex t = TileAddByDiagDir(tile, dir); t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == axis; t = TileAddByDiagDir(t, dir)) {
-			UpdateLevelCrossingTile(t, sound, forced_state);
+		for (TileIndex t = TileAddByDiagDir(tile, dir); t < Map::Size() && IsLevelCrossingTile(t); t = TileAddByDiagDir(t, dir)) {
+			Tile crossing = GetLevelCrossingTile(t);
+			if (GetLevelCrossingRoadAxis(crossing) != axis) break;
+			UpdateLevelCrossingTile(t, crossing, sound, forced_state);
 		}
 	}
 }
@@ -1810,7 +1825,7 @@ void MarkDirtyAdjacentLevelCrossingTiles(TileIndex tile, Axis road_axis)
 	const DiagDirection dir2 = ReverseDiagDir(dir1);
 	for (DiagDirection dir : { dir1, dir2 }) {
 		const TileIndex t = TileAddByDiagDir(tile, dir);
-		if (t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == road_axis) {
+		if (t < Map::Size() && IsLevelCrossingTile(t) && GetLevelCrossingRoadAxis(GetLevelCrossingTile(t)) == road_axis) {
 			MarkTileDirtyByTile(t);
 		}
 	}
@@ -1828,21 +1843,25 @@ void UpdateAdjacentLevelCrossingTilesOnLevelCrossingRemoval(TileIndex tile, Axis
 	for (DiagDirection dir : { dir1, dir2 }) {
 		const TileIndexDiff diff = TileOffsByDiagDir(dir);
 		bool occupied = false;
-		for (TileIndex t = tile + diff; t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == road_axis; t += diff) {
-			occupied |= CheckLevelCrossing(t);
+		for (TileIndex t = tile + diff; t < Map::Size() && IsLevelCrossingTile(t); t += diff) {
+			Tile crossing = GetLevelCrossingTile(t);
+			if (GetLevelCrossingRoadAxis(crossing) != road_axis) break;
+			occupied |= CheckLevelCrossing(t, crossing);
 		}
 		if (occupied) {
 			/* Mark the immediately adjacent tile dirty */
 			const TileIndex t = tile + diff;
-			if (t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == road_axis) {
+			if (t < Map::Size() && IsLevelCrossingTile(t) && GetLevelCrossingRoadAxis(GetLevelCrossingTile(t)) == road_axis) {
 				MarkTileDirtyByTile(t);
 			}
 		} else {
 			/* Unbar the crossing tiles in this direction as necessary */
-			for (TileIndex t = tile + diff; t < Map::Size() && IsLevelCrossingTile(t) && GetCrossingRoadAxis(t) == road_axis; t += diff) {
-				if (IsCrossingBarred(t)) {
+			for (TileIndex t = tile + diff; t < Map::Size() && IsLevelCrossingTile(t); t += diff) {
+				Tile crossing = GetLevelCrossingTile(t);
+				if (GetLevelCrossingRoadAxis(crossing) != road_axis) break;
+				if (IsCrossingBarred(crossing)) {
 					/* The crossing tile is barred, unbar it and continue to check the next tile */
-					SetCrossingBarred(t, false);
+					SetCrossingBarred(crossing, false);
 					MarkTileDirtyByTile(t);
 				} else {
 					/* The crossing tile is already unbarred, mark the tile dirty and stop checking */
@@ -1861,8 +1880,9 @@ void UpdateAdjacentLevelCrossingTilesOnLevelCrossingRemoval(TileIndex tile, Axis
  */
 static inline void MaybeBarCrossingWithSound(TileIndex tile)
 {
-	if (!IsCrossingBarred(tile)) {
-		SetCrossingReservation(tile, true);
+	Tile crossing = GetLevelCrossingTile(tile);
+	if (!IsCrossingBarred(crossing)) {
+		SetTrackReservation(crossing, GetTrackBits(crossing));
 		UpdateLevelCrossing(tile, true);
 	}
 }
@@ -3499,7 +3519,7 @@ bool TrainController(Train *v, Vehicle *nomove, bool reverse)
 
 					/* If we are approaching a crossing that is reserved, play the sound now. */
 					TileIndex crossing = TrainApproachingCrossingTile(v);
-					if (crossing != INVALID_TILE && HasCrossingReservation(crossing) && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing);
+					if (crossing != INVALID_TILE && GetReservedTrackbits(crossing) != TRACK_BIT_NONE && _settings_client.sound.ambient) SndPlayTileFx(SND_0E_LEVEL_CROSSING, crossing);
 
 					/* Always try to extend the reservation when entering a tile. */
 					CheckNextTrainTile(v);
@@ -3878,7 +3898,7 @@ static TileIndex TrainApproachingCrossingTile(const Train *v)
 	TileIndex tile = v->tile + TileOffsByDiagDir(dir);
 
 	/* not a crossing || wrong axis || unusable rail (wrong type or owner) */
-	if (!IsLevelCrossingTile(tile) || DiagDirToAxis(dir) == GetCrossingRoadAxis(tile) ||
+	if (!IsLevelCrossingTile(tile) || !GetRailTileFromDiagDir(tile, dir) ||
 			!CheckCompatibleRail(v, tile, dir)) {
 		return INVALID_TILE;
 	}

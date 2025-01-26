@@ -8,6 +8,7 @@
 /** @file track_land.h Sprites to use and how to display them for train depot tiles. */
 
 #define TILE_SEQ_LINE(img, dx, dy, sx, sy) { dx, dy, 0, sx, sy, 23, {img, PAL_NONE} },
+#define TILE_SEQ_LINE2(img, pal, dx, dy, sx, sy) { dx, dy, 0, sx, sy, 20, {img, pal} }, // For level crossing
 #define TILE_SEQ_END() { (int8_t)0x80, 0, 0, 0, 0, 0, {0, 0} }
 
 
@@ -47,6 +48,61 @@ static const DrawTileSprites _depot_invisible_gfx_table[] = {
 	{ {SPR_RAIL_TRACK_Y, PAL_NONE}, _depot_gfx_NW }
 };
 
-#undef TILE_SEQ_LINE
-#undef TILE_SEQ_END
 
+/* Sprite layout for level crossings. The SpriteIDs are actually offsets
+ * from the base SpriteID returned from the NewGRF sprite resolver. */
+static const DrawTileSeqStruct _crossing_layout_ALL[] = {
+	TILE_SEQ_LINE2(2, PAL_NONE,  0,  0, 3, 3)
+	TILE_SEQ_LINE2(4, PAL_NONE,  0, 13, 3, 3)
+	TILE_SEQ_LINE2(6, PAL_NONE, 13,  0, 3, 3)
+	TILE_SEQ_LINE2(8, PAL_NONE, 13, 13, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout = {
+	{0, PAL_NONE}, _crossing_layout_ALL
+};
+
+static const DrawTileSeqStruct _crossing_layout_SW_ALL[] = {
+	TILE_SEQ_LINE2(6, PAL_NONE, 13,  0, 3, 3)
+	TILE_SEQ_LINE2(8, PAL_NONE, 13, 13, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout_SW = {
+	{0, PAL_NONE}, _crossing_layout_SW_ALL
+};
+
+static const DrawTileSeqStruct _crossing_layout_NW_ALL[] = {
+	TILE_SEQ_LINE2(2, PAL_NONE,  0,  0, 3, 3)
+	TILE_SEQ_LINE2(6, PAL_NONE, 13,  0, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout_NW = {
+	{0, PAL_NONE}, _crossing_layout_NW_ALL
+};
+
+static const DrawTileSeqStruct _crossing_layout_NE_ALL[] = {
+	TILE_SEQ_LINE2(2, PAL_NONE,  0,  0, 3, 3)
+	TILE_SEQ_LINE2(4, PAL_NONE,  0, 13, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout_NE = {
+	{0, PAL_NONE}, _crossing_layout_NE_ALL
+};
+
+static const DrawTileSeqStruct _crossing_layout_SE_ALL[] = {
+	TILE_SEQ_LINE2(4, PAL_NONE,  0, 13, 3, 3)
+	TILE_SEQ_LINE2(8, PAL_NONE, 13, 13, 3, 3)
+	TILE_SEQ_END()
+};
+
+static const DrawTileSprites _crossing_layout_SE = {
+	{0, PAL_NONE}, _crossing_layout_SE_ALL
+};
+
+#undef TILE_SEQ_LINE
+#undef TILE_SEQ_LINE2
+#undef TILE_SEQ_END
