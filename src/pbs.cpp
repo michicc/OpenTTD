@@ -387,8 +387,9 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 		if (HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, TrackdirToTrack(trackdir)))) return true;
 	}
 
-	/* Check next tile. For performance reasons, we check for 90 degree turns ourself. */
-	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
+	/* Check next tile. Do not filter for compatible railtypes here, as we make a special check later-on.
+	 * For performance reasons, we check for 90 degree turns ourself. */
+	CFollowTrackRail ft(v, RailTypes{});
 
 	/* End of track? */
 	if (!ft.Follow(tile, trackdir)) {
@@ -400,6 +401,17 @@ bool IsSafeWaitingPosition(const Train *v, TileIndex tile, Trackdir trackdir, bo
 	ft.new_td_bits &= DiagdirReachesTrackdirs(ft.exitdir);
 	if (Rail90DegTurnDisallowed(GetTileRailType(ft.old_tile), GetTileRailType(ft.new_tile), forbid_90deg)) ft.new_td_bits &= ~TrackdirCrossesTrackdirs(trackdir);
 	if (ft.new_td_bits == TRACKDIR_BIT_NONE) return include_line_end;
+
+	/* If the railtype of the next tile is compatible with our railtype, and it is already reserved,
+	 * do not allow a reservation to end here. Otherwise, the vehicle that holds the reservation could
+	 * follow it into our reservation and crash. */
+	bool reverse_compatible = GetRailTypeInfo(GetTileRailType(ft.new_tile))->compatible_railtypes.Test(v->railtype);
+	if (reverse_compatible && (GetReservedTrackbits(ft.new_tile) & DiagdirReachesTracks(ft.exitdir)) != TRACK_BIT_NONE) {
+		return false;
+	}
+
+	/* Reservation can end at an incompatible railtype if end-of-line is allowed. */
+	if (!GetRailTypeInfo(v->railtype)->compatible_railtypes.Test(GetTileRailType(ft.new_tile))) return include_line_end;
 
 	if (ft.new_td_bits != TRACKDIR_BIT_NONE && KillFirstBit(ft.new_td_bits) == TRACKDIR_BIT_NONE) {
 		Trackdir td = FindFirstTrackdir(ft.new_td_bits);
@@ -436,8 +448,9 @@ bool IsWaitingPositionFree(const Train *v, TileIndex tile, Trackdir trackdir, bo
 	if (IsRailDepotTile(tile)) return true;
 	if (IsTileType(tile, MP_RAILWAY) && HasSignalOnTrackdir(tile, trackdir) && !IsPbsSignal(GetSignalType(tile, track))) return true;
 
-	/* Check the next tile, if it's a PBS signal, it has to be free as well. */
-	CFollowTrackRail ft(v, GetRailTypeInfo(v->railtype)->compatible_railtypes);
+	/* Check the next tile, if it's a PBS signal, it has to be free as well. Do not filter for
+	 * compatible railtypes to make sure we never accidentally join up reservations. */
+	CFollowTrackRail ft(v, RailTypes{});
 
 	if (!ft.Follow(tile, trackdir)) return true;
 
