@@ -99,7 +99,7 @@ struct CFollowTrackT
 	inline static bool DoTrackMasking() { return Tmask_reserved_tracks; }
 
 	/** Tests if a tile is a road tile with a single tramtrack (tram can reverse) */
-	inline DiagDirection GetSingleTramBit(TileIndex tile)
+	inline DiagDirection GetSingleTramBit(Tile tile)
 	{
 		assert(this->IsTram()); // this function shouldn't be called in other cases
 
@@ -234,6 +234,9 @@ protected:
 		if (IsRailTT() && Tile::HasType(this->new_tile, MP_RAILWAY)) {
 			this->new_sub_tile = GetRailTileFromDiagDir(this->new_tile, this->exitdir);
 		}
+		if (IsRoadTT() && Tile::HasType(this->new_tile, MP_ROAD)) {
+			this->new_sub_tile = GetRoadTileByType(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD);
+		}
 
 		/* special handling for stations */
 		if (IsRailTT() && HasStationTileRail(this->new_tile)) {
@@ -270,7 +273,7 @@ protected:
 
 		/* single tram bits can only be left in one direction */
 		if (this->IsTram()) {
-			DiagDirection single_tram = GetSingleTramBit(this->old_tile);
+			DiagDirection single_tram = GetSingleTramBit(Tile::GetNextByType(this->old_tile, MP_ROAD));
 			if (single_tram != INVALID_DIAGDIR && single_tram != this->exitdir) {
 				this->err = EC_NO_WAY;
 				return false;
@@ -279,7 +282,7 @@ protected:
 
 		/* road depots can be also left in one direction only */
 		if (IsRoadTT() && IsDepotTypeTile(this->old_tile, TT())) {
-			DiagDirection exitdir = GetRoadDepotDirection(this->old_tile);
+			DiagDirection exitdir = GetRoadDepotDirection(GetRoadDepotTile(this->old_tile));
 			if (exitdir != this->exitdir) {
 				this->err = EC_NO_WAY;
 				return false;
@@ -302,7 +305,7 @@ protected:
 
 		/* single tram bits can only be entered from one direction */
 		if (this->IsTram()) {
-			DiagDirection single_tram = this->GetSingleTramBit(this->new_tile);
+			DiagDirection single_tram = this->GetSingleTramBit(this->new_sub_tile);
 			if (single_tram != INVALID_DIAGDIR && single_tram != ReverseDiagDir(this->exitdir)) {
 				this->err = EC_NO_WAY;
 				return false;
@@ -310,14 +313,14 @@ protected:
 		}
 
 		/* road and rail depots can also be entered from one direction only */
-		if (IsRoadTT() && IsDepotTypeTile(this->new_tile, TT())) {
-			DiagDirection exitdir = GetRoadDepotDirection(this->new_tile);
+		if (IsRoadTT() && IsRoadDepotTile(this->new_sub_tile)) {
+			DiagDirection exitdir = GetRoadDepotDirection(this->new_sub_tile);
 			if (ReverseDiagDir(exitdir) != this->exitdir) {
 				this->err = EC_NO_WAY;
 				return false;
 			}
 			/* don't try to enter other company's depots */
-			if (GetTileOwner(this->new_tile) != this->veh_owner) {
+			if (GetTileOwner(this->new_sub_tile) != this->veh_owner) {
 				this->err = EC_OWNER;
 				return false;
 			}
@@ -353,8 +356,10 @@ protected:
 
 		/* road transport is possible only on compatible road types */
 		if (IsRoadTT()) {
+			assert(this->new_sub_tile.IsValid());
+
 			const RoadVehicle *v = RoadVehicle::From(this->veh);
-			RoadType roadtype = GetRoadType(this->new_tile, GetRoadTramType(v->roadtype));
+			RoadType roadtype = GetRoadType(this->new_sub_tile, GetRoadTramType(v->roadtype));
 			if (!HasBit(v->compatible_roadtypes, roadtype)) {
 				/* incompatible road type */
 				this->err = EC_RAIL_ROAD_TYPE;
@@ -446,6 +451,7 @@ protected:
 			this->exitdir = ReverseDiagDir(this->exitdir);
 			/* new tile will be the same as old one */
 			this->new_tile = this->old_tile;
+			this->new_sub_tile = Tile::HasType(this->new_tile, MP_ROAD) ? GetRoadTileByType(this->new_tile, this->IsTram() ? RTT_TRAM : RTT_ROAD) : this->new_tile;
 			/* set new trackdir bits to all reachable trackdirs */
 			QueryNewTileTrackStatus();
 			this->new_td_bits &= DiagdirReachesTrackdirs(this->exitdir);

@@ -53,6 +53,7 @@ inline Tile GetDepotTile(TileIndex index)
 {
 	assert(IsDepotTile(index));
 	if (Tile rail = Tile::GetByType(index, MP_RAILWAY); rail.IsValid()) return rail;
+	if (Tile road = Tile::GetByType(index, MP_ROAD); road.IsValid()) return road;
 	return index;
 }
 

@@ -1276,9 +1276,10 @@ struct BuildVehicleWindow : Window {
 				if (this->listview_mode) {
 					this->filter.roadtype = INVALID_ROADTYPE;
 				} else {
-					this->filter.roadtype = GetRoadTypeRoad(this->window_number);
+					Tile depot = GetRoadDepotTile(TileIndex(this->window_number));
+					this->filter.roadtype = GetRoadTypeRoad(depot);
 					if (this->filter.roadtype == INVALID_ROADTYPE) {
-						this->filter.roadtype = GetRoadTypeTram(this->window_number);
+						this->filter.roadtype = GetRoadTypeTram(depot);
 					}
 				}
 				break;

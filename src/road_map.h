@@ -18,6 +18,9 @@
 #include "road_type.h"
 
 
+/** Iterator to iterate road tiles at a tile index. */
+using RoadTileIterator = AssociatedTileIterator<MP_ROAD>;
+
 /** The different types of road tiles. */
 enum RoadTileType {
 	ROAD_TILE_NORMAL = 0, ///< Normal road
@@ -72,7 +75,17 @@ debug_inline static bool IsNormalRoad(Tile t)
  */
 debug_inline static bool IsNormalRoadTile(Tile t)
 {
-	return IsTileType(t, MP_ROAD) && IsNormalRoad(t);
+	return t.IsValid() && IsTileType(t, MP_ROAD) && IsNormalRoad(t);
+}
+
+/**
+ * Return whether a tile is a normal road tile.
+ * @param t Tile to query.
+ * @return True if normal road tile.
+ */
+debug_inline static bool IsNormalRoadTile(TileIndex t)
+{
+	return IsNormalRoadTile(Tile::GetByType(t, MP_ROAD));
 }
 
 /**
@@ -93,10 +106,33 @@ debug_inline static bool IsRoadDepot(Tile t)
  */
 debug_inline static bool IsRoadDepotTile(Tile t)
 {
-	return IsTileType(t, MP_ROAD) && IsRoadDepot(t);
+	return t.IsValid() && IsTileType(t, MP_ROAD) && IsRoadDepot(t);
 }
 
 /**
+ * Return whether a tile is a road depot tile.
+ * @param t Tile to query.
+ * @return True if road depot tile.
+ */
+debug_inline static bool IsRoadDepotTile(TileIndex t)
+{
+	return IsRoadDepotTile(Tile::GetByType(t, MP_ROAD));
+}
+
+
+/**
+ * Get the actual associated sub-tile of a road depot.
+ * @pre IsRoadDepotTile(index)
+ * @param index The tile index to get the depot tile for.
+ * @return The depot sub-tile.
+ */
+inline Tile GetRoadDepotTile(TileIndex index)
+{
+	assert(IsRoadDepotTile(index));
+	return Tile::GetByType(index, MP_ROAD);
+}
+
+ /**
  * Get the present road bits for a specific road type.
  * @param t  The tile to query.
  * @param rt Road type.
@@ -189,6 +225,20 @@ inline bool HasRoadTypeTram(Tile t)
 inline bool HasTileRoadType(Tile t, RoadTramType rtt)
 {
 	return GetRoadType(t, rtt) != INVALID_ROADTYPE;
+}
+
+/**
+ * Get a road sub-tile with a specific road tile type.
+ * @param index Tile index.
+ * @param rtt Road tile type to search for.
+ * @return The road sub-tile or an invalid \c Tile if no such tile exists.
+ */
+inline Tile GetRoadTileByType(TileIndex tile, RoadTramType rtt)
+{
+	for (Tile road : RoadTileIterator::Iterate(tile)) {
+		if (HasTileRoadType(road, rtt)) return road;
+	}
+	return {};
 }
 
 /**

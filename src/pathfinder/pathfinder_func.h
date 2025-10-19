@@ -57,9 +57,9 @@ inline TileIndex CalcClosestStationTile(StationID station, TileIndex tile, Stati
  * the pathfinders cannot exit on the wrong side and allows reversing on such
  * tiles.
  */
-inline TrackdirBits GetTrackdirBitsForRoad(TileIndex tile, RoadTramType rtt)
+inline TrackdirBits GetTrackdirBitsForRoad(TileIndex index, Tile tile, RoadTramType rtt)
 {
-	TrackdirBits bits = TrackStatusToTrackdirBits(GetTileTrackStatus(tile, TRANSPORT_ROAD, rtt));
+	TrackdirBits bits = TrackStatusToTrackdirBits(GetTileTrackStatus(index, TRANSPORT_ROAD, rtt));
 
 	if (rtt == RTT_TRAM && bits == TRACKDIR_BIT_NONE) {
 		if (IsNormalRoadTile(tile)) {
