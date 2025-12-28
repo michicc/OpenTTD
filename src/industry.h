@@ -20,6 +20,7 @@
 #include "station_base.h"
 #include "timer/timer_game_calendar.h"
 #include "timer/timer_game_economy.h"
+#include "cargodest_base.h"
 
 
 typedef Pool<Industry, IndustryID, 64> IndustryPool;
@@ -59,7 +60,7 @@ using IndustryControlFlags = EnumBitSet<IndustryControlFlag, uint8_t, IndustryCo
 /**
  * Defines the internal data of a functional industry.
  */
-struct Industry : IndustryPool::PoolItem<&_industry_pool> {
+struct Industry final : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink {
 	struct ProducedHistory {
 		uint16_t production = 0; ///< Total produced
 		uint16_t transported = 0; ///< Total transported
@@ -272,6 +273,9 @@ struct Industry : IndustryPool::PoolItem<&_industry_pool> {
 		if (this->cached_name.empty()) this->FillCachedName();
 		return this->cached_name;
 	}
+
+	Source ToSource() const override { return Source(this->index, SourceType::Industry); }
+	TileIndex GetXY() const override { return this->location.tile; }
 
 	static std::array<FlatSet<IndustryID>, NUM_INDUSTRYTYPES> industries; ///< List of industries of each type.
 
