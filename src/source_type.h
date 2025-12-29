@@ -38,7 +38,7 @@ public:
 
 	Source() = default;
 	Source(ConvertibleThroughBase auto id, SourceType type) : id(id.base()), type(type) {}
-	Source(SourceID id, SourceType type) : id(id), type(type) {}
+	constexpr Source(SourceID id, SourceType type) : id(id), type(type) {}
 
 	constexpr CompanyID ToCompanyID() const { assert(this->type == SourceType::Headquarters); return static_cast<CompanyID>(this->id); }
 	constexpr IndustryID ToIndustryID() const { assert(this->type == SourceType::Industry); return static_cast<IndustryID>(this->id); }
@@ -53,6 +53,9 @@ public:
 
 	NewsReference GetNewsReference() const;
 	StringID GetFormat() const;
+
+	constexpr size_t Pack() const { return (static_cast<size_t>(id) << 16) | to_underlying(type); }
+	static constexpr Source Unpack(size_t packed) { return Source{static_cast<SourceID>(packed >> 16), static_cast<SourceType>(packed & 0xFF)}; }
 };
 
 #endif /* SOURCE_TYPE_H */

@@ -13,6 +13,7 @@
 #include "compat/town_sl_compat.h"
 
 #include "newgrf_sl.h"
+#include "cargodest_sl.h"
 #include "../newgrf_house.h"
 #include "../town.h"
 #include "../landscape.h"
@@ -322,6 +323,8 @@ static const SaveLoad _town_desc[] = {
 	SLEG_CONDSTRUCTLIST("supplied", SlTownSupplied,                    SLV_TOWN_SUPPLY_HISTORY, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("received", SlTownReceived,                    SLV_165, SL_MAX_VERSION),
 	SLEG_CONDSTRUCTLIST("acceptance_matrix", SlTownAcceptanceMatrix,   SLV_166, SLV_REMOVE_TOWN_CARGO_CACHE),
+
+	SLEG_STRUCTLIST("cargo_source_sink", SlCargoSourceSink<Town>),
 };
 
 struct HIDSChunkHandler : NewGRFMappingChunkHandler {
