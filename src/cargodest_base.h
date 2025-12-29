@@ -30,6 +30,12 @@ struct CargoDemandLink {
 	{
 		return this->dest != other.dest;
 	}
+
+	/** Compare if this link refers to the given destination. */
+	bool operator ==(const CargoSourceSink *other) const
+	{
+		return this->dest == other;
+	}
 };
 
 /** An entity producing or accepting cargo with a destination. */
@@ -38,6 +44,8 @@ struct CargoSourceSink {
 	std::array<std::vector<CargoDemandLink>, NUM_CARGO> cargo_links;
 	/** NOSAVE: Sum of the destination weights for each cargo type. */
 	std::array<uint, NUM_CARGO> cargo_links_weight;
+
+	virtual ~CargoSourceSink();
 
 	/** Update cached link weight sums. */
 	void UpdateLinkWeightSums();

@@ -9,8 +9,27 @@
 
 #include "stdafx.h"
 #include "cargodest_base.h"
+#include "town.h"
+#include "industry.h"
 
 #include "safeguards.h"
+
+/* virtual */ CargoSourceSink::~CargoSourceSink()
+{
+	if (Town::CleaningPool() || Industry::CleaningPool()) return;
+
+	/* Remove all demand links having us as a destination. */
+	for (Town *t : Town::Iterate()) {
+		for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
+			std::erase(t->cargo_links[cargo], this);
+		}
+	}
+	for (Industry *ind : Industry::Iterate()) {
+		for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
+			std::erase(ind->cargo_links[cargo], this);
+		}
+	}
+}
 
 void CargoSourceSink::UpdateLinkWeightSums()
 {
