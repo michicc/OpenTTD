@@ -41,19 +41,58 @@ void CheckCaches()
 
 	/* Check the town caches. */
 	std::vector<TownCache> old_town_caches;
+	std::vector<CargoTypes> old_town_cargo_produced;
+	std::vector<CargoTypes> old_town_cargo_accepted_total;
+	std::vector<AcceptanceMatrix> old_town_cargo_accepted;
 	for (const Town *t : Town::Iterate()) {
 		old_town_caches.push_back(t->cache);
+		old_town_cargo_produced.push_back(t->cargo_produced);
+		old_town_cargo_accepted_total.push_back(t->cargo_accepted_total);
+		old_town_cargo_accepted.push_back(t->cargo_accepted);
 	}
+
+	const CargoTypes old_town_cargoes_accepted = _town_cargoes_accepted;
 
 	RebuildTownCaches();
 	RebuildSubsidisedSourceAndDestinationCache();
+
+	/* Rebuild area of cargo acceptance matrix, as UpdateTownCargoes will not recalculate the area.
+	 * A removed house will not shrink the area due to the high overhead of determining if any grid
+	 * square is actually redundant, so we only make sure no house is accidentally not covered. */
+	for (TileIndex tile : Map::Iterate()) {
+		if (!IsTileType(tile, MP_HOUSE)) continue;
+
+		Town::Get(GetTownIndex(tile))->cargo_accepted.Add(tile);
+	}
+
+	for (Town *t : Town::Iterate()) {
+		UpdateTownCargoes(t);
+	}
+	UpdateTownCargoBitmap();
 
 	uint i = 0;
 	for (Town *t : Town::Iterate()) {
 		if (old_town_caches[i] != t->cache) {
 			Debug(desync, 2, "warning: town cache mismatch: town {}", t->index);
 		}
+		if (old_town_cargo_produced[i] != t->cargo_produced) {
+			Debug(desync, 2, "town cargo_produced mismatch: town {}, old: {:X}, new: {:X}", t->index, old_town_cargo_produced[i], t->cargo_produced);
+		}
+		if (old_town_cargo_accepted[i].GetArea() == t->cargo_accepted.GetArea()) {
+			for (TileIndex tile : t->cargo_accepted.GetArea()) {
+				if (old_town_cargo_accepted[i][tile] != t->cargo_accepted[tile]) {
+					Debug(desync, 2, "town cargo_accepted mismatch: town {}, first wrong tile: 0x{:X}, old: {:X}, new: {:X}", t->index, tile, old_town_cargo_accepted[i][tile], t->cargo_accepted[tile]);
+					break;
+				}
+			}
+		} else {
+			Debug(desync, 2, "town cargo_accepted area mismatch: town {}", t->index);
+		}
 		i++;
+	}
+
+	if (old_town_cargoes_accepted != _town_cargoes_accepted) {
+		Debug(desync, 2, "_town_cargoes_accepted mismatch: old: {:X}, new: {:X}", old_town_cargoes_accepted, _town_cargoes_accepted);
 	}
 
 	/* Check company infrastructure cache. */

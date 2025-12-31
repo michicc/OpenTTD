@@ -72,6 +72,8 @@ struct OrthogonalTileArea {
 	OrthogonalTileIterator begin() const;
 
 	OrthogonalTileIterator end() const;
+
+	bool operator ==(const OrthogonalTileArea &o) const noexcept = default;
 };
 
 /** Represents a diagonal tile area. */
