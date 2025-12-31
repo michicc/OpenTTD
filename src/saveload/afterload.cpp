@@ -296,6 +296,7 @@ static void InitializeWindowsAndCaches()
 
 	GroupStatistics::UpdateAfterLoad();
 
+	UpdateTownCargoBitmap();
 	RebuildSubsidisedSourceAndDestinationCache();
 
 	/* Towns have a noise controlled number of airports system
@@ -3319,6 +3320,19 @@ bool AfterLoadGame()
 		/* Refresh all level crossings to bar adjacent crossing tiles, if needed. */
 		for (const auto tile : Map::Iterate()) {
 			if (IsLevelCrossingTile(tile)) UpdateLevelCrossing(tile, false);
+		}
+	}
+
+	if (IsSavegameVersionBefore(SLV_RESTORE_TOWN_CARGO_CACHE)) {
+		/* Update cargo acceptance map of towns. */
+		for (const auto tile : Map::Iterate()) {
+			if (!IsTileType(tile, MP_HOUSE)) continue;
+
+			Town::Get(GetTownIndex(tile))->cargo_accepted.Add(tile);
+		}
+
+		for (Town *town : Town::Iterate()) {
+			UpdateTownCargoes(town);
 		}
 	}
 

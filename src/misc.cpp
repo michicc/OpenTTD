@@ -130,6 +130,8 @@ void InitializeGame(uint size_x, uint size_y, bool reset_date, bool reset_settin
 
 	ResetPersistentNewGRFData();
 
+	UpdateTownCargoBitmap();
+
 	InitializeSound();
 	InitializeMusic();
 

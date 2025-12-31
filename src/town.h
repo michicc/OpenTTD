@@ -18,6 +18,7 @@
 #include "newgrf_storage.h"
 #include "cargotype.h"
 #include "cargodest_base.h"
+#include "tilematrix_type.h"
 
 template <typename T>
 struct BuildingCounts {
@@ -47,6 +48,8 @@ enum class TownFlag : uint8_t {
 };
 
 using TownFlags = EnumBitSet<TownFlag, uint8_t>;
+
+using AcceptanceMatrix = TileMatrix<CargoTypes, 4>;
 
 /** Data structure with cached data of towns. */
 struct TownCache {
@@ -111,6 +114,10 @@ struct Town final : TownPool::PoolItem<&_town_pool>, CargoSourceSink {
 	std::array<TransportedCargoStat<uint16_t>, NUM_TAE> received{}; ///< Cargo statistics about received cargotypes.
 	std::array<uint32_t, NUM_TAE> goal{}; ///< Amount of cargo required for the town to grow.
 	ValidHistoryMask valid_history = 0; ///< Mask of valid history records.
+
+	CargoTypes cargo_produced; ///< Bitmap of all cargoes produced by houses in this town.
+	AcceptanceMatrix cargo_accepted; ///< Bitmap of cargoes accepted by houses for each 4*4 map square of the town.
+	CargoTypes cargo_accepted_total; ///< NOSAVE: Bitmap of all cargoes accepted by houses in this town.
 
 	EncodedString text{}; ///< General text with additional information.
 
@@ -263,9 +270,14 @@ using TownActions = EnumBitSet<TownAction, uint8_t>;
 
 DECLARE_INCREMENT_DECREMENT_OPERATORS(TownAction);
 
+extern CargoTypes _town_cargoes_accepted;
+
 void ClearTownHouse(Town *t, TileIndex tile);
 void UpdateTownMaxPass(Town *t);
 void UpdateTownRadius(Town *t);
+void UpdateTownCargoes(Town *t);
+void UpdateTownCargoTotal(Town *t);
+void UpdateTownCargoBitmap();
 CommandCost CheckIfAuthorityAllowsNewStation(TileIndex tile, DoCommandFlags flags);
 Town *ClosestTownFromTile(TileIndex tile, uint threshold);
 void ChangeTownRating(Town *t, int add, int max, DoCommandFlags flags);

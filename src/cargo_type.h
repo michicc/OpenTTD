@@ -127,6 +127,17 @@ struct CargoArray : std::array<uint, NUM_CARGO> {
 	{
 		return std::ranges::count_if(*this, [](uint amount) { return amount != 0; });
 	}
+
+	/**
+	 * Combine another cargo array with this one.
+	 * @param other Array to combine.
+	 */
+	inline void operator +=(const CargoArray &other)
+	{
+		for (size_t i = 0; i < this->size(); i++) {
+			this->operator[](i) += other[i];
+		}
+	}
 };
 
 #endif /* CARGO_TYPE_H */

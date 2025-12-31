@@ -72,6 +72,7 @@
 TownPool _town_pool("Town");
 INSTANTIATE_POOL_METHODS(Town)
 
+CargoTypes _town_cargoes_accepted; ///< Bitmap of all cargoes accepted by houses.
 
 TownKdtree _town_kdtree{};
 
@@ -2019,6 +2020,105 @@ void UpdateTownMaxPass(Town *t)
 	}
 }
 
+/**
+ * Update the total cargo acceptance of the whole town.
+ * @param t The town to update.
+ */
+void UpdateTownCargoTotal(Town *t)
+{
+	t->cargo_accepted_total = 0;
+
+	const TileArea &area = t->cargo_accepted.GetArea();
+	for (TileIndex tile : area) {
+		if (AcceptanceMatrix::IsOnGrid(tile)) {
+			t->cargo_accepted_total |= t->cargo_accepted[tile];
+		}
+	}
+}
+
+/**
+ * Update accepted town cargoes around a specific area.
+ * @param t The town to update.
+ * @param update_area Update the values around these tile.
+ */
+static void UpdateTownCargoes(Town *t, const TileArea &update_area)
+{
+	/* Expand the area of the cargo acceptance map if needed. */
+	t->cargo_accepted.Add(update_area);
+
+	/* Gather the acceptance for all gird squares in the update area and its surrounding squares.
+	 * This avoids getting the cargo data for a grid square multiple times.*/
+	CargoArray produced{};
+	TileMatrix<CargoArray, AcceptanceMatrix::GRID> acceptance_matrix;
+	TileArea acceptance_area = AcceptanceMatrix::GetAreaForTiles(update_area, 1);
+	for (TileIndex grid_tile : acceptance_area) {
+		if (AcceptanceMatrix::IsOnGrid(grid_tile)) {
+		/* Get acceptance only for this grid square. */
+			CargoTypes dummy = 0;
+			CargoArray accepted{};
+			for (TileIndex tile : AcceptanceMatrix::GetAreaForTile(grid_tile, 0)) {
+				if (!IsTileType(tile, MP_HOUSE) || GetTownIndex(tile) != t->index) continue;
+
+				AddAcceptedCargo_Town(tile, accepted, dummy);
+				AddProducedCargo_Town(tile, produced);
+			}
+
+			acceptance_matrix[grid_tile] = accepted;
+		}
+	}
+
+	/* Update cargo bitmap of all affected grid squares. */
+	for (TileIndex update_tile : update_area) {
+		if (AcceptanceMatrix::IsOnGrid(update_tile)) {
+			/* Gather acceptance around the grid square. */
+			CargoArray acc{};
+			for (TileIndex block_tile : AcceptanceMatrix::GetAreaForTile(update_tile, 1)) {
+				if (AcceptanceMatrix::IsOnGrid(block_tile)) {
+					acc += acceptance_matrix[block_tile];
+				}
+			}
+
+			CargoTypes ct = 0;
+			for (CargoType cargo = 0; cargo < NUM_CARGO; cargo++) {
+				if (acc[cargo] >= 8) SetBit(ct, cargo);
+			}
+			t->cargo_accepted[update_tile] = ct;
+		}
+	}
+
+	/* Update produced cargoes. */
+	for (CargoType cargo = 0; cargo < NUM_CARGO; cargo++) {
+		if (produced[cargo] > 0) SetBit(t->cargo_produced, cargo);
+	}
+
+	UpdateTownCargoTotal(t);
+}
+
+/**
+ * Update cargo acceptance for the complete town.
+ * @param t The town to update.
+ */
+void UpdateTownCargoes(Town *t)
+{
+	t->cargo_produced = 0;
+
+	const TileArea &area = t->cargo_accepted.GetArea();
+	if (area.tile == INVALID_TILE) return;
+
+	/* Update acceptance for each grid square. */
+	UpdateTownCargoes(t, area);
+}
+
+/** Updates the bitmap of all cargoes accepted by houses. */
+void UpdateTownCargoBitmap()
+{
+	_town_cargoes_accepted = 0;
+
+	for (const Town *town : Town::Iterate()) {
+		_town_cargoes_accepted |= town->cargo_accepted_total;
+	}
+}
+
 static void UpdateTownGrowthRate(Town *t);
 static void UpdateTownGrowth(Town *t);
 
@@ -2272,6 +2372,8 @@ std::tuple<CommandCost, Money, TownID> CmdFoundTown(DoCommandFlags flags, TileIn
 		if (_game_mode != GM_EDITOR) {
 			/* 't' can't be nullptr since 'random' is false outside scenedit */
 			assert(!random_location);
+
+			UpdateTownCargoBitmap();
 
 			if (_current_company == OWNER_DEITY) {
 				AddTileNewsItem(GetEncodedString(STR_NEWS_NEW_TOWN_UNSPONSORED, t->index), NewsType::IndustryOpen, tile);
@@ -2550,6 +2652,16 @@ static inline void ClearMakeHouseTile(TileIndex tile, Town *t, uint8_t counter, 
 	MarkTileDirtyByTile(tile);
 }
 
+/**
+ * Get the tile area occupied by a specific house size.
+ * @param tile Tile index.
+ * @param size The size of house.
+ * @return Area of the house.
+ */
+static TileArea GetHouseTileArea(TileIndex tile, BuildingFlags size)
+{
+	return TileArea(tile, size.Any(BUILDING_2_TILES_X) ? 2 : 1, size.Any(BUILDING_2_TILES_Y) ? 2 : 1);
+}
 
 /**
  * Write house information into the map. For multi-tile houses, all tiles are marked.
@@ -2557,7 +2669,7 @@ static inline void ClearMakeHouseTile(TileIndex tile, Town *t, uint8_t counter, 
  * @param t The tile to build on. If a multi-tile house, this is the northern-most tile.
  * @param counter The counter of the construction stage.
  * @param stage The current construction stage.
- * @param The type of house.
+ * @param type The type of house.
  * @param random_bits Random bits for newgrf houses to use.
  * @param is_protected Whether the house is protected from the town upgrading it.
  * @pre The house can be built here.
@@ -2571,7 +2683,7 @@ static void MakeTownHouse(TileIndex tile, Town *t, uint8_t counter, uint8_t stag
 	if (size.Any(BUILDING_2_TILES_X))   ClearMakeHouseTile(tile + TileDiffXY(1, 0), t, counter, stage, ++type, random_bits, is_protected);
 	if (size.Any(BUILDING_HAS_4_TILES)) ClearMakeHouseTile(tile + TileDiffXY(1, 1), t, counter, stage, ++type, random_bits, is_protected);
 
-	ForAllStationsAroundTiles(TileArea(tile, size.Any(BUILDING_2_TILES_X) ? 2 : 1, size.Any(BUILDING_2_TILES_Y) ? 2 : 1), [t](Station *st, TileIndex) {
+	ForAllStationsAroundTiles(GetHouseTileArea(tile, size), [t](Station *st, TileIndex) {
 		t->stations_near.insert(st);
 		return true;
 	});
@@ -2796,6 +2908,7 @@ static void BuildTownHouse(Town *t, TileIndex tile, const HouseSpec *hs, HouseID
 	MakeTownHouse(tile, t, construction_counter, construction_stage, house, random_bits, is_protected);
 	UpdateTownRadius(t);
 	UpdateTownGrowthRate(t);
+	UpdateTownCargoes(t, GetHouseTileArea(tile, hs->building_flags));
 
 	BuildingFlags size = hs->building_flags;
 
@@ -3081,6 +3194,9 @@ void ClearTownHouse(Town *t, TileIndex tile)
 	RemoveNearbyStations(t, tile, hs->building_flags);
 
 	UpdateTownRadius(t);
+
+	/* Update cargo acceptance. */
+	UpdateTownCargoes(t, GetHouseTileArea(tile, hs->building_flags));
 }
 
 /**
@@ -4137,9 +4253,12 @@ static const IntervalTimer<TimerGameEconomy> _economy_towns_monthly({TimerGameEc
 
 		UpdateTownGrowth(t);
 		UpdateTownRating(t);
+		UpdateTownCargoes(t);
 
 		SetWindowDirty(WC_TOWN_VIEW, t->index);
 	}
+
+	UpdateTownCargoBitmap();
 });
 
 static const IntervalTimer<TimerGameEconomy> _economy_towns_yearly({TimerGameEconomy::YEAR, TimerGameEconomy::Priority::TOWN}, [](auto)
