@@ -1978,6 +1978,8 @@ static void DoCreateNewIndustry(Industry *i, TileIndex tile, IndustryType type, 
 	InvalidateWindowData(WC_INDUSTRY_DIRECTORY, 0, IDIWD_FORCE_REBUILD);
 	SetWindowDirty(WC_BUILD_INDUSTRY, 0);
 
+	i->UpdateAcceptance();
+
 	if (!_generating_world) PopulateStationsNearby(i);
 }
 
@@ -2600,6 +2602,30 @@ void Industry::RecomputeProductionMultipliers()
 	}
 }
 
+/**
+ * Update the mask of always accepted cargoes that are also produced.
+ */
+void Industry::UpdateAcceptance()
+{
+	CargoArray accepted{};
+	CargoTypes always_accepted = 0;
+
+	/* Gather always accepted cargoes for all tiles of this industry. */
+	for (TileIndex tile : this->location) {
+		if (IsTileType(tile, MP_INDUSTRY) && GetIndustryIndex(tile) == this->index) {
+			AddAcceptedCargo_Industry(tile, accepted, always_accepted);
+		}
+	}
+
+	/* Create mask of produced cargoes. */
+	CargoTypes produced = 0;
+	for (const auto &p : this->produced) {
+		if (IsValidCargoType(p.cargo)) SetBit(produced, p.cargo);
+	}
+
+	this->produced_accepted_mask = always_accepted & produced;
+}
+
 void Industry::FillCachedName() const
 {
 	auto tmp_params = MakeParameters(this->index);
@@ -3137,6 +3163,7 @@ static const IntervalTimer<TimerGameEconomy> _economy_industries_monthly({TimerG
 			delete i;
 		} else {
 			ChangeIndustryProduction(i, true);
+			i->UpdateAcceptance();
 			SetWindowDirty(WC_INDUSTRY_VIEW, i->index);
 		}
 	}

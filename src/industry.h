@@ -110,6 +110,7 @@ struct Industry final : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	ValidHistoryMask valid_history = 0; ///< Mask of valid history records.
 	ProducedCargoes produced{}; ///< produced cargo slots
 	AcceptedCargoes accepted{}; ///< accepted cargo slots
+	CargoTypes produced_accepted_mask; ///< Bitmask of all cargoes that are always accepted and also produced.
 	uint8_t prod_level = 0; ///< general production level
 	uint16_t counter = 0; ///< used for animation and/or production (if available cargo)
 
@@ -140,6 +141,7 @@ struct Industry final : IndustryPool::PoolItem<&_industry_pool>, CargoSourceSink
 	~Industry();
 
 	void RecomputeProductionMultipliers();
+	void UpdateAcceptance();
 
 	/**
 	 * Check if a given tile belongs to this industry.
