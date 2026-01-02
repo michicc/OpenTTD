@@ -27,6 +27,8 @@ enum IndustryViewWidgets : WidgetID {
 	WID_IV_CAPTION,  ///< Caption of the window.
 	WID_IV_VIEWPORT, ///< Viewport of the industry.
 	WID_IV_INFO,     ///< Info of the industry.
+	WID_IV_DEST,     ///< List of cargo destinations for the industry.
+	WID_IV_DEST_SCROLL, ///< Scrollbar for the list of cargo destinations.
 	WID_IV_GOTO,     ///< Goto button.
 	WID_IV_DISPLAY,  ///< Display chain button.
 	WID_IV_GRAPH,    ///< Production history button.

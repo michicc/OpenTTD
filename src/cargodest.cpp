@@ -11,6 +11,7 @@
 #include "cargodest_base.h"
 #include "town.h"
 #include "industry.h"
+#include "window_func.h"
 
 #include "safeguards.h"
 
@@ -21,12 +22,12 @@
 	/* Remove all demand links having us as a destination. */
 	for (Town *t : Town::Iterate()) {
 		for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
-			std::erase(t->cargo_links[cargo], this);
+			if (std::erase(t->cargo_links[cargo], this) > 0) InvalidateWindowData(WC_TOWN_VIEW, t->index, -1);
 		}
 	}
 	for (Industry *ind : Industry::Iterate()) {
 		for (CargoType cargo = 0; cargo < NUM_CARGO; ++cargo) {
-			std::erase(ind->cargo_links[cargo], this);
+			if (std::erase(ind->cargo_links[cargo], this) > 0) InvalidateWindowData(WC_INDUSTRY_VIEW, ind->index, -1);
 		}
 	}
 }

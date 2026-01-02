@@ -99,6 +99,8 @@ add_files(
     cargoaction.h
     cargodest.cpp
     cargodest_base.h
+    cargodest_gui.cpp
+    cargodest_gui.h
     cargomonitor.cpp
     cargomonitor.h
     cargopacket.cpp

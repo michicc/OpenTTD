@@ -3699,6 +3699,14 @@ STR_EDIT_SIGN_TEXT_COLOUR_TOOLTIP                               :{BLACK}Colour o
 
 STR_EDIT_SIGN_SIGN_OSKTITLE                                     :{BLACK}Enter a name for the sign
 
+# Cargodest UI strings
+STR_VIEW_CARGO_TOOLTIP                                          :{BLACK}List of cargo demand destinations
+STR_VIEW_CARGO_LAST_MONTH_OUT                                   :{BLACK}Outgoing cargo last month:
+STR_VIEW_CARGO_LAST_MONTH_NONE                                  :{YELLOW}- None -
+STR_VIEW_CARGO_LAST_MONTH_DEST                                  :{BLACK}{CARGO_TINY} out of {CARGO_LONG} to {YELLOW}{STRING1}
+STR_VIEW_CARGO_LAST_MONTH_LOCAL                                 :{BLACK}{CARGO_TINY} out of {CARGO_LONG} to {YELLOW}local destinations
+STR_VIEW_CARGO_LAST_MONTH_OTHER                                 :{BLACK}{CARGO_TINY} out of {CARGO_LONG} to {YELLOW}other destinations
+
 # Town directory window
 STR_TOWN_DIRECTORY_CAPTION                                      :{WHITE}Towns ({COMMA} of {COMMA})
 STR_TOWN_DIRECTORY_NONE                                         :{ORANGE}- None -

@@ -37,6 +37,8 @@ enum TownViewWidgets : WidgetID {
 	WID_TV_CAPTION,        ///< Caption of window.
 	WID_TV_VIEWPORT,       ///< View of the center of the town.
 	WID_TV_INFO,           ///< General information about the town.
+	WID_TV_DEST,           ///< List of cargo destinations for the town.
+	WID_TV_DEST_SCROLL,    ///< Scrollbar for the list of cargo destinations.
 	WID_TV_CENTER_VIEW,    ///< Center the main view on this town.
 	WID_TV_SHOW_AUTHORITY, ///< Show the town authority window.
 	WID_TV_CHANGE_NAME,    ///< Change the name of this town.
