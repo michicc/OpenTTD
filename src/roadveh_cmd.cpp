@@ -1569,7 +1569,6 @@ again:
 static bool RoadVehController(RoadVehicle *v)
 {
 	/* decrease counters */
-	v->current_order_time++;
 	if (v->reverse_ctr != 0) v->reverse_ctr--;
 
 	/* handle crashed */
@@ -1646,20 +1645,6 @@ Money RoadVehicle::GetRunningCost() const
 	if (cost_factor == 0) return 0;
 
 	return GetPrice(e->VehInfo<RoadVehicleInfo>().running_cost_class, cost_factor, e->GetGRF());
-}
-
-bool RoadVehicle::Tick()
-{
-	PerformanceAccumulator framerate(PerformanceElement::GameLoopRoadVehicles);
-
-	this->tick_counter++;
-
-	if (this->IsFrontEngine()) {
-		if (!this->vehstatus.Test(VehState::Stopped)) this->running_ticks++;
-		return RoadVehController(this);
-	}
-
-	return true;
 }
 
 void RoadVehicle::SetDestTile(TileIndex tile)
@@ -1773,4 +1758,17 @@ uint16_t RoadVehicle::GetMaxWeight() const
 	}
 
 	return weight;
+}
+
+/**
+ * Update road vehicle consist data for a tick.
+ * @return True if the consist still exists, false if it has ceased to exist.
+ */
+bool RoadConsist::Tick()
+{
+	PerformanceAccumulator framerate(PerformanceElement::GameLoopRoadVehicles);
+
+	if (!this->SpecializedConsistBase::Tick()) return false;
+
+	return RoadVehController(this->Front());
 }

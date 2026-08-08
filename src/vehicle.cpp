@@ -1076,6 +1076,10 @@ void CallVehicleTicks()
 		}
 	}
 
+	for (Consist *cs : Consist::Iterate()) {
+		cs->Tick();
+	}
+
 	for (auto &it : _vehicles_to_autoreplace) {
 		Vehicle *v = Vehicle::Get(it.first);
 		/* Autoreplace needs the current company set as the vehicle owner */

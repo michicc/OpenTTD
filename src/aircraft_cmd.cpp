@@ -2144,19 +2144,11 @@ bool Aircraft::Tick()
 {
 	if (!this->IsNormalAircraft()) return true;
 
-	PerformanceAccumulator framerate(PerformanceElement::GameLoopAircraft);
+	if (!this->SpecializedVehicleBase::Tick()) return false;
 
-	this->tick_counter++;
-
-	if (!this->vehstatus.Test(VehState::Stopped)) this->running_ticks++;
-
-	if (this->subtype == AIR_HELICOPTER) HelicopterTickHandler(this);
-
-	this->current_order_time++;
-
-	for (uint i = 0; i != 2; i++) {
-		/* stop if the aircraft was deleted */
-		if (!AircraftEventHandler(this, i)) return false;
+	if (this->subtype == AIR_HELICOPTER) {
+		PerformanceAccumulator framerate(PerformanceElement::GameLoopAircraft);
+		HelicopterTickHandler(this);
 	}
 
 	return true;
@@ -2207,4 +2199,22 @@ void UpdateAirplanesOnNewStation(const Station *st)
 
 	/* Heliports don't have a hangar. Invalidate all go to hangar orders from all aircraft. */
 	if (!st->airport.HasHangar()) RemoveOrderFromAllVehicles(OT_GOTO_DEPOT, st->index, true);
+}
+
+/**
+ * Update aircraft consist data for a tick.
+ * @return True if the consist still exists, false if it has ceased to exist.
+ */
+bool AircraftConsist::Tick()
+{
+	PerformanceAccumulator framerate(PerformanceElement::GameLoopAircraft);
+
+	if (!this->SpecializedConsistBase::Tick()) return false;
+
+	for (uint i = 0; i != 2; i++) {
+		/* stop if the aircraft was deleted */
+		if (!AircraftEventHandler(this->Front(), i)) return false;
+	}
+
+	return true;
 }

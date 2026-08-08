@@ -620,9 +620,6 @@ static void ReverseShip(Ship *v)
 
 static void ShipController(Ship *v)
 {
-	v->tick_counter++;
-	v->current_order_time++;
-
 	if (v->HandleBreakdown()) return;
 
 	if (v->vehstatus.Test(VehState::Stopped)) return;
@@ -786,17 +783,6 @@ static void ShipController(Ship *v)
 	}
 }
 
-bool Ship::Tick()
-{
-	PerformanceAccumulator framerate(PerformanceElement::GameLoopShips);
-
-	if (!this->vehstatus.Test(VehState::Stopped)) this->running_ticks++;
-
-	ShipController(this);
-
-	return true;
-}
-
 void Ship::SetDestTile(TileIndex tile)
 {
 	if (tile == this->dest_tile) return;
@@ -887,4 +873,19 @@ ClosestDepot Ship::FindClosestDepot()
 	if (depot == nullptr) return ClosestDepot();
 
 	return ClosestDepot(depot->xy, depot->index);
+}
+
+/**
+ * Update ship consist data for a tick.
+ * @return True if the consist still exists, false if it has ceased to exist.
+ */
+bool ShipConsist::Tick()
+{
+	PerformanceAccumulator framerate(PerformanceElement::GameLoopShips);
+
+	if (!this->SpecializedConsistBase::Tick()) return false;
+
+	ShipController(this->Front());
+
+	return true;
 }

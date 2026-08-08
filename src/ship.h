@@ -52,7 +52,6 @@ struct Ship final : public SpecializedVehicle<Ship, VehicleType::Ship> {
 	int GetCurrentMaxSpeed() const override { return std::min<int>(this->vcache.cached_max_speed, this->current_order.GetMaxSpeed() * 2); }
 	Money GetRunningCost() const override;
 	bool IsInDepot() const override { return this->state == Track::Depot; }
-	bool Tick() override;
 	void OnNewCalendarDay() override;
 	void OnNewEconomyDay() override;
 	Trackdir GetVehicleTrackdir() const override;
@@ -68,6 +67,8 @@ struct Ship final : public SpecializedVehicle<Ship, VehicleType::Ship> {
 class ShipConsist final : public SpecializedConsist<ShipConsist, Ship, VehicleType::Ship> {
 public:
 	inline ShipConsist(ConsistID index, Owner owner = INVALID_OWNER) : SpecializedConsist(index, owner) {}
+
+	bool Tick() override;
 };
 
 
