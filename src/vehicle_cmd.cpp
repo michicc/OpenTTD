@@ -37,6 +37,7 @@
 #include "roadveh_cmd.h"
 #include "train_cmd.h"
 #include "ship_cmd.h"
+#include "consist_base.h"
 #include <charconv>
 
 #include "widgets/vehicle_widget.h"
@@ -148,6 +149,7 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 	 * and (train) wagons don't have an unit number in any scenario. */
 	UnitID unit_num = (flags.Test(DoCommandFlag::QueryCost) || flags.Test(DoCommandFlag::AutoReplace) || (type == VehicleType::Train && e->VehInfo<RailVehicleInfo>().railveh_type == RailVehicleType::Wagon)) ? 0 : GetFreeUnitNumber(type);
 	if (unit_num == UINT16_MAX) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), VehicleID::Invalid(), 0, 0, {} };
+	if (unit_num != 0 && !Consist::CanAllocateItem()) return { CommandCost(STR_ERROR_TOO_MANY_VEHICLES_IN_GAME), VehicleID::Invalid(), 0, 0, {} };
 
 	/* If we are refitting we need to temporarily purchase the vehicle to be able to
 	 * test it. */
@@ -177,6 +179,22 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 			v->unitnumber = unit_num;
 			v->value      = value.GetCost();
 			veh_id        = v->index;
+
+			if (unit_num != 0) {
+				/* CmdBuildRailVehicle may have already created a consist for us. */
+				if (v->GetConsist() == nullptr) {
+					Consist *cs = nullptr;
+					switch (type) {
+						case VehicleType::Train:    cs = TrainConsist::Create(_current_company); break;
+						case VehicleType::Road:     cs = RoadConsist::Create(_current_company); break;
+						case VehicleType::Ship:     cs = ShipConsist::Create(_current_company); break;
+						case VehicleType::Aircraft: cs = AircraftConsist::Create(_current_company); break;
+						default: NOT_REACHED(); // Safe due to IsDepotTile()
+					}
+
+					cs->SetFront(v);
+				}
+			}
 		}
 
 		if (refitting) {
@@ -266,7 +284,11 @@ CommandCost CmdSellVehicle(DoCommandFlags flags, VehicleID v_id, bool sell_chain
 		ret = CommandCost(ExpensesType::NewVehicles, -front->value);
 
 		if (flags.Test(DoCommandFlag::Execute)) {
-			if (front->IsPrimaryVehicle() && backup_order) OrderBackup::Backup(front, client_id);
+			if (front->IsPrimaryVehicle()) {
+				if (backup_order) OrderBackup::Backup(front, client_id);
+				delete front->GetConsist();
+				front->SetConsist(nullptr);
+			}
 			delete front;
 		}
 	}

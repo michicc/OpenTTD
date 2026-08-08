@@ -18,6 +18,7 @@
 #include "engine_base.h"
 #include "rail_map.h"
 #include "ground_vehicle.hpp"
+#include "consist_base.h"
 
 struct Train;
 
@@ -360,6 +361,14 @@ protected: // These functions should not be called outside acceleration code.
 	{
 		return false;
 	}
+};
+
+/**
+ * Specialized consist for the rail transport type.
+ */
+class TrainConsist final : public SpecializedConsist<TrainConsist, Train, VehicleType::Train> {
+public:
+	inline TrainConsist(ConsistID index, Owner owner = INVALID_OWNER) : SpecializedConsist(index, owner) {}
 };
 
 #endif /* TRAIN_H */

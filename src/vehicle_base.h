@@ -22,6 +22,7 @@
 #include "transport_type.h"
 #include "group_type.h"
 #include "base_consist.h"
+#include "consist_type.h"
 #include "network/network.h"
 #include "saveload/saveload_type.h"
 #include "timer/timer_game_calendar.h"
@@ -206,6 +207,8 @@ private:
 
 	Vehicle *next_shared = nullptr; ///< pointer to the next vehicle that shares the order
 	Vehicle *previous_shared = nullptr; ///< NOSAVE: pointer to the previous vehicle in the shared order chain
+
+	Consist *consist = nullptr; ///< NOSAVE: pointer to the consist of this vehicle.
 
 public:
 	friend void FixOldVehicles(LoadgameState &ls);
@@ -649,6 +652,21 @@ public:
 	 * @return the last vehicle of the chain.
 	 */
 	inline Vehicle *Last() const { return this->last; }
+
+	/**
+	 * Get the consist this vehicle is a part of.
+	 * @return Pointer to the consist or nullptr if not part of a consist.
+	 */
+	inline Consist *GetConsist() const { return this->consist; }
+
+	/**
+	 * Set the consist this and all following vehicles in the chain are a part of.
+	 * @param consist The consist.
+	 */
+	inline void SetConsist(Consist *consist)
+	{
+		for (Vehicle *v = this; v != nullptr; v = v->Next()) v->consist = consist;
+	}
 
 	/**
 	 * Get the vehicle at offset \a n of this vehicle chain.

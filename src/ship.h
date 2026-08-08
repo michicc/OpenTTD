@@ -12,6 +12,7 @@
 
 #include "vehicle_base.h"
 #include "water_map.h"
+#include "consist_base.h"
 
 void GetShipSpriteSize(EngineID engine, uint &width, uint &height, int &xoffs, int &yoffs, EngineImageType image_type);
 WaterClass GetEffectiveWaterClass(TileIndex tile);
@@ -60,6 +61,15 @@ struct Ship final : public SpecializedVehicle<Ship, VehicleType::Ship> {
 	void UpdateCache();
 	void SetDestTile(TileIndex tile) override;
 };
+
+/**
+ * Specialized consist for the water transport type.
+ */
+class ShipConsist final : public SpecializedConsist<ShipConsist, Ship, VehicleType::Ship> {
+public:
+	inline ShipConsist(ConsistID index, Owner owner = INVALID_OWNER) : SpecializedConsist(index, owner) {}
+};
+
 
 bool IsShipDestinationTile(TileIndex tile, StationID station);
 

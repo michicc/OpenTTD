@@ -157,6 +157,14 @@ void CheckCaches()
 		assert(c == v->cargo.GetFeederShare());
 	}
 
+	/* Check for back-links from vehicles to consists. */
+	for (Consist *cs : Consist::Iterate()) {
+		for (Vehicle *v = cs->Front(); v != nullptr; v = v->Next()) {
+			assert(v->GetConsist() == cs);
+			assert(v->owner == cs->owner);
+		}
+	}
+
 	/* Backup stations_near */
 	std::vector<StationList> old_town_stations_near;
 	for (Town *t : Town::Iterate()) old_town_stations_near.push_back(t->stations_near);

@@ -61,6 +61,7 @@
 #include "timer/timer_game_calendar.h"
 #include "timer/timer_game_economy.h"
 #include "timer/timer_game_tick.h"
+#include "consist_base.h"
 
 #include "table/strings.h"
 
@@ -889,6 +890,11 @@ void Vehicle::PreDestructor()
 	DeleteDepotHighlightOfVehicle(this);
 
 	StopGlobalFollowVehicle(this);
+
+	if (this->IsPrimaryVehicle()) {
+		delete this->GetConsist();
+		this->SetConsist(nullptr);
+	}
 }
 
 Vehicle::~Vehicle()

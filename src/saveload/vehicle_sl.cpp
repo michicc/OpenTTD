@@ -23,6 +23,7 @@
 #include "../effectvehicle_base.h"
 #include "../company_base.h"
 #include "../company_func.h"
+#include "../consist_base.h"
 #include "../disaster_vehicle.h"
 #include "../economy_base.h"
 
@@ -267,6 +268,11 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 		v->first = nullptr;
 		v->last = nullptr;
 		if (v->IsGroundVehicle()) v->GetGroundVehicleCache()->first_engine = EngineID::Invalid();
+	}
+
+	for (Consist *cs : Consist::Iterate()) {
+		/* Reinstate consist pointers. */
+		cs->Front()->SetConsist(cs);
 	}
 
 	/* AfterLoadVehicles may also be called in case of NewGRF reload, in this
@@ -1174,6 +1180,33 @@ struct VEHSChunkHandler : ChunkHandler {
 
 			/* Advanced vehicle lists got added */
 			if (IsSavegameVersionBefore(SaveLoadVersion::VehicleGroups)) v->group_id = DEFAULT_GROUP;
+
+			if (IsSavegameVersionBefore(SaveLoadVersion::Consists)) {
+				/* The way to detect the primary vehicle of a chain changed during several
+				 * savegame versions. Waiting for that stuff to be corrected in AfterLoadGame
+				 * is too late, so we have to do a miniature replica here. */
+				bool is_primary = v->IsPrimaryVehicle();
+				if ((v->type == VehicleType::Train && IsSavegameVersionBefore(SaveLoadVersion::StoreWaypointIdInMap, 1)) || (v->type == VehicleType::Road && IsSavegameVersionBefore(SaveLoadVersion::UnifyGroundVehicles))) {
+					is_primary = v->subtype == 0;
+				}
+
+				if (is_primary) {
+					/* We have a primary vehicle, create a consist for it. */
+
+					/* Consist pool is the same size as the vehicle pool which means
+					 * there should always be space in the consist pool. */
+					assert(Consist::CanAllocateItem());
+					Consist *c = nullptr;
+					switch (v->type) {
+						case VehicleType::Train: c = TrainConsist::Create(v->owner); break;
+						case VehicleType::Road: c = RoadConsist::Create(v->owner); break;
+						case VehicleType::Ship: c = ShipConsist::Create(v->owner); break;
+						case VehicleType::Aircraft: c = AircraftConsist::Create(v->owner); break;
+						default: NOT_REACHED();
+					}
+					c->front = v;
+				}
+			}
 		}
 	}
 

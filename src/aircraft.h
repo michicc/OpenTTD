@@ -12,6 +12,7 @@
 
 #include "station_map.h"
 #include "vehicle_base.h"
+#include "consist_base.h"
 
 /**
  * Base values for flight levels above ground level for 'normal' flight and holding patterns.
@@ -136,6 +137,14 @@ struct Aircraft final : public SpecializedVehicle<Aircraft, VehicleType::Aircraf
 	{
 		return this->acache.cached_max_range;
 	}
+};
+
+/**
+ * Specialized consist for the air transport type.
+ */
+class AircraftConsist final : public SpecializedConsist<AircraftConsist, Aircraft, VehicleType::Aircraft> {
+public:
+	inline AircraftConsist(ConsistID index, Owner owner = INVALID_OWNER) : SpecializedConsist(index, owner) {}
 };
 
 void GetRotorImage(const Aircraft *v, EngineImageType image_type, VehicleSpriteSeq *result);
