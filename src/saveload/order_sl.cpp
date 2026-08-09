@@ -309,8 +309,9 @@ SaveLoadTable GetOrderBackupDescription()
 		 SLE_CONDVAR(OrderBackup, lateness_counter, VarTypes::I32, SaveLoadVersion::BackupOrderState, SaveLoadVersion::MaxVersion),
 		 SLE_CONDVAR(OrderBackup, timetable_start, VarFileType::I32 | VarMemType::U64, SaveLoadVersion::BackupOrderState, SaveLoadVersion::TimetableStartTicksFix),
 		 SLE_CONDVAR(OrderBackup, timetable_start, VarTypes::U64, SaveLoadVersion::TimetableStartTicksFix, SaveLoadVersion::MaxVersion),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::BackupOrderState, SaveLoadVersion::ServiceIntervalPercent),
-		 SLE_CONDVAR(OrderBackup, vehicle_flags, VarTypes::U16, SaveLoadVersion::ServiceIntervalPercent, SaveLoadVersion::MaxVersion),
+		SLE_CONDVARNAME(OrderBackup, consist_flags, "vehicle_flags", VarFileType::U8 | VarMemType::U16, SaveLoadVersion::BackupOrderState, SaveLoadVersion::ServiceIntervalPercent),
+		SLE_CONDVARNAME(OrderBackup, consist_flags, "vehicle_flags", VarTypes::U16, SaveLoadVersion::ServiceIntervalPercent, SaveLoadVersion::Consists),
+		 SLE_CONDVAR(OrderBackup, consist_flags, VarTypes::U16, SaveLoadVersion::Consists, SaveLoadVersion::MaxVersion),
 		SLE_CONDVARNAME(OrderBackup, old_order_index, "orders", VarFileType::U16 | VarMemType::U32, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCargoPackets),
 		SLE_CONDVARNAME(OrderBackup, old_order_index, "orders", VarTypes::U32, SaveLoadVersion::MoreCargoPackets, SaveLoadVersion::OrdersOwnedByOrderlist),
 		SLEG_CONDSTRUCTLIST("orders", SlOrders<OrderBackup>, SaveLoadVersion::OrdersOwnedByOrderlist, SaveLoadVersion::MaxVersion),
@@ -348,6 +349,10 @@ struct BKORChunkHandler : ChunkHandler {
 			/* set num_orders to 0 so it's a valid OrderList */
 			OrderBackup *ob = OrderBackup::CreateAtIndex(OrderBackupID(index));
 			SlObject(ob, slt);
+
+			if (IsSavegameVersionBefore(SaveLoadVersion::Consists)) {
+				ob->consist_flags = ConvertToConsistFlags(ob->consist_flags.base());
+			}
 		}
 	}
 

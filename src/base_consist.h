@@ -15,22 +15,20 @@
 #include "timer/timer_game_tick.h"
 
 /** Bit numbers in #Vehicle::vehicle_flags. */
-enum class VehicleFlag : uint8_t {
+enum class ConsistFlag : uint8_t {
 	LoadingFinished = 0, ///< Vehicle has finished loading.
-	CargoUnloading = 1, ///< Vehicle is unloading cargo.
-	BuiltAsPrototype = 2, ///< Vehicle is a prototype (accepted as exclusive preview).
-	TimetableStarted = 3, ///< Whether the vehicle has started running on the timetable yet.
-	AutofillTimetable = 4, ///< Whether the vehicle should fill in the timetable automatically.
-	AutofillPreserveWaitTime = 5, ///< Whether non-destructive auto-fill should preserve waiting times
-	StopLoading = 6, ///< Don't load anymore during the next load cycle.
-	PathfinderLost = 7, ///< Vehicle's pathfinder is lost.
-	ServiceIntervalIsCustom = 8, ///< Service interval is custom.
-	ServiceIntervalIsPercent = 9, ///< Service interval is percent.
-	DrivingBackwards = 10, ///< Vehicle is driving backwards.
+	StopLoading = 1, ///< Don't load anymore during the next load cycle.
+	TimetableStarted = 2, ///< Whether the vehicle has started running on the timetable yet.
+	AutofillTimetable = 3, ///< Whether the vehicle should fill in the timetable automatically.
+	AutofillPreserveWaitTime = 4, ///< Whether non-destructive auto-fill should preserve waiting times
+	PathfinderLost = 5, ///< Vehicle's pathfinder is lost.
+	ServiceIntervalIsCustom = 6, ///< Service interval is custom.
+	ServiceIntervalIsPercent = 7, ///< Service interval is percent.
+	DrivingBackwards = 8, ///< Vehicle is driving backwards.
 };
 
-/** Bitset of \c VehicleFlag elements. */
-using VehicleFlags = EnumBitSet<VehicleFlag, uint16_t>;
+/** Bitset of \c ConsistFlag elements. */
+using ConsistFlags = EnumBitSet<ConsistFlag, uint16_t>;
 
 /** Various front vehicle properties that are preserved when autoreplacing, using order-backup or switching front engines within a consist. */
 struct BaseConsist {
@@ -50,7 +48,7 @@ struct BaseConsist {
 	VehicleOrderID cur_real_order_index = 0; ///< The index to the current real (non-implicit) order
 	VehicleOrderID cur_implicit_order_index = 0; ///< The index to the current implicit order
 
-	VehicleFlags vehicle_flags{}; ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
+	ConsistFlags consist_flags{}; ///< Various state flags for the consist.
 
 	/** Ensure the destructor of the sub classes are called as well. */
 	virtual ~BaseConsist() = default;

@@ -206,7 +206,7 @@ struct TimetableWindow : Window {
 	 */
 	static bool BuildArrivalDepartureList(const Vehicle *v, std::vector<TimetableArrivalDeparture> &table)
 	{
-		assert(v->vehicle_flags.Test(VehicleFlag::TimetableStarted));
+		assert(v->consist_flags.Test(ConsistFlag::TimetableStarted));
 
 		bool travelling = (!v->current_order.IsType(OT_LOADING) || v->current_order.GetNonStopType().None());
 		TimerGameTick::Ticks start_time = -v->current_order_time;
@@ -373,7 +373,7 @@ struct TimetableWindow : Window {
 			this->DisableWidget(WID_VT_SHARED_ORDER_LIST);
 		}
 
-		this->SetWidgetLoweredState(WID_VT_AUTOFILL, v->vehicle_flags.Test(VehicleFlag::AutofillTimetable));
+		this->SetWidgetLoweredState(WID_VT_AUTOFILL, v->consist_flags.Test(ConsistFlag::AutofillTimetable));
 
 		this->DrawWidgets();
 	}
@@ -479,7 +479,7 @@ struct TimetableWindow : Window {
 		 * i.e. are only shown if we can calculate all times.
 		 * Excluding order lists with only one order makes some things easier. */
 		TimerGameTick::Ticks total_time = v->orders != nullptr ? v->orders->GetTimetableDurationIncomplete() : 0;
-		if (total_time <= 0 || v->GetNumOrders() <= 1 || !v->vehicle_flags.Test(VehicleFlag::TimetableStarted)) return;
+		if (total_time <= 0 || v->GetNumOrders() <= 1 || !v->consist_flags.Test(ConsistFlag::TimetableStarted)) return;
 
 		std::vector<TimetableArrivalDeparture> arr_dep(v->GetNumOrders());
 		const VehicleOrderID cur_order = v->cur_real_order_index % v->GetNumOrders();
@@ -578,7 +578,7 @@ struct TimetableWindow : Window {
 				/* Other units use dates. */
 				DrawString(tr, GetString(STR_TIMETABLE_STATUS_START_AT_DATE, STR_JUST_DATE_TINY, GetDateFromStartTick(v->timetable_start)));
 			}
-		} else if (!v->vehicle_flags.Test(VehicleFlag::TimetableStarted)) {
+		} else if (!v->consist_flags.Test(ConsistFlag::TimetableStarted)) {
 			/* We aren't running on a timetable yet. */
 			DrawString(tr, STR_TIMETABLE_STATUS_NOT_STARTED);
 		} else if (!VehicleIsAboveLatenessThreshold(abs(v->lateness_counter), false)) {
@@ -721,7 +721,7 @@ struct TimetableWindow : Window {
 				break;
 
 			case WID_VT_AUTOFILL: { // Autofill the timetable.
-				Command<Commands::AutofillTimetable>::Post(STR_ERROR_CAN_T_TIMETABLE_VEHICLE, v->index, !v->vehicle_flags.Test(VehicleFlag::AutofillTimetable), _ctrl_pressed);
+				Command<Commands::AutofillTimetable>::Post(STR_ERROR_CAN_T_TIMETABLE_VEHICLE, v->index, !v->consist_flags.Test(ConsistFlag::AutofillTimetable), _ctrl_pressed);
 				break;
 			}
 

@@ -1672,7 +1672,7 @@ bool AfterLoadGame()
 
 				/* The loading finished flag is *only* set when actually completely
 				 * finished. Because the vehicle is loading, it is not finished. */
-				v->vehicle_flags.Reset(VehicleFlag::LoadingFinished);
+				v->consist_flags.Reset(ConsistFlag::LoadingFinished);
 			}
 		}
 	} else if (IsSavegameVersionBefore(SaveLoadVersion::TownLayout)) {
@@ -2699,7 +2699,7 @@ bool AfterLoadGame()
 			if (!t->flags.Test(VehicleRailFlag{5})) continue;
 
 			t->flags.Reset(VehicleRailFlag{5});
-			t->vehicle_flags.Set(VehicleFlag::PathfinderLost);
+			t->consist_flags.Set(ConsistFlag::PathfinderLost);
 		}
 
 		/* Introduced terraform/clear limits. */

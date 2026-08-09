@@ -45,6 +45,15 @@ enum class VehState : uint8_t {
 /** Bitset of \c VehState elements. */
 using VehStates = EnumBitSet<VehState, uint8_t>;
 
+/** Bit numbers in #Vehicle::vehicle_flags. */
+enum class VehicleFlag : uint8_t {
+	CargoUnloading = 0, ///< Vehicle is unloading cargo.
+	BuiltAsPrototype = 1, ///< Vehicle is a prototype (accepted as exclusive preview).
+};
+
+/** Bitset of \c VehicleFlag elements. */
+using VehicleFlags = EnumBitSet<VehicleFlag, uint16_t>;
+
 /** Bit numbers used to indicate which of the #NewGRFCache values are valid. */
 enum NewGRFCacheValidValues : uint8_t {
 	NCVV_POSITION_CONSIST_LENGTH   = 0, ///< This bit will be set if the NewGRF var 40 currently stored is valid.
@@ -303,6 +312,8 @@ public:
 	uint8_t running_ticks = 0; ///< Number of ticks this vehicle was not stopped this day
 	uint16_t load_unload_ticks = 0; ///< Ticks to wait before starting next cycle.
 
+	VehicleFlags vehicle_flags; ///< Used for gradual loading and other miscellaneous things (@see VehicleFlags enum)
+
 	VehStates vehstatus{}; ///< Status
 	uint8_t subtype = 0; ///< subtype (Filled with values from #AircraftSubType/#DisasterSubType/#EffectVehicleType/#GroundVehicleSubtypeFlags)
 	Order current_order{}; ///< The current order (+ status, like: loading)
@@ -368,7 +379,7 @@ public:
 	 * Is this vehicle moving backwards?
 	 * @return \c true iff the vehicle is moving backwards.
 	 */
-	bool IsDrivingBackwards() const { return this->First()->vehicle_flags.Test(VehicleFlag::DrivingBackwards); }
+	bool IsDrivingBackwards() const { return this->First()->consist_flags.Test(ConsistFlag::DrivingBackwards); }
 
 	/**
 	 * Is this vehicle the moving front of the vehicle chain?
@@ -848,13 +859,13 @@ public:
 
 	inline void SetServiceInterval(uint16_t interval) { this->service_interval = interval; }
 
-	inline bool ServiceIntervalIsCustom() const { return this->vehicle_flags.Test(VehicleFlag::ServiceIntervalIsCustom); }
+	inline bool ServiceIntervalIsCustom() const { return this->consist_flags.Test(ConsistFlag::ServiceIntervalIsCustom); }
 
-	inline bool ServiceIntervalIsPercent() const { return this->vehicle_flags.Test(VehicleFlag::ServiceIntervalIsPercent); }
+	inline bool ServiceIntervalIsPercent() const { return this->consist_flags.Test(ConsistFlag::ServiceIntervalIsPercent); }
 
-	inline void SetServiceIntervalIsCustom(bool on) { this->vehicle_flags.Set(VehicleFlag::ServiceIntervalIsCustom, on); }
+	inline void SetServiceIntervalIsCustom(bool on) { this->consist_flags.Set(ConsistFlag::ServiceIntervalIsCustom, on); }
 
-	inline void SetServiceIntervalIsPercent(bool on) { this->vehicle_flags.Set(VehicleFlag::ServiceIntervalIsPercent, on); }
+	inline void SetServiceIntervalIsPercent(bool on) { this->consist_flags.Set(ConsistFlag::ServiceIntervalIsPercent, on); }
 
 	bool HasFullLoadOrder() const;
 	bool HasConditionalOrder() const;

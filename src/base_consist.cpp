@@ -34,13 +34,13 @@ void BaseConsist::CopyConsistPropertiesFrom(const BaseConsist *src)
 	this->cur_real_order_index = src->cur_real_order_index;
 	this->cur_implicit_order_index = src->cur_implicit_order_index;
 
-	if (src->vehicle_flags.Test(VehicleFlag::TimetableStarted)) this->vehicle_flags.Set(VehicleFlag::TimetableStarted);
-	if (src->vehicle_flags.Test(VehicleFlag::AutofillTimetable)) this->vehicle_flags.Set(VehicleFlag::AutofillTimetable);
-	if (src->vehicle_flags.Test(VehicleFlag::AutofillPreserveWaitTime)) this->vehicle_flags.Set(VehicleFlag::AutofillPreserveWaitTime);
-	if (src->vehicle_flags.Test(VehicleFlag::ServiceIntervalIsPercent) != this->vehicle_flags.Test(VehicleFlag::ServiceIntervalIsPercent)) {
-		this->vehicle_flags.Flip(VehicleFlag::ServiceIntervalIsPercent);
+	if (src->consist_flags.Test(ConsistFlag::TimetableStarted)) this->consist_flags.Set(ConsistFlag::TimetableStarted);
+	if (src->consist_flags.Test(ConsistFlag::AutofillTimetable)) this->consist_flags.Set(ConsistFlag::AutofillTimetable);
+	if (src->consist_flags.Test(ConsistFlag::AutofillPreserveWaitTime)) this->consist_flags.Set(ConsistFlag::AutofillPreserveWaitTime);
+	if (src->consist_flags.Test(ConsistFlag::ServiceIntervalIsPercent) != this->consist_flags.Test(ConsistFlag::ServiceIntervalIsPercent)) {
+		this->consist_flags.Flip(ConsistFlag::ServiceIntervalIsPercent);
 	}
-	if (src->vehicle_flags.Test(VehicleFlag::ServiceIntervalIsCustom)) this->vehicle_flags.Set(VehicleFlag::ServiceIntervalIsCustom);
+	if (src->consist_flags.Test(ConsistFlag::ServiceIntervalIsCustom)) this->consist_flags.Set(ConsistFlag::ServiceIntervalIsCustom);
 }
 
 /**

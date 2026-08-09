@@ -2059,9 +2059,9 @@ static void ReverseTrainDirection(Train *consist)
 	TileIndex crossing = TrainApproachingCrossingTile(moving_front);
 
 	/* Check if we should back up or flip the train. */
-	if (consist->vehicle_flags.Test(VehicleFlag::DrivingBackwards) || _settings_game.difficulty.train_flip_reverse_allowed == TrainFlipReversingAllowed::None || consist->Last()->CanLeadTrain()) {
+	if (consist->consist_flags.Test(ConsistFlag::DrivingBackwards) || _settings_game.difficulty.train_flip_reverse_allowed == TrainFlipReversingAllowed::None || consist->Last()->CanLeadTrain()) {
 		/* The train will back up. */
-		consist->vehicle_flags.Flip(VehicleFlag::DrivingBackwards);
+		consist->consist_flags.Flip(ConsistFlag::DrivingBackwards);
 
 		for (Train *u = consist; u != nullptr; u = u->Next()) {
 			/* Invert going up/down */

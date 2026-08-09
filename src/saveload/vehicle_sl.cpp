@@ -161,6 +161,23 @@ void ConvertOldMultiheadToNew()
 	}
 }
 
+/** Extract consist flags from old vehicle flags. */
+ConsistFlags ConvertToConsistFlags(uint16_t old_flags)
+{
+	ConsistFlags consist_flags{};
+
+	if (HasBit(old_flags, 0)) consist_flags.Set(ConsistFlag::LoadingFinished);
+	if (HasBit(old_flags, 3)) consist_flags.Set(ConsistFlag::TimetableStarted);
+	if (HasBit(old_flags, 4)) consist_flags.Set(ConsistFlag::AutofillTimetable);
+	if (HasBit(old_flags, 5)) consist_flags.Set(ConsistFlag::AutofillPreserveWaitTime);
+	if (HasBit(old_flags, 6)) consist_flags.Set(ConsistFlag::StopLoading);
+	if (HasBit(old_flags, 7)) consist_flags.Set(ConsistFlag::PathfinderLost);
+	if (HasBit(old_flags, 8)) consist_flags.Set(ConsistFlag::ServiceIntervalIsCustom);
+	if (HasBit(old_flags, 9)) consist_flags.Set(ConsistFlag::ServiceIntervalIsPercent);
+	if (HasBit(old_flags, 10)) consist_flags.Set(ConsistFlag::DrivingBackwards);
+
+	return consist_flags;
+}
 
 /** need to be called to load aircraft from old version */
 void UpdateOldAircraft()
@@ -1206,6 +1223,10 @@ struct VEHSChunkHandler : ChunkHandler {
 					}
 					c->front = v;
 				}
+
+				/* Split old vehicle flags into consist flags and new vehicle flags. */
+				v->consist_flags = ConvertToConsistFlags(v->vehicle_flags.base());
+				v->vehicle_flags = VehicleFlags(((uint16_t)v->vehicle_flags.base() >> 1) & 0x03);
 			}
 		}
 	}

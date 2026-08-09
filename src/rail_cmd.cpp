@@ -3065,11 +3065,11 @@ static VehicleEnterTileStates VehicleEnterTile_Rail(Vehicle *v, TileIndex tile, 
 		v->vehstatus.Set(VehState::Hidden);
 		if (v->GetMovingNext() == nullptr) {
 			Train *consist = Train::From(v)->First();
-			if (consist->vehicle_flags.Test(VehicleFlag::DrivingBackwards)) {
+			if (consist->consist_flags.Test(ConsistFlag::DrivingBackwards)) {
 				/* Trains always drive forwards out of a depot.
 				 * This allows a player to easily reset a confused train,
 				 * and matches the behaviour of the \c VehicleRailFlag::Reversed variable. */
-				consist->vehicle_flags.Reset(VehicleFlag::DrivingBackwards);
+				consist->consist_flags.Reset(ConsistFlag::DrivingBackwards);
 			} else {
 				for (Train *u = consist; u != nullptr; u = u->Next()) {
 					u->direction = ReverseDir(u->direction);

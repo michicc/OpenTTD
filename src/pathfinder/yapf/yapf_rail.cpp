@@ -622,7 +622,7 @@ bool YapfTrainCheckReverse(const Train *v)
 	if (_settings_game.difficulty.train_flip_reverse_allowed == TrainFlipReversingAllowed::None && !v->Last()->CanLeadTrain()) {
 		constexpr int DRIVING_BACKWARDS_PENALTY = 100 * YAPF_TILE_LENGTH;
 
-		if (!v->vehicle_flags.Test(VehicleFlag::DrivingBackwards)) {
+		if (!v->consist_flags.Test(ConsistFlag::DrivingBackwards)) {
 			/* We're currently driving forwards at full speed, and would rather not reverse if possible. */
 			reverse_penalty += DRIVING_BACKWARDS_PENALTY;
 		}
