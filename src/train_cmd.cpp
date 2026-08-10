@@ -843,7 +843,6 @@ CommandCost CmdBuildRailVehicle(DoCommandFlags flags, TileIndex tile, const Engi
 
 		v->railtypes = rvi->railtypes;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_trains);
 		v->date_of_last_service = TimerGameEconomy::date;
 		v->date_of_last_service_newgrf = TimerGameCalendar::date;
 		v->build_year = TimerGameCalendar::year;
@@ -851,7 +850,6 @@ CommandCost CmdBuildRailVehicle(DoCommandFlags flags, TileIndex tile, const Engi
 		v->random_bits = Random();
 
 		if (e->flags.Test(EngineFlag::ExclusivePreview)) v->vehicle_flags.Set(VehicleFlag::BuiltAsPrototype);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->group_id = DEFAULT_GROUP;
 
@@ -1422,7 +1420,6 @@ CommandCost CmdMoveRailVehicle(DoCommandFlags flags, VehicleID src_veh, VehicleI
 			/* Remove stuff not valid anymore for non-front engines. */
 			DeleteVehicleOrders(src);
 			src->ReleaseUnitNumber();
-			src->name.clear();
 		}
 
 		/* We weren't a front engine but are becoming one. So
@@ -2059,9 +2056,9 @@ static void ReverseTrainDirection(Train *consist)
 	TileIndex crossing = TrainApproachingCrossingTile(moving_front);
 
 	/* Check if we should back up or flip the train. */
-	if (consist->consist_flags.Test(ConsistFlag::DrivingBackwards) || _settings_game.difficulty.train_flip_reverse_allowed == TrainFlipReversingAllowed::None || consist->Last()->CanLeadTrain()) {
+	if (consist->GetConsist()->consist_flags.Test(ConsistFlag::DrivingBackwards) || _settings_game.difficulty.train_flip_reverse_allowed == TrainFlipReversingAllowed::None || consist->Last()->CanLeadTrain()) {
 		/* The train will back up. */
-		consist->consist_flags.Flip(ConsistFlag::DrivingBackwards);
+		consist->GetConsist()->consist_flags.Flip(ConsistFlag::DrivingBackwards);
 
 		for (Train *u = consist; u != nullptr; u = u->Next()) {
 			/* Invert going up/down */
@@ -2205,7 +2202,7 @@ CommandCost CmdReverseTrainDirection(DoCommandFlags flags, VehicleID veh_id, boo
 			}
 
 			/* Unbunching data is no longer valid. */
-			v->ResetDepotUnbunching();
+			v->GetConsist()->ResetDepotUnbunching();
 		}
 	}
 	return CommandCost();
@@ -2255,7 +2252,7 @@ CommandCost CmdForceTrainProceed(DoCommandFlags flags, VehicleID veh_id)
 		InvalidateWindowData(WindowClass::VehicleView, t->index);
 
 		/* Unbunching data is no longer valid. */
-		t->ResetDepotUnbunching();
+		t->GetConsist()->ResetDepotUnbunching();
 	}
 
 	return CommandCost();
@@ -2710,7 +2707,7 @@ public:
 		old_order(_v->current_order),
 		old_dest_tile(_v->dest_tile),
 		old_last_station_visited(_v->last_station_visited),
-		index(_v->cur_real_order_index),
+		index(_v->GetConsist()->cur_real_order_index),
 		suppress_implicit_orders(_v->gv_flags.Test(GroundVehicleFlag::SuppressImplicitOrders)),
 		restored(false)
 	{
@@ -2782,7 +2779,7 @@ public:
 			 * orders can lead to an infinite loop. */
 			++this->index;
 			depth++;
-		} while (this->index != this->v->cur_real_order_index && depth < this->v->GetNumOrders());
+		} while (this->index != this->v->GetConsist()->cur_real_order_index && depth < this->v->GetNumOrders());
 
 		return false;
 	}
@@ -3062,7 +3059,7 @@ TileIndex Train::GetOrderStationLocation(StationID station)
 	const Station *st = Station::Get(station);
 	if (!st->facilities.Test(StationFacility::Train)) {
 		/* The destination station has no trainstation tiles. */
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return TileIndex{};
 	}
 

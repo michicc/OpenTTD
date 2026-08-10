@@ -205,7 +205,7 @@ struct ClosestDepot {
 };
 
 /** %Vehicle data structure. */
-struct Vehicle : VehiclePool::PoolItem<&_vehicle_pool>, BaseVehicle, BaseConsist {
+struct Vehicle : VehiclePool::PoolItem<&_vehicle_pool>, BaseVehicle {
 private:
 	typedef std::list<RefitDesc> RefitList;
 
@@ -297,7 +297,6 @@ public:
 
 	StationID last_station_visited = StationID::Invalid(); ///< The last station we stopped at.
 	StationID last_loading_station = StationID::Invalid(); ///< Last station the vehicle has stopped at and could possibly leave from with any cargo loaded.
-	TimerGameTick::TickCounter last_loading_tick{}; ///< Last TimerGameTick::counter tick that the vehicle has stopped at a station and could possibly leave with any cargo loaded.
 
 	VehicleCargoList cargo{}; ///< The cargo this vehicle is carrying
 	CargoType cargo_type{}; ///< type of cargo this vehicle is carrying
@@ -343,7 +342,7 @@ public:
 
 	void PreDestructor();
 	/** We want to 'destruct' the right class. */
-	~Vehicle() override;
+	virtual ~Vehicle();
 
 	void BeginLoading();
 	void CancelReservation(StationID next, Station *st);
@@ -375,11 +374,7 @@ public:
 	 */
 	virtual void UpdateDeltaXY() {}
 
-	/**
-	 * Is this vehicle moving backwards?
-	 * @return \c true iff the vehicle is moving backwards.
-	 */
-	bool IsDrivingBackwards() const { return this->First()->consist_flags.Test(ConsistFlag::DrivingBackwards); }
+	bool IsDrivingBackwards() const;
 
 	/**
 	 * Is this vehicle the moving front of the vehicle chain?
@@ -794,8 +789,6 @@ public:
 	 */
 	inline void CopyVehicleConfigAndStatistics(Vehicle *src)
 	{
-		this->CopyConsistPropertiesFrom(src);
-
 		this->ReleaseUnitNumber();
 		this->unitnumber = src->unitnumber;
 
@@ -855,102 +848,12 @@ public:
 	void UpdatePositionAndViewport();
 	bool MarkAllViewportsDirty() const;
 
-	inline uint16_t GetServiceInterval() const { return this->service_interval; }
-
-	inline void SetServiceInterval(uint16_t interval) { this->service_interval = interval; }
-
-	inline bool ServiceIntervalIsCustom() const { return this->consist_flags.Test(ConsistFlag::ServiceIntervalIsCustom); }
-
-	inline bool ServiceIntervalIsPercent() const { return this->consist_flags.Test(ConsistFlag::ServiceIntervalIsPercent); }
-
-	inline void SetServiceIntervalIsCustom(bool on) { this->consist_flags.Set(ConsistFlag::ServiceIntervalIsCustom, on); }
-
-	inline void SetServiceIntervalIsPercent(bool on) { this->consist_flags.Set(ConsistFlag::ServiceIntervalIsPercent, on); }
 
 	bool HasFullLoadOrder() const;
 	bool HasConditionalOrder() const;
 	bool HasUnbunchingOrder() const;
 	void LeaveUnbunchingDepot();
 	bool IsWaitingForUnbunching() const;
-
-private:
-	/**
-	 * Advance cur_real_order_index to the next real order.
-	 * cur_implicit_order_index is not touched.
-	 */
-	void SkipToNextRealOrderIndex()
-	{
-		if (this->GetNumManualOrders() > 0) {
-			/* Advance to next real order */
-			do {
-				this->cur_real_order_index++;
-				if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-			} while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT));
-		} else {
-			this->cur_real_order_index = 0;
-		}
-	}
-
-public:
-	/**
-	 * Increments cur_implicit_order_index, keeps care of the wrap-around and invalidates the GUI.
-	 * cur_real_order_index is incremented as well, if needed.
-	 * Note: current_order is not invalidated.
-	 */
-	void IncrementImplicitOrderIndex()
-	{
-		if (this->cur_implicit_order_index == this->cur_real_order_index) {
-			/* Increment real order index as well */
-			this->SkipToNextRealOrderIndex();
-		}
-
-		assert(this->cur_real_order_index == 0 || this->cur_real_order_index < this->GetNumOrders());
-
-		/* Advance to next implicit order */
-		do {
-			this->cur_implicit_order_index++;
-			if (this->cur_implicit_order_index >= this->GetNumOrders()) this->cur_implicit_order_index = 0;
-		} while (this->cur_implicit_order_index != this->cur_real_order_index && !this->GetOrder(this->cur_implicit_order_index)->IsType(OT_IMPLICIT));
-
-		InvalidateVehicleOrder(this, 0);
-	}
-
-	/**
-	 * Advanced cur_real_order_index to the next real order, keeps care of the wrap-around and invalidates the GUI.
-	 * cur_implicit_order_index is incremented as well, if it was equal to cur_real_order_index, i.e. cur_real_order_index is skipped
-	 * but not any implicit orders.
-	 * Note: current_order is not invalidated.
-	 */
-	void IncrementRealOrderIndex()
-	{
-		if (this->cur_implicit_order_index == this->cur_real_order_index) {
-			/* Increment both real and implicit order */
-			this->IncrementImplicitOrderIndex();
-		} else {
-			/* Increment real order only */
-			this->SkipToNextRealOrderIndex();
-			InvalidateVehicleOrder(this, 0);
-		}
-	}
-
-	/**
-	 * Skip implicit orders until cur_real_order_index is a non-implicit order.
-	 */
-	void UpdateRealOrderIndex()
-	{
-		/* Make sure the index is valid */
-		if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-
-		if (this->GetNumManualOrders() > 0) {
-			/* Advance to next real order */
-			while (this->GetOrder(this->cur_real_order_index)->IsType(OT_IMPLICIT)) {
-				this->cur_real_order_index++;
-				if (this->cur_real_order_index >= this->GetNumOrders()) this->cur_real_order_index = 0;
-			}
-		} else {
-			this->cur_real_order_index = 0;
-		}
-	}
 
 	/**
 	 * Returns order 'index' of a vehicle or nullptr when it doesn't exists

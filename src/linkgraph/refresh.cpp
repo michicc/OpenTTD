@@ -9,6 +9,7 @@
 
 #include "../stdafx.h"
 #include "../core/bitmath_func.hpp"
+#include "../consist_base.h"
 #include "../station_func.h"
 #include "../engine_base.h"
 #include "../vehicle_func.h"
@@ -29,7 +30,7 @@
 	if (v->orders == nullptr) return;
 
 	/* Make sure the first order is a useful order. */
-	VehicleOrderID first = v->orders->GetNextDecisionNode(v->cur_implicit_order_index, 0);
+	VehicleOrderID first = v->orders->GetNextDecisionNode(v->GetConsist()->cur_implicit_order_index, 0);
 	if (first == INVALID_VEH_ORDER_ID) return;
 
 	HopSet seen_hops;
@@ -217,7 +218,7 @@ void LinkRefresher::RefreshStats(VehicleOrderID cur, VehicleOrderID next)
 			 * probably far off and we'd greatly overestimate the capacity by increasing.*/
 			if (this->is_full_loading && this->vehicle->orders != nullptr &&
 					st->index == vehicle->last_station_visited &&
-					this->vehicle->orders->GetTotalDuration() > this->vehicle->current_order_time) {
+					this->vehicle->orders->GetTotalDuration() > this->vehicle->GetConsist()->current_order_time) {
 				uint effective_capacity = cargo_quantity * this->vehicle->load_unload_ticks;
 				if (effective_capacity > (uint)this->vehicle->orders->GetTotalDuration()) {
 					IncreaseStats(st, cargo, next_station, effective_capacity /

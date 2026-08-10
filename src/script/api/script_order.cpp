@@ -20,6 +20,7 @@
 #include "../../station_base.h"
 #include "../../waypoint_base.h"
 #include "../../order_cmd.h"
+#include "../../consist_base.h"
 
 #include "../../safeguards.h"
 
@@ -181,7 +182,7 @@ static ScriptOrder::OrderPosition RealOrderPositionToScriptOrderPosition(Vehicle
 	if (num_manual_orders == 0) return ORDER_INVALID;
 
 	if (order_position == ORDER_CURRENT) {
-		int cur_order_pos = ::Vehicle::Get(vehicle_id)->cur_real_order_index;
+		int cur_order_pos = ::Vehicle::Get(vehicle_id)->GetConsist()->cur_real_order_index;
 		OrderPosition order_pos = ::RealOrderPositionToScriptOrderPosition(vehicle_id, cur_order_pos);
 		assert(order_pos < num_manual_orders);
 		return order_pos;

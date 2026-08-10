@@ -407,8 +407,9 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 				const Company *c = Company::Get(v->owner);
 				int interval = CompanyServiceInterval(c, v->type);
 
-				v->SetServiceIntervalIsCustom(v->GetServiceInterval() != interval);
-				v->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
+				Consist *cs = v->GetConsist();
+				cs->SetServiceIntervalIsCustom(cs->GetServiceInterval() != interval);
+				cs->SetServiceIntervalIsPercent(c->settings.vehicle.servint_ispercent);
 			}
 		}
 
@@ -431,11 +432,11 @@ void AfterLoadVehiclesPhase1(bool part_of_load)
 
 		if (IsSavegameVersionBefore(SaveLoadVersion::TimetableStartTicks)) {
 			/* Convert timetable start from a date to an absolute tick in TimerGameTick::counter. */
-			for (Vehicle *v : Vehicle::Iterate()) {
+			for (Consist *cs : Consist::Iterate()) {
 				/* If the start date is 0, the vehicle is not waiting to start and can be ignored. */
-				if (v->timetable_start == 0) continue;
+				if (cs->timetable_start == 0) continue;
 
-				v->timetable_start = GetStartTickFromDate(TimerGameEconomy::Date(v->timetable_start));
+				cs->timetable_start = GetStartTickFromDate(TimerGameEconomy::Date(cs->timetable_start));
 			}
 		}
 
@@ -674,14 +675,26 @@ static uint16_t _cargo_count;
 static uint16_t _cargo_paid_for;
 static Money  _cargo_feeder_share;
 
+static std::string _veh_name;
+static TimerGameTick::Ticks _veh_current_order_time;
+static TimerGameTick::TickCounter _veh_last_loading_tick;
+static TimerGameTick::Ticks _veh_lateness_counter;
+static TimerGameTick::TickCounter _veh_timetable_start;
+static uint16_t _veh_service_interval;
+static VehicleOrderID _veh_cur_real_order_index;
+static VehicleOrderID _veh_cur_implicit_order_index;
+static TimerGameTick::TickCounter _veh_depot_unbunching_last_departure;
+static TimerGameTick::TickCounter _veh_depot_unbunching_next_departure;
+static TimerGameTick::Ticks _veh_round_trip_time;
+
 class SlVehicleCommon : public DefaultSaveLoadHandler<SlVehicleCommon, Vehicle> {
 public:
 	static inline const SaveLoad description[] = {
 		    SLE_VAR(Vehicle, subtype,               VarTypes::U8),
 
 		    SLE_REF(Vehicle, next,                  SLRefType::OldVehicle),
-		SLE_CONDVAR(Vehicle, name, VarTypes::NAME, SaveLoadVersion::MinVersion, SaveLoadVersion::ReplaceCustomNameArray),
-		SLE_CONDSSTR(Vehicle, name, VarTypes::STR | StringValidationSetting::AllowControlCode, SaveLoadVersion::ReplaceCustomNameArray, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("name", _veh_name, VarTypes::NAME, SaveLoadVersion::MinVersion, SaveLoadVersion::ReplaceCustomNameArray),
+		SLEG_CONDSSTR("name", _veh_name, VarTypes::STR | StringValidationSetting::AllowControlCode, SaveLoadVersion::ReplaceCustomNameArray, SaveLoadVersion::Consists),
 		SLE_CONDVAR(Vehicle, unitnumber, VarFileType::U8 | VarMemType::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::LargerUnitNumber),
 		SLE_CONDVAR(Vehicle, unitnumber, VarTypes::U16, SaveLoadVersion::LargerUnitNumber, SaveLoadVersion::MaxVersion),
 		    SLE_VAR(Vehicle, owner,                 VarTypes::U8),
@@ -728,8 +741,8 @@ public:
 		    SLE_VAR(Vehicle, tick_counter,          VarTypes::U8),
 		SLE_CONDVAR(Vehicle, running_ticks, VarTypes::U8, SaveLoadVersion::FractionProfitRunningTicks, SaveLoadVersion::MaxVersion),
 
-		    SLE_VAR(Vehicle, cur_implicit_order_index,  VarTypes::U8),
-		SLE_CONDVAR(Vehicle, cur_real_order_index, VarTypes::U8, SaveLoadVersion::TrackRealAndAutoOrders, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("cur_implicit_order_index", _veh_cur_implicit_order_index, VarTypes::U8, SaveLoadVersion::MinVersion, SaveLoadVersion::Consists),
+		SLEG_CONDVAR("cur_real_order_index", _veh_cur_real_order_index, VarTypes::U8, SaveLoadVersion::TrackRealAndAutoOrders, SaveLoadVersion::Consists),
 
 		/* This next line is for version 4 and prior compatibility.. it temporarily reads
 		type and flags (which were both 4 bits) into type. Later on this is
@@ -749,8 +762,8 @@ public:
 		SLE_CONDVAR(Vehicle, current_order.wait_time, VarTypes::U16, SaveLoadVersion::Timetables, SaveLoadVersion::MaxVersion),
 		SLE_CONDVAR(Vehicle, current_order.travel_time, VarTypes::U16, SaveLoadVersion::Timetables, SaveLoadVersion::MaxVersion),
 		SLE_CONDVAR(Vehicle, current_order.max_speed, VarTypes::U16, SaveLoadVersion::CurrentOrderMaxSpeed, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, timetable_start, VarFileType::I32 | VarMemType::U64, SaveLoadVersion::TimetableStart, SaveLoadVersion::TimetableStartTicks),
-		SLE_CONDVAR(Vehicle, timetable_start, VarTypes::U64, SaveLoadVersion::TimetableStartTicks, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("timetable_start", _veh_timetable_start, VarFileType::I32 | VarMemType::U64, SaveLoadVersion::TimetableStart, SaveLoadVersion::TimetableStartTicks),
+		SLEG_CONDVAR("timetable_start", _veh_timetable_start, VarTypes::U64, SaveLoadVersion::TimetableStartTicks, SaveLoadVersion::Consists),
 
 		SLE_CONDVARNAME(Vehicle, old_orders, "orders", VarFileType::U16 | VarMemType::U32, SaveLoadVersion::MinVersion, SaveLoadVersion::MoreCargoPackets),
 		SLE_CONDVARNAME(Vehicle, old_orders, "orders", VarTypes::U32, SaveLoadVersion::MoreCargoPackets, SaveLoadVersion::OrderList),
@@ -764,9 +777,9 @@ public:
 		SLE_CONDVAR(Vehicle, date_of_last_service, VarFileType::U16 | VarMemType::I32, SaveLoadVersion::MinVersion, SaveLoadVersion::BigDates),
 		SLE_CONDVAR(Vehicle, date_of_last_service, VarTypes::I32, SaveLoadVersion::BigDates, SaveLoadVersion::MaxVersion),
 		SLE_CONDVAR(Vehicle, date_of_last_service_newgrf, VarTypes::I32, SaveLoadVersion::NewGRFLastService, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, service_interval, VarTypes::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::BigDates),
-		SLE_CONDVAR(Vehicle, service_interval, VarFileType::U32 | VarMemType::U16, SaveLoadVersion::BigDates, SaveLoadVersion::ServiceIntervalPercent),
-		SLE_CONDVAR(Vehicle, service_interval, VarTypes::U16, SaveLoadVersion::ServiceIntervalPercent, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("service_interval", _veh_service_interval, VarTypes::U16, SaveLoadVersion::MinVersion, SaveLoadVersion::BigDates),
+		SLEG_CONDVAR("service_interval", _veh_service_interval, VarFileType::U32 | VarMemType::U16, SaveLoadVersion::BigDates, SaveLoadVersion::ServiceIntervalPercent),
+		SLEG_CONDVAR("service_interval", _veh_service_interval, VarTypes::U16,  SaveLoadVersion::ServiceIntervalPercent, SaveLoadVersion::Consists),
 		    SLE_VAR(Vehicle, reliability,           VarTypes::U16),
 		    SLE_VAR(Vehicle, reliability_spd_dec,   VarTypes::U16),
 		    SLE_VAR(Vehicle, breakdown_ctr,         VarTypes::U8),
@@ -797,14 +810,14 @@ public:
 		SLE_CONDREF(Vehicle, next_shared, SLRefType::Vehicle, SaveLoadVersion::VehicleCurrencyStationChanges, SaveLoadVersion::MaxVersion),
 		SLE_CONDVAR(Vehicle, group_id, VarTypes::U16, SaveLoadVersion::VehicleGroups, SaveLoadVersion::MaxVersion),
 
-		SLE_CONDVAR(Vehicle, current_order_time, VarFileType::U32 | VarMemType::I32, SaveLoadVersion::Timetables, SaveLoadVersion::TimetableTicksType),
-		SLE_CONDVAR(Vehicle, current_order_time, VarTypes::I32, SaveLoadVersion::TimetableTicksType, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, last_loading_tick, VarTypes::U64, SaveLoadVersion::LastLoadingTick, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, lateness_counter, VarTypes::I32, SaveLoadVersion::Timetables, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("current_order_time", _veh_current_order_time, VarFileType::U32 | VarMemType::I32, SaveLoadVersion::Timetables, SaveLoadVersion::TimetableTicksType),
+		SLEG_CONDVAR("current_order_time", _veh_current_order_time, VarTypes::I32, SaveLoadVersion::TimetableTicksType, SaveLoadVersion::Consists),
+		SLEG_CONDVAR("last_loading_tick", _veh_last_loading_tick, VarTypes::U64, SaveLoadVersion::LastLoadingTick, SaveLoadVersion::Consists),
+		SLEG_CONDVAR("lateness_counter", _veh_lateness_counter, VarTypes::I32, SaveLoadVersion::Timetables, SaveLoadVersion::Consists),
 
-		SLE_CONDVAR(Vehicle, depot_unbunching_last_departure, VarTypes::U64, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, depot_unbunching_next_departure, VarTypes::U64, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::MaxVersion),
-		SLE_CONDVAR(Vehicle, round_trip_time, VarTypes::I32, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::MaxVersion),
+		SLEG_CONDVAR("depot_unbunching_last_departure", _veh_depot_unbunching_last_departure, VarTypes::U64, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::Consists),
+		SLEG_CONDVAR("depot_unbunching_next_departure", _veh_depot_unbunching_next_departure, VarTypes::U64, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::Consists),
+		SLEG_CONDVAR("round_trip_time", _veh_round_trip_time, VarTypes::I32, SaveLoadVersion::DepotUnbunching, SaveLoadVersion::Consists),
 	};
 
 	static inline const SaveLoadCompatTable compat_description = _vehicle_common_sl_compat;
@@ -1173,6 +1186,17 @@ struct VEHSChunkHandler : ChunkHandler {
 				default: SlErrorCorrupt("Invalid vehicle type");
 			}
 
+			/* Clear stuff that is conditionally read from the save. */
+			_veh_name.clear();
+			_veh_current_order_time = 0;
+			_veh_last_loading_tick = 0;
+			_veh_lateness_counter = 0;
+			_veh_timetable_start = 0;
+			_veh_cur_real_order_index = 0;
+			_veh_depot_unbunching_last_departure = 0;
+			_veh_depot_unbunching_next_departure = 0;
+			_veh_round_trip_time = 0;
+
 			SlObject(v, slt);
 
 			if (_cargo_count != 0 && IsCompanyBuildableVehicleType(v) && CargoPacket::CanAllocateItem()) {
@@ -1222,11 +1246,23 @@ struct VEHSChunkHandler : ChunkHandler {
 						default: NOT_REACHED();
 					}
 					c->front = v;
-				}
 
-				/* Split old vehicle flags into consist flags and new vehicle flags. */
-				v->consist_flags = ConvertToConsistFlags(v->vehicle_flags.base());
-				v->vehicle_flags = VehicleFlags(((uint16_t)v->vehicle_flags.base() >> 1) & 0x03);
+					/* Split old vehicle flags into consist flags and new vehicle flags. */
+					c->consist_flags = ConvertToConsistFlags(v->vehicle_flags.base());
+					v->vehicle_flags = VehicleFlags(((uint16_t)v->vehicle_flags.base() >> 1) & 0x03);
+
+					c->name = _veh_name;
+					c->current_order_time = _veh_current_order_time;
+					c->last_loading_tick = _veh_last_loading_tick;
+					c->lateness_counter = _veh_lateness_counter;
+					c->timetable_start = _veh_timetable_start;
+					c->depot_unbunching_last_departure = _veh_depot_unbunching_last_departure;
+					c->depot_unbunching_next_departure = _veh_depot_unbunching_next_departure;
+					c->round_trip_time = _veh_round_trip_time;
+					c->service_interval = _veh_service_interval;
+					c->cur_real_order_index = _veh_cur_real_order_index;
+					c->cur_implicit_order_index = _veh_cur_implicit_order_index;
+				}
 			}
 		}
 	}

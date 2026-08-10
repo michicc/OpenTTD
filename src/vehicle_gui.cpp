@@ -37,6 +37,7 @@
 #include "station_base.h"
 #include "tilehighlight_func.h"
 #include "zoom_func.h"
+#include "consist_base.h"
 #include "depot_cmd.h"
 #include "vehicle_cmd.h"
 #include "order_cmd.h"
@@ -1566,7 +1567,7 @@ static bool VehicleTimeToLiveSorter(const Vehicle * const &a, const Vehicle * co
 /** Sort vehicles by the timetable delay. @copydoc GUIList::Sorter */
 static bool VehicleTimetableDelaySorter(const Vehicle * const &a, const Vehicle * const &b)
 {
-	int r = a->lateness_counter - b->lateness_counter;
+	int r = a->GetConsist()->lateness_counter - b->GetConsist()->lateness_counter;
 	return (r != 0) ? r < 0 : VehicleNumberSorter(a, b);
 }
 
@@ -1674,9 +1675,9 @@ static constexpr std::initializer_list<NWidgetPart> _nested_vehicle_list = {
 	EndContainer(),
 };
 
-static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, uint order_arrow_width, VehicleOrderID start)
+static void DrawSmallOrderList(const Consist *cs, int left, int right, int y, uint order_arrow_width, VehicleOrderID start)
 {
-	auto orders = v->Orders();
+	auto orders = cs->Front()->Orders();
 	if (orders.empty()) return;
 
 	bool rtl = _current_text_dir == TD_RTL;
@@ -1686,7 +1687,7 @@ static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, uin
 	VehicleOrderID oid = start;
 
 	do {
-		if (oid == v->cur_real_order_index) DrawString(left, right, y, rtl ? STR_JUST_LEFT_ARROW : STR_JUST_RIGHT_ARROW, TextColour::Black, AlignmentH::Start, false, FontSize::Small);
+		if (oid == cs->cur_real_order_index) DrawString(left, right, y, rtl ? STR_JUST_LEFT_ARROW : STR_JUST_RIGHT_ARROW, TextColour::Black, AlignmentH::Start, false, FontSize::Small);
 
 		if (orders[oid].IsType(OT_GOTO_STATION)) {
 			DrawString(left + l_offset, right - r_offset, y, GetString(STR_STATION_NAME, orders[oid].GetDestination()), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
@@ -1695,7 +1696,7 @@ static void DrawSmallOrderList(const Vehicle *v, int left, int right, int y, uin
 			if (++i == 4) break;
 		}
 
-		oid = v->orders->GetNext(oid);
+		oid =cs->Front()->orders->GetNext(oid);
 	} while (oid != start);
 }
 
@@ -1812,8 +1813,9 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 		switch (this->grouping) {
 			case GB_NONE: {
 				const Vehicle *v = vehgroup.GetSingleVehicle();
+				const Consist *cs = v->GetConsist();
 
-				if (v->consist_flags.Test(ConsistFlag::PathfinderLost)) {
+				if (cs->consist_flags.Test(ConsistFlag::PathfinderLost)) {
 					DrawSprite(SPR_WARNING_SIGN, PAL_NONE, vehicle_button_x, ir.top + GetCharacterHeight(FontSize::Normal) + WidgetDimensions::scaled.vsep_normal + profit.height);
 				}
 
@@ -1829,7 +1831,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 						vehicle_cargoes.Set(u->cargo_type);
 					}
 
-					if (!v->name.empty()) {
+					if (!cs->name.empty()) {
 						/* The vehicle got a name so we will print it and the cargoes */
 						DrawString(tr.left, tr.right, ir.top,
 								GetString(STR_VEHICLE_LIST_NAME_AND_CARGO, STR_VEHICLE_NAME, v->index, STR_VEHICLE_LIST_CARGO, vehicle_cargoes),
@@ -1843,7 +1845,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 						/* The vehicle has no name, and is not a member of a group, so just print the cargoes */
 						DrawString(tr.left, tr.right, ir.top, GetString(STR_VEHICLE_LIST_CARGO, vehicle_cargoes), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
 					}
-				} else if (!v->name.empty()) {
+				} else if (!cs->name.empty()) {
 					/* The vehicle got a name so we will print it */
 					DrawString(tr.left, tr.right, ir.top, GetString(STR_VEHICLE_NAME, v->index), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
 				} else if (v->group_id != DEFAULT_GROUP) {
@@ -1851,7 +1853,7 @@ void BaseVehicleListWindow::DrawVehicleListItems(VehicleID selected_vehicle, int
 					DrawString(tr.left, tr.right, ir.top, GetString(STR_GROUP_NAME, v->group_id), TextColour::Black, AlignmentH::Start, false, FontSize::Small);
 				}
 
-				if (show_orderlist) DrawSmallOrderList(v, olr.left, olr.right, ir.top + GetCharacterHeight(FontSize::Small), this->order_arrow_width, v->cur_real_order_index);
+				if (show_orderlist) DrawSmallOrderList(cs, olr.left, olr.right, ir.top + GetCharacterHeight(FontSize::Small), this->order_arrow_width, cs->cur_real_order_index);
 
 				TextColour tc;
 				if (v->IsChainInDepot()) {
@@ -2617,6 +2619,7 @@ struct VehicleDetailsWindow : Window {
 	void DrawWidget(const Rect &r, WidgetID widget) const override
 	{
 		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = v->GetConsist();
 
 		switch (widget) {
 			case WID_VD_TOP_DETAILS: {
@@ -2706,15 +2709,15 @@ struct VehicleDetailsWindow : Window {
 				if (TimerGameEconomy::UsingWallclockUnits()) {
 					int minutes_since_serviced = (TimerGameEconomy::date - v->date_of_last_service).base() / EconomyTime::DAYS_IN_ECONOMY_MONTH;
 					DrawString(tr.left, tr.right, CentreBounds(r.top, r.bottom, GetCharacterHeight(FontSize::Normal)),
-							GetString(v->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_MINUTES,
-									v->GetServiceInterval(), STR_VEHICLE_DETAILS_LAST_SERVICE_MINUTES_AGO, minutes_since_serviced));
+							GetString(cs->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_MINUTES,
+									cs->GetServiceInterval(), STR_VEHICLE_DETAILS_LAST_SERVICE_MINUTES_AGO, minutes_since_serviced));
 					break;
 				}
 
 				/* We're using calendar dates. Show the date of last service. */
 				DrawString(tr.left, tr.right, CentreBounds(r.top, r.bottom, GetCharacterHeight(FontSize::Normal)),
-						GetString(v->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_DAYS,
-								v->GetServiceInterval(), STR_VEHICLE_DETAILS_LAST_SERVICE_DATE, v->date_of_last_service));
+						GetString(cs->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_SERVICING_INTERVAL_PERCENT : STR_VEHICLE_DETAILS_SERVICING_INTERVAL_DAYS,
+								cs->GetServiceInterval(), STR_VEHICLE_DETAILS_LAST_SERVICE_DATE, v->date_of_last_service));
 				break;
 			}
 		}
@@ -2724,6 +2727,7 @@ struct VehicleDetailsWindow : Window {
 	void OnPaint() override
 	{
 		const Vehicle *v = Vehicle::Get(this->window_number);
+		const Consist *cs = v->GetConsist();
 
 		if (v->type == VehicleType::Train) {
 			this->LowerWidget(WID_VD_DETAILS_CARGO_CARRIED + this->tab);
@@ -2736,8 +2740,8 @@ struct VehicleDetailsWindow : Window {
 			WID_VD_DECREASE_SERVICING_INTERVAL);
 
 		StringID str =
-			!v->ServiceIntervalIsCustom() ? STR_VEHICLE_DETAILS_DEFAULT :
-			v->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_PERCENT :
+			!cs->ServiceIntervalIsCustom() ? STR_VEHICLE_DETAILS_DEFAULT :
+			cs->ServiceIntervalIsPercent() ? STR_VEHICLE_DETAILS_PERCENT :
 			TimerGameEconomy::UsingWallclockUnits() ? STR_VEHICLE_DETAILS_MINUTES : STR_VEHICLE_DETAILS_DAYS;
 		this->GetWidget<NWidgetCore>(WID_VD_SERVICE_INTERVAL_DROPDOWN)->SetString(str);
 		this->SetWidgetDisabledState(WID_VD_SERVICE_INTERVAL_DROPDOWN, v->owner != _local_company);
@@ -2751,26 +2755,27 @@ struct VehicleDetailsWindow : Window {
 			case WID_VD_INCREASE_SERVICING_INTERVAL:   // increase int
 			case WID_VD_DECREASE_SERVICING_INTERVAL: { // decrease int
 				const Vehicle *v = Vehicle::Get(this->window_number);
+				const Consist *cs = v->GetConsist();
 				int mod;
-				if (!v->ServiceIntervalIsPercent() && TimerGameEconomy::UsingWallclockUnits()) {
+				if (!cs->ServiceIntervalIsPercent() && TimerGameEconomy::UsingWallclockUnits()) {
 					mod = _ctrl_pressed ? 1 : 5;
 				} else {
 					mod = _ctrl_pressed ? 5 : 10;
 				}
 
 				mod = (widget == WID_VD_DECREASE_SERVICING_INTERVAL) ? -mod : mod;
-				mod = GetServiceIntervalClamped(mod + v->GetServiceInterval(), v->ServiceIntervalIsPercent());
-				if (mod == v->GetServiceInterval()) return;
+				mod = GetServiceIntervalClamped(mod + cs->GetServiceInterval(), cs->ServiceIntervalIsPercent());
+				if (mod == cs->GetServiceInterval()) return;
 
-				Command<Commands::ChangeServiceInterval>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, v->index, mod, true, v->ServiceIntervalIsPercent());
+				Command<Commands::ChangeServiceInterval>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, v->index, mod, true, cs->ServiceIntervalIsPercent());
 				break;
 			}
 
 			case WID_VD_SERVICE_INTERVAL_DROPDOWN: {
-				const Vehicle *v = Vehicle::Get(this->window_number);
+				const Consist *cs = Vehicle::Get(this->window_number)->GetConsist();
 				ShowDropDownMenu(this,
 					TimerGameEconomy::UsingWallclockUnits() ? _service_interval_dropdown_wallclock : _service_interval_dropdown_calendar,
-					v->ServiceIntervalIsCustom() ? (v->ServiceIntervalIsPercent() ? 2 : 1) : 0, widget, 0, 0);
+					cs->ServiceIntervalIsCustom() ? (cs->ServiceIntervalIsPercent() ? 2 : 1) : 0, widget, 0, 0);
 				break;
 			}
 
@@ -2795,7 +2800,7 @@ struct VehicleDetailsWindow : Window {
 		if (widget == WID_VD_INCREASE_SERVICING_INTERVAL || widget == WID_VD_DECREASE_SERVICING_INTERVAL) {
 			const Vehicle *v = Vehicle::Get(this->window_number);
 			StringID tool_tip;
-			if (v->ServiceIntervalIsPercent()) {
+			if (v->GetConsist()->ServiceIntervalIsPercent()) {
 				tool_tip = widget == WID_VD_INCREASE_SERVICING_INTERVAL ? STR_VEHICLE_DETAILS_INCREASE_SERVICING_INTERVAL_TOOLTIP_PERCENT : STR_VEHICLE_DETAILS_DECREASE_SERVICING_INTERVAL_TOOLTIP_PERCENT;
 			} else if (TimerGameEconomy::UsingWallclockUnits()) {
 				tool_tip = widget == WID_VD_INCREASE_SERVICING_INTERVAL ? STR_VEHICLE_DETAILS_INCREASE_SERVICING_INTERVAL_TOOLTIP_MINUTES : STR_VEHICLE_DETAILS_DECREASE_SERVICING_INTERVAL_TOOLTIP_MINUTES;
@@ -2816,7 +2821,7 @@ struct VehicleDetailsWindow : Window {
 				const Vehicle *v = Vehicle::Get(this->window_number);
 				bool iscustom = index != 0;
 				bool ispercent = iscustom ? (index == 2) : Company::Get(v->owner)->settings.vehicle.servint_ispercent;
-				uint16_t interval = GetServiceIntervalClamped(v->GetServiceInterval(), ispercent);
+				uint16_t interval = GetServiceIntervalClamped(v->GetConsist()->GetServiceInterval(), ispercent);
 				Command<Commands::ChangeServiceInterval>::Post(STR_ERROR_CAN_T_CHANGE_SERVICING, v->index, interval, iscustom, ispercent);
 				break;
 			}
@@ -3188,6 +3193,8 @@ public:
 	 */
 	std::string GetVehicleStatusString(const Vehicle *v, ExtendedTextColour &text_colour) const
 	{
+		const Consist *cs = v->GetConsist();
+
 		text_colour = TextColour::Black;
 
 		if (v->vehstatus.Test(VehState::Crashed)) return GetString(STR_VEHICLE_STATUS_CRASHED);
@@ -3218,7 +3225,7 @@ public:
 
 		switch (v->current_order.GetType()) {
 			case OT_GOTO_STATION:
-				return GetString(v->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_STATION_VEL : STR_VEHICLE_STATUS_HEADING_FOR_STATION_VEL,
+				return GetString(cs->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_STATION_VEL : STR_VEHICLE_STATUS_HEADING_FOR_STATION_VEL,
 					v->current_order.GetDestination(), PackVelocity(v->GetDisplaySpeed(), v->type));
 
 			case OT_GOTO_DEPOT: {
@@ -3232,14 +3239,14 @@ public:
 
 				auto params = MakeParameters(v->type, v->current_order.GetDestination(), PackVelocity(v->GetDisplaySpeed(), v->type));
 				if (v->current_order.GetDepotActionType().Test(OrderDepotActionFlag::Halt)) {
-					return GetStringWithArgs(v->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_VEL, params);
+					return GetStringWithArgs(cs->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_VEL, params);
 				}
 
 				if (v->current_order.GetDepotActionType().Test(OrderDepotActionFlag::Unbunch)) {
-					return GetStringWithArgs(v->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_SERVICE_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_UNBUNCH_VEL, params);
+					return GetStringWithArgs(cs->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_SERVICE_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_UNBUNCH_VEL, params);
 				}
 
-				return GetStringWithArgs(v->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_SERVICE_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_SERVICE_VEL, params);
+				return GetStringWithArgs(cs->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_DEPOT_SERVICE_VEL : STR_VEHICLE_STATUS_HEADING_FOR_DEPOT_SERVICE_VEL, params);
 			}
 
 			case OT_LOADING:
@@ -3247,7 +3254,7 @@ public:
 
 			case OT_GOTO_WAYPOINT:
 				assert(v->type == VehicleType::Train || v->type == VehicleType::Road || v->type == VehicleType::Ship);
-				return GetString(v->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_WAYPOINT_VEL : STR_VEHICLE_STATUS_HEADING_FOR_WAYPOINT_VEL,
+				return GetString(cs->consist_flags.Test(ConsistFlag::PathfinderLost) ? STR_VEHICLE_STATUS_CANNOT_REACH_WAYPOINT_VEL : STR_VEHICLE_STATUS_HEADING_FOR_WAYPOINT_VEL,
 					v->current_order.GetDestination(),PackVelocity(v->GetDisplaySpeed(), v->type));
 
 			case OT_LEAVESTATION:
@@ -3275,7 +3282,7 @@ public:
 		Rect tr = r.Shrink(WidgetDimensions::scaled.framerect);
 
 		const Vehicle *v = Vehicle::Get(this->window_number);
-		SpriteID image = v->vehstatus.Test(VehState::Stopped) ? SPR_FLAG_VEH_STOPPED : (v->consist_flags.Test(ConsistFlag::PathfinderLost)) ? SPR_WARNING_SIGN : SPR_FLAG_VEH_RUNNING;
+		SpriteID image = v->vehstatus.Test(VehState::Stopped) ? SPR_FLAG_VEH_STOPPED : (v->GetConsist()->consist_flags.Test(ConsistFlag::PathfinderLost)) ? SPR_WARNING_SIGN : SPR_FLAG_VEH_RUNNING;
 		DrawSpriteIgnorePadding(image, PAL_NONE, tr.WithWidth(icon_width, rtl), {AlignmentH::Centre, AlignmentV::Middle});
 
 		tr = tr.Indent(icon_width + WidgetDimensions::scaled.imgbtn.Horizontal(), rtl);

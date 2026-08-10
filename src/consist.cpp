@@ -49,7 +49,7 @@ bool Consist::Tick()
 	Vehicle *v = this->Front();
 
 	/* Update counters. */
-	v->current_order_time++;
+	this->current_order_time++;
 	if (!v->vehstatus.Test(VehState::Stopped) || v->cur_speed > 0) v->running_ticks++;
 
 	return true;

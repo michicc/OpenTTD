@@ -50,6 +50,7 @@
 #include "goal_base.h"
 #include "story_base.h"
 #include "linkgraph/refresh.h"
+#include "consist_base.h"
 #include "company_cmd.h"
 #include "economy_cmd.h"
 #include "vehicle_cmd.h"
@@ -442,17 +443,6 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 			if (v->owner == old_owner && IsCompanyBuildableVehicleType(v->type)) {
 				assert(new_owner != INVALID_OWNER);
 
-				/* Correct default values of interval settings while maintaining custom set ones.
-				 * This prevents invalid values on mismatching company defaults being accepted.
-				 */
-				if (!v->ServiceIntervalIsCustom()) {
-					/* Technically, passing the interval is not needed as the command will query the default value itself.
-					 * However, do not rely on that behaviour.
-					 */
-					int interval = CompanyServiceInterval(new_company, v->type);
-					Command<Commands::ChangeServiceInterval>::Do({DoCommandFlag::Execute, DoCommandFlag::Bankrupt}, v->index, interval, false, new_company->settings.vehicle.servint_ispercent);
-				}
-
 				v->owner = new_owner;
 
 				/* Owner changes, clear cache */
@@ -473,6 +463,19 @@ void ChangeOwnershipOfCompanyItems(Owner old_owner, Owner new_owner)
 		for (Consist *cs : Consist::Iterate()) {
 			if (cs->owner == old_owner) {
 				assert(new_owner != INVALID_OWNER);
+
+				/* Correct default values of interval settings while maintaining custom set ones.
+				 * This prevents invalid values on mismatching company defaults being accepted.
+				 */
+				if (!cs->ServiceIntervalIsCustom()) {
+					Company *new_company = Company::Get(new_owner);
+
+					/* Technically, passing the interval is not needed as the command will query the default value itself.
+					 * However, do not rely on that behaviour.
+					 */
+					int interval = CompanyServiceInterval(new_company, cs->type);
+					Command<Commands::ChangeServiceInterval>::Do({ DoCommandFlag::Execute, DoCommandFlag::Bankrupt }, cs->Front()->index, interval, false, new_company->settings.vehicle.servint_ispercent);
+				}
 
 				cs->owner = new_owner;
 			}
@@ -1263,7 +1266,7 @@ void PrepareUnload(Vehicle *front_v)
 	curr_station->loading_vehicles.push_back(front_v);
 
 	/* At this moment loading cannot be finished */
-	front_v->consist_flags.Reset(ConsistFlag::LoadingFinished);
+	front_v->GetConsist()->consist_flags.Reset(ConsistFlag::LoadingFinished);
 
 	/* Start unloading at the first possible moment */
 	front_v->load_unload_ticks = 1;
@@ -1619,6 +1622,8 @@ static void LoadUnloadVehicle(Vehicle *front)
 {
 	assert(front->current_order.IsType(OT_LOADING));
 
+	Consist *cs = front->GetConsist();
+
 	StationID last_visited = front->last_station_visited;
 	Station *st = Station::Get(last_visited);
 
@@ -1640,7 +1645,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 	if (front->type == VehicleType::Train && (!IsTileType(moving_front->tile, TileType::Station) || GetStationIndex(moving_front->tile) != st->index)) {
 		/* The train reversed in the station. Take the "easy" way
 		 * out and let the train just leave as it always did. */
-		front->consist_flags.Set(ConsistFlag::LoadingFinished);
+		cs->consist_flags.Set(ConsistFlag::LoadingFinished);
 		front->load_unload_ticks = 1;
 		return;
 	}
@@ -1734,7 +1739,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 		}
 
 		/* Do not pick up goods when we have no-load set or loading is stopped. */
-		if (front->current_order.GetLoadType() == OrderLoadType::NoLoad || front->consist_flags.Test(ConsistFlag::StopLoading)) continue;
+		if (front->current_order.GetLoadType() == OrderLoadType::NoLoad || cs->consist_flags.Test(ConsistFlag::StopLoading)) continue;
 
 		/* This order has a refit, if this is the first vehicle part carrying cargo and the whole vehicle is empty, try refitting. */
 		if (front->current_order.IsRefit() && artic_part == 1) {
@@ -1847,7 +1852,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 
 	if (!anything_unloaded) delete payment;
 
-	front->consist_flags.Reset(ConsistFlag::StopLoading);
+	cs->consist_flags.Reset(ConsistFlag::StopLoading);
 	if (anything_loaded || anything_unloaded) {
 		if (_settings_game.order.gradual_loading) {
 			/* The time it takes to load one 'slice' of cargo or passengers depends
@@ -1859,8 +1864,8 @@ static void LoadUnloadVehicle(Vehicle *front)
 		/* We loaded less cargo than possible for all cargo types and it's not full
 		 * load and we're not supposed to wait any longer: stop loading. */
 		if (!anything_unloaded && full_load_amount.None() && reservation_left.None() && !front->current_order.IsFullLoadOrder() &&
-				front->current_order_time >= std::max(front->current_order.GetTimetabledWait() - front->lateness_counter, 0)) {
-			front->consist_flags.Set(ConsistFlag::StopLoading);
+				cs->current_order_time >= std::max(front->current_order.GetTimetabledWait() - cs->lateness_counter, 0)) {
+			cs->consist_flags.Set(ConsistFlag::StopLoading);
 		}
 
 		UpdateLoadUnloadTicks(front, st, new_load_unload_ticks);
@@ -1887,7 +1892,7 @@ static void LoadUnloadVehicle(Vehicle *front)
 			if (!finished_loading) LinkRefresher::Run(front, true, true);
 		}
 
-		front->consist_flags.Set(ConsistFlag::LoadingFinished, finished_loading);
+		cs->consist_flags.Set(ConsistFlag::LoadingFinished, finished_loading);
 	}
 
 	/* Calculate the loading indicator fill percent and display

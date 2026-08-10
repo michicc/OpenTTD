@@ -316,7 +316,6 @@ CommandCost CmdBuildAircraft(DoCommandFlags flags, TileIndex tile, const Engine 
 			u->cargo_cap = avi->mail_capacity;
 		}
 
-		v->name.clear();
 		v->last_station_visited = StationID::Invalid();
 		v->last_loading_station = StationID::Invalid();
 
@@ -341,8 +340,6 @@ CommandCost CmdBuildAircraft(DoCommandFlags flags, TileIndex tile, const Engine 
 		v->targetairport = GetStationIndex(tile);
 		v->SetNext(u);
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_aircraft);
-
 		v->date_of_last_service = TimerGameEconomy::date;
 		v->date_of_last_service_newgrf = TimerGameCalendar::date;
 		v->build_year = u->build_year = TimerGameCalendar::year;
@@ -355,7 +352,6 @@ CommandCost CmdBuildAircraft(DoCommandFlags flags, TileIndex tile, const Engine 
 
 		v->vehicle_flags = {};
 		if (e->flags.Test(EngineFlag::ExclusivePreview)) v->vehicle_flags.Set(VehicleFlag::BuiltAsPrototype);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();
 

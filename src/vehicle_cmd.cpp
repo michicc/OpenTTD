@@ -182,8 +182,8 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 
 			if (unit_num != 0) {
 				/* CmdBuildRailVehicle may have already created a consist for us. */
-				if (v->GetConsist() == nullptr) {
-					Consist *cs = nullptr;
+				Consist *cs = v->GetConsist();
+				if (cs == nullptr) {
 					switch (type) {
 						case VehicleType::Train:    cs = TrainConsist::Create(_current_company); break;
 						case VehicleType::Road:     cs = RoadConsist::Create(_current_company); break;
@@ -194,6 +194,10 @@ std::tuple<CommandCost, VehicleID, uint, uint16_t, CargoArray> CmdBuildVehicle(D
 
 					cs->SetFront(v);
 				}
+
+				cs->name = {};
+				cs->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
+				cs->SetServiceInterval(CompanyServiceInterval(Company::Get(_current_company), cs->type));
 			}
 		}
 
@@ -673,7 +677,7 @@ CommandCost CmdStartStopVehicle(DoCommandFlags flags, VehicleID veh_id, bool eva
 		if (v->type != VehicleType::Train) v->cur_speed = 0; // trains can stop 'slowly'
 
 		/* Unbunching data is no longer valid. */
-		v->ResetDepotUnbunching();
+		v->GetConsist()->ResetDepotUnbunching();
 
 		v->MarkDirty();
 		SetWindowWidgetDirty(WindowClass::VehicleView, v->index, WID_VV_START_STOP);
@@ -790,19 +794,19 @@ CommandCost CmdDepotMassAutoReplace(DoCommandFlags flags, TileIndex tile, Vehicl
  */
 bool IsUniqueVehicleName(const std::string &name)
 {
-	for (const Vehicle *v : Vehicle::Iterate()) {
-		if (!v->name.empty() && v->name == name) return false;
+	for (const Consist *cs : Consist::Iterate()) {
+		if (!cs->name.empty() && cs->name == name) return false;
 	}
 
 	return true;
 }
 
 /**
- * Clone the custom name of a vehicle, adding or incrementing a number.
- * @param src Source vehicle, with a custom name.
- * @param dst Destination vehicle.
+ * Clone the custom name of a vehicle consist, adding or incrementing a number.
+ * @param src Source consist, with a custom name.
+ * @param dst Destination consist.
  */
-static void CloneVehicleName(const Vehicle *src, Vehicle *dst)
+static void CloneVehicleName(const Consist *src, Consist *dst)
 {
 	std::string buf;
 
@@ -948,9 +952,11 @@ std::tuple<CommandCost, VehicleID> CmdCloneVehicle(DoCommandFlags flags, TileInd
 			} else {
 				/* this is a front engine or not a train. */
 				w_front = w;
-				w->service_interval = v->service_interval;
-				w->SetServiceIntervalIsCustom(v->ServiceIntervalIsCustom());
-				w->SetServiceIntervalIsPercent(v->ServiceIntervalIsPercent());
+				Consist *cs_w = w->GetConsist();
+				Consist *cs_v = v->GetConsist();
+				cs_w->service_interval = cs_v->service_interval;
+				cs_w->SetServiceIntervalIsCustom(cs_v->ServiceIntervalIsCustom());
+				cs_w->SetServiceIntervalIsPercent(cs_v->ServiceIntervalIsPercent());
 			}
 			w_rear = w; // trains needs to know the last car in the train, so they can add more in next loop
 		}
@@ -1028,7 +1034,7 @@ std::tuple<CommandCost, VehicleID> CmdCloneVehicle(DoCommandFlags flags, TileInd
 		}
 
 		/* Now clone the vehicle's name, if it has one. */
-		if (!v_front->name.empty()) CloneVehicleName(v_front, w_front);
+		if (!v_front->GetConsist()->name.empty()) CloneVehicleName(v_front->GetConsist(), w_front->GetConsist());
 
 		/* Since we can't estimate the cost of cloning a vehicle accurately we must
 		 * check whether the company has enough money manually. */
@@ -1108,7 +1114,7 @@ CommandCost CmdSendVehicleToDepot(DoCommandFlags flags, VehicleID veh_id, DepotC
 CommandCost CmdRenameVehicle(DoCommandFlags flags, VehicleID veh_id, const std::string &text)
 {
 	Vehicle *v = Vehicle::GetIfValid(veh_id);
-	if (v == nullptr || !IsCompanyBuildableVehicleType(v) || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	if (v == nullptr || v->GetConsist() == nullptr || !IsCompanyBuildableVehicleType(v) || !v->IsPrimaryVehicle()) return CMD_ERROR;
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1122,9 +1128,9 @@ CommandCost CmdRenameVehicle(DoCommandFlags flags, VehicleID veh_id, const std::
 
 	if (flags.Test(DoCommandFlag::Execute)) {
 		if (reset) {
-			v->name.clear();
+			v->GetConsist()->name.clear();
 		} else {
-			v->name = text;
+			v->GetConsist()->name = text;
 		}
 		InvalidateWindowClassesData(GetWindowClassForVehicleType(v->type), 1);
 		MarkWholeScreenDirty();
@@ -1146,7 +1152,7 @@ CommandCost CmdRenameVehicle(DoCommandFlags flags, VehicleID veh_id, const std::
 CommandCost CmdChangeServiceInt(DoCommandFlags flags, VehicleID veh_id, uint16_t serv_int, bool is_custom, bool is_percent)
 {
 	Vehicle *v = Vehicle::GetIfValid(veh_id);
-	if (v == nullptr || !IsCompanyBuildableVehicleType(v) || !v->IsPrimaryVehicle()) return CMD_ERROR;
+	if (v == nullptr || v->GetConsist() == nullptr || !IsCompanyBuildableVehicleType(v) || !v->IsPrimaryVehicle()) return CMD_ERROR;
 
 	CommandCost ret = CheckOwnership(v->owner);
 	if (ret.Failed()) return ret;
@@ -1161,9 +1167,10 @@ CommandCost CmdChangeServiceInt(DoCommandFlags flags, VehicleID veh_id, uint16_t
 	}
 
 	if (flags.Test(DoCommandFlag::Execute)) {
-		v->SetServiceInterval(serv_int);
-		v->SetServiceIntervalIsCustom(is_custom);
-		v->SetServiceIntervalIsPercent(is_percent);
+		Consist *cs = v->GetConsist();
+		cs->SetServiceInterval(serv_int);
+		cs->SetServiceIntervalIsCustom(is_custom);
+		cs->SetServiceIntervalIsPercent(is_percent);
 		SetWindowDirty(WindowClass::VehicleDetails, v->index);
 	}
 

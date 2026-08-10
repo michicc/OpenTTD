@@ -35,6 +35,7 @@
 #include "industry.h"
 #include "industry_map.h"
 #include "ship_cmd.h"
+#include "consist_base.h"
 #include "script/api/script_event_types.hpp"
 
 #include "table/strings.h"
@@ -324,7 +325,7 @@ TileIndex Ship::GetOrderStationLocation(StationID station)
 	if (CanVehicleUseStation(this, st)) {
 		return st->xy;
 	} else {
-		this->IncrementRealOrderIndex();
+		this->GetConsist()->IncrementRealOrderIndex();
 		return TileIndex{};
 	}
 }
@@ -681,7 +682,7 @@ static void ShipController(Ship *v)
 							/* We got within 3 tiles of our target buoy, so let's skip to our
 							 * next order */
 							UpdateVehicleTimetable(v, true);
-							v->IncrementRealOrderIndex();
+							v->GetConsist()->IncrementRealOrderIndex();
 							v->current_order.MakeDummy();
 						} else if (v->current_order.IsType(OT_GOTO_DEPOT) &&
 							v->dest_tile == gp.new_tile) {
@@ -700,7 +701,7 @@ static void ShipController(Ship *v)
 									v->BeginLoading();
 								} else { // leave stations without docks right away
 									v->current_order.MakeLeaveStation();
-									v->IncrementRealOrderIndex();
+									v->GetConsist()->IncrementRealOrderIndex();
 								}
 							}
 						}
@@ -842,7 +843,6 @@ CommandCost CmdBuildShip(DoCommandFlags flags, TileIndex tile, const Engine *e, 
 
 		v->state = Track::Depot;
 
-		v->SetServiceInterval(Company::Get(_current_company)->settings.vehicle.servint_ships);
 		v->date_of_last_service = TimerGameEconomy::date;
 		v->date_of_last_service_newgrf = TimerGameCalendar::date;
 		v->build_year = TimerGameCalendar::year;
@@ -853,7 +853,6 @@ CommandCost CmdBuildShip(DoCommandFlags flags, TileIndex tile, const Engine *e, 
 		v->UpdateCache();
 
 		if (e->flags.Test(EngineFlag::ExclusivePreview)) v->vehicle_flags.Set(VehicleFlag::BuiltAsPrototype);
-		v->SetServiceIntervalIsPercent(Company::Get(_current_company)->settings.vehicle.servint_ispercent);
 
 		v->InvalidateNewGRFCacheOfChain();
 
