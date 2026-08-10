@@ -881,7 +881,6 @@ void Vehicle::PreDestructor()
 		CloseWindowById(WindowClass::VehicleDetails, this->index);
 		CloseWindowById(WindowClass::VehicleTimetable, this->index);
 		SetWindowDirty(WindowClass::Company, this->owner);
-		OrderBackup::ClearVehicle(this);
 	}
 	InvalidateWindowClassesData(GetWindowClassForVehicleType(this->type), 0);
 

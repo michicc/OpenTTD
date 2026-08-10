@@ -1530,7 +1530,7 @@ CommandCost CmdSellRailWagon(DoCommandFlags flags, Vehicle *t, bool sell_chain, 
 			}
 			GroupStatistics::CountVehicle(new_head, 1); // after copying over the profit, if required
 		} else if (v->IsPrimaryVehicle()) {
-			if (backup_order) OrderBackup::Backup(v, user);
+			if (backup_order) OrderBackup::Backup(v->GetConsist(), user);
 			delete v->GetConsist();
 			v->SetConsist(nullptr);
 		}

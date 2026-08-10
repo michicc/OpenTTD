@@ -31,7 +31,7 @@ public:
 	Owner owner;      ///< Which company owns the consist?
 
 	/** We want to 'destruct' the right class. */
-	virtual ~Consist() {}
+	virtual ~Consist();
 
 	/**
 	 * Gets the front vehicle of the associated vehicle chain.

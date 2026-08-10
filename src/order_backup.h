@@ -15,6 +15,7 @@
 #include "tile_type.h"
 #include "vehicle_type.h"
 #include "base_consist.h"
+#include "consist_type.h"
 #include "saveload/saveload_type.h"
 
 /** Unique identifier for an order backup. */
@@ -48,24 +49,24 @@ private:
 	std::vector<Order> orders; ///< The actual orders if the vehicle was not a clone.
 	uint32_t old_order_index = 0;
 
-	void DoRestore(Vehicle *v);
+	void DoRestore(Consist *cs);
 
 	friend OrderBackupPoolItem; ///< Loading of order backups.
 	OrderBackup(OrderBackupID index);
-	OrderBackup(OrderBackupID index, const Vehicle *v, ClientID user);
+	OrderBackup(OrderBackupID index, const Consist *cs, ClientID user);
 
 public:
 	~OrderBackup();
 
-	static void Backup(const Vehicle *v, ClientID user);
-	static void Restore(Vehicle *v, ClientID user);
+	static void Backup(const Consist *cs, ClientID user);
+	static void Restore(Consist *cs, ClientID user);
 
 	static void ResetOfUser(TileIndex tile, ClientID user);
 	static void ResetUser(ClientID user);
 	static void Reset(TileIndex tile = INVALID_TILE, bool from_gui = true);
 
 	static void ClearGroup(GroupID group);
-	static void ClearVehicle(const Vehicle *v);
+	static void ClearConsist(const Consist *cs);
 	static void RemoveOrder(OrderType type, DestinationID destination, bool hangar);
 };
 
